@@ -77,13 +77,16 @@ export const Layout = ({ children }) => {
     { path: '/pos', icon: ShoppingCart, label: t.pos },
     { path: '/products', icon: Package, label: t.products },
     { path: '/sales', icon: Receipt, label: t.sales },
+    { path: '/recharge', icon: Smartphone, label: t.recharge },
     { path: '/customers', icon: Users, label: t.customers },
     ...(isAdmin ? [
+      { path: '/product-families', icon: FolderTree, label: t.productFamilies },
       { path: '/suppliers', icon: Truck, label: t.suppliers },
       { path: '/employees', icon: Users, label: t.employees },
       { path: '/debts', icon: Receipt, label: t.debts },
       { path: '/cash', icon: Wallet, label: t.cashManagement },
       { path: '/reports', icon: LayoutDashboard, label: t.reports },
+      { path: '/api-keys', icon: Key, label: t.apiKeys },
       { path: '/users', icon: Shield, label: t.users }
     ] : [])
   ];
