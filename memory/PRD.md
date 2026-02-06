@@ -17,42 +17,56 @@
 ## What's Been Implemented (Jan 2026)
 ### Backend (FastAPI + MongoDB)
 - ✅ نظام المصادقة JWT (تسجيل/دخول/خروج)
-- ✅ CRUD كامل للمنتجات
-- ✅ البحث بالاسم أو موديل الهاتف (يشمل الموديلات المتوافقة)
-- ✅ حماية الصلاحيات (Admin only endpoints)
-- ✅ إحصائيات لوحة التحكم
-- ✅ إدارة المستخدمين (عرض/تعديل/حذف)
-- ✅ تنبيهات المخزون المنخفض (حد قابل للتخصيص)
-- ✅ OCR لاستخراج الموديلات من الصور (Gemini)
+- ✅ CRUD كامل للمنتجات مع 3 أسعار (شراء، جملة، تجزئة)
+- ✅ البحث بالاسم أو موديل الهاتف أو الباركود
+- ✅ إدارة الزبائن (إضافة/تعديل/حذف + رصيد)
+- ✅ إدارة الموردين (إضافة/تعديل/حذف + رصيد)
+- ✅ نظام المبيعات (فواتير + خصومات + طرق دفع متعددة)
+- ✅ نظام المشتريات من الموردين
+- ✅ إدارة الصناديق (نقدي + بنكي + محفظة إلكترونية)
+- ✅ تحويل الأموال بين الصناديق
+- ✅ إرجاع المبيعات
+- ✅ تنبيهات المخزون المنخفض
+- ✅ تنبيهات إعادة التخزين
+- ✅ فواتير PDF/HTML
+- ✅ OCR لاستخراج الموديلات (Gemini)
 
 ### Frontend (React + Tailwind + Shadcn)
-- ✅ صفحات تسجيل الدخول وإنشاء حساب
-- ✅ لوحة التحكم مع الإحصائيات
-- ✅ قائمة المنتجات مع البحث والفلترة
-- ✅ صفحة تفاصيل المنتج
-- ✅ نموذج إضافة/تعديل المنتج مع OCR
-- ✅ صفحة إدارة المستخدمين
-- ✅ دعم كامل للغة العربية (RTL)
-- ✅ تبديل اللغة (عربي/إنجليزي)
+- ✅ لوحة تحكم شاملة مع إحصائيات
+- ✅ واجهة نقطة البيع (POS) متقدمة
+- ✅ إدارة المنتجات (إضافة/تعديل/حذف)
+- ✅ إدارة الزبائن
+- ✅ إدارة الموردين (للمدير)
+- ✅ سجل المبيعات مع طباعة الفواتير
+- ✅ إدارة المال والصناديق
+- ✅ إدارة المستخدمين
+- ✅ نظام الإشعارات
+- ✅ دعم كامل للعربية (RTL)
+- ✅ العملة: دينار جزائري (دج)
 
 ## Prioritized Backlog
 ### P0 (Critical) - Done
 - [x] Authentication system
-- [x] Product CRUD
-- [x] Search functionality
-- [x] Bilingual support
+- [x] Product CRUD with 3 prices
+- [x] POS system with discounts
+- [x] Multiple payment methods
+- [x] Cash boxes management
+- [x] Customers & Suppliers
+- [x] Sales history & returns
+- [x] Invoice PDF
+- [x] Notifications system
 
 ### P1 (High Priority)
-- [ ] Import/Export products (CSV/Excel)
-- [ ] Product categories
-- [ ] Image upload instead of URL
-- [ ] Email notifications for low stock
+- [ ] Barcode scanner integration
+- [ ] Detailed financial reports
+- [ ] Import/Export products (Excel)
+- [ ] Email notifications
 
 ### P2 (Medium Priority)
-- [ ] Product barcode/QR support
-- [ ] Sales tracking
-- [ ] Customer management
-- [ ] Reports and analytics
+- [ ] Dashboard charts
+- [ ] Sales analytics
+- [ ] Profit margin reports
+- [ ] Backup & restore
 
 ## Next Tasks
 1. إضافة ميزة تحميل الصور مباشرة
