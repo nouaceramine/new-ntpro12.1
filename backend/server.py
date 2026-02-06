@@ -2941,50 +2941,6 @@ async def get_system_stats(admin: dict = Depends(get_admin_user)):
     }
     return stats
 
-# ============ BARCODE GENERATION ============
-
-@api_router.get("/products/generate-barcode")
-async def generate_barcode():
-    """Generate a unique product barcode"""
-    import random
-    
-    while True:
-        # Generate EAN-13 format barcode
-        # Country code (213 for Algeria) + Company code + Product code + Check digit
-        prefix = "213"  # Algeria
-        company = "0001"  # Company code
-        product_num = str(random.randint(10000, 99999))
-        
-        # Calculate check digit (EAN-13 algorithm)
-        code = prefix + company + product_num
-        odd_sum = sum(int(code[i]) for i in range(0, 12, 2))
-        even_sum = sum(int(code[i]) for i in range(1, 12, 2))
-        check_digit = (10 - ((odd_sum + even_sum * 3) % 10)) % 10
-        
-        barcode = code + str(check_digit)
-        
-        # Check if barcode already exists
-        existing = await db.products.find_one({"barcode": barcode})
-        if not existing:
-            return {"barcode": barcode}
-
-@api_router.get("/products/generate-sku")
-async def generate_sku(family_id: Optional[str] = None):
-    """Generate a unique SKU code"""
-    prefix = "SG"  # ScreenGuard
-    
-    if family_id:
-        family = await db.product_families.find_one({"id": family_id}, {"_id": 0, "name_en": 1})
-        if family:
-            # Use first 2 letters of family name
-            prefix = family["name_en"][:2].upper()
-    
-    # Count products to generate sequential number
-    count = await db.products.count_documents({})
-    sku = f"{prefix}-{str(count + 1).zfill(5)}"
-    
-    return {"sku": sku}
-
 # ============ BULK PRICE UPDATE ============
 
 class BulkPriceUpdateRequest(BaseModel):
