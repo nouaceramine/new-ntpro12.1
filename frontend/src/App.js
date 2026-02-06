@@ -13,6 +13,11 @@ import ProductDetailPage from "./pages/ProductDetailPage";
 import AddProductPage from "./pages/AddProductPage";
 import EditProductPage from "./pages/EditProductPage";
 import UsersPage from "./pages/UsersPage";
+import POSPage from "./pages/POSPage";
+import CustomersPage from "./pages/CustomersPage";
+import SuppliersPage from "./pages/SuppliersPage";
+import CashManagementPage from "./pages/CashManagementPage";
+import SalesHistoryPage from "./pages/SalesHistoryPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -87,6 +92,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/pos"
+        element={
+          <ProtectedRoute>
+            <POSPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/products"
         element={
           <ProtectedRoute>
@@ -115,6 +128,38 @@ function AppRoutes() {
         element={
           <ProtectedRoute adminOnly>
             <EditProductPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sales"
+        element={
+          <ProtectedRoute>
+            <SalesHistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customers"
+        element={
+          <ProtectedRoute>
+            <CustomersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/suppliers"
+        element={
+          <ProtectedRoute adminOnly>
+            <SuppliersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cash"
+        element={
+          <ProtectedRoute adminOnly>
+            <CashManagementPage />
           </ProtectedRoute>
         }
       />
