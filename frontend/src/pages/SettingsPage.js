@@ -330,6 +330,364 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
+          {/* Printer Settings Tab */}
+          <TabsContent value="printer" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Printer className="h-5 w-5" />
+                  {language === 'ar' ? 'إعدادات الطابعة' : 'Paramètres de l\'imprimante'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'إعداد الطابعة لطباعة الفواتير والإيصالات' 
+                    : 'Configurer l\'imprimante pour les factures et reçus'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Enable Printer */}
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <Printer className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{language === 'ar' ? 'تفعيل الطابعة' : 'Activer l\'imprimante'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' ? 'طباعة الفواتير تلقائياً' : 'Impression automatique des factures'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={printerSettings.enabled}
+                    onCheckedChange={(checked) => setPrinterSettings(prev => ({ ...prev, enabled: checked }))}
+                  />
+                </div>
+
+                {printerSettings.enabled && (
+                  <>
+                    {/* Printer Type */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>{language === 'ar' ? 'نوع الطابعة' : 'Type d\'imprimante'}</Label>
+                        <Select 
+                          value={printerSettings.type} 
+                          onValueChange={(v) => setPrinterSettings(prev => ({ ...prev, type: v }))}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="thermal">
+                              {language === 'ar' ? 'طابعة حرارية (إيصالات)' : 'Thermique (reçus)'}
+                            </SelectItem>
+                            <SelectItem value="laser">
+                              {language === 'ar' ? 'طابعة ليزر' : 'Laser'}
+                            </SelectItem>
+                            <SelectItem value="inkjet">
+                              {language === 'ar' ? 'طابعة حبر' : 'Jet d\'encre'}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>{language === 'ar' ? 'طريقة الاتصال' : 'Type de connexion'}</Label>
+                        <Select 
+                          value={printerSettings.connectionType} 
+                          onValueChange={(v) => setPrinterSettings(prev => ({ ...prev, connectionType: v }))}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="usb">
+                              <div className="flex items-center gap-2">
+                                <Cable className="h-4 w-4" />
+                                USB
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="network">
+                              <div className="flex items-center gap-2">
+                                <Wifi className="h-4 w-4" />
+                                {language === 'ar' ? 'شبكة (IP)' : 'Réseau (IP)'}
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="bluetooth">
+                              <div className="flex items-center gap-2">
+                                <Monitor className="h-4 w-4" />
+                                Bluetooth
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Connection Settings */}
+                    {printerSettings.connectionType === 'usb' && (
+                      <div>
+                        <Label>{language === 'ar' ? 'اسم الطابعة' : 'Nom de l\'imprimante'}</Label>
+                        <Input
+                          value={printerSettings.name}
+                          onChange={(e) => setPrinterSettings(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder={language === 'ar' ? 'مثال: POS-58' : 'Ex: POS-58'}
+                          className="mt-1"
+                        />
+                      </div>
+                    )}
+
+                    {printerSettings.connectionType === 'network' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>{language === 'ar' ? 'عنوان IP' : 'Adresse IP'}</Label>
+                          <Input
+                            value={printerSettings.ipAddress}
+                            onChange={(e) => setPrinterSettings(prev => ({ ...prev, ipAddress: e.target.value }))}
+                            placeholder="192.168.1.100"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>{language === 'ar' ? 'المنفذ' : 'Port'}</Label>
+                          <Input
+                            value={printerSettings.port}
+                            onChange={(e) => setPrinterSettings(prev => ({ ...prev, port: e.target.value }))}
+                            placeholder="9100"
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Paper & Print Settings */}
+                    {printerSettings.type === 'thermal' && (
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>{language === 'ar' ? 'عرض الورق' : 'Largeur du papier'}</Label>
+                          <Select 
+                            value={printerSettings.paperWidth} 
+                            onValueChange={(v) => setPrinterSettings(prev => ({ ...prev, paperWidth: v }))}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="58">58mm</SelectItem>
+                              <SelectItem value="80">80mm</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>{language === 'ar' ? 'عدد النسخ' : 'Nombre de copies'}</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="5"
+                            value={printerSettings.printCopies}
+                            onChange={(e) => setPrinterSettings(prev => ({ ...prev, printCopies: parseInt(e.target.value) || 1 }))}
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Auto Print */}
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                      <div>
+                        <p className="font-medium">{language === 'ar' ? 'طباعة تلقائية' : 'Impression automatique'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {language === 'ar' ? 'طباعة الفاتورة تلقائياً بعد كل عملية بيع' : 'Imprimer automatiquement après chaque vente'}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={printerSettings.autoPrint}
+                        onCheckedChange={(checked) => setPrinterSettings(prev => ({ ...prev, autoPrint: checked }))}
+                      />
+                    </div>
+
+                    {/* Test Print Button */}
+                    <Button variant="outline" className="gap-2">
+                      <Printer className="h-4 w-4" />
+                      {language === 'ar' ? 'طباعة اختبارية' : 'Test d\'impression'}
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* USB SIM Settings Tab */}
+          <TabsContent value="usb" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Usb className="h-5 w-5" />
+                  {language === 'ar' ? 'إعدادات شرائح USB' : 'Paramètres SIM USB'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'ربط شرائح الهاتف عبر مفتاح USB لعمليات شحن الرصيد' 
+                    : 'Connecter les cartes SIM via clé USB pour les recharges'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Enable USB */}
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-blue-100">
+                      <Usb className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">{language === 'ar' ? 'تفعيل USB Modem' : 'Activer USB Modem'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' ? 'استخدام شرائح SIM عبر منفذ USB' : 'Utiliser les cartes SIM via port USB'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={usbSettings.enabled}
+                    onCheckedChange={(checked) => setUsbSettings(prev => ({ ...prev, enabled: checked }))}
+                  />
+                </div>
+
+                {usbSettings.enabled && (
+                  <>
+                    {/* USB Port Settings */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>{language === 'ar' ? 'منفذ USB' : 'Port USB'}</Label>
+                        <Select 
+                          value={usbSettings.port} 
+                          onValueChange={(v) => setUsbSettings(prev => ({ ...prev, port: v }))}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder={language === 'ar' ? 'اختر المنفذ' : 'Sélectionner port'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="COM1">COM1</SelectItem>
+                            <SelectItem value="COM2">COM2</SelectItem>
+                            <SelectItem value="COM3">COM3</SelectItem>
+                            <SelectItem value="COM4">COM4</SelectItem>
+                            <SelectItem value="/dev/ttyUSB0">/dev/ttyUSB0</SelectItem>
+                            <SelectItem value="/dev/ttyUSB1">/dev/ttyUSB1</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>{language === 'ar' ? 'سرعة الاتصال' : 'Vitesse baud'}</Label>
+                        <Select 
+                          value={usbSettings.baudRate} 
+                          onValueChange={(v) => setUsbSettings(prev => ({ ...prev, baudRate: v }))}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="9600">9600</SelectItem>
+                            <SelectItem value="19200">19200</SelectItem>
+                            <SelectItem value="38400">38400</SelectItem>
+                            <SelectItem value="115200">115200</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* SIM Slots */}
+                    <div className="space-y-4">
+                      <Label className="text-lg font-semibold">{language === 'ar' ? 'شرائح SIM' : 'Cartes SIM'}</Label>
+                      
+                      {usbSettings.simSlots.map((slot, index) => (
+                        <div key={slot.id} className="p-4 border rounded-lg space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Smartphone className="h-5 w-5 text-muted-foreground" />
+                              <span className="font-medium">
+                                {language === 'ar' ? `شريحة ${slot.id}` : `SIM ${slot.id}`}
+                              </span>
+                            </div>
+                            <Switch
+                              checked={slot.enabled}
+                              onCheckedChange={(checked) => {
+                                const newSlots = [...usbSettings.simSlots];
+                                newSlots[index].enabled = checked;
+                                setUsbSettings(prev => ({ ...prev, simSlots: newSlots }));
+                              }}
+                            />
+                          </div>
+                          
+                          {slot.enabled && (
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>{language === 'ar' ? 'المشغل' : 'Opérateur'}</Label>
+                                <Select 
+                                  value={slot.operator}
+                                  onValueChange={(v) => {
+                                    const newSlots = [...usbSettings.simSlots];
+                                    newSlots[index].operator = v;
+                                    setUsbSettings(prev => ({ ...prev, simSlots: newSlots }));
+                                  }}
+                                >
+                                  <SelectTrigger className="mt-1">
+                                    <SelectValue placeholder={language === 'ar' ? 'اختر' : 'Choisir'} />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="mobilis">Mobilis</SelectItem>
+                                    <SelectItem value="djezzy">Djezzy</SelectItem>
+                                    <SelectItem value="ooredoo">Ooredoo</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label>{language === 'ar' ? 'رقم الهاتف' : 'Numéro'}</Label>
+                                <Input
+                                  value={slot.phone}
+                                  onChange={(e) => {
+                                    const newSlots = [...usbSettings.simSlots];
+                                    newSlots[index].phone = e.target.value;
+                                    setUsbSettings(prev => ({ ...prev, simSlots: newSlots }));
+                                  }}
+                                  placeholder="0555123456"
+                                  className="mt-1"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                      {/* Add SIM Button */}
+                      <Button 
+                        variant="outline" 
+                        className="w-full gap-2"
+                        onClick={() => {
+                          setUsbSettings(prev => ({
+                            ...prev,
+                            simSlots: [...prev.simSlots, {
+                              id: prev.simSlots.length + 1,
+                              operator: '',
+                              phone: '',
+                              enabled: false
+                            }]
+                          }));
+                        }}
+                      >
+                        <Plus className="h-4 w-4" />
+                        {language === 'ar' ? 'إضافة شريحة' : 'Ajouter SIM'}
+                      </Button>
+                    </div>
+
+                    {/* Test Connection Button */}
+                    <Button variant="outline" className="gap-2">
+                      <RefreshCw className="h-4 w-4" />
+                      {language === 'ar' ? 'اختبار الاتصال' : 'Tester la connexion'}
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* System Tab */}
           <TabsContent value="system" className="space-y-6">
             {/* System Stats */}
