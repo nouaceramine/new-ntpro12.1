@@ -820,6 +820,43 @@ async def get_products(search: Optional[str] = None, model: Optional[str] = None
     
     return [ProductResponse(**p) for p in products]
 
+@api_router.get("/products/generate-barcode")
+async def generate_barcode():
+    """Generate a unique product barcode"""
+    import random
+    
+    while True:
+        # Generate EAN-13 format barcode
+        prefix = "213"  # Algeria
+        company = "0001"
+        product_num = str(random.randint(10000, 99999))
+        
+        code = prefix + company + product_num
+        odd_sum = sum(int(code[i]) for i in range(0, 12, 2))
+        even_sum = sum(int(code[i]) for i in range(1, 12, 2))
+        check_digit = (10 - ((odd_sum + even_sum * 3) % 10)) % 10
+        
+        barcode = code + str(check_digit)
+        
+        existing = await db.products.find_one({"barcode": barcode})
+        if not existing:
+            return {"barcode": barcode}
+
+@api_router.get("/products/generate-sku")
+async def generate_sku(family_id: Optional[str] = None):
+    """Generate a unique SKU code"""
+    prefix = "SG"
+    
+    if family_id:
+        family = await db.product_families.find_one({"id": family_id}, {"_id": 0, "name_en": 1})
+        if family:
+            prefix = family["name_en"][:2].upper()
+    
+    count = await db.products.count_documents({})
+    sku = f"{prefix}-{str(count + 1).zfill(5)}"
+    
+    return {"sku": sku}
+
 @api_router.get("/products/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: str):
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
