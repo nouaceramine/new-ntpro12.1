@@ -150,6 +150,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/purchases"
+        element={
+          <ProtectedRoute adminOnly>
+            <PurchasesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/customers"
         element={
           <ProtectedRoute>
