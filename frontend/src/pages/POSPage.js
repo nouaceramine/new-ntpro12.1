@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
+import { Switch } from '../components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -14,6 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 import { toast } from 'sonner';
 import { 
   ShoppingCart, 
@@ -26,7 +33,9 @@ import {
   Banknote,
   Wallet,
   User,
-  Barcode
+  Truck,
+  AlertCircle,
+  FolderTree
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -37,19 +46,58 @@ export default function POSPage() {
   
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [families, setFamilies] = useState([]);
+  const [wilayas, setWilayas] = useState([]);
   const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFamily, setSelectedFamily] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [customerDebt, setCustomerDebt] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentType, setPaymentType] = useState('cash'); // cash, credit, partial
   const [loading, setLoading] = useState(false);
-  const [priceType, setPriceType] = useState('retail'); // retail, wholesale
+  const [priceType, setPriceType] = useState('retail');
+  
+  // Delivery state
+  const [deliveryEnabled, setDeliveryEnabled] = useState(false);
+  const [selectedWilaya, setSelectedWilaya] = useState('');
+  const [deliveryType, setDeliveryType] = useState('desk');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryCity, setDeliveryCity] = useState('');
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  
+  // Debt dialog
+  const [showDebtDialog, setShowDebtDialog] = useState(false);
+  const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
 
   useEffect(() => {
     fetchProducts();
     fetchCustomers();
+    fetchFamilies();
+    fetchWilayas();
   }, []);
+
+  useEffect(() => {
+    if (selectedCustomer) {
+      fetchCustomerDebt(selectedCustomer);
+    } else {
+      setCustomerDebt(0);
+    }
+  }, [selectedCustomer]);
+
+  useEffect(() => {
+    // Calculate delivery fee when wilaya or type changes
+    if (selectedWilaya && deliveryEnabled) {
+      const wilaya = wilayas.find(w => w.code === selectedWilaya);
+      if (wilaya) {
+        setDeliveryFee(deliveryType === 'home' ? wilaya.home_fee : wilaya.desk_fee);
+      }
+    } else {
+      setDeliveryFee(0);
+    }
+  }, [selectedWilaya, deliveryType, deliveryEnabled, wilayas]);
 
   const fetchProducts = async () => {
     try {
@@ -69,7 +117,47 @@ export default function POSPage() {
     }
   };
 
+  const fetchFamilies = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/product-families`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFamilies(response.data);
+    } catch (error) {
+      console.error('Error fetching families:', error);
+    }
+  };
+
+  const fetchWilayas = async () => {
+    try {
+      const response = await axios.get(`${API}/delivery/wilayas`);
+      setWilayas(response.data);
+    } catch (error) {
+      console.error('Error fetching wilayas:', error);
+    }
+  };
+
+  const fetchCustomerDebt = async (customerId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/customers/${customerId}/debt`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCustomerDebt(response.data.total_debt || 0);
+    } catch (error) {
+      console.error('Error fetching customer debt:', error);
+      setCustomerDebt(0);
+    }
+  };
+
   const filteredProducts = products.filter(p => {
+    // Filter by family
+    if (selectedFamily !== 'all' && p.family_id !== selectedFamily) {
+      return false;
+    }
+    
+    // Filter by search
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -144,8 +232,29 @@ export default function POSPage() {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const total = subtotal - discount;
+  const total = subtotal - discount + (deliveryEnabled ? deliveryFee : 0);
   const remaining = total - paidAmount;
+
+  const handlePayDebt = async () => {
+    if (!selectedCustomer || debtPaymentAmount <= 0) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/customers/${selectedCustomer}/debt/pay`, {
+        customer_id: selectedCustomer,
+        amount: debtPaymentAmount,
+        payment_method: paymentMethod
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(t.debtPaid);
+      setShowDebtDialog(false);
+      setDebtPaymentAmount(0);
+      fetchCustomerDebt(selectedCustomer);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    }
+  };
 
   const completeSale = async () => {
     if (cart.length === 0) {
@@ -153,17 +262,35 @@ export default function POSPage() {
       return;
     }
 
+    // Validate credit sale requires customer
+    if (paymentType !== 'cash' && !selectedCustomer) {
+      toast.error(t.customerRequired);
+      return;
+    }
+
     setLoading(true);
     try {
+      const wilaya = wilayas.find(w => w.code === selectedWilaya);
+      
       const saleData = {
         customer_id: selectedCustomer,
         items: cart,
         subtotal,
         discount,
-        total,
-        paid_amount: paidAmount,
+        total: subtotal - discount, // Without delivery for backend calculation
+        paid_amount: paymentType === 'credit' ? 0 : paidAmount,
         payment_method: paymentMethod,
-        notes: ''
+        payment_type: paymentType,
+        notes: '',
+        delivery: deliveryEnabled ? {
+          enabled: true,
+          wilaya_code: selectedWilaya,
+          wilaya_name: wilaya ? (language === 'ar' ? wilaya.name_ar : wilaya.name_en) : '',
+          city: deliveryCity,
+          address: deliveryAddress,
+          delivery_type: deliveryType,
+          fee: deliveryFee
+        } : null
       };
 
       const response = await axios.post(`${API}/sales`, saleData);
@@ -177,6 +304,11 @@ export default function POSPage() {
       setDiscount(0);
       setPaidAmount(0);
       setSelectedCustomer(null);
+      setDeliveryEnabled(false);
+      setSelectedWilaya('');
+      setDeliveryAddress('');
+      setDeliveryCity('');
+      setPaymentType('cash');
       fetchProducts();
     } catch (error) {
       console.error('Error completing sale:', error);
@@ -191,9 +323,9 @@ export default function POSPage() {
       <div className="h-[calc(100vh-8rem)] flex gap-6" data-testid="pos-page">
         {/* Products Section */}
         <div className="flex-1 flex flex-col">
-          {/* Search */}
-          <div className="mb-4 flex gap-4">
-            <div className="relative flex-1">
+          {/* Search & Filters */}
+          <div className="mb-4 flex gap-4 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
               <Input
                 ref={searchInputRef}
@@ -205,6 +337,23 @@ export default function POSPage() {
                 data-testid="pos-search-input"
               />
             </div>
+            
+            {/* Family Filter */}
+            <Select value={selectedFamily} onValueChange={setSelectedFamily}>
+              <SelectTrigger className="w-48 h-12" data-testid="family-filter">
+                <FolderTree className="h-4 w-4 me-2" />
+                <SelectValue placeholder={t.allFamilies} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t.allFamilies}</SelectItem>
+                {families.map(f => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {language === 'ar' ? f.name_ar : f.name_en}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
             <Select value={priceType} onValueChange={setPriceType}>
               <SelectTrigger className="w-40 h-12" data-testid="price-type-select">
                 <SelectValue />
@@ -254,15 +403,15 @@ export default function POSPage() {
         </div>
 
         {/* Cart Section */}
-        <Card className="w-96 flex flex-col">
+        <Card className="w-[420px] flex flex-col">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
               {t.cart}
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col">
-            {/* Customer Selection */}
+          <CardContent className="flex-1 flex flex-col overflow-hidden">
+            {/* Customer Selection with Debt Info */}
             <div className="mb-4">
               <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
                 <SelectTrigger data-testid="customer-select">
@@ -276,6 +425,63 @@ export default function POSPage() {
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Customer Debt Warning */}
+              {selectedCustomer && customerDebt > 0 && (
+                <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="text-sm font-medium">{t.customerDebt}: {customerDebt.toLocaleString()} {t.currency}</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setDebtPaymentAmount(customerDebt);
+                        setShowDebtDialog(true);
+                      }}
+                      className="text-xs"
+                    >
+                      {t.payDebt}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Payment Type Selection */}
+            <div className="mb-4">
+              <Label className="text-sm mb-2 block">{t.paymentType}</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={paymentType === 'cash' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPaymentType('cash')}
+                  className="flex-1"
+                >
+                  {t.cashPayment}
+                </Button>
+                <Button
+                  type="button"
+                  variant={paymentType === 'credit' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPaymentType('credit')}
+                  className="flex-1"
+                >
+                  {t.creditPayment}
+                </Button>
+                <Button
+                  type="button"
+                  variant={paymentType === 'partial' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPaymentType('partial')}
+                  className="flex-1"
+                >
+                  {t.partialPayment}
+                </Button>
+              </div>
             </div>
 
             {/* Cart Items */}
@@ -335,6 +541,80 @@ export default function POSPage() {
               )}
             </div>
 
+            {/* Delivery Section */}
+            <div className="mb-4 p-3 rounded-lg border bg-muted/30">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4" />
+                  <Label>{t.deliveryService}</Label>
+                </div>
+                <Switch
+                  checked={deliveryEnabled}
+                  onCheckedChange={setDeliveryEnabled}
+                  data-testid="delivery-toggle"
+                />
+              </div>
+              
+              {deliveryEnabled && (
+                <div className="space-y-3">
+                  <Select value={selectedWilaya} onValueChange={setSelectedWilaya}>
+                    <SelectTrigger data-testid="wilaya-select">
+                      <SelectValue placeholder={t.selectWilaya} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {wilayas.map(w => (
+                        <SelectItem key={w.code} value={w.code}>
+                          {w.code} - {language === 'ar' ? w.name_ar : w.name_en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={deliveryType === 'desk' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setDeliveryType('desk')}
+                      className="flex-1"
+                    >
+                      {t.officeDelivery}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={deliveryType === 'home' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setDeliveryType('home')}
+                      className="flex-1"
+                    >
+                      {t.homeDelivery}
+                    </Button>
+                  </div>
+                  
+                  <Input
+                    placeholder={t.deliveryCity}
+                    value={deliveryCity}
+                    onChange={(e) => setDeliveryCity(e.target.value)}
+                    className="h-9"
+                  />
+                  
+                  <Input
+                    placeholder={t.deliveryAddress}
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    className="h-9"
+                  />
+                  
+                  {deliveryFee > 0 && (
+                    <div className="flex justify-between text-sm font-medium text-primary">
+                      <span>{t.deliveryFee}</span>
+                      <span>{deliveryFee.toLocaleString()} {t.currency}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Totals */}
             <div className="space-y-3 border-t pt-4">
               <div className="flex justify-between text-sm">
@@ -352,63 +632,80 @@ export default function POSPage() {
                   data-testid="total-discount-input"
                 />
               </div>
+              {deliveryEnabled && deliveryFee > 0 && (
+                <div className="flex justify-between text-sm text-primary">
+                  <span>{t.deliveryFee}</span>
+                  <span>+{deliveryFee.toLocaleString()} {t.currency}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold text-lg">
                 <span>{t.total}</span>
                 <span className="text-primary">{total.toFixed(2)} {t.currency}</span>
               </div>
               
-              {/* Payment */}
-              <div className="flex items-center gap-2">
-                <Label className="text-sm w-20">{t.paidAmount}</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={paidAmount || ''}
-                  onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
-                  className="h-9"
-                  data-testid="paid-amount-input"
-                />
-              </div>
+              {/* Payment - only show for cash or partial */}
+              {paymentType !== 'credit' && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm w-20">{t.paidAmount}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={paidAmount || ''}
+                    onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
+                    className="h-9"
+                    data-testid="paid-amount-input"
+                  />
+                </div>
+              )}
               
-              {remaining > 0 && (
+              {paymentType === 'credit' && (
+                <div className="flex justify-between text-sm text-amber-600 font-medium">
+                  <span>{t.debtAmount}</span>
+                  <span>{total.toFixed(2)} {t.currency}</span>
+                </div>
+              )}
+              
+              {paymentType === 'partial' && remaining > 0 && (
                 <div className="flex justify-between text-sm text-amber-600">
-                  <span>{t.remaining}</span>
+                  <span>{t.debtAmount}</span>
                   <span>{remaining.toFixed(2)} {t.currency}</span>
                 </div>
               )}
 
               {/* Payment Method */}
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPaymentMethod('cash')}
-                  className="flex-1 gap-1"
-                >
-                  <Banknote className="h-4 w-4" />
-                  {t.cash}
-                </Button>
-                <Button
-                  type="button"
-                  variant={paymentMethod === 'bank' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPaymentMethod('bank')}
-                  className="flex-1 gap-1"
-                >
-                  <CreditCard className="h-4 w-4" />
-                  {t.bank}
-                </Button>
-                <Button
-                  type="button"
-                  variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPaymentMethod('wallet')}
-                  className="flex-1 gap-1"
-                >
-                  <Wallet className="h-4 w-4" />
-                </Button>
-              </div>
+              {paymentType !== 'credit' && (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaymentMethod('cash')}
+                    className="flex-1 gap-1"
+                  >
+                    <Banknote className="h-4 w-4" />
+                    {t.cash}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={paymentMethod === 'bank' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaymentMethod('bank')}
+                    className="flex-1 gap-1"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    {t.bank}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaymentMethod('wallet')}
+                    className="flex-1 gap-1"
+                  >
+                    <Wallet className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
 
               {/* Complete Sale Button */}
               <Button
@@ -424,6 +721,62 @@ export default function POSPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Debt Payment Dialog */}
+      <Dialog open={showDebtDialog} onOpenChange={setShowDebtDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t.payDebt}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>{t.totalDebt}</Label>
+              <p className="text-xl font-bold text-amber-600">{customerDebt.toLocaleString()} {t.currency}</p>
+            </div>
+            <div>
+              <Label>{t.amount}</Label>
+              <Input
+                type="number"
+                min="0"
+                max={customerDebt}
+                value={debtPaymentAmount}
+                onChange={(e) => setDebtPaymentAmount(parseFloat(e.target.value) || 0)}
+                data-testid="debt-payment-input"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPaymentMethod('cash')}
+                className="flex-1"
+              >
+                <Banknote className="h-4 w-4 me-1" />
+                {t.cash}
+              </Button>
+              <Button
+                type="button"
+                variant={paymentMethod === 'bank' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setPaymentMethod('bank')}
+                className="flex-1"
+              >
+                <CreditCard className="h-4 w-4 me-1" />
+                {t.bank}
+              </Button>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowDebtDialog(false)} className="flex-1">
+                {t.cancel}
+              </Button>
+              <Button onClick={handlePayDebt} className="flex-1" disabled={debtPaymentAmount <= 0}>
+                {t.confirm}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
