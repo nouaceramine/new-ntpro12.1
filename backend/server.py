@@ -68,6 +68,7 @@ class ProductCreate(BaseModel):
     quantity: int = 0
     image_url: Optional[str] = ""
     compatible_models: List[str] = []
+    low_stock_threshold: int = 10  # Custom threshold for low stock alerts
 
 class ProductUpdate(BaseModel):
     name_en: Optional[str] = None
@@ -78,6 +79,7 @@ class ProductUpdate(BaseModel):
     quantity: Optional[int] = None
     image_url: Optional[str] = None
     compatible_models: Optional[List[str]] = None
+    low_stock_threshold: Optional[int] = None
 
 class ProductResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -90,8 +92,16 @@ class ProductResponse(BaseModel):
     quantity: int
     image_url: str
     compatible_models: List[str]
+    low_stock_threshold: int = 10
     created_at: str
     updated_at: str
+
+class OCRRequest(BaseModel):
+    image_base64: str  # Base64 encoded image
+
+class OCRResponse(BaseModel):
+    extracted_models: List[str]
+    raw_text: str
 
 # ============ HELPER FUNCTIONS ============
 
@@ -204,6 +214,7 @@ async def create_product(product: ProductCreate, admin: dict = Depends(get_admin
         "quantity": product.quantity,
         "image_url": product.image_url or "",
         "compatible_models": product.compatible_models,
+        "low_stock_threshold": product.low_stock_threshold,
         "created_at": now,
         "updated_at": now
     }
@@ -279,13 +290,90 @@ async def delete_product(product_id: str, admin: dict = Depends(get_admin_user))
 async def get_stats(admin: dict = Depends(get_admin_user)):
     total_products = await db.products.count_documents({})
     total_users = await db.users.count_documents({})
-    low_stock = await db.products.count_documents({"quantity": {"$lt": 10}})
+    
+    # Count products where quantity is below their custom threshold
+    pipeline = [
+        {
+            "$match": {
+                "$expr": {
+                    "$lt": ["$quantity", {"$ifNull": ["$low_stock_threshold", 10]}]
+                }
+            }
+        },
+        {"$count": "count"}
+    ]
+    result = await db.products.aggregate(pipeline).to_list(1)
+    low_stock = result[0]["count"] if result else 0
     
     return {
         "total_products": total_products,
         "total_users": total_users,
         "low_stock_count": low_stock
     }
+
+# ============ LOW STOCK ALERTS ============
+
+@api_router.get("/products/alerts/low-stock", response_model=List[ProductResponse])
+async def get_low_stock_products(admin: dict = Depends(get_admin_user)):
+    """Get all products where quantity is below their custom threshold"""
+    pipeline = [
+        {
+            "$match": {
+                "$expr": {
+                    "$lt": ["$quantity", {"$ifNull": ["$low_stock_threshold", 10]}]
+                }
+            }
+        },
+        {"$project": {"_id": 0}}
+    ]
+    products = await db.products.aggregate(pipeline).to_list(1000)
+    return [ProductResponse(**p) for p in products]
+
+# ============ OCR ROUTE ============
+
+@api_router.post("/ocr/extract-models", response_model=OCRResponse)
+async def extract_models_from_image(request: OCRRequest, admin: dict = Depends(get_admin_user)):
+    """Extract phone model names from an image using Gemini Vision"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+    
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OCR service not configured")
+    
+    try:
+        # Initialize Gemini chat
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"ocr-{uuid.uuid4()}",
+            system_message="""You are an OCR assistant specialized in extracting phone model names from images.
+            Extract all phone model names you can see in the image.
+            Return ONLY the model names, one per line, without any additional text or explanation.
+            Examples of model names: iPhone 15 Pro, Samsung Galaxy S24, Huawei P60 Pro, etc."""
+        ).with_model("gemini", "gemini-3-flash-preview")
+        
+        # Create image content
+        image_content = ImageContent(image_base64=request.image_base64)
+        
+        # Send message with image
+        user_message = UserMessage(
+            text="Extract all phone model names from this image. Return only the model names, one per line.",
+            file_contents=[image_content]
+        )
+        
+        response = await chat.send_message(user_message)
+        
+        # Parse the response into a list of models
+        raw_text = response.strip()
+        models = [m.strip() for m in raw_text.split('\n') if m.strip()]
+        
+        return OCRResponse(
+            extracted_models=models,
+            raw_text=raw_text
+        )
+        
+    except Exception as e:
+        logger.error(f"OCR error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"OCR processing failed: {str(e)}")
 
 # ============ HEALTH CHECK ============
 
