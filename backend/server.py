@@ -279,6 +279,113 @@ class TransactionResponse(BaseModel):
     created_at: str
     created_by: str
 
+# ============ EMPLOYEE MODELS ============
+
+class EmployeeCreate(BaseModel):
+    name: str
+    phone: Optional[str] = ""
+    email: Optional[str] = ""
+    position: Optional[str] = ""
+    salary: float = 0
+    hire_date: Optional[str] = None
+    commission_rate: float = 0  # نسبة العمولة على المبيعات
+
+class EmployeeUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    position: Optional[str] = None
+    salary: Optional[float] = None
+    commission_rate: Optional[float] = None
+
+class EmployeeResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    phone: str
+    email: str
+    position: str
+    salary: float
+    hire_date: str
+    commission_rate: float
+    total_advances: float = 0
+    total_commission: float = 0
+    created_at: str
+
+class AttendanceCreate(BaseModel):
+    employee_id: str
+    date: str
+    status: Literal["present", "absent", "late", "leave"]
+    notes: Optional[str] = ""
+
+class AttendanceResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    employee_name: str
+    date: str
+    status: str
+    notes: str
+
+class AdvanceCreate(BaseModel):
+    employee_id: str
+    amount: float
+    notes: Optional[str] = ""
+
+class AdvanceResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    employee_id: str
+    employee_name: str
+    amount: float
+    notes: str
+    created_at: str
+
+# ============ DEBT MODELS ============
+
+class DebtCreate(BaseModel):
+    type: Literal["receivable", "payable"]  # receivable = دين على زبون, payable = دين لمورد
+    party_type: Literal["customer", "supplier"]
+    party_id: str
+    amount: float
+    due_date: Optional[str] = None
+    notes: Optional[str] = ""
+    reference_type: Optional[str] = None  # sale, purchase
+    reference_id: Optional[str] = None
+
+class DebtPaymentCreate(BaseModel):
+    debt_id: str
+    amount: float
+    payment_method: Literal["cash", "bank", "wallet"] = "cash"
+    notes: Optional[str] = ""
+
+class DebtResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    type: str
+    party_type: str
+    party_id: str
+    party_name: str
+    original_amount: float
+    paid_amount: float
+    remaining_amount: float
+    due_date: str
+    status: str  # pending, partial, paid, overdue
+    notes: str
+    reference_type: str
+    reference_id: str
+    created_at: str
+
+class DebtPaymentResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    debt_id: str
+    amount: float
+    payment_method: str
+    notes: str
+    created_at: str
+    created_by: str
+
 # ============ OCR & OTHER MODELS ============
 
 class OCRRequest(BaseModel):
