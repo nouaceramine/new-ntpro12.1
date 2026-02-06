@@ -22,40 +22,35 @@ export default function EditProductPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [formData, setFormData] = useState({
-    name_en: '',
-    name_ar: '',
-    description_en: '',
-    description_ar: '',
-    price: '',
-    quantity: '',
-    image_url: '',
-    compatible_models: ''
+    name_en: '', name_ar: '', description_en: '', description_ar: '',
+    purchase_price: '', wholesale_price: '', retail_price: '',
+    quantity: '', image_url: '', barcode: '', compatible_models: '', low_stock_threshold: ''
   });
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const response = await axios.get(`${API}/products/${id}`);
-        const product = response.data;
+        const p = response.data;
         setFormData({
-          name_en: product.name_en,
-          name_ar: product.name_ar,
-          description_en: product.description_en || '',
-          description_ar: product.description_ar || '',
-          price: product.price.toString(),
-          quantity: product.quantity.toString(),
-          image_url: product.image_url || '',
-          compatible_models: product.compatible_models.join(', ')
+          name_en: p.name_en, name_ar: p.name_ar,
+          description_en: p.description_en || '', description_ar: p.description_ar || '',
+          purchase_price: p.purchase_price?.toString() || '0',
+          wholesale_price: p.wholesale_price?.toString() || '0',
+          retail_price: p.retail_price?.toString() || '0',
+          quantity: p.quantity.toString(),
+          image_url: p.image_url || '',
+          barcode: p.barcode || '',
+          compatible_models: p.compatible_models.join(', '),
+          low_stock_threshold: p.low_stock_threshold?.toString() || '10'
         });
       } catch (error) {
-        console.error('Error fetching product:', error);
         toast.error(t.notFound);
         navigate('/products');
       } finally {
         setFetching(false);
       }
     };
-
     fetchProduct();
   }, [id, navigate, t.notFound]);
 
@@ -74,20 +69,20 @@ export default function EditProductPage() {
         name_ar: formData.name_ar,
         description_en: formData.description_en,
         description_ar: formData.description_ar,
-        price: parseFloat(formData.price) || 0,
+        purchase_price: parseFloat(formData.purchase_price) || 0,
+        wholesale_price: parseFloat(formData.wholesale_price) || 0,
+        retail_price: parseFloat(formData.retail_price) || 0,
         quantity: parseInt(formData.quantity) || 0,
         image_url: formData.image_url,
-        compatible_models: formData.compatible_models
-          .split(',')
-          .map(m => m.trim())
-          .filter(m => m)
+        barcode: formData.barcode,
+        compatible_models: formData.compatible_models.split(',').map(m => m.trim()).filter(m => m),
+        low_stock_threshold: parseInt(formData.low_stock_threshold) || 10
       };
 
       await axios.put(`${API}/products/${id}`, payload);
       toast.success(t.productUpdated);
       navigate(`/products/${id}`);
     } catch (error) {
-      console.error('Error updating product:', error);
       toast.error(error.response?.data?.detail || t.somethingWentWrong);
     } finally {
       setLoading(false);
@@ -95,21 +90,14 @@ export default function EditProductPage() {
   };
 
   if (fetching) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="spinner" />
-        </div>
-      </Layout>
-    );
+    return <Layout><div className="flex items-center justify-center min-h-[60vh]"><div className="spinner" /></div></Layout>;
   }
 
   return (
     <Layout>
       <div className="max-w-3xl mx-auto space-y-6 animate-fade-in" data-testid="edit-product-page">
-        {/* Back Button */}
         <Link to={`/products/${id}`}>
-          <Button variant="ghost" className="gap-2" data-testid="back-to-product-btn">
+          <Button variant="ghost" className="gap-2">
             <BackArrow className="h-4 w-4" />
             {t.viewDetails}
           </Button>
@@ -121,137 +109,81 @@ export default function EditProductPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Product Names */}
-              <div className="form-grid">
+              {/* Names */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name_en">{t.productNameEn} *</Label>
-                  <Input
-                    id="name_en"
-                    name="name_en"
-                    value={formData.name_en}
-                    onChange={handleChange}
-                    required
-                    className="h-11"
-                    data-testid="edit-name-en-input"
-                  />
+                  <Label>{t.productNameEn} *</Label>
+                  <Input name="name_en" value={formData.name_en} onChange={handleChange} required className="h-11" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="name_ar">{t.productNameAr} *</Label>
-                  <Input
-                    id="name_ar"
-                    name="name_ar"
-                    value={formData.name_ar}
-                    onChange={handleChange}
-                    required
-                    className="h-11"
-                    dir="rtl"
-                    data-testid="edit-name-ar-input"
-                  />
+                  <Label>{t.productNameAr} *</Label>
+                  <Input name="name_ar" value={formData.name_ar} onChange={handleChange} required className="h-11" dir="rtl" />
                 </div>
               </div>
 
               {/* Descriptions */}
-              <div className="form-grid">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="description_en">{t.descriptionEn}</Label>
-                  <Textarea
-                    id="description_en"
-                    name="description_en"
-                    value={formData.description_en}
-                    onChange={handleChange}
-                    rows={3}
-                    data-testid="edit-desc-en-input"
-                  />
+                  <Label>{t.descriptionEn}</Label>
+                  <Textarea name="description_en" value={formData.description_en} onChange={handleChange} rows={2} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description_ar">{t.descriptionAr}</Label>
-                  <Textarea
-                    id="description_ar"
-                    name="description_ar"
-                    value={formData.description_ar}
-                    onChange={handleChange}
-                    rows={3}
-                    dir="rtl"
-                    data-testid="edit-desc-ar-input"
-                  />
+                  <Label>{t.descriptionAr}</Label>
+                  <Textarea name="description_ar" value={formData.description_ar} onChange={handleChange} rows={2} dir="rtl" />
                 </div>
               </div>
 
-              {/* Price & Quantity */}
-              <div className="form-grid">
+              {/* Prices */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="price">{t.price} ($) *</Label>
-                  <Input
-                    id="price"
-                    name="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.price}
-                    onChange={handleChange}
-                    required
-                    className="h-11"
-                    data-testid="edit-price-input"
-                  />
+                  <Label>{t.purchasePrice} ({t.currency})</Label>
+                  <Input name="purchase_price" type="number" step="0.01" min="0" value={formData.purchase_price} onChange={handleChange} className="h-11" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="quantity">{t.quantity} *</Label>
-                  <Input
-                    id="quantity"
-                    name="quantity"
-                    type="number"
-                    min="0"
-                    value={formData.quantity}
-                    onChange={handleChange}
-                    required
-                    className="h-11"
-                    data-testid="edit-quantity-input"
-                  />
+                  <Label>{t.wholesalePrice} ({t.currency})</Label>
+                  <Input name="wholesale_price" type="number" step="0.01" min="0" value={formData.wholesale_price} onChange={handleChange} className="h-11" />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t.retailPrice} ({t.currency})</Label>
+                  <Input name="retail_price" type="number" step="0.01" min="0" value={formData.retail_price} onChange={handleChange} className="h-11" />
+                </div>
+              </div>
+
+              {/* Quantity & Barcode */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label>{t.quantity}</Label>
+                  <Input name="quantity" type="number" min="0" value={formData.quantity} onChange={handleChange} className="h-11" />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t.lowStockThreshold}</Label>
+                  <Input name="low_stock_threshold" type="number" min="1" value={formData.low_stock_threshold} onChange={handleChange} className="h-11" />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t.barcode}</Label>
+                  <Input name="barcode" value={formData.barcode} onChange={handleChange} className="h-11" />
                 </div>
               </div>
 
               {/* Image URL */}
               <div className="space-y-2">
-                <Label htmlFor="image_url">{t.imageUrl}</Label>
-                <Input
-                  id="image_url"
-                  name="image_url"
-                  type="url"
-                  value={formData.image_url}
-                  onChange={handleChange}
-                  className="h-11"
-                  data-testid="edit-image-input"
-                />
+                <Label>{t.imageUrl}</Label>
+                <Input name="image_url" type="url" value={formData.image_url} onChange={handleChange} className="h-11" />
               </div>
 
               {/* Compatible Models */}
               <div className="space-y-2">
-                <Label htmlFor="compatible_models">{t.compatibleModels} *</Label>
-                <Textarea
-                  id="compatible_models"
-                  name="compatible_models"
-                  value={formData.compatible_models}
-                  onChange={handleChange}
-                  required
-                  rows={3}
-                  data-testid="edit-models-input"
-                />
+                <Label>{t.compatibleModels}</Label>
+                <Textarea name="compatible_models" value={formData.compatible_models} onChange={handleChange} rows={3} />
                 <p className="text-sm text-muted-foreground">{t.compatibleModelsHelp}</p>
               </div>
 
-              {/* Submit Button */}
+              {/* Submit */}
               <div className="flex justify-end gap-4 pt-4">
                 <Link to={`/products/${id}`}>
-                  <Button type="button" variant="outline" data-testid="cancel-edit-btn">
-                    {t.cancel}
-                  </Button>
+                  <Button type="button" variant="outline">{t.cancel}</Button>
                 </Link>
-                <Button 
-                  type="submit" 
-                  disabled={loading}
-                  className="gap-2"
-                  data-testid="update-product-btn"
-                >
+                <Button type="submit" disabled={loading} className="gap-2" data-testid="update-product-btn">
                   <Save className="h-4 w-4" />
                   {loading ? t.loading : t.save}
                 </Button>
