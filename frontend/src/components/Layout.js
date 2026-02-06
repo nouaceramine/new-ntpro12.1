@@ -308,10 +308,10 @@ export const Layout = ({ children }) => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => toggleLanguage()}
-                className={`lang-btn ${language === 'en' ? 'active' : ''}`}
-                data-testid="lang-en-btn"
+                className={`lang-btn ${language === 'fr' ? 'active' : ''}`}
+                data-testid="lang-fr-btn"
               >
-                EN
+                FR
               </button>
               <button
                 onClick={() => toggleLanguage()}
