@@ -50,7 +50,13 @@ import {
   Edit2,
   Plus,
   Check,
-  X
+  X,
+  Printer,
+  Usb,
+  Smartphone,
+  Wifi,
+  Cable,
+  Monitor
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
