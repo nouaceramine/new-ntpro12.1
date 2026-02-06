@@ -150,18 +150,19 @@ export const Layout = ({ children }) => {
       {/* Sidebar */}
       <aside 
         className={`
-          fixed top-0 ${isRTL ? 'right-0' : 'left-0'} z-50 h-full w-64 bg-card border-e
-          transform transition-transform duration-300 ease-in-out
+          fixed top-0 ${isRTL ? 'right-0' : 'left-0'} z-50 h-full bg-card border-e
+          transform transition-all duration-300 ease-in-out
+          ${sidebarCollapsed ? 'w-16' : 'w-64'}
           ${sidebarOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'}
           md:translate-x-0
         `}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b">
+          <div className={`flex items-center justify-between h-16 border-b ${sidebarCollapsed ? 'px-2' : 'px-6'}`}>
             <div className="flex items-center gap-2">
-              <Shield className="h-7 w-7 text-primary" />
-              <span className="font-bold text-lg">{t.appName}</span>
+              <Shield className="h-7 w-7 text-primary flex-shrink-0" />
+              {!sidebarCollapsed && <span className="font-bold text-lg">{t.appName}</span>}
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -171,33 +172,56 @@ export const Layout = ({ children }) => {
             </button>
           </div>
 
+          {/* Collapse Toggle - Desktop Only */}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="hidden md:flex items-center justify-center h-10 border-b hover:bg-muted transition-colors"
+            title={sidebarCollapsed ? t.expandSidebar : t.collapseSidebar}
+          >
+            {sidebarCollapsed ? (
+              isRTL ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />
+            ) : (
+              isRTL ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />
+            )}
+            {!sidebarCollapsed && (
+              <span className="text-sm text-muted-foreground ms-2">{t.collapseSidebar}</span>
+            )}
+          </button>
+
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                  isActive(item.path) 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'hover:bg-muted'
+                } ${sidebarCollapsed ? 'justify-center' : ''}`}
                 data-testid={`nav-${item.path.replace(/\//g, '-') || 'home'}`}
+                title={sidebarCollapsed ? item.label : ''}
               >
-                <item.icon className="h-5 w-5" />
-                <span>{item.label}</span>
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
               </Link>
             ))}
           </nav>
 
           {/* User Info & Logout */}
-          <div className="p-4 border-t">
-            <div className="mb-3 px-2">
-              <p className="font-medium truncate">{user?.name}</p>
-              <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
-              {isAdmin && (
-                <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
-                  Admin
-                </span>
-              )}
-            </div>
+          <div className={`p-2 border-t ${sidebarCollapsed ? 'px-2' : 'p-4'}`}>
+            {!sidebarCollapsed && (
+              <div className="mb-3 px-2">
+                <p className="font-medium truncate">{user?.name}</p>
+                <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
+                {isAdmin && (
+                  <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+                    Admin
+                  </span>
+                )}
+              </div>
+            )}
             <Button
               variant="outline"
               className="w-full justify-start gap-2"
