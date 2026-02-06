@@ -87,6 +87,7 @@ class ProductCreate(BaseModel):
     compatible_models: List[str] = []
     low_stock_threshold: int = 10
     barcode: Optional[str] = ""
+    family_id: Optional[str] = None  # عائلة المنتج
 
 class ProductUpdate(BaseModel):
     name_en: Optional[str] = None
