@@ -174,6 +174,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/employees"
+        element={
+          <ProtectedRoute adminOnly>
+            <EmployeesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/debts"
+        element={
+          <ProtectedRoute adminOnly>
+            <DebtsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute adminOnly>
+            <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
