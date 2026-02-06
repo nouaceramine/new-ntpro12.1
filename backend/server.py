@@ -1036,6 +1036,90 @@ async def delete_supplier(supplier_id: str, admin: dict = Depends(get_admin_user
         raise HTTPException(status_code=404, detail="Supplier not found")
     return {"message": "Supplier deleted successfully"}
 
+# ============ SUPPLIER DEBTS ROUTES ============
+
+class SupplierDebtPayment(BaseModel):
+    supplier_id: str
+    amount: float
+    payment_method: str = "cash"
+
+@api_router.post("/supplier-debts/pay")
+async def pay_supplier_debt(payment: SupplierDebtPayment, user: dict = Depends(get_current_user)):
+    """Pay supplier debt - applies payment to oldest unpaid purchases first"""
+    
+    # Get unpaid purchases for this supplier, ordered by date
+    unpaid_purchases = await db.purchases.find({
+        "supplier_id": payment.supplier_id,
+        "remaining": {"$gt": 0}
+    }).sort("created_at", 1).to_list(100)
+    
+    if not unpaid_purchases:
+        raise HTTPException(status_code=400, detail="No outstanding debt for this supplier")
+    
+    remaining_payment = payment.amount
+    updated_purchases = []
+    
+    for purchase in unpaid_purchases:
+        if remaining_payment <= 0:
+            break
+            
+        purchase_remaining = purchase["remaining"]
+        payment_for_this = min(remaining_payment, purchase_remaining)
+        
+        new_paid = purchase["paid_amount"] + payment_for_this
+        new_remaining = purchase["total"] - new_paid
+        new_status = "paid" if new_remaining <= 0 else "partial"
+        
+        await db.purchases.update_one(
+            {"id": purchase["id"]},
+            {"$set": {
+                "paid_amount": new_paid,
+                "remaining": new_remaining,
+                "status": new_status,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        updated_purchases.append({
+            "purchase_id": purchase["id"],
+            "paid": payment_for_this
+        })
+        
+        remaining_payment -= payment_for_this
+    
+    # Update supplier total_purchases
+    supplier = await db.suppliers.find_one({"id": payment.supplier_id})
+    if supplier:
+        await db.suppliers.update_one(
+            {"id": payment.supplier_id},
+            {"$inc": {"total_purchases": -payment.amount}}
+        )
+    
+    # Record transaction
+    transaction_id = str(uuid.uuid4())
+    transaction = {
+        "id": transaction_id,
+        "type": "expense",
+        "box": payment.payment_method,
+        "amount": -payment.amount,
+        "balance_after": 0,
+        "description": f"سداد دين مورد - {supplier['name'] if supplier else payment.supplier_id}",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.transactions.insert_one(transaction)
+    
+    # Update cash box
+    await db.cash_boxes.update_one(
+        {"id": payment.payment_method},
+        {"$inc": {"balance": -payment.amount}}
+    )
+    
+    return {
+        "message": "Payment recorded successfully",
+        "amount_paid": payment.amount,
+        "updated_purchases": updated_purchases
+    }
+
 # ============ SALES ROUTES ============
 
 @api_router.post("/sales", response_model=SaleResponse)
