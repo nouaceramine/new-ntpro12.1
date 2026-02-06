@@ -38,6 +38,8 @@ const translations = {
     products: 'Products',
     addProduct: 'Add Product',
     settings: 'Settings',
+    users: 'Users',
+    userManagement: 'User Management',
     
     // Dashboard
     totalProducts: 'Total Products',
@@ -101,6 +103,22 @@ const translations = {
     notFound: 'Not Found',
     unauthorized: 'Unauthorized',
     forbidden: 'Access Denied',
+    
+    // User Management
+    allUsers: 'All Users',
+    userRole: 'Role',
+    userEmail: 'Email',
+    userName: 'Name',
+    changeRole: 'Change Role',
+    deleteUser: 'Delete User',
+    deleteUserConfirm: 'Are you sure you want to delete this user?',
+    userDeleted: 'User deleted successfully',
+    userUpdated: 'User updated successfully',
+    noUsers: 'No users found',
+    adminRole: 'Admin',
+    userRoleLabel: 'User',
+    cannotDeleteSelf: 'Cannot delete your own account',
+    createdAt: 'Created At',
   },
   ar: {
     // General
@@ -139,6 +157,8 @@ const translations = {
     products: 'المنتجات',
     addProduct: 'إضافة منتج',
     settings: 'الإعدادات',
+    users: 'المستخدمين',
+    userManagement: 'إدارة المستخدمين',
     
     // Dashboard
     totalProducts: 'إجمالي المنتجات',
@@ -202,6 +222,22 @@ const translations = {
     notFound: 'غير موجود',
     unauthorized: 'غير مصرح',
     forbidden: 'الوصول مرفوض',
+    
+    // User Management
+    allUsers: 'جميع المستخدمين',
+    userRole: 'الدور',
+    userEmail: 'البريد الإلكتروني',
+    userName: 'الاسم',
+    changeRole: 'تغيير الدور',
+    deleteUser: 'حذف المستخدم',
+    deleteUserConfirm: 'هل أنت متأكد من حذف هذا المستخدم؟',
+    userDeleted: 'تم حذف المستخدم بنجاح',
+    userUpdated: 'تم تحديث المستخدم بنجاح',
+    noUsers: 'لا يوجد مستخدمين',
+    adminRole: 'مدير',
+    userRoleLabel: 'مستخدم',
+    cannotDeleteSelf: 'لا يمكن حذف حسابك الخاص',
+    createdAt: 'تاريخ الإنشاء',
   }
 };
 
