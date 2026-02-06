@@ -50,14 +50,6 @@ export const Layout = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
-  }, [sidebarCollapsed]);
-
   const fetchNotifications = async () => {
     try {
       const response = await axios.get(`${API}/notifications`);
@@ -66,6 +58,14 @@ export const Layout = ({ children }) => {
       console.error('Error fetching notifications:', error);
     }
   };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
 
   const markAllRead = async () => {
     try {
