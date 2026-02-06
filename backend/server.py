@@ -1093,6 +1093,7 @@ async def get_stats(admin: dict = Depends(get_admin_user)):
     total_products = await db.products.count_documents({})
     total_customers = await db.customers.count_documents({})
     total_suppliers = await db.suppliers.count_documents({})
+    total_employees = await db.employees.count_documents({})
     
     # Low stock count
     pipeline = [
@@ -1116,18 +1117,489 @@ async def get_stats(admin: dict = Depends(get_admin_user)):
     # Unread notifications
     unread_notifications = await db.notifications.count_documents({"read": False})
     
+    # Total debts
+    total_receivables = await db.debts.aggregate([
+        {"$match": {"type": "receivable", "status": {"$ne": "paid"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$remaining_amount"}}}
+    ]).to_list(1)
+    
+    total_payables = await db.debts.aggregate([
+        {"$match": {"type": "payable", "status": {"$ne": "paid"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$remaining_amount"}}}
+    ]).to_list(1)
+    
     return {
         "total_products": total_products,
         "total_customers": total_customers,
         "total_suppliers": total_suppliers,
+        "total_employees": total_employees,
         "low_stock_count": low_stock,
         "today_sales_total": today_sales[0]["total"] if today_sales else 0,
         "today_sales_count": today_sales[0]["count"] if today_sales else 0,
         "total_cash": total_cash,
         "cash_boxes": cash_boxes,
         "unread_notifications": unread_notifications,
+        "total_receivables": total_receivables[0]["total"] if total_receivables else 0,
+        "total_payables": total_payables[0]["total"] if total_payables else 0,
         "currency": CURRENCY
     }
+
+# ============ CHARTS & ANALYTICS ============
+
+@api_router.get("/reports/sales-chart")
+async def get_sales_chart(days: int = 7, admin: dict = Depends(get_admin_user)):
+    """Get sales data for chart (last N days)"""
+    start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+    
+    pipeline = [
+        {"$match": {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}}},
+        {"$addFields": {"date": {"$substr": ["$created_at", 0, 10]}}},
+        {"$group": {
+            "_id": "$date",
+            "total_sales": {"$sum": "$total"},
+            "count": {"$sum": 1}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    
+    result = await db.sales.aggregate(pipeline).to_list(100)
+    return [{"date": r["_id"], "total": r["total_sales"], "count": r["count"]} for r in result]
+
+@api_router.get("/reports/top-products")
+async def get_top_products(limit: int = 10, admin: dict = Depends(get_admin_user)):
+    """Get top selling products"""
+    pipeline = [
+        {"$match": {"status": {"$ne": "returned"}}},
+        {"$unwind": "$items"},
+        {"$group": {
+            "_id": "$items.product_id",
+            "product_name": {"$first": "$items.product_name"},
+            "total_quantity": {"$sum": "$items.quantity"},
+            "total_revenue": {"$sum": "$items.total"}
+        }},
+        {"$sort": {"total_quantity": -1}},
+        {"$limit": limit}
+    ]
+    
+    result = await db.sales.aggregate(pipeline).to_list(limit)
+    return result
+
+@api_router.get("/reports/top-customers")
+async def get_top_customers(limit: int = 10, admin: dict = Depends(get_admin_user)):
+    """Get top customers by purchases"""
+    customers = await db.customers.find(
+        {}, {"_id": 0}
+    ).sort("total_purchases", -1).limit(limit).to_list(limit)
+    return customers
+
+@api_router.get("/reports/profit")
+async def get_profit_report(days: int = 30, admin: dict = Depends(get_admin_user)):
+    """Get profit report"""
+    start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+    
+    # Get sales
+    sales = await db.sales.find(
+        {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}},
+        {"_id": 0, "items": 1, "total": 1}
+    ).to_list(10000)
+    
+    total_revenue = sum(s["total"] for s in sales)
+    
+    # Calculate cost from items (need to get purchase prices from products)
+    total_cost = 0
+    for sale in sales:
+        for item in sale.get("items", []):
+            product = await db.products.find_one({"id": item["product_id"]}, {"_id": 0, "purchase_price": 1})
+            if product:
+                total_cost += product.get("purchase_price", 0) * item["quantity"]
+    
+    gross_profit = total_revenue - total_cost
+    profit_margin = (gross_profit / total_revenue * 100) if total_revenue > 0 else 0
+    
+    return {
+        "total_revenue": total_revenue,
+        "total_cost": total_cost,
+        "gross_profit": gross_profit,
+        "profit_margin": round(profit_margin, 2),
+        "period_days": days
+    }
+
+# ============ EMPLOYEE ROUTES ============
+
+@api_router.post("/employees", response_model=EmployeeResponse)
+async def create_employee(employee: EmployeeCreate, admin: dict = Depends(get_admin_user)):
+    employee_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    employee_doc = {
+        "id": employee_id,
+        "name": employee.name,
+        "phone": employee.phone or "",
+        "email": employee.email or "",
+        "position": employee.position or "",
+        "salary": employee.salary,
+        "hire_date": employee.hire_date or now[:10],
+        "commission_rate": employee.commission_rate,
+        "total_advances": 0,
+        "total_commission": 0,
+        "created_at": now
+    }
+    await db.employees.insert_one(employee_doc)
+    return EmployeeResponse(**employee_doc)
+
+@api_router.get("/employees", response_model=List[EmployeeResponse])
+async def get_employees(admin: dict = Depends(get_admin_user)):
+    employees = await db.employees.find({}, {"_id": 0}).to_list(1000)
+    return [EmployeeResponse(**e) for e in employees]
+
+@api_router.get("/employees/{employee_id}", response_model=EmployeeResponse)
+async def get_employee(employee_id: str, admin: dict = Depends(get_admin_user)):
+    employee = await db.employees.find_one({"id": employee_id}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    return EmployeeResponse(**employee)
+
+@api_router.put("/employees/{employee_id}", response_model=EmployeeResponse)
+async def update_employee(employee_id: str, updates: EmployeeUpdate, admin: dict = Depends(get_admin_user)):
+    employee = await db.employees.find_one({"id": employee_id})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    if update_data:
+        await db.employees.update_one({"id": employee_id}, {"$set": update_data})
+    updated = await db.employees.find_one({"id": employee_id}, {"_id": 0})
+    return EmployeeResponse(**updated)
+
+@api_router.delete("/employees/{employee_id}")
+async def delete_employee(employee_id: str, admin: dict = Depends(get_admin_user)):
+    result = await db.employees.delete_one({"id": employee_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    return {"message": "Employee deleted successfully"}
+
+# Attendance
+@api_router.post("/employees/attendance", response_model=AttendanceResponse)
+async def record_attendance(attendance: AttendanceCreate, admin: dict = Depends(get_admin_user)):
+    employee = await db.employees.find_one({"id": attendance.employee_id}, {"_id": 0, "name": 1})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    attendance_id = str(uuid.uuid4())
+    attendance_doc = {
+        "id": attendance_id,
+        "employee_id": attendance.employee_id,
+        "employee_name": employee["name"],
+        "date": attendance.date,
+        "status": attendance.status,
+        "notes": attendance.notes or ""
+    }
+    await db.attendance.insert_one(attendance_doc)
+    return AttendanceResponse(**attendance_doc)
+
+@api_router.get("/employees/{employee_id}/attendance")
+async def get_employee_attendance(employee_id: str, month: Optional[str] = None, admin: dict = Depends(get_admin_user)):
+    query = {"employee_id": employee_id}
+    if month:
+        query["date"] = {"$regex": f"^{month}"}
+    attendance = await db.attendance.find(query, {"_id": 0}).sort("date", -1).to_list(100)
+    return attendance
+
+# Advances (سلف)
+@api_router.post("/employees/advances", response_model=AdvanceResponse)
+async def create_advance(advance: AdvanceCreate, admin: dict = Depends(get_admin_user)):
+    employee = await db.employees.find_one({"id": advance.employee_id}, {"_id": 0, "name": 1})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    advance_id = str(uuid.uuid4())
+    
+    advance_doc = {
+        "id": advance_id,
+        "employee_id": advance.employee_id,
+        "employee_name": employee["name"],
+        "amount": advance.amount,
+        "notes": advance.notes or "",
+        "created_at": now
+    }
+    await db.advances.insert_one(advance_doc)
+    
+    # Update employee total advances
+    await db.employees.update_one(
+        {"id": advance.employee_id},
+        {"$inc": {"total_advances": advance.amount}}
+    )
+    
+    return AdvanceResponse(**advance_doc)
+
+@api_router.get("/employees/{employee_id}/advances")
+async def get_employee_advances(employee_id: str, admin: dict = Depends(get_admin_user)):
+    advances = await db.advances.find({"employee_id": employee_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return advances
+
+# ============ DEBT ROUTES ============
+
+@api_router.post("/debts", response_model=DebtResponse)
+async def create_debt(debt: DebtCreate, admin: dict = Depends(get_admin_user)):
+    # Get party name
+    if debt.party_type == "customer":
+        party = await db.customers.find_one({"id": debt.party_id}, {"_id": 0, "name": 1})
+    else:
+        party = await db.suppliers.find_one({"id": debt.party_id}, {"_id": 0, "name": 1})
+    
+    if not party:
+        raise HTTPException(status_code=404, detail="Party not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    debt_id = str(uuid.uuid4())
+    
+    debt_doc = {
+        "id": debt_id,
+        "type": debt.type,
+        "party_type": debt.party_type,
+        "party_id": debt.party_id,
+        "party_name": party["name"],
+        "original_amount": debt.amount,
+        "paid_amount": 0,
+        "remaining_amount": debt.amount,
+        "due_date": debt.due_date or "",
+        "status": "pending",
+        "notes": debt.notes or "",
+        "reference_type": debt.reference_type or "",
+        "reference_id": debt.reference_id or "",
+        "created_at": now
+    }
+    await db.debts.insert_one(debt_doc)
+    return DebtResponse(**debt_doc)
+
+@api_router.get("/debts", response_model=List[DebtResponse])
+async def get_debts(
+    type: Optional[str] = None,
+    party_type: Optional[str] = None,
+    status: Optional[str] = None,
+    admin: dict = Depends(get_admin_user)
+):
+    query = {}
+    if type:
+        query["type"] = type
+    if party_type:
+        query["party_type"] = party_type
+    if status:
+        query["status"] = status
+    
+    debts = await db.debts.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Check for overdue
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    for debt in debts:
+        if debt.get("due_date") and debt["due_date"] < today and debt["status"] not in ["paid", "overdue"]:
+            await db.debts.update_one({"id": debt["id"]}, {"$set": {"status": "overdue"}})
+            debt["status"] = "overdue"
+    
+    return [DebtResponse(**d) for d in debts]
+
+@api_router.post("/debts/{debt_id}/pay", response_model=DebtPaymentResponse)
+async def pay_debt(debt_id: str, payment: DebtPaymentCreate, admin: dict = Depends(get_admin_user)):
+    debt = await db.debts.find_one({"id": debt_id})
+    if not debt:
+        raise HTTPException(status_code=404, detail="Debt not found")
+    
+    if payment.amount > debt["remaining_amount"]:
+        raise HTTPException(status_code=400, detail="Payment amount exceeds remaining debt")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    payment_id = str(uuid.uuid4())
+    
+    new_paid = debt["paid_amount"] + payment.amount
+    new_remaining = debt["remaining_amount"] - payment.amount
+    new_status = "paid" if new_remaining <= 0 else "partial"
+    
+    # Update debt
+    await db.debts.update_one(
+        {"id": debt_id},
+        {"$set": {
+            "paid_amount": new_paid,
+            "remaining_amount": new_remaining,
+            "status": new_status
+        }}
+    )
+    
+    # Record payment
+    payment_doc = {
+        "id": payment_id,
+        "debt_id": debt_id,
+        "amount": payment.amount,
+        "payment_method": payment.payment_method,
+        "notes": payment.notes or "",
+        "created_at": now,
+        "created_by": admin["name"]
+    }
+    await db.debt_payments.insert_one(payment_doc)
+    
+    # Update cash box
+    tx_type = "income" if debt["type"] == "receivable" else "expense"
+    await db.cash_boxes.update_one(
+        {"id": payment.payment_method},
+        {"$inc": {"balance": payment.amount if tx_type == "income" else -payment.amount}, "$set": {"updated_at": now}}
+    )
+    
+    await db.transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "cash_box_id": payment.payment_method,
+        "type": tx_type,
+        "amount": payment.amount,
+        "description": f"سداد دين - {debt['party_name']}",
+        "reference_type": "debt_payment",
+        "reference_id": payment_id,
+        "created_at": now,
+        "created_by": admin["name"]
+    })
+    
+    return DebtPaymentResponse(**payment_doc)
+
+@api_router.get("/debts/{debt_id}/payments")
+async def get_debt_payments(debt_id: str, admin: dict = Depends(get_admin_user)):
+    payments = await db.debt_payments.find({"debt_id": debt_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return payments
+
+# ============ EXCEL IMPORT/EXPORT ============
+
+@api_router.get("/products/export/excel")
+async def export_products_excel(admin: dict = Depends(get_admin_user)):
+    import pandas as pd
+    
+    products = await db.products.find({}, {"_id": 0}).to_list(10000)
+    
+    # Prepare data
+    data = []
+    for p in products:
+        data.append({
+            "الباركود": p.get("barcode", ""),
+            "الاسم (عربي)": p.get("name_ar", ""),
+            "الاسم (إنجليزي)": p.get("name_en", ""),
+            "الوصف (عربي)": p.get("description_ar", ""),
+            "الوصف (إنجليزي)": p.get("description_en", ""),
+            "سعر الشراء": p.get("purchase_price", 0),
+            "سعر الجملة": p.get("wholesale_price", 0),
+            "سعر التجزئة": p.get("retail_price", 0),
+            "الكمية": p.get("quantity", 0),
+            "حد المخزون المنخفض": p.get("low_stock_threshold", 10),
+            "الموديلات المتوافقة": ", ".join(p.get("compatible_models", [])),
+            "رابط الصورة": p.get("image_url", "")
+        })
+    
+    df = pd.DataFrame(data)
+    
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='المنتجات')
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=products.xlsx"}
+    )
+
+from fastapi import UploadFile, File
+
+@api_router.post("/products/import/excel")
+async def import_products_excel(file: UploadFile = File(...), admin: dict = Depends(get_admin_user)):
+    import pandas as pd
+    
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="File must be Excel format (.xlsx or .xls)")
+    
+    contents = await file.read()
+    df = pd.read_excel(io.BytesIO(contents))
+    
+    now = datetime.now(timezone.utc).isoformat()
+    imported = 0
+    updated = 0
+    errors = []
+    
+    for index, row in df.iterrows():
+        try:
+            barcode = str(row.get("الباركود", "")).strip()
+            name_ar = str(row.get("الاسم (عربي)", "")).strip()
+            name_en = str(row.get("الاسم (إنجليزي)", "")).strip()
+            
+            if not name_ar and not name_en:
+                continue
+            
+            product_data = {
+                "barcode": barcode,
+                "name_ar": name_ar or name_en,
+                "name_en": name_en or name_ar,
+                "description_ar": str(row.get("الوصف (عربي)", "")),
+                "description_en": str(row.get("الوصف (إنجليزي)", "")),
+                "purchase_price": float(row.get("سعر الشراء", 0) or 0),
+                "wholesale_price": float(row.get("سعر الجملة", 0) or 0),
+                "retail_price": float(row.get("سعر التجزئة", 0) or 0),
+                "quantity": int(row.get("الكمية", 0) or 0),
+                "low_stock_threshold": int(row.get("حد المخزون المنخفض", 10) or 10),
+                "compatible_models": [m.strip() for m in str(row.get("الموديلات المتوافقة", "")).split(",") if m.strip()],
+                "image_url": str(row.get("رابط الصورة", "")),
+                "updated_at": now
+            }
+            
+            # Check if product exists by barcode or name
+            existing = None
+            if barcode:
+                existing = await db.products.find_one({"barcode": barcode})
+            if not existing and name_ar:
+                existing = await db.products.find_one({"name_ar": name_ar})
+            
+            if existing:
+                await db.products.update_one({"id": existing["id"]}, {"$set": product_data})
+                updated += 1
+            else:
+                product_data["id"] = str(uuid.uuid4())
+                product_data["created_at"] = now
+                await db.products.insert_one(product_data)
+                imported += 1
+                
+        except Exception as e:
+            errors.append(f"Row {index + 2}: {str(e)}")
+    
+    return {
+        "imported": imported,
+        "updated": updated,
+        "errors": errors[:10]  # Return first 10 errors
+    }
+
+# ============ BACKUP ============
+
+@api_router.get("/backup/create")
+async def create_backup(admin: dict = Depends(get_admin_user)):
+    """Create a backup of all data"""
+    import json
+    
+    collections = ["users", "products", "customers", "suppliers", "sales", "purchases", 
+                   "cash_boxes", "transactions", "employees", "attendance", "advances", 
+                   "debts", "debt_payments", "notifications"]
+    
+    backup_data = {
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "collections": {}
+    }
+    
+    for collection_name in collections:
+        collection = db[collection_name]
+        docs = await collection.find({}, {"_id": 0}).to_list(100000)
+        backup_data["collections"][collection_name] = docs
+    
+    output = io.BytesIO()
+    output.write(json.dumps(backup_data, ensure_ascii=False, indent=2).encode('utf-8'))
+    output.seek(0)
+    
+    filename = f"backup_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+    
+    return StreamingResponse(
+        output,
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 # ============ OCR ROUTE ============
 
