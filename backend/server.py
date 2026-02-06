@@ -2554,6 +2554,8 @@ async def get_sms_settings(admin: dict = Depends(get_admin_user)):
     if not settings:
         settings = {**DEFAULT_SMS_SETTINGS, "id": "global"}
         await db.sms_settings.insert_one(settings)
+        # Return without _id
+        settings = {k: v for k, v in settings.items() if k != "_id"}
     return settings
 
 @api_router.put("/sms/settings")
