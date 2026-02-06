@@ -709,7 +709,7 @@ async def create_product(product: ProductCreate, admin: dict = Depends(get_admin
     return ProductResponse(**product_doc)
 
 @api_router.get("/products", response_model=List[ProductResponse])
-async def get_products(search: Optional[str] = None, model: Optional[str] = None, barcode: Optional[str] = None):
+async def get_products(search: Optional[str] = None, model: Optional[str] = None, barcode: Optional[str] = None, family_id: Optional[str] = None):
     query = {}
     
     if barcode:
@@ -730,7 +730,24 @@ async def get_products(search: Optional[str] = None, model: Optional[str] = None
         else:
             query["compatible_models"] = {"$regex": model, "$options": "i"}
     
+    if family_id:
+        if "$and" in query:
+            query["$and"].append({"family_id": family_id})
+        elif "$or" in query:
+            query = {"$and": [{"$or": query["$or"]}, {"family_id": family_id}]}
+        else:
+            query["family_id"] = family_id
+    
     products = await db.products.find(query, {"_id": 0}).to_list(1000)
+    
+    # Add family names for products without them
+    for product in products:
+        if product.get("family_id") and not product.get("family_name"):
+            family = await db.product_families.find_one({"id": product["family_id"]}, {"_id": 0, "name_ar": 1})
+            product["family_name"] = family["name_ar"] if family else ""
+        elif not product.get("family_name"):
+            product["family_name"] = ""
+    
     return [ProductResponse(**p) for p in products]
 
 @api_router.get("/products/{product_id}", response_model=ProductResponse)
@@ -738,6 +755,14 @@ async def get_product(product_id: str):
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Add family name
+    if product.get("family_id") and not product.get("family_name"):
+        family = await db.product_families.find_one({"id": product["family_id"]}, {"_id": 0, "name_ar": 1})
+        product["family_name"] = family["name_ar"] if family else ""
+    elif not product.get("family_name"):
+        product["family_name"] = ""
+    
     return ProductResponse(**product)
 
 @api_router.put("/products/{product_id}", response_model=ProductResponse)
@@ -749,6 +774,13 @@ async def update_product(product_id: str, updates: ProductUpdate, admin: dict = 
     old_quantity = product.get("quantity", 0)
     update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Update family name if family_id changed
+    if "family_id" in update_data and update_data["family_id"]:
+        family = await db.product_families.find_one({"id": update_data["family_id"]}, {"_id": 0, "name_ar": 1})
+        update_data["family_name"] = family["name_ar"] if family else ""
+    elif "family_id" in update_data and not update_data["family_id"]:
+        update_data["family_name"] = ""
     
     await db.products.update_one({"id": product_id}, {"$set": update_data})
     
@@ -766,6 +798,14 @@ async def update_product(product_id: str, updates: ProductUpdate, admin: dict = 
         })
     
     updated = await db.products.find_one({"id": product_id}, {"_id": 0})
+    
+    # Add family name
+    if updated.get("family_id") and not updated.get("family_name"):
+        family = await db.product_families.find_one({"id": updated["family_id"]}, {"_id": 0, "name_ar": 1})
+        updated["family_name"] = family["name_ar"] if family else ""
+    elif not updated.get("family_name"):
+        updated["family_name"] = ""
+    
     return ProductResponse(**updated)
 
 @api_router.delete("/products/{product_id}")
