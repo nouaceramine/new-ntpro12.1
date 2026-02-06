@@ -1842,6 +1842,210 @@ async def get_invoice_pdf(sale_id: str, user: dict = Depends(get_current_user)):
         headers={"Content-Disposition": f"inline; filename=invoice_{sale['invoice_number']}.html"}
     )
 
+# ============ API KEYS MANAGEMENT ============
+
+import secrets
+
+@api_router.post("/api-keys", response_model=ApiKeyResponse)
+async def create_api_key(api_key: ApiKeyCreate, admin: dict = Depends(get_admin_user)):
+    key_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Generate internal API key if type is internal
+    generated_key = ""
+    if api_key.type == "internal":
+        generated_key = f"sk_{secrets.token_hex(32)}"
+    
+    key_value = api_key.key_value or generated_key
+    
+    api_key_doc = {
+        "id": key_id,
+        "name": api_key.name,
+        "type": api_key.type,
+        "service": api_key.service or "",
+        "key_value": key_value,
+        "secret_value": api_key.secret_value or "",
+        "endpoint_url": api_key.endpoint_url or "",
+        "permissions": api_key.permissions,
+        "is_active": True,
+        "last_used": "",
+        "created_at": now
+    }
+    await db.api_keys.insert_one(api_key_doc)
+    
+    return ApiKeyResponse(
+        **api_key_doc,
+        key_preview=f"...{key_value[-4:]}" if len(key_value) > 4 else key_value
+    )
+
+@api_router.get("/api-keys", response_model=List[ApiKeyResponse])
+async def get_api_keys(admin: dict = Depends(get_admin_user)):
+    keys = await db.api_keys.find({}, {"_id": 0}).to_list(100)
+    result = []
+    for k in keys:
+        k["key_preview"] = f"...{k['key_value'][-4:]}" if len(k.get('key_value', '')) > 4 else k.get('key_value', '')
+        # Hide full key value
+        if k["type"] == "internal":
+            k["key_value"] = k["key_preview"]
+        result.append(ApiKeyResponse(**k))
+    return result
+
+@api_router.get("/api-keys/{key_id}")
+async def get_api_key(key_id: str, admin: dict = Depends(get_admin_user)):
+    key = await db.api_keys.find_one({"id": key_id}, {"_id": 0})
+    if not key:
+        raise HTTPException(status_code=404, detail="API Key not found")
+    return key
+
+@api_router.put("/api-keys/{key_id}/toggle")
+async def toggle_api_key(key_id: str, admin: dict = Depends(get_admin_user)):
+    key = await db.api_keys.find_one({"id": key_id})
+    if not key:
+        raise HTTPException(status_code=404, detail="API Key not found")
+    
+    new_status = not key.get("is_active", True)
+    await db.api_keys.update_one({"id": key_id}, {"$set": {"is_active": new_status}})
+    return {"is_active": new_status}
+
+@api_router.delete("/api-keys/{key_id}")
+async def delete_api_key(key_id: str, admin: dict = Depends(get_admin_user)):
+    result = await db.api_keys.delete_one({"id": key_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="API Key not found")
+    return {"message": "API Key deleted successfully"}
+
+# ============ RECHARGE / USSD ============
+
+@api_router.get("/recharge/config")
+async def get_recharge_config(user: dict = Depends(get_current_user)):
+    """Get recharge operators configuration"""
+    return RECHARGE_CONFIG
+
+@api_router.post("/recharge", response_model=RechargeResponse)
+async def create_recharge(recharge: RechargeCreate, user: dict = Depends(get_current_user)):
+    """Record a recharge transaction"""
+    recharge_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get operator config
+    operator_config = RECHARGE_CONFIG.get(recharge.operator)
+    if not operator_config:
+        raise HTTPException(status_code=400, detail="Invalid operator")
+    
+    # Calculate cost and profit
+    commission_rate = operator_config.get("commission", 0) / 100
+    profit = recharge.amount * commission_rate
+    cost = recharge.amount - profit
+    
+    # Get customer name
+    customer_name = "عميل نقدي"
+    if recharge.customer_id:
+        customer = await db.customers.find_one({"id": recharge.customer_id}, {"_id": 0, "name": 1})
+        if customer:
+            customer_name = customer["name"]
+    
+    # Generate USSD code
+    ussd_template = operator_config["ussd"].get(recharge.recharge_type, "")
+    ussd_code = ussd_template.replace("{phone}", recharge.phone_number).replace("{amount}", str(int(recharge.amount)))
+    
+    recharge_doc = {
+        "id": recharge_id,
+        "operator": recharge.operator,
+        "operator_name": operator_config["name"],
+        "phone_number": recharge.phone_number,
+        "amount": recharge.amount,
+        "recharge_type": recharge.recharge_type,
+        "cost": cost,
+        "profit": profit,
+        "customer_id": recharge.customer_id or "",
+        "customer_name": customer_name,
+        "payment_method": recharge.payment_method,
+        "status": "completed",
+        "ussd_code": ussd_code,
+        "notes": recharge.notes or "",
+        "created_at": now,
+        "created_by": user["name"]
+    }
+    await db.recharges.insert_one(recharge_doc)
+    
+    # Update cash box
+    await db.cash_boxes.update_one(
+        {"id": recharge.payment_method},
+        {"$inc": {"balance": recharge.amount}, "$set": {"updated_at": now}}
+    )
+    
+    # Record transaction
+    await db.transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "cash_box_id": recharge.payment_method,
+        "type": "income",
+        "amount": recharge.amount,
+        "description": f"شحن {operator_config['name']} - {recharge.phone_number}",
+        "reference_type": "recharge",
+        "reference_id": recharge_id,
+        "created_at": now,
+        "created_by": user["name"]
+    })
+    
+    return RechargeResponse(**recharge_doc)
+
+@api_router.get("/recharge", response_model=List[RechargeResponse])
+async def get_recharges(
+    operator: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get recharge history"""
+    query = {}
+    if operator:
+        query["operator"] = operator
+    if start_date:
+        query["created_at"] = {"$gte": start_date}
+    if end_date:
+        if "created_at" in query:
+            query["created_at"]["$lte"] = end_date
+        else:
+            query["created_at"] = {"$lte": end_date}
+    
+    recharges = await db.recharges.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [RechargeResponse(**r) for r in recharges]
+
+@api_router.get("/recharge/stats")
+async def get_recharge_stats(days: int = 30, admin: dict = Depends(get_admin_user)):
+    """Get recharge statistics"""
+    start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+    
+    # Total by operator
+    pipeline = [
+        {"$match": {"created_at": {"$gte": start_date}}},
+        {"$group": {
+            "_id": "$operator",
+            "count": {"$sum": 1},
+            "total_amount": {"$sum": "$amount"},
+            "total_profit": {"$sum": "$profit"}
+        }}
+    ]
+    by_operator = await db.recharges.aggregate(pipeline).to_list(10)
+    
+    # Today's stats
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_stats = await db.recharges.aggregate([
+        {"$match": {"created_at": {"$gte": today}}},
+        {"$group": {
+            "_id": None,
+            "count": {"$sum": 1},
+            "total_amount": {"$sum": "$amount"},
+            "total_profit": {"$sum": "$profit"}
+        }}
+    ]).to_list(1)
+    
+    return {
+        "by_operator": by_operator,
+        "today": today_stats[0] if today_stats else {"count": 0, "total_amount": 0, "total_profit": 0},
+        "period_days": days
+    }
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
