@@ -18,6 +18,9 @@ import CustomersPage from "./pages/CustomersPage";
 import SuppliersPage from "./pages/SuppliersPage";
 import CashManagementPage from "./pages/CashManagementPage";
 import SalesHistoryPage from "./pages/SalesHistoryPage";
+import EmployeesPage from "./pages/EmployeesPage";
+import DebtsPage from "./pages/DebtsPage";
+import ReportsPage from "./pages/ReportsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
