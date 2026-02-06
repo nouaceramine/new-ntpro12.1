@@ -12,7 +12,8 @@ import {
   X,
   Search,
   Globe,
-  Shield
+  Shield,
+  Users
 } from 'lucide-react';
 
 export const Layout = ({ children }) => {
@@ -38,7 +39,10 @@ export const Layout = ({ children }) => {
   const navItems = [
     { path: '/', icon: LayoutDashboard, label: t.dashboard },
     { path: '/products', icon: Package, label: t.products },
-    ...(isAdmin ? [{ path: '/products/add', icon: PlusCircle, label: t.addProduct }] : [])
+    ...(isAdmin ? [
+      { path: '/products/add', icon: PlusCircle, label: t.addProduct },
+      { path: '/users', icon: Users, label: t.users }
+    ] : [])
   ];
 
   const isActive = (path) => {
