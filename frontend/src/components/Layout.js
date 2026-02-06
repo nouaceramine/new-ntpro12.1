@@ -52,6 +52,9 @@ export const Layout = ({ children }) => {
 
   const fetchNotifications = async () => {
     try {
+      // Generate automatic notifications first
+      await axios.post(`${API}/notifications/generate`).catch(() => {});
+      // Then fetch all notifications
       const response = await axios.get(`${API}/notifications`);
       setNotifications(response.data);
     } catch (error) {
