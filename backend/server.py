@@ -197,6 +197,52 @@ async def login(credentials: UserLogin):
 async def get_me(current_user: dict = Depends(get_current_user)):
     return UserResponse(**current_user)
 
+# ============ USER MANAGEMENT ROUTES (Admin Only) ============
+
+@api_router.get("/users", response_model=List[UserResponse])
+async def get_all_users(admin: dict = Depends(get_admin_user)):
+    """Get all users (admin only)"""
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    return [UserResponse(**u) for u in users]
+
+@api_router.get("/users/{user_id}", response_model=UserResponse)
+async def get_user(user_id: str, admin: dict = Depends(get_admin_user)):
+    """Get a specific user (admin only)"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserResponse(**user)
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    role: Optional[str] = None
+
+@api_router.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(user_id: str, updates: UserUpdate, admin: dict = Depends(get_admin_user)):
+    """Update a user (admin only)"""
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    if update_data:
+        await db.users.update_one({"id": user_id}, {"$set": update_data})
+    
+    updated = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    return UserResponse(**updated)
+
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str, admin: dict = Depends(get_admin_user)):
+    """Delete a user (admin only)"""
+    # Prevent admin from deleting themselves
+    if admin["id"] == user_id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User deleted successfully"}
+
 # ============ PRODUCT ROUTES ============
 
 @api_router.post("/products", response_model=ProductResponse)
@@ -231,11 +277,13 @@ async def get_products(
     query = {}
     
     if search:
+        # Search in name, description AND compatible_models
         query["$or"] = [
             {"name_en": {"$regex": search, "$options": "i"}},
             {"name_ar": {"$regex": search, "$options": "i"}},
             {"description_en": {"$regex": search, "$options": "i"}},
-            {"description_ar": {"$regex": search, "$options": "i"}}
+            {"description_ar": {"$regex": search, "$options": "i"}},
+            {"compatible_models": {"$regex": search, "$options": "i"}}
         ]
     
     if model:
