@@ -1489,6 +1489,94 @@ async def mark_all_notifications_read(user: dict = Depends(get_current_user)):
     await db.notifications.update_many({"read": False}, {"$set": {"read": True}})
     return {"message": "All notifications marked as read"}
 
+@api_router.post("/notifications/generate")
+async def generate_auto_notifications(user: dict = Depends(get_current_user)):
+    """Generate automatic notifications for low stock and due debts"""
+    notifications_created = []
+    
+    # 1. Low stock notifications
+    low_stock_products = await db.products.find({
+        "$expr": {"$lt": ["$quantity", {"$ifNull": ["$low_stock_threshold", 10]}]}
+    }).to_list(100)
+    
+    for product in low_stock_products:
+        # Check if notification already exists for this product
+        existing = await db.notifications.find_one({
+            "type": "low_stock",
+            "reference_id": product["id"],
+            "read": False
+        })
+        if not existing:
+            notif = {
+                "id": str(uuid.uuid4()),
+                "type": "low_stock",
+                "reference_id": product["id"],
+                "message_ar": f"تنبيه: المنتج '{product.get('name_ar', product.get('name_en', 'منتج'))}' مخزونه منخفض ({product['quantity']} قطعة)",
+                "message_en": f"Alert: Product '{product.get('name_en', product.get('name_ar', 'Product'))}' is low on stock ({product['quantity']} units)",
+                "read": False,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.notifications.insert_one(notif)
+            notifications_created.append(notif["id"])
+    
+    # 2. Customer debt notifications (debts > 7 days)
+    week_ago = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    overdue_sales = await db.sales.find({
+        "remaining": {"$gt": 0},
+        "created_at": {"$lt": week_ago}
+    }).to_list(100)
+    
+    for sale in overdue_sales:
+        existing = await db.notifications.find_one({
+            "type": "overdue_debt",
+            "reference_id": sale["id"],
+            "read": False
+        })
+        if not existing:
+            customer = await db.customers.find_one({"id": sale.get("customer_id")})
+            customer_name = customer["name"] if customer else "عميل"
+            notif = {
+                "id": str(uuid.uuid4()),
+                "type": "overdue_debt",
+                "reference_id": sale["id"],
+                "message_ar": f"تذكير: دين مستحق من {customer_name} بقيمة {sale['remaining']:.2f} دج",
+                "message_en": f"Reminder: Overdue debt from {customer_name} of {sale['remaining']:.2f} DA",
+                "read": False,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.notifications.insert_one(notif)
+            notifications_created.append(notif["id"])
+    
+    # 3. Supplier debt notifications (debts > 7 days)
+    overdue_purchases = await db.purchases.find({
+        "remaining": {"$gt": 0},
+        "created_at": {"$lt": week_ago}
+    }).to_list(100)
+    
+    for purchase in overdue_purchases:
+        existing = await db.notifications.find_one({
+            "type": "supplier_debt",
+            "reference_id": purchase["id"],
+            "read": False
+        })
+        if not existing:
+            notif = {
+                "id": str(uuid.uuid4()),
+                "type": "supplier_debt",
+                "reference_id": purchase["id"],
+                "message_ar": f"تذكير: دين للمورد {purchase.get('supplier_name', '')} بقيمة {purchase['remaining']:.2f} دج",
+                "message_en": f"Reminder: Supplier debt to {purchase.get('supplier_name', '')} of {purchase['remaining']:.2f} DA",
+                "read": False,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.notifications.insert_one(notif)
+            notifications_created.append(notif["id"])
+    
+    return {
+        "message": f"Generated {len(notifications_created)} notifications",
+        "notification_ids": notifications_created
+    }
+
 # ============ STATS & REPORTS ============
 
 @api_router.get("/stats")
