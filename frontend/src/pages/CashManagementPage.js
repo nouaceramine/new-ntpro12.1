@@ -28,7 +28,8 @@ import {
   ArrowRightLeft,
   TrendingUp,
   TrendingDown,
-  RefreshCw
+  RefreshCw,
+  Safe
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
