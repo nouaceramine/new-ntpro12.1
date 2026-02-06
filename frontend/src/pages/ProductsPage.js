@@ -182,29 +182,31 @@ export default function ProductsPage() {
                     </p>
                     <div className="mt-4">
                       <p className="text-primary font-bold text-xl">
-                        ${product.price.toFixed(2)}
+                        ${(product.price ?? 0).toFixed(2)}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {t.quantity}: {product.quantity}
+                        {t.quantity}: {product.quantity ?? 0}
                       </p>
                     </div>
-                    <div className="mt-3">
-                      <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
-                        {t.compatibleModels}
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {product.compatible_models.slice(0, 3).map((model, idx) => (
-                          <span key={idx} className="model-badge">
-                            {model}
-                          </span>
-                        ))}
-                        {product.compatible_models.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{product.compatible_models.length - 3}
-                          </Badge>
-                        )}
+                    {product.compatible_models && product.compatible_models.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+                          {t.compatibleModels}
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {product.compatible_models.slice(0, 3).map((model, idx) => (
+                            <span key={idx} className="model-badge">
+                              {model}
+                            </span>
+                          ))}
+                          {product.compatible_models.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{product.compatible_models.length - 3}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </Link>
