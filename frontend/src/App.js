@@ -12,6 +12,7 @@ import ProductsPage from "./pages/ProductsPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
 import AddProductPage from "./pages/AddProductPage";
 import EditProductPage from "./pages/EditProductPage";
+import UsersPage from "./pages/UsersPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -114,6 +115,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute adminOnly>
             <EditProductPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute adminOnly>
+            <UsersPage />
           </ProtectedRoute>
         }
       />
