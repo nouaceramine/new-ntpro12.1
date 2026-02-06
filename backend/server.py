@@ -2504,6 +2504,232 @@ async def export_debts_to_excel(user: dict = Depends(get_current_user)):
         headers={"Content-Disposition": f"attachment; filename=debts_{datetime.now().strftime('%Y%m%d')}.xlsx"}
     )
 
+# ============ SMS REMINDER SYSTEM ============
+
+class SMSReminderRequest(BaseModel):
+    customer_ids: List[str]  # قائمة معرفات الزبائن
+    message_template: Optional[str] = None  # قالب الرسالة المخصص
+
+class SMSSettingsUpdate(BaseModel):
+    auto_reminder_enabled: bool = False
+    reminder_frequency: Literal["daily", "weekly", "monthly"] = "weekly"
+    reminder_day: int = 1  # 1-7 للأسبوعي، 1-28 للشهري
+    reminder_time: str = "09:00"
+    min_debt_amount: float = 100  # الحد الأدنى للدين لإرسال تذكير
+    message_template: str = "السلام عليكم {customer_name}، نذكركم بأن لديكم مبلغ {debt_amount} دج مستحق. شكراً لتعاملكم معنا."
+
+# Default SMS settings
+DEFAULT_SMS_SETTINGS = {
+    "auto_reminder_enabled": False,
+    "reminder_frequency": "weekly",
+    "reminder_day": 1,
+    "reminder_time": "09:00",
+    "min_debt_amount": 100,
+    "message_template": "السلام عليكم {customer_name}، نذكركم بأن لديكم مبلغ {debt_amount} دج مستحق. شكراً لتعاملكم معنا - ScreenGuard Pro"
+}
+
+async def send_sms_mock(phone: str, message: str) -> dict:
+    """
+    MOCKED SMS sending function
+    Replace this with actual SMS provider integration
+    Supported providers: SMS Algérie, Mobilzone, etc.
+    """
+    # Simulate SMS sending
+    import random
+    success = random.random() > 0.1  # 90% success rate simulation
+    
+    return {
+        "success": success,
+        "phone": phone,
+        "message_length": len(message),
+        "provider": "MOCKED",
+        "message_id": str(uuid.uuid4()) if success else None,
+        "error": None if success else "Simulated failure"
+    }
+
+@api_router.get("/sms/settings")
+async def get_sms_settings(admin: dict = Depends(get_admin_user)):
+    """Get SMS reminder settings"""
+    settings = await db.sms_settings.find_one({"id": "global"}, {"_id": 0})
+    if not settings:
+        settings = {**DEFAULT_SMS_SETTINGS, "id": "global"}
+        await db.sms_settings.insert_one(settings)
+    return settings
+
+@api_router.put("/sms/settings")
+async def update_sms_settings(settings: SMSSettingsUpdate, admin: dict = Depends(get_admin_user)):
+    """Update SMS reminder settings"""
+    update_data = settings.model_dump()
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.sms_settings.update_one(
+        {"id": "global"},
+        {"$set": update_data},
+        upsert=True
+    )
+    
+    return {"success": True, "message": "Settings updated"}
+
+@api_router.post("/sms/send-reminder")
+async def send_debt_reminder(request: SMSReminderRequest, user: dict = Depends(get_current_user)):
+    """Send SMS reminder to selected customers"""
+    settings = await db.sms_settings.find_one({"id": "global"}, {"_id": 0})
+    if not settings:
+        settings = DEFAULT_SMS_SETTINGS
+    
+    template = request.message_template or settings.get("message_template", DEFAULT_SMS_SETTINGS["message_template"])
+    
+    results = []
+    for customer_id in request.customer_ids:
+        # Get customer info
+        customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
+        if not customer:
+            results.append({"customer_id": customer_id, "success": False, "error": "Customer not found"})
+            continue
+        
+        if not customer.get("phone"):
+            results.append({"customer_id": customer_id, "success": False, "error": "No phone number"})
+            continue
+        
+        # Get customer debt
+        debt_pipeline = [
+            {"$match": {"customer_id": customer_id, "debt_amount": {"$gt": 0}}},
+            {"$group": {"_id": None, "total": {"$sum": "$debt_amount"}}}
+        ]
+        debt_result = await db.sales.aggregate(debt_pipeline).to_list(1)
+        total_debt = debt_result[0]["total"] if debt_result else 0
+        
+        if total_debt <= 0:
+            results.append({"customer_id": customer_id, "success": False, "error": "No debt"})
+            continue
+        
+        # Format message
+        message = template.format(
+            customer_name=customer.get("name", ""),
+            debt_amount=f"{total_debt:,.0f}",
+            phone=customer.get("phone", "")
+        )
+        
+        # Send SMS (MOCKED)
+        sms_result = await send_sms_mock(customer["phone"], message)
+        
+        # Log the SMS
+        sms_log = {
+            "id": str(uuid.uuid4()),
+            "customer_id": customer_id,
+            "customer_name": customer.get("name", ""),
+            "phone": customer.get("phone", ""),
+            "message": message,
+            "debt_amount": total_debt,
+            "status": "sent" if sms_result["success"] else "failed",
+            "provider_response": sms_result,
+            "sent_by": user.get("name", ""),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.sms_logs.insert_one(sms_log)
+        
+        results.append({
+            "customer_id": customer_id,
+            "customer_name": customer.get("name", ""),
+            "phone": customer.get("phone", ""),
+            "success": sms_result["success"],
+            "error": sms_result.get("error")
+        })
+    
+    success_count = sum(1 for r in results if r.get("success"))
+    return {
+        "total": len(request.customer_ids),
+        "success": success_count,
+        "failed": len(request.customer_ids) - success_count,
+        "results": results
+    }
+
+@api_router.post("/sms/send-bulk-reminder")
+async def send_bulk_debt_reminder(user: dict = Depends(get_current_user), min_debt: float = 0):
+    """Send SMS reminder to all customers with debt"""
+    settings = await db.sms_settings.find_one({"id": "global"}, {"_id": 0})
+    if not settings:
+        settings = DEFAULT_SMS_SETTINGS
+    
+    min_amount = min_debt if min_debt > 0 else settings.get("min_debt_amount", 100)
+    
+    # Get all customers with debt above minimum
+    pipeline = [
+        {"$match": {"debt_amount": {"$gt": 0}}},
+        {"$group": {
+            "_id": "$customer_id",
+            "total_debt": {"$sum": "$debt_amount"}
+        }},
+        {"$match": {"total_debt": {"$gte": min_amount}}}
+    ]
+    
+    debts = await db.sales.aggregate(pipeline).to_list(1000)
+    customer_ids = [d["_id"] for d in debts if d["_id"]]
+    
+    if not customer_ids:
+        return {"total": 0, "success": 0, "failed": 0, "results": [], "message": "No customers with debt found"}
+    
+    # Use the single reminder endpoint
+    request = SMSReminderRequest(customer_ids=customer_ids)
+    return await send_debt_reminder(request, user)
+
+@api_router.get("/sms/logs")
+async def get_sms_logs(
+    limit: int = 50,
+    customer_id: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get SMS sending history"""
+    query = {}
+    if customer_id:
+        query["customer_id"] = customer_id
+    
+    logs = await db.sms_logs.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    
+    # Stats
+    total_sent = await db.sms_logs.count_documents({"status": "sent"})
+    total_failed = await db.sms_logs.count_documents({"status": "failed"})
+    
+    return {
+        "logs": logs,
+        "stats": {
+            "total_sent": total_sent,
+            "total_failed": total_failed
+        }
+    }
+
+@api_router.get("/sms/templates")
+async def get_sms_templates():
+    """Get predefined SMS templates"""
+    return {
+        "templates": [
+            {
+                "id": "reminder_friendly",
+                "name_ar": "تذكير ودي",
+                "name_en": "Friendly Reminder",
+                "template": "السلام عليكم {customer_name}، نذكركم بأن لديكم مبلغ {debt_amount} دج مستحق. شكراً لتعاملكم معنا."
+            },
+            {
+                "id": "reminder_formal",
+                "name_ar": "تذكير رسمي",
+                "name_en": "Formal Reminder",
+                "template": "عزيزنا {customer_name}، نود إعلامكم بوجود مستحقات بقيمة {debt_amount} دج. نرجو التسديد في أقرب وقت."
+            },
+            {
+                "id": "reminder_urgent",
+                "name_ar": "تذكير عاجل",
+                "name_en": "Urgent Reminder",
+                "template": "تنبيه: {customer_name}، لديكم مبلغ {debt_amount} دج متأخر السداد. يرجى التواصل معنا."
+            },
+            {
+                "id": "payment_thanks",
+                "name_ar": "شكر على الدفع",
+                "name_en": "Payment Thanks",
+                "template": "شكراً {customer_name} على سداد مستحقاتكم. نقدر تعاملكم معنا - ScreenGuard Pro"
+            }
+        ]
+    }
+
 # ============ PRODUCT FAMILIES ROUTES ============
 
 @api_router.post("/product-families", response_model=ProductFamilyResponse)
