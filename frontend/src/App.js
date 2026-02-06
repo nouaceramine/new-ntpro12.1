@@ -25,6 +25,8 @@ import ApiKeysPage from "./pages/ApiKeysPage";
 import RechargePage from "./pages/RechargePage";
 import ProductFamiliesPage from "./pages/ProductFamiliesPage";
 import CustomerDebtsPage from "./pages/CustomerDebtsPage";
+import SettingsPage from "./pages/SettingsPage";
+import BulkPriceUpdatePage from "./pages/BulkPriceUpdatePage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
