@@ -93,6 +93,7 @@ export const Layout = ({ children }) => {
     { path: '/pos', icon: ShoppingCart, label: t.pos },
     { path: '/products', icon: Package, label: t.products },
     { path: '/sales', icon: Receipt, label: t.sales },
+    { path: '/purchases', icon: ShoppingBag, label: t.purchases },
     { path: '/recharge', icon: Smartphone, label: t.recharge },
     { path: '/customers', icon: Users, label: t.customers },
     { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
