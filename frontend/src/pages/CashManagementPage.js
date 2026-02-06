@@ -86,7 +86,7 @@ export default function CashManagementPage() {
       case 'cash': return Banknote;
       case 'bank': return CreditCard;
       case 'wallet': return Wallet;
-      case 'safe': return Safe;
+      case 'safe': return Lock;
       default: return Banknote;
     }
   };
