@@ -264,13 +264,13 @@ export default function POSPage() {
           <CardContent className="flex-1 flex flex-col">
             {/* Customer Selection */}
             <div className="mb-4">
-              <Select value={selectedCustomer || ''} onValueChange={setSelectedCustomer}>
+              <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
                 <SelectTrigger data-testid="customer-select">
                   <User className="h-4 w-4 me-2" />
                   <SelectValue placeholder={t.selectCustomer} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t.walkInCustomer}</SelectItem>
+                  <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
                   {customers.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
