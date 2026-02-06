@@ -30,7 +30,8 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeft,
-  DollarSign
+  DollarSign,
+  ShoppingBag
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
