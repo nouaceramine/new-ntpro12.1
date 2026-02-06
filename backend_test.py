@@ -137,7 +137,7 @@ class MobileGlassAPITester:
         return success
 
     def test_create_product(self):
-        """Test product creation (admin only)"""
+        """Test product creation (admin only) with low stock threshold"""
         if not self.admin_token:
             print("❌ Skipping - No admin token available")
             return False
@@ -153,9 +153,10 @@ class MobileGlassAPITester:
                 "description_en": "High-quality tempered glass screen protector for testing",
                 "description_ar": "واقي شاشة زجاجي عالي الجودة للاختبار",
                 "price": 25.99,
-                "quantity": 50,
+                "quantity": 5,  # Low quantity to test alerts
                 "image_url": "https://example.com/test-image.jpg",
-                "compatible_models": ["iPhone 15 Pro", "iPhone 15 Pro Max", "Samsung Galaxy S24"]
+                "compatible_models": ["iPhone 15 Pro", "iPhone 15 Pro Max", "Samsung Galaxy S24"],
+                "low_stock_threshold": 10
             },
             token=self.admin_token
         )
