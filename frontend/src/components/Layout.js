@@ -97,13 +97,15 @@ export const Layout = ({ children }) => {
     { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
     ...(isAdmin ? [
       { path: '/product-families', icon: FolderTree, label: t.productFamilies },
+      { path: '/bulk-price-update', icon: DollarSign, label: t.bulkPriceUpdate },
       { path: '/suppliers', icon: Truck, label: t.suppliers },
       { path: '/employees', icon: Users, label: t.employees },
       { path: '/debts', icon: Receipt, label: t.debts },
       { path: '/cash', icon: Wallet, label: t.cashManagement },
       { path: '/reports', icon: LayoutDashboard, label: t.reports },
       { path: '/api-keys', icon: Key, label: t.apiKeys },
-      { path: '/users', icon: Shield, label: t.users }
+      { path: '/users', icon: Shield, label: t.users },
+      { path: '/settings', icon: Settings, label: t.settings }
     ] : [])
   ];
 
