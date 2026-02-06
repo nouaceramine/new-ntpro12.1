@@ -2787,6 +2787,310 @@ async def get_sms_templates():
         ]
     }
 
+# ============ PERMISSIONS SYSTEM ============
+
+@api_router.get("/permissions/roles")
+async def get_available_roles():
+    """Get all available roles and their default permissions"""
+    return {
+        "roles": ["admin", "manager", "user"],
+        "default_permissions": DEFAULT_PERMISSIONS
+    }
+
+@api_router.get("/users/{user_id}/permissions")
+async def get_user_permissions(user_id: str, admin: dict = Depends(get_admin_user)):
+    """Get permissions for a specific user"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # If user has custom permissions, return them; otherwise return role defaults
+    permissions = user.get("permissions") or DEFAULT_PERMISSIONS.get(user.get("role", "user"), {})
+    return {
+        "user_id": user_id,
+        "role": user.get("role", "user"),
+        "permissions": permissions,
+        "is_custom": bool(user.get("permissions"))
+    }
+
+@api_router.put("/users/{user_id}/permissions")
+async def update_user_permissions(user_id: str, permissions: dict, admin: dict = Depends(get_admin_user)):
+    """Update permissions for a specific user"""
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"permissions": permissions}}
+    )
+    
+    return {"success": True, "message": "Permissions updated"}
+
+@api_router.put("/users/{user_id}/reset-permissions")
+async def reset_user_permissions(user_id: str, admin: dict = Depends(get_admin_user)):
+    """Reset user permissions to role defaults"""
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$unset": {"permissions": ""}}
+    )
+    
+    return {"success": True, "message": "Permissions reset to defaults"}
+
+# ============ FACTORY RESET ============
+
+@api_router.post("/system/factory-reset")
+async def factory_reset(confirm_code: str, admin: dict = Depends(get_admin_user)):
+    """Factory reset - Delete all data except admin user"""
+    # Verify confirmation code
+    if confirm_code != "RESET-ALL-DATA":
+        raise HTTPException(status_code=400, detail="Invalid confirmation code")
+    
+    # Check if user has factory_reset permission
+    user_permissions = admin.get("permissions") or DEFAULT_PERMISSIONS.get(admin.get("role", "user"), {})
+    if not user_permissions.get("factory_reset", False):
+        raise HTTPException(status_code=403, detail="No permission for factory reset")
+    
+    # Collections to clear
+    collections_to_clear = [
+        "products", "customers", "suppliers", "employees", 
+        "sales", "purchases", "debts", "debt_payments",
+        "transactions", "notifications", "sms_logs",
+        "product_families", "api_keys", "recharges"
+    ]
+    
+    deleted_counts = {}
+    for collection in collections_to_clear:
+        result = await db[collection].delete_many({})
+        deleted_counts[collection] = result.deleted_count
+    
+    # Reset cash boxes to zero
+    await db.cash_boxes.update_many({}, {"$set": {"balance": 0}})
+    
+    # Keep admin user, delete others
+    await db.users.delete_many({"role": {"$ne": "admin"}})
+    
+    # Log the reset
+    await db.system_logs.insert_one({
+        "id": str(uuid.uuid4()),
+        "action": "factory_reset",
+        "performed_by": admin.get("name", ""),
+        "deleted_counts": deleted_counts,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {
+        "success": True,
+        "message": "Factory reset completed",
+        "deleted_counts": deleted_counts
+    }
+
+@api_router.get("/system/stats")
+async def get_system_stats(admin: dict = Depends(get_admin_user)):
+    """Get system statistics for factory reset preview"""
+    stats = {
+        "products": await db.products.count_documents({}),
+        "customers": await db.customers.count_documents({}),
+        "suppliers": await db.suppliers.count_documents({}),
+        "employees": await db.employees.count_documents({}),
+        "sales": await db.sales.count_documents({}),
+        "users": await db.users.count_documents({}),
+        "product_families": await db.product_families.count_documents({}),
+        "recharges": await db.recharges.count_documents({})
+    }
+    return stats
+
+# ============ BARCODE GENERATION ============
+
+@api_router.get("/products/generate-barcode")
+async def generate_barcode():
+    """Generate a unique product barcode"""
+    import random
+    
+    while True:
+        # Generate EAN-13 format barcode
+        # Country code (213 for Algeria) + Company code + Product code + Check digit
+        prefix = "213"  # Algeria
+        company = "0001"  # Company code
+        product_num = str(random.randint(10000, 99999))
+        
+        # Calculate check digit (EAN-13 algorithm)
+        code = prefix + company + product_num
+        odd_sum = sum(int(code[i]) for i in range(0, 12, 2))
+        even_sum = sum(int(code[i]) for i in range(1, 12, 2))
+        check_digit = (10 - ((odd_sum + even_sum * 3) % 10)) % 10
+        
+        barcode = code + str(check_digit)
+        
+        # Check if barcode already exists
+        existing = await db.products.find_one({"barcode": barcode})
+        if not existing:
+            return {"barcode": barcode}
+
+@api_router.get("/products/generate-sku")
+async def generate_sku(family_id: Optional[str] = None):
+    """Generate a unique SKU code"""
+    prefix = "SG"  # ScreenGuard
+    
+    if family_id:
+        family = await db.product_families.find_one({"id": family_id}, {"_id": 0, "name_en": 1})
+        if family:
+            # Use first 2 letters of family name
+            prefix = family["name_en"][:2].upper()
+    
+    # Count products to generate sequential number
+    count = await db.products.count_documents({})
+    sku = f"{prefix}-{str(count + 1).zfill(5)}"
+    
+    return {"sku": sku}
+
+# ============ BULK PRICE UPDATE ============
+
+class BulkPriceUpdateRequest(BaseModel):
+    product_ids: Optional[List[str]] = None  # None = all products
+    family_id: Optional[str] = None  # Filter by family
+    update_type: Literal["percentage", "fixed", "set"]  # نسبة مئوية، مبلغ ثابت، تحديد قيمة
+    price_field: Literal["purchase_price", "wholesale_price", "retail_price", "all"]
+    value: float
+    round_to: int = 0  # Round to nearest (0 = no rounding, 10 = nearest 10, etc.)
+
+@api_router.post("/products/bulk-price-update")
+async def bulk_price_update(request: BulkPriceUpdateRequest, admin: dict = Depends(get_admin_user)):
+    """Update prices for multiple products at once"""
+    
+    # Build query
+    query = {}
+    if request.product_ids:
+        query["id"] = {"$in": request.product_ids}
+    if request.family_id:
+        query["family_id"] = request.family_id
+    
+    # Get products
+    products = await db.products.find(query, {"_id": 0}).to_list(10000)
+    
+    if not products:
+        return {"success": False, "message": "No products found", "updated_count": 0}
+    
+    price_fields = ["purchase_price", "wholesale_price", "retail_price"] if request.price_field == "all" else [request.price_field]
+    
+    updated_count = 0
+    updates_log = []
+    
+    for product in products:
+        update_data = {}
+        
+        for field in price_fields:
+            old_price = product.get(field, 0)
+            new_price = old_price
+            
+            if request.update_type == "percentage":
+                # Increase/decrease by percentage
+                new_price = old_price * (1 + request.value / 100)
+            elif request.update_type == "fixed":
+                # Add/subtract fixed amount
+                new_price = old_price + request.value
+            elif request.update_type == "set":
+                # Set to specific value
+                new_price = request.value
+            
+            # Round if needed
+            if request.round_to > 0:
+                new_price = round(new_price / request.round_to) * request.round_to
+            
+            # Ensure price is not negative
+            new_price = max(0, new_price)
+            
+            update_data[field] = new_price
+        
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        await db.products.update_one({"id": product["id"]}, {"$set": update_data})
+        updated_count += 1
+        
+        updates_log.append({
+            "product_id": product["id"],
+            "product_name": product.get("name_ar", product.get("name_en", "")),
+            "old_prices": {f: product.get(f, 0) for f in price_fields},
+            "new_prices": {f: update_data[f] for f in price_fields}
+        })
+    
+    # Log the bulk update
+    await db.system_logs.insert_one({
+        "id": str(uuid.uuid4()),
+        "action": "bulk_price_update",
+        "performed_by": admin.get("name", ""),
+        "update_type": request.update_type,
+        "value": request.value,
+        "updated_count": updated_count,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {
+        "success": True,
+        "updated_count": updated_count,
+        "updates": updates_log[:10]  # Return first 10 as sample
+    }
+
+@api_router.get("/products/price-preview")
+async def preview_price_update(
+    update_type: str,
+    price_field: str,
+    value: float,
+    family_id: Optional[str] = None,
+    round_to: int = 0,
+    admin: dict = Depends(get_admin_user)
+):
+    """Preview price changes before applying"""
+    query = {}
+    if family_id:
+        query["family_id"] = family_id
+    
+    products = await db.products.find(query, {"_id": 0}).limit(20).to_list(20)
+    
+    previews = []
+    for product in products:
+        price_fields = ["purchase_price", "wholesale_price", "retail_price"] if price_field == "all" else [price_field]
+        
+        preview = {
+            "id": product["id"],
+            "name": product.get("name_ar", product.get("name_en", "")),
+            "changes": {}
+        }
+        
+        for field in price_fields:
+            old_price = product.get(field, 0)
+            new_price = old_price
+            
+            if update_type == "percentage":
+                new_price = old_price * (1 + value / 100)
+            elif update_type == "fixed":
+                new_price = old_price + value
+            elif update_type == "set":
+                new_price = value
+            
+            if round_to > 0:
+                new_price = round(new_price / round_to) * round_to
+            
+            new_price = max(0, new_price)
+            
+            preview["changes"][field] = {
+                "old": old_price,
+                "new": new_price,
+                "diff": new_price - old_price
+            }
+        
+        previews.append(preview)
+    
+    return {
+        "preview_count": len(previews),
+        "total_products": await db.products.count_documents(query),
+        "previews": previews
+    }
+
 # ============ PRODUCT FAMILIES ROUTES ============
 
 @api_router.post("/product-families", response_model=ProductFamilyResponse)
