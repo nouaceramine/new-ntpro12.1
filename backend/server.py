@@ -50,6 +50,7 @@ class UserCreate(BaseModel):
     password: str
     name: str
     role: str = "user"
+    permissions: Optional[dict] = None
 
 class UserLogin(BaseModel):
     email: str
@@ -58,6 +59,7 @@ class UserLogin(BaseModel):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = None
+    permissions: Optional[dict] = None
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -65,7 +67,60 @@ class UserResponse(BaseModel):
     email: str
     name: str
     role: str
+    permissions: dict = {}
     created_at: str
+
+# Default Permissions for each role
+DEFAULT_PERMISSIONS = {
+    "admin": {
+        "dashboard": True,
+        "pos": True,
+        "products": {"view": True, "add": True, "edit": True, "delete": True},
+        "sales": {"view": True, "add": True, "edit": True, "delete": True},
+        "customers": {"view": True, "add": True, "edit": True, "delete": True},
+        "suppliers": {"view": True, "add": True, "edit": True, "delete": True},
+        "employees": {"view": True, "add": True, "edit": True, "delete": True},
+        "debts": {"view": True, "add": True, "edit": True, "delete": True},
+        "reports": True,
+        "settings": True,
+        "users": {"view": True, "add": True, "edit": True, "delete": True},
+        "recharge": True,
+        "api_keys": True,
+        "factory_reset": True
+    },
+    "manager": {
+        "dashboard": True,
+        "pos": True,
+        "products": {"view": True, "add": True, "edit": True, "delete": False},
+        "sales": {"view": True, "add": True, "edit": True, "delete": False},
+        "customers": {"view": True, "add": True, "edit": True, "delete": False},
+        "suppliers": {"view": True, "add": True, "edit": False, "delete": False},
+        "employees": {"view": True, "add": False, "edit": False, "delete": False},
+        "debts": {"view": True, "add": True, "edit": True, "delete": False},
+        "reports": True,
+        "settings": False,
+        "users": {"view": True, "add": False, "edit": False, "delete": False},
+        "recharge": True,
+        "api_keys": False,
+        "factory_reset": False
+    },
+    "user": {
+        "dashboard": True,
+        "pos": True,
+        "products": {"view": True, "add": False, "edit": False, "delete": False},
+        "sales": {"view": True, "add": True, "edit": False, "delete": False},
+        "customers": {"view": True, "add": True, "edit": False, "delete": False},
+        "suppliers": {"view": False, "add": False, "edit": False, "delete": False},
+        "employees": {"view": False, "add": False, "edit": False, "delete": False},
+        "debts": {"view": True, "add": False, "edit": False, "delete": False},
+        "reports": False,
+        "settings": False,
+        "users": {"view": False, "add": False, "edit": False, "delete": False},
+        "recharge": True,
+        "api_keys": False,
+        "factory_reset": False
+    }
+}
 
 class TokenResponse(BaseModel):
     access_token: str
