@@ -27,6 +27,7 @@ import ProductFamiliesPage from "./pages/ProductFamiliesPage";
 import CustomerDebtsPage from "./pages/CustomerDebtsPage";
 import SettingsPage from "./pages/SettingsPage";
 import BulkPriceUpdatePage from "./pages/BulkPriceUpdatePage";
+import PurchasesPage from "./pages/PurchasesPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
