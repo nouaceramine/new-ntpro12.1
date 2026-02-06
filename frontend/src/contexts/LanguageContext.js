@@ -1,0 +1,215 @@
+import { createContext, useContext, useState, useEffect } from 'react';
+
+const translations = {
+  en: {
+    // General
+    appName: 'ScreenGuard Pro',
+    search: 'Search',
+    searchPlaceholder: 'Search by product name or phone model...',
+    loading: 'Loading...',
+    save: 'Save',
+    cancel: 'Cancel',
+    delete: 'Delete',
+    edit: 'Edit',
+    add: 'Add',
+    actions: 'Actions',
+    confirm: 'Confirm',
+    yes: 'Yes',
+    no: 'No',
+    
+    // Auth
+    login: 'Login',
+    register: 'Register',
+    logout: 'Logout',
+    email: 'Email',
+    password: 'Password',
+    name: 'Name',
+    welcomeBack: 'Welcome Back',
+    createAccount: 'Create Account',
+    loginSubtitle: 'Sign in to manage your screen protectors inventory',
+    registerSubtitle: 'Create an account to get started',
+    noAccount: "Don't have an account?",
+    hasAccount: 'Already have an account?',
+    invalidCredentials: 'Invalid email or password',
+    registerAsAdmin: 'Register as Admin',
+    
+    // Navigation
+    dashboard: 'Dashboard',
+    products: 'Products',
+    addProduct: 'Add Product',
+    settings: 'Settings',
+    
+    // Dashboard
+    totalProducts: 'Total Products',
+    totalUsers: 'Total Users',
+    lowStock: 'Low Stock',
+    recentProducts: 'Recent Products',
+    quickStats: 'Quick Stats',
+    
+    // Products
+    productName: 'Product Name',
+    productNameEn: 'Product Name (English)',
+    productNameAr: 'Product Name (Arabic)',
+    description: 'Description',
+    descriptionEn: 'Description (English)',
+    descriptionAr: 'Description (Arabic)',
+    price: 'Price',
+    quantity: 'Quantity',
+    imageUrl: 'Image URL',
+    compatibleModels: 'Compatible Models',
+    compatibleModelsHelp: 'Enter phone models separated by commas',
+    addNewProduct: 'Add New Product',
+    editProduct: 'Edit Product',
+    deleteProduct: 'Delete Product',
+    deleteConfirm: 'Are you sure you want to delete this product?',
+    productAdded: 'Product added successfully',
+    productUpdated: 'Product updated successfully',
+    productDeleted: 'Product deleted successfully',
+    noProducts: 'No products found',
+    noProductsSubtitle: 'Add your first screen protector product',
+    viewDetails: 'View Details',
+    inStock: 'In Stock',
+    outOfStock: 'Out of Stock',
+    lowStockWarning: 'Low Stock',
+    
+    // Filters
+    filterByModel: 'Filter by Model',
+    allModels: 'All Models',
+    clearFilters: 'Clear Filters',
+    
+    // Errors
+    error: 'Error',
+    somethingWentWrong: 'Something went wrong',
+    tryAgain: 'Try Again',
+    notFound: 'Not Found',
+    unauthorized: 'Unauthorized',
+    forbidden: 'Access Denied',
+  },
+  ar: {
+    // General
+    appName: 'سكرين جارد برو',
+    search: 'بحث',
+    searchPlaceholder: 'ابحث باسم المنتج أو موديل الهاتف...',
+    loading: 'جاري التحميل...',
+    save: 'حفظ',
+    cancel: 'إلغاء',
+    delete: 'حذف',
+    edit: 'تعديل',
+    add: 'إضافة',
+    actions: 'الإجراءات',
+    confirm: 'تأكيد',
+    yes: 'نعم',
+    no: 'لا',
+    
+    // Auth
+    login: 'تسجيل الدخول',
+    register: 'إنشاء حساب',
+    logout: 'تسجيل الخروج',
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    name: 'الاسم',
+    welcomeBack: 'مرحباً بعودتك',
+    createAccount: 'إنشاء حساب جديد',
+    loginSubtitle: 'سجل دخولك لإدارة مخزون زجاج الحماية',
+    registerSubtitle: 'أنشئ حساباً للبدء',
+    noAccount: 'ليس لديك حساب؟',
+    hasAccount: 'لديك حساب بالفعل؟',
+    invalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+    registerAsAdmin: 'التسجيل كمدير',
+    
+    // Navigation
+    dashboard: 'لوحة التحكم',
+    products: 'المنتجات',
+    addProduct: 'إضافة منتج',
+    settings: 'الإعدادات',
+    
+    // Dashboard
+    totalProducts: 'إجمالي المنتجات',
+    totalUsers: 'إجمالي المستخدمين',
+    lowStock: 'مخزون منخفض',
+    recentProducts: 'أحدث المنتجات',
+    quickStats: 'إحصائيات سريعة',
+    
+    // Products
+    productName: 'اسم المنتج',
+    productNameEn: 'اسم المنتج (بالإنجليزية)',
+    productNameAr: 'اسم المنتج (بالعربية)',
+    description: 'الوصف',
+    descriptionEn: 'الوصف (بالإنجليزية)',
+    descriptionAr: 'الوصف (بالعربية)',
+    price: 'السعر',
+    quantity: 'الكمية',
+    imageUrl: 'رابط الصورة',
+    compatibleModels: 'الموديلات المتوافقة',
+    compatibleModelsHelp: 'أدخل موديلات الهواتف مفصولة بفواصل',
+    addNewProduct: 'إضافة منتج جديد',
+    editProduct: 'تعديل المنتج',
+    deleteProduct: 'حذف المنتج',
+    deleteConfirm: 'هل أنت متأكد من حذف هذا المنتج؟',
+    productAdded: 'تمت إضافة المنتج بنجاح',
+    productUpdated: 'تم تحديث المنتج بنجاح',
+    productDeleted: 'تم حذف المنتج بنجاح',
+    noProducts: 'لا توجد منتجات',
+    noProductsSubtitle: 'أضف أول منتج زجاج حماية',
+    viewDetails: 'عرض التفاصيل',
+    inStock: 'متوفر',
+    outOfStock: 'غير متوفر',
+    lowStockWarning: 'مخزون منخفض',
+    
+    // Filters
+    filterByModel: 'تصفية حسب الموديل',
+    allModels: 'جميع الموديلات',
+    clearFilters: 'مسح الفلاتر',
+    
+    // Errors
+    error: 'خطأ',
+    somethingWentWrong: 'حدث خطأ ما',
+    tryAgain: 'حاول مرة أخرى',
+    notFound: 'غير موجود',
+    unauthorized: 'غير مصرح',
+    forbidden: 'الوصول مرفوض',
+  }
+};
+
+const LanguageContext = createContext();
+
+export const LanguageProvider = ({ children }) => {
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('language') || 'ar';
+  });
+  
+  const isRTL = language === 'ar';
+  const t = translations[language];
+  
+  useEffect(() => {
+    localStorage.setItem('language', language);
+    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.body.dir = isRTL ? 'rtl' : 'ltr';
+  }, [language, isRTL]);
+  
+  const toggleLanguage = () => {
+    setLanguage(prev => prev === 'en' ? 'ar' : 'en');
+  };
+  
+  const value = {
+    language,
+    setLanguage,
+    toggleLanguage,
+    isRTL,
+    t
+  };
+  
+  return (
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
