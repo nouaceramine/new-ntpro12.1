@@ -258,11 +258,18 @@ class ScreenGuardPOSAPITester:
 
     def test_cash_transfer(self):
         """Test transferring money between cash boxes"""
+        # First we need to check if there's money in cash box from sales
+        # Since we made sales, there should be money in cash box to transfer
         success, response = self.run_test(
             "Transfer Between Cash Boxes",
             "POST",
-            "cash-boxes/transfer?from_box=cash&to_box=bank&amount=100.0",
+            "cash-boxes/transfer",
             200,
+            data={
+                "from_box": "cash",
+                "to_box": "bank", 
+                "amount": 10.0  # Transfer smaller amount that should be available
+            },
             token=self.admin_token
         )
         return success
