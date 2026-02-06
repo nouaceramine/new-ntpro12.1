@@ -190,6 +190,15 @@ class SaleItem(BaseModel):
     discount: float = 0
     total: float
 
+class DeliveryInfo(BaseModel):
+    enabled: bool = False
+    wilaya_code: Optional[str] = None
+    wilaya_name: Optional[str] = None
+    city: Optional[str] = None
+    address: Optional[str] = None
+    delivery_type: Literal["desk", "home"] = "desk"
+    fee: float = 0
+
 class SaleCreate(BaseModel):
     customer_id: Optional[str] = None
     items: List[SaleItem]
@@ -198,7 +207,9 @@ class SaleCreate(BaseModel):
     total: float
     paid_amount: float
     payment_method: Literal["cash", "bank", "wallet"] = "cash"
+    payment_type: Literal["cash", "credit", "partial"] = "cash"  # نقدي أو دين أو جزئي
     notes: Optional[str] = ""
+    delivery: Optional[DeliveryInfo] = None
 
 class SaleResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
