@@ -397,7 +397,7 @@ async def extract_models_from_image(request: OCRRequest, admin: dict = Depends(g
             Extract all phone model names you can see in the image.
             Return ONLY the model names, one per line, without any additional text or explanation.
             Examples of model names: iPhone 15 Pro, Samsung Galaxy S24, Huawei P60 Pro, etc."""
-        ).with_model("gemini", "gemini-3-flash-preview")
+        ).with_model("gemini", "gemini-2.5-flash")
         
         # Create image content
         image_content = ImageContent(image_base64=request.image_base64)
