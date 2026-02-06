@@ -24,6 +24,7 @@ import ReportsPage from "./pages/ReportsPage";
 import ApiKeysPage from "./pages/ApiKeysPage";
 import RechargePage from "./pages/RechargePage";
 import ProductFamiliesPage from "./pages/ProductFamiliesPage";
+import CustomerDebtsPage from "./pages/CustomerDebtsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
