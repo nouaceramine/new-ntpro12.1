@@ -333,6 +333,38 @@ const translations = {
     noRecharges: 'No recharges found',
     copyUssd: 'Copy USSD Code',
     ussdCopied: 'USSD code copied',
+    
+    // Delivery
+    delivery: 'Delivery',
+    deliveryService: 'Delivery Service',
+    withDelivery: 'With Delivery',
+    withoutDelivery: 'Without Delivery',
+    deliveryAddress: 'Delivery Address',
+    deliveryWilaya: 'Wilaya',
+    deliveryCity: 'City/Commune',
+    deliveryFee: 'Delivery Fee',
+    homeDelivery: 'Home Delivery',
+    officeDelivery: 'Office Delivery',
+    selectWilaya: 'Select Wilaya',
+    
+    // Credit Sale
+    creditSale: 'Credit Sale',
+    sellOnCredit: 'Sell on Credit',
+    paymentType: 'Payment Type',
+    cashPayment: 'Cash Payment',
+    creditPayment: 'On Credit',
+    partialPayment: 'Partial Payment',
+    customerDebt: 'Customer Debt',
+    customerDebts: 'Customer Debts',
+    totalDebt: 'Total Debt',
+    payDebt: 'Pay Debt',
+    debtAmount: 'Debt Amount',
+    debtHistory: 'Debt History',
+    noDebt: 'No Debt',
+    addPayment: 'Add Payment',
+    debtPaid: 'Debt Payment Recorded',
+    viewDebts: 'View Debts',
+    customerRequired: 'Please select a customer for credit sale',
   },
   ar: {
     // General
