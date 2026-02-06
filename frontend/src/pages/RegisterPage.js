@@ -76,7 +76,7 @@ export default function RegisterPage() {
             >
               <Globe className="h-4 w-4" />
               <span className="text-sm font-medium">
-                {language === 'en' ? 'عربي' : 'English'}
+                {language === 'fr' ? 'عربي' : 'Français'}
               </span>
             </button>
           </div>
