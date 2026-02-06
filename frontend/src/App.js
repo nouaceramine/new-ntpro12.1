@@ -201,6 +201,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/api-keys"
+        element={
+          <ProtectedRoute adminOnly>
+            <ApiKeysPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/recharge"
+        element={
+          <ProtectedRoute>
+            <RechargePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/product-families"
+        element={
+          <ProtectedRoute adminOnly>
+            <ProductFamiliesPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
