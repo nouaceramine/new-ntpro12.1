@@ -698,6 +698,38 @@ const translations = {
     noRecharges: 'لا توجد عمليات شحن',
     copyUssd: 'نسخ كود USSD',
     ussdCopied: 'تم نسخ الكود',
+    
+    // Delivery
+    delivery: 'التوصيل',
+    deliveryService: 'خدمة التوصيل',
+    withDelivery: 'مع التوصيل',
+    withoutDelivery: 'بدون توصيل',
+    deliveryAddress: 'عنوان التوصيل',
+    deliveryWilaya: 'الولاية',
+    deliveryCity: 'البلدية/المدينة',
+    deliveryFee: 'رسوم التوصيل',
+    homeDelivery: 'توصيل للمنزل',
+    officeDelivery: 'توصيل للمكتب',
+    selectWilaya: 'اختر الولاية',
+    
+    // Credit Sale
+    creditSale: 'البيع بالدين',
+    sellOnCredit: 'بيع بالدين',
+    paymentType: 'نوع الدفع',
+    cashPayment: 'نقداً',
+    creditPayment: 'دين',
+    partialPayment: 'دفع جزئي',
+    customerDebt: 'دين الزبون',
+    customerDebts: 'ديون الزبائن',
+    totalDebt: 'إجمالي الدين',
+    payDebt: 'سداد الدين',
+    debtAmount: 'مبلغ الدين',
+    debtHistory: 'سجل الديون',
+    noDebt: 'لا يوجد دين',
+    addPayment: 'إضافة دفعة',
+    debtPaid: 'تم تسجيل دفعة الدين',
+    viewDebts: 'عرض الديون',
+    customerRequired: 'يرجى اختيار زبون للبيع بالدين',
   }
 };
 
