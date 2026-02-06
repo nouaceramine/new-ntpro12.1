@@ -408,6 +408,56 @@ const translations = {
     no: 'لا',
     currency: 'دج',
     
+    // Settings & System
+    settings: 'الإعدادات',
+    systemSettings: 'إعدادات النظام',
+    factoryReset: 'إعادة ضبط المصنع',
+    factoryResetConfirm: 'هل أنت متأكد؟ سيتم حذف جميع البيانات!',
+    factoryResetCode: 'أدخل كود التأكيد',
+    factoryResetSuccess: 'تم إعادة ضبط المصنع بنجاح',
+    dataWillBeDeleted: 'سيتم حذف البيانات التالية:',
+    resetConfirmCode: 'RESET-ALL-DATA',
+    
+    // Permissions
+    permissions: 'الصلاحيات',
+    userPermissions: 'صلاحيات المستخدم',
+    rolePermissions: 'صلاحيات الدور',
+    customPermissions: 'صلاحيات مخصصة',
+    resetToDefault: 'إعادة للافتراضي',
+    viewPermission: 'عرض',
+    addPermission: 'إضافة',
+    editPermission: 'تعديل',
+    deletePermission: 'حذف',
+    manager: 'مدير',
+    
+    // Sidebar
+    hideSidebar: 'إخفاء القائمة',
+    showSidebar: 'إظهار القائمة',
+    collapseSidebar: 'طي القائمة',
+    expandSidebar: 'توسيع القائمة',
+    
+    // Barcode
+    generateBarcode: 'توليد باركود',
+    generateSku: 'توليد SKU',
+    barcodeGenerated: 'تم توليد الباركود',
+    
+    // Bulk Price Update
+    bulkPriceUpdate: 'تحديث الأسعار الجماعي',
+    priceUpdateType: 'نوع التحديث',
+    percentageChange: 'نسبة مئوية',
+    fixedAmount: 'مبلغ ثابت',
+    setPrice: 'تحديد قيمة',
+    priceField: 'حقل السعر',
+    allPrices: 'جميع الأسعار',
+    roundTo: 'تقريب إلى',
+    previewChanges: 'معاينة التغييرات',
+    applyChanges: 'تطبيق التغييرات',
+    priceUpdated: 'تم تحديث الأسعار',
+    
+    // Quick Add Family
+    addNewFamily: 'إضافة عائلة جديدة',
+    quickAddFamily: 'إضافة سريعة',
+    
     // Auth
     login: 'تسجيل الدخول',
     register: 'إنشاء حساب',
