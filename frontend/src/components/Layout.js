@@ -77,7 +77,10 @@ export const Layout = ({ children }) => {
     { path: '/customers', icon: Users, label: t.customers },
     ...(isAdmin ? [
       { path: '/suppliers', icon: Truck, label: t.suppliers },
+      { path: '/employees', icon: Users, label: t.employees },
+      { path: '/debts', icon: Receipt, label: t.debts },
       { path: '/cash', icon: Wallet, label: t.cashManagement },
+      { path: '/reports', icon: LayoutDashboard, label: t.reports },
       { path: '/users', icon: Shield, label: t.users }
     ] : [])
   ];
