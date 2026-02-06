@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
+import { Textarea } from '../components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -28,6 +29,12 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../components/ui/tabs';
 import { toast } from 'sonner';
 import { 
   ShoppingBag, 
@@ -41,9 +48,15 @@ import {
   Banknote,
   Wallet,
   TrendingUp,
+  TrendingDown,
   Calculator,
   FileText,
-  Calendar
+  Calendar,
+  Users,
+  Receipt,
+  DollarSign,
+  History,
+  AlertCircle
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -55,15 +68,20 @@ export default function PurchasesPage() {
   const [products, setProducts] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [purchases, setPurchases] = useState([]);
+  const [supplierDebts, setSupplierDebts] = useState([]);
   const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [paidAmount, setPaidAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentType, setPaymentType] = useState('cash'); // cash, credit, partial
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [showNewPurchaseDialog, setShowNewPurchaseDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState('history'); // history, new
+  const [showPayDebtDialog, setShowPayDebtDialog] = useState(false);
+  const [selectedDebt, setSelectedDebt] = useState(null);
+  const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
+  const [activeTab, setActiveTab] = useState('purchases');
 
   useEffect(() => {
     fetchData();
@@ -79,9 +97,32 @@ export default function PurchasesPage() {
       setProducts(productsRes.data);
       setSuppliers(suppliersRes.data);
       setPurchases(purchasesRes.data);
+      
+      // Calculate supplier debts
+      calculateSupplierDebts(purchasesRes.data, suppliersRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
+  };
+
+  const calculateSupplierDebts = (purchasesData, suppliersData) => {
+    const debts = {};
+    purchasesData.forEach(p => {
+      if (p.remaining > 0) {
+        if (!debts[p.supplier_id]) {
+          const supplier = suppliersData.find(s => s.id === p.supplier_id);
+          debts[p.supplier_id] = {
+            supplier_id: p.supplier_id,
+            supplier_name: supplier?.name || p.supplier_name,
+            total_debt: 0,
+            purchases: []
+          };
+        }
+        debts[p.supplier_id].total_debt += p.remaining;
+        debts[p.supplier_id].purchases.push(p);
+      }
+    });
+    setSupplierDebts(Object.values(debts));
   };
 
   const filteredProducts = products.filter(p => {
@@ -136,6 +177,15 @@ export default function PurchasesPage() {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+  
+  // Auto-set paid amount based on payment type
+  useEffect(() => {
+    if (paymentType === 'cash') {
+      setPaidAmount(subtotal);
+    } else if (paymentType === 'credit') {
+      setPaidAmount(0);
+    }
+  }, [paymentType, subtotal]);
 
   const completePurchase = async () => {
     if (cart.length === 0) {
@@ -156,21 +206,60 @@ export default function PurchasesPage() {
         total: subtotal,
         paid_amount: paidAmount,
         payment_method: paymentMethod,
+        payment_type: paymentType,
         notes
       };
 
       await axios.post(`${API}/purchases`, purchaseData);
-      toast.success(t.purchaseCompleted);
+      
+      const msg = paymentType === 'credit' 
+        ? (language === 'ar' ? 'تم تسجيل الشراء بالدين' : 'Achat à crédit enregistré')
+        : paymentType === 'partial'
+        ? (language === 'ar' ? 'تم تسجيل الشراء مع دفعة جزئية' : 'Achat avec paiement partiel enregistré')
+        : t.purchaseCompleted;
+      
+      toast.success(msg);
       
       // Reset
       setCart([]);
       setPaidAmount(0);
       setSelectedSupplier(null);
       setNotes('');
+      setPaymentType('cash');
       setShowNewPurchaseDialog(false);
       fetchData();
     } catch (error) {
       console.error('Error completing purchase:', error);
+      toast.error(error.response?.data?.detail || t.somethingWentWrong);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openPayDebtDialog = (debt) => {
+    setSelectedDebt(debt);
+    setDebtPaymentAmount(debt.total_debt);
+    setShowPayDebtDialog(true);
+  };
+
+  const paySupplierDebt = async () => {
+    if (!selectedDebt || debtPaymentAmount <= 0) return;
+
+    setLoading(true);
+    try {
+      await axios.post(`${API}/supplier-debts/pay`, {
+        supplier_id: selectedDebt.supplier_id,
+        amount: debtPaymentAmount,
+        payment_method: paymentMethod
+      });
+      
+      toast.success(language === 'ar' ? 'تم تسجيل الدفعة بنجاح' : 'Paiement enregistré avec succès');
+      setShowPayDebtDialog(false);
+      setSelectedDebt(null);
+      setDebtPaymentAmount(0);
+      fetchData();
+    } catch (error) {
+      console.error('Error paying debt:', error);
       toast.error(error.response?.data?.detail || t.somethingWentWrong);
     } finally {
       setLoading(false);
@@ -209,6 +298,9 @@ export default function PurchasesPage() {
     return purchaseDate.getMonth() === now.getMonth() && purchaseDate.getFullYear() === now.getFullYear();
   }).length;
 
+  const selectedSupplierData = suppliers.find(s => s.id === selectedSupplier);
+  const supplierPreviousDebt = supplierDebts.find(d => d.supplier_id === selectedSupplier)?.total_debt || 0;
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in" data-testid="purchases-page">
@@ -217,7 +309,7 @@ export default function PurchasesPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{t.purchases}</h1>
             <p className="text-muted-foreground mt-1">
-              {language === 'ar' ? 'إدارة المشتريات وتتبع المخزون' : 'Gestion des achats et suivi des stocks'}
+              {language === 'ar' ? 'إدارة المشتريات وحسابات الموردين' : 'Gestion des achats et comptes fournisseurs'}
             </p>
           </div>
           <Button onClick={() => setShowNewPurchaseDialog(true)} className="gap-2" data-testid="new-purchase-btn">
@@ -258,16 +350,16 @@ export default function PurchasesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={totalRemaining > 0 ? 'border-red-200 bg-red-50/30' : ''}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{language === 'ar' ? 'المتبقي' : 'Restant'}</p>
-                  <p className="text-2xl font-bold mt-1 text-amber-600">{totalRemaining.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground">{language === 'ar' ? 'ديون الموردين' : 'Dettes fournisseurs'}</p>
+                  <p className="text-2xl font-bold mt-1 text-red-600">{totalRemaining.toFixed(2)}</p>
                   <p className="text-xs text-muted-foreground">{t.currency}</p>
                 </div>
-                <div className="p-3 rounded-xl bg-amber-100 text-amber-600">
-                  <Calculator className="h-6 w-6" />
+                <div className="p-3 rounded-xl bg-red-100 text-red-600">
+                  <TrendingDown className="h-6 w-6" />
                 </div>
               </div>
             </CardContent>
@@ -277,64 +369,150 @@ export default function PurchasesPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{language === 'ar' ? 'هذا الشهر' : 'Ce mois'}</p>
-                  <p className="text-2xl font-bold mt-1">{purchasesThisMonth}</p>
-                  <p className="text-xs text-muted-foreground">{language === 'ar' ? 'فاتورة' : 'factures'}</p>
+                  <p className="text-sm text-muted-foreground">{language === 'ar' ? 'موردين بديون' : 'Fournisseurs débiteurs'}</p>
+                  <p className="text-2xl font-bold mt-1">{supplierDebts.length}</p>
+                  <p className="text-xs text-muted-foreground">{language === 'ar' ? 'مورد' : 'fournisseurs'}</p>
                 </div>
                 <div className="p-3 rounded-xl bg-purple-100 text-purple-600">
-                  <Calendar className="h-6 w-6" />
+                  <Users className="h-6 w-6" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Purchases History Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              {language === 'ar' ? 'سجل المشتريات' : 'Historique des achats'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {purchases.length === 0 ? (
-              <div className="text-center py-12">
-                <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">{language === 'ar' ? 'لا توجد مشتريات' : 'Aucun achat'}</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{language === 'ar' ? 'رقم الفاتورة' : 'N° Facture'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'المورد' : 'Fournisseur'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'الإجمالي' : 'Total'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'المدفوع' : 'Payé'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'المتبقي' : 'Restant'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'الحالة' : 'Statut'}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {purchases.map(purchase => (
-                      <TableRow key={purchase.id}>
-                        <TableCell className="font-medium">{purchase.invoice_number}</TableCell>
-                        <TableCell>{purchase.supplier_name}</TableCell>
-                        <TableCell>{formatDate(purchase.created_at)}</TableCell>
-                        <TableCell className="font-semibold">{purchase.total.toFixed(2)} {t.currency}</TableCell>
-                        <TableCell className="text-emerald-600">{purchase.paid_amount.toFixed(2)} {t.currency}</TableCell>
-                        <TableCell className="text-amber-600">{purchase.remaining.toFixed(2)} {t.currency}</TableCell>
-                        <TableCell>{getStatusBadge(purchase.status)}</TableCell>
-                      </TableRow>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="purchases" className="gap-2">
+              <Receipt className="h-4 w-4" />
+              {language === 'ar' ? 'سجل المشتريات' : 'Historique'}
+            </TabsTrigger>
+            <TabsTrigger value="debts" className="gap-2">
+              <AlertCircle className="h-4 w-4" />
+              {language === 'ar' ? 'حسابات الموردين' : 'Comptes'}
+              {totalRemaining > 0 && (
+                <Badge variant="destructive" className="ms-1">{supplierDebts.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Purchases History Tab */}
+          <TabsContent value="purchases">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  {language === 'ar' ? 'سجل المشتريات' : 'Historique des achats'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {purchases.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ShoppingBag className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">{language === 'ar' ? 'لا توجد مشتريات' : 'Aucun achat'}</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{language === 'ar' ? 'رقم الفاتورة' : 'N° Facture'}</TableHead>
+                          <TableHead>{language === 'ar' ? 'المورد' : 'Fournisseur'}</TableHead>
+                          <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                          <TableHead>{language === 'ar' ? 'الإجمالي' : 'Total'}</TableHead>
+                          <TableHead>{language === 'ar' ? 'المدفوع' : 'Payé'}</TableHead>
+                          <TableHead>{language === 'ar' ? 'المتبقي' : 'Restant'}</TableHead>
+                          <TableHead>{language === 'ar' ? 'الحالة' : 'Statut'}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {purchases.map(purchase => (
+                          <TableRow key={purchase.id}>
+                            <TableCell className="font-medium">{purchase.invoice_number}</TableCell>
+                            <TableCell>{purchase.supplier_name}</TableCell>
+                            <TableCell>{formatDate(purchase.created_at)}</TableCell>
+                            <TableCell className="font-semibold">{purchase.total.toFixed(2)} {t.currency}</TableCell>
+                            <TableCell className="text-emerald-600">{purchase.paid_amount.toFixed(2)} {t.currency}</TableCell>
+                            <TableCell className={purchase.remaining > 0 ? 'text-red-600 font-semibold' : ''}>
+                              {purchase.remaining.toFixed(2)} {t.currency}
+                            </TableCell>
+                            <TableCell>{getStatusBadge(purchase.status)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Supplier Debts Tab */}
+          <TabsContent value="debts">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  {language === 'ar' ? 'حسابات الموردين' : 'Comptes fournisseurs'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {supplierDebts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <DollarSign className="h-16 w-16 text-emerald-500 mx-auto mb-4" />
+                    <p className="text-emerald-600 font-medium">
+                      {language === 'ar' ? 'لا توجد ديون للموردين' : 'Aucune dette fournisseur'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {supplierDebts.map(debt => (
+                      <div key={debt.supplier_id} className="border rounded-lg p-4 hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-full bg-red-100">
+                              <Truck className="h-5 w-5 text-red-600" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold">{debt.supplier_name}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {debt.purchases.length} {language === 'ar' ? 'فاتورة غير مسددة' : 'factures impayées'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-end">
+                            <p className="text-2xl font-bold text-red-600">{debt.total_debt.toFixed(2)}</p>
+                            <p className="text-xs text-muted-foreground">{t.currency}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2 mt-3">
+                          <Button 
+                            size="sm" 
+                            onClick={() => openPayDebtDialog(debt)}
+                            className="gap-1"
+                          >
+                            <Banknote className="h-4 w-4" />
+                            {language === 'ar' ? 'تسديد الدين' : 'Payer'}
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="gap-1"
+                          >
+                            <History className="h-4 w-4" />
+                            {language === 'ar' ? 'السجل' : 'Historique'}
+                          </Button>
+                        </div>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* New Purchase Dialog */}
         <Dialog open={showNewPurchaseDialog} onOpenChange={setShowNewPurchaseDialog}>
@@ -398,6 +576,12 @@ export default function PurchasesPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedSupplier && supplierPreviousDebt > 0 && (
+                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {language === 'ar' ? `دين سابق: ${supplierPreviousDebt.toFixed(2)} ${t.currency}` : `Dette précédente: ${supplierPreviousDebt.toFixed(2)} ${t.currency}`}
+                    </p>
+                  )}
                 </div>
 
                 {/* Cart Items */}
@@ -438,72 +622,118 @@ export default function PurchasesPage() {
                   )}
                 </div>
 
-                {/* Total & Payment */}
-                <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                {/* Payment Type Selection */}
+                <div className="p-4 bg-muted/30 rounded-lg space-y-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>{t.total}</span>
                     <span>{subtotal.toFixed(2)} {t.currency}</span>
                   </div>
-                  
-                  <div>
-                    <Label>{t.paidAmount}</Label>
-                    <Input
-                      type="number"
-                      value={paidAmount}
-                      onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
-                      className="mt-1"
-                    />
-                  </div>
 
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>{t.remaining}</span>
-                    <span className={subtotal - paidAmount > 0 ? 'text-amber-600 font-semibold' : ''}>
-                      {(subtotal - paidAmount).toFixed(2)} {t.currency}
-                    </span>
-                  </div>
-
+                  {/* Payment Type */}
                   <div>
-                    <Label>{t.paymentMethod}</Label>
-                    <div className="flex gap-2 mt-2">
+                    <Label>{language === 'ar' ? 'نوع الدفع' : 'Type de paiement'}</Label>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
                       <Button
                         type="button"
-                        variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                        variant={paymentType === 'cash' ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setPaymentMethod('cash')}
-                        className="flex-1"
+                        onClick={() => setPaymentType('cash')}
+                        className="flex-col h-16 gap-1"
                       >
-                        <Banknote className="h-4 w-4 me-1" />
-                        {t.cash}
+                        <Banknote className="h-5 w-5" />
+                        <span className="text-xs">{language === 'ar' ? 'نقداً' : 'Comptant'}</span>
                       </Button>
                       <Button
                         type="button"
-                        variant={paymentMethod === 'bank' ? 'default' : 'outline'}
+                        variant={paymentType === 'credit' ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setPaymentMethod('bank')}
-                        className="flex-1"
+                        onClick={() => setPaymentType('credit')}
+                        className="flex-col h-16 gap-1 border-red-200 hover:border-red-300"
                       >
-                        <CreditCard className="h-4 w-4 me-1" />
-                        {t.bank}
+                        <CreditCard className="h-5 w-5" />
+                        <span className="text-xs">{language === 'ar' ? 'دين' : 'Crédit'}</span>
                       </Button>
                       <Button
                         type="button"
-                        variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
+                        variant={paymentType === 'partial' ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setPaymentMethod('wallet')}
-                        className="flex-1"
+                        onClick={() => setPaymentType('partial')}
+                        className="flex-col h-16 gap-1 border-amber-200 hover:border-amber-300"
                       >
-                        <Wallet className="h-4 w-4 me-1" />
+                        <Calculator className="h-5 w-5" />
+                        <span className="text-xs">{language === 'ar' ? 'جزئي' : 'Partiel'}</span>
                       </Button>
                     </div>
                   </div>
 
+                  {/* Paid Amount (for partial payment) */}
+                  {paymentType === 'partial' && (
+                    <div>
+                      <Label>{t.paidAmount}</Label>
+                      <Input
+                        type="number"
+                        value={paidAmount}
+                        onChange={(e) => setPaidAmount(Math.min(parseFloat(e.target.value) || 0, subtotal))}
+                        className="mt-1"
+                        max={subtotal}
+                      />
+                    </div>
+                  )}
+
+                  {/* Remaining */}
+                  {paymentType !== 'cash' && (
+                    <div className="flex justify-between text-red-600 font-semibold p-2 bg-red-50 rounded">
+                      <span>{language === 'ar' ? 'سيُسجل كدين' : 'Sera enregistré comme dette'}</span>
+                      <span>{(subtotal - paidAmount).toFixed(2)} {t.currency}</span>
+                    </div>
+                  )}
+
+                  {/* Payment Method */}
+                  {(paymentType === 'cash' || paymentType === 'partial') && (
+                    <div>
+                      <Label>{t.paymentMethod}</Label>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          type="button"
+                          variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setPaymentMethod('cash')}
+                          className="flex-1"
+                        >
+                          <Banknote className="h-4 w-4 me-1" />
+                          {t.cash}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={paymentMethod === 'bank' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setPaymentMethod('bank')}
+                          className="flex-1"
+                        >
+                          <CreditCard className="h-4 w-4 me-1" />
+                          {t.bank}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setPaymentMethod('wallet')}
+                          className="flex-1"
+                        >
+                          <Wallet className="h-4 w-4 me-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <Label>{t.notes}</Label>
-                    <Input
+                    <Textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder={language === 'ar' ? 'ملاحظات...' : 'Notes...'}
                       className="mt-1"
+                      rows={2}
                     />
                   </div>
                 </div>
@@ -512,12 +742,99 @@ export default function PurchasesPage() {
                 <Button
                   onClick={completePurchase}
                   disabled={loading || cart.length === 0 || !selectedSupplier}
-                  className="w-full h-12 text-lg"
+                  className={`w-full h-12 text-lg ${paymentType === 'credit' ? 'bg-red-600 hover:bg-red-700' : ''}`}
                 >
-                  {loading ? t.loading : t.completeSale}
+                  {loading ? t.loading : (
+                    paymentType === 'credit' 
+                      ? (language === 'ar' ? 'تسجيل شراء بالدين' : 'Enregistrer achat à crédit')
+                      : t.completeSale
+                  )}
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Pay Debt Dialog */}
+        <Dialog open={showPayDebtDialog} onOpenChange={setShowPayDebtDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                {language === 'ar' ? 'تسديد دين المورد' : 'Payer dette fournisseur'}
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedDebt && (
+              <div className="space-y-4 mt-4">
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Truck className="h-6 w-6 text-muted-foreground" />
+                    <div>
+                      <p className="font-semibold">{selectedDebt.supplier_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedDebt.purchases.length} {language === 'ar' ? 'فاتورة' : 'factures'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-lg">
+                    <span>{language === 'ar' ? 'إجمالي الدين' : 'Total dette'}</span>
+                    <span className="font-bold text-red-600">{selectedDebt.total_debt.toFixed(2)} {t.currency}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>{language === 'ar' ? 'المبلغ المدفوع' : 'Montant à payer'}</Label>
+                  <Input
+                    type="number"
+                    value={debtPaymentAmount}
+                    onChange={(e) => setDebtPaymentAmount(Math.min(parseFloat(e.target.value) || 0, selectedDebt.total_debt))}
+                    className="mt-1"
+                    max={selectedDebt.total_debt}
+                  />
+                </div>
+
+                <div>
+                  <Label>{t.paymentMethod}</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      type="button"
+                      variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setPaymentMethod('cash')}
+                      className="flex-1"
+                    >
+                      <Banknote className="h-4 w-4 me-1" />
+                      {t.cash}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={paymentMethod === 'bank' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setPaymentMethod('bank')}
+                      className="flex-1"
+                    >
+                      <CreditCard className="h-4 w-4 me-1" />
+                      {t.bank}
+                    </Button>
+                  </div>
+                </div>
+
+                {debtPaymentAmount < selectedDebt.total_debt && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+                    {language === 'ar' ? 'سيتبقى' : 'Restera'}: {(selectedDebt.total_debt - debtPaymentAmount).toFixed(2)} {t.currency}
+                  </div>
+                )}
+
+                <Button
+                  onClick={paySupplierDebt}
+                  disabled={loading || debtPaymentAmount <= 0}
+                  className="w-full"
+                >
+                  {loading ? t.loading : (language === 'ar' ? 'تأكيد الدفع' : 'Confirmer le paiement')}
+                </Button>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
