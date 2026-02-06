@@ -958,17 +958,44 @@ async def create_sale(sale: SaleCreate, user: dict = Depends(get_current_user)):
         if customer:
             customer_name = customer["name"]
     
-    # Calculate remaining
-    remaining = sale.total - sale.paid_amount
+    # Validate credit sale requires customer
+    if sale.payment_type in ["credit", "partial"] and not sale.customer_id:
+        raise HTTPException(status_code=400, detail="Customer required for credit sale")
+    
+    # Calculate delivery fee
+    delivery_fee = 0
+    delivery_info = None
+    if sale.delivery and sale.delivery.enabled:
+        delivery_fee = sale.delivery.fee
+        delivery_info = {
+            "enabled": True,
+            "wilaya_code": sale.delivery.wilaya_code,
+            "wilaya_name": sale.delivery.wilaya_name,
+            "city": sale.delivery.city,
+            "address": sale.delivery.address,
+            "delivery_type": sale.delivery.delivery_type,
+            "fee": delivery_fee
+        }
+    
+    # Recalculate total with delivery
+    final_total = sale.total + delivery_fee
+    
+    # Calculate remaining and debt
+    remaining = final_total - sale.paid_amount
+    debt_amount = remaining if sale.payment_type in ["credit", "partial"] else 0
     status = "paid" if remaining <= 0 else ("partial" if sale.paid_amount > 0 else "unpaid")
     
     sale_doc = {
         "id": sale_id, "invoice_number": invoice_number,
         "customer_id": sale.customer_id, "customer_name": customer_name,
         "items": [item.model_dump() for item in sale.items],
-        "subtotal": sale.subtotal, "discount": sale.discount, "total": sale.total,
-        "paid_amount": sale.paid_amount, "remaining": max(0, remaining),
-        "payment_method": sale.payment_method, "status": status,
+        "subtotal": sale.subtotal, "discount": sale.discount,
+        "delivery_fee": delivery_fee, "delivery": delivery_info,
+        "total": final_total,
+        "paid_amount": sale.paid_amount, "debt_amount": debt_amount,
+        "remaining": max(0, remaining),
+        "payment_method": sale.payment_method, "payment_type": sale.payment_type,
+        "status": status,
         "notes": sale.notes or "", "created_at": now, "created_by": user["name"]
     }
     await db.sales.insert_one(sale_doc)
@@ -998,7 +1025,7 @@ async def create_sale(sale: SaleCreate, user: dict = Depends(get_current_user)):
     if sale.customer_id:
         await db.customers.update_one(
             {"id": sale.customer_id},
-            {"$inc": {"total_purchases": sale.total, "balance": remaining}}
+            {"$inc": {"total_purchases": final_total, "balance": debt_amount}}
         )
     
     # Update cash box
