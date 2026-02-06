@@ -80,6 +80,7 @@ export const Layout = ({ children }) => {
     { path: '/sales', icon: Receipt, label: t.sales },
     { path: '/recharge', icon: Smartphone, label: t.recharge },
     { path: '/customers', icon: Users, label: t.customers },
+    { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
     ...(isAdmin ? [
       { path: '/product-families', icon: FolderTree, label: t.productFamilies },
       { path: '/suppliers', icon: Truck, label: t.suppliers },
