@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -8,19 +8,38 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowRight, ArrowLeft, Save, Camera, Loader2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Save, Camera, Loader2, RefreshCw, Plus, FolderTree } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function AddProductPage() {
   const navigate = useNavigate();
-  const { t, isRTL } = useLanguage();
+  const { t, language, isRTL } = useLanguage();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const fileInputRef = useRef(null);
   
   const [loading, setLoading] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [generatingBarcode, setGeneratingBarcode] = useState(false);
+  const [families, setFamilies] = useState([]);
+  const [showAddFamilyDialog, setShowAddFamilyDialog] = useState(false);
+  const [newFamily, setNewFamily] = useState({ name_ar: '', name_en: '' });
+  const [addingFamily, setAddingFamily] = useState(false);
+  
   const [formData, setFormData] = useState({
     name_en: '',
     name_ar: '',
@@ -32,13 +51,71 @@ export default function AddProductPage() {
     quantity: '',
     image_url: '',
     barcode: '',
+    family_id: '',
     compatible_models: '',
     low_stock_threshold: '10'
   });
 
+  useEffect(() => {
+    fetchFamilies();
+  }, []);
+
+  const fetchFamilies = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/product-families`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFamilies(response.data);
+    } catch (error) {
+      console.error('Error fetching families:', error);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const generateBarcode = async () => {
+    setGeneratingBarcode(true);
+    try {
+      const response = await axios.get(`${API}/products/generate-barcode`);
+      setFormData(prev => ({ ...prev, barcode: response.data.barcode }));
+      toast.success(t.barcodeGenerated);
+    } catch (error) {
+      toast.error(t.error);
+    } finally {
+      setGeneratingBarcode(false);
+    }
+  };
+
+  const handleAddFamily = async () => {
+    if (!newFamily.name_ar && !newFamily.name_en) {
+      toast.error(language === 'ar' ? 'يرجى إدخال اسم العائلة' : 'Please enter family name');
+      return;
+    }
+
+    setAddingFamily(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/product-families`, {
+        name_ar: newFamily.name_ar || newFamily.name_en,
+        name_en: newFamily.name_en || newFamily.name_ar
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setFamilies(prev => [...prev, response.data]);
+      setFormData(prev => ({ ...prev, family_id: response.data.id }));
+      setShowAddFamilyDialog(false);
+      setNewFamily({ name_ar: '', name_en: '' });
+      toast.success(t.familyAdded);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    } finally {
+      setAddingFamily(false);
+    }
   };
 
   const handleImageUpload = async (e) => {
@@ -96,6 +173,7 @@ export default function AddProductPage() {
         quantity: parseInt(formData.quantity) || 0,
         image_url: formData.image_url,
         barcode: formData.barcode,
+        family_id: formData.family_id || null,
         compatible_models: formData.compatible_models.split(',').map(m => m.trim()).filter(m => m),
         low_stock_threshold: parseInt(formData.low_stock_threshold) || 10
       };
@@ -138,6 +216,37 @@ export default function AddProductPage() {
                 </div>
               </div>
 
+              {/* Family Selection with Quick Add */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>{t.productFamilies}</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddFamilyDialog(true)}
+                    className="gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {t.quickAddFamily}
+                  </Button>
+                </div>
+                <Select value={formData.family_id || "none"} onValueChange={(v) => setFormData({...formData, family_id: v === "none" ? "" : v})}>
+                  <SelectTrigger data-testid="family-select">
+                    <FolderTree className="h-4 w-4 me-2" />
+                    <SelectValue placeholder={t.selectFamily} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{language === 'ar' ? 'بدون عائلة' : 'No Family'}</SelectItem>
+                    {families.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {language === 'ar' ? f.name_ar : f.name_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Descriptions */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -177,8 +286,32 @@ export default function AddProductPage() {
                   <Input id="low_stock_threshold" name="low_stock_threshold" type="number" min="1" value={formData.low_stock_threshold} onChange={handleChange} className="h-11" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="barcode">{t.barcode}</Label>
-                  <Input id="barcode" name="barcode" value={formData.barcode} onChange={handleChange} className="h-11" data-testid="barcode-input" />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="barcode">{t.barcode}</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={generateBarcode}
+                      disabled={generatingBarcode}
+                      className="gap-1 h-auto py-1"
+                    >
+                      {generatingBarcode ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      {t.generateBarcode}
+                    </Button>
+                  </div>
+                  <Input 
+                    id="barcode" 
+                    name="barcode" 
+                    value={formData.barcode} 
+                    onChange={handleChange} 
+                    className="h-11 font-mono" 
+                    data-testid="barcode-input" 
+                  />
                 </div>
               </div>
 
@@ -217,6 +350,42 @@ export default function AddProductPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Family Dialog */}
+      <Dialog open={showAddFamilyDialog} onOpenChange={setShowAddFamilyDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t.addNewFamily}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>{t.familyNameAr}</Label>
+              <Input
+                value={newFamily.name_ar}
+                onChange={(e) => setNewFamily({...newFamily, name_ar: e.target.value})}
+                dir="rtl"
+                placeholder={language === 'ar' ? 'مثال: واقيات الشاشة' : 'e.g., Screen Protectors'}
+              />
+            </div>
+            <div>
+              <Label>{t.familyNameEn}</Label>
+              <Input
+                value={newFamily.name_en}
+                onChange={(e) => setNewFamily({...newFamily, name_en: e.target.value})}
+                placeholder="e.g., Screen Protectors"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowAddFamilyDialog(false)} className="flex-1">
+                {t.cancel}
+              </Button>
+              <Button onClick={handleAddFamily} disabled={addingFamily} className="flex-1">
+                {addingFamily ? t.loading : t.save}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
