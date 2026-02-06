@@ -119,6 +119,8 @@ class ProductResponse(BaseModel):
     compatible_models: List[str]
     low_stock_threshold: int = 10
     barcode: str = ""
+    family_id: str = ""
+    family_name: str = ""
     created_at: str
     updated_at: str
 
