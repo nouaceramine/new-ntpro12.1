@@ -668,6 +668,13 @@ async def create_product(product: ProductCreate, admin: dict = Depends(get_admin
         "$or": [{"name_en": product.name_en}, {"name_ar": product.name_ar}]
     })
     
+    # Get family name if exists
+    family_name = ""
+    if product.family_id:
+        family = await db.product_families.find_one({"id": product.family_id}, {"_id": 0, "name_ar": 1})
+        if family:
+            family_name = family["name_ar"]
+    
     product_doc = {
         "id": product_id,
         "name_en": product.name_en, "name_ar": product.name_ar,
@@ -681,6 +688,8 @@ async def create_product(product: ProductCreate, admin: dict = Depends(get_admin
         "compatible_models": product.compatible_models,
         "low_stock_threshold": product.low_stock_threshold,
         "barcode": product.barcode or "",
+        "family_id": product.family_id or "",
+        "family_name": family_name,
         "created_at": now, "updated_at": now
     }
     await db.products.insert_one(product_doc)
