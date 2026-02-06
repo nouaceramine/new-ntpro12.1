@@ -491,6 +491,34 @@ RECHARGE_CONFIG = {
     }
 }
 
+# ============ PRODUCT FAMILY MODELS ============
+
+class ProductFamilyCreate(BaseModel):
+    name_en: str
+    name_ar: str
+    description_en: Optional[str] = ""
+    description_ar: Optional[str] = ""
+    parent_id: Optional[str] = None  # للعائلات الفرعية
+
+class ProductFamilyUpdate(BaseModel):
+    name_en: Optional[str] = None
+    name_ar: Optional[str] = None
+    description_en: Optional[str] = None
+    description_ar: Optional[str] = None
+    parent_id: Optional[str] = None
+
+class ProductFamilyResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name_en: str
+    name_ar: str
+    description_en: str
+    description_ar: str
+    parent_id: str
+    parent_name: str
+    product_count: int
+    created_at: str
+
 # ============ OCR & OTHER MODELS ============
 
 class OCRRequest(BaseModel):
