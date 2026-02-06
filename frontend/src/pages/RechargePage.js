@@ -306,14 +306,14 @@ export default function RechargePage() {
                 <div>
                   <Label>{t.selectCustomer}</Label>
                   <Select
-                    value={form.customer_id}
-                    onValueChange={(value) => setForm({ ...form, customer_id: value })}
+                    value={form.customer_id || "walk-in"}
+                    onValueChange={(value) => setForm({ ...form, customer_id: value === "walk-in" ? "" : value })}
                   >
                     <SelectTrigger data-testid="customer-select">
                       <SelectValue placeholder={t.walkInCustomer} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">{t.walkInCustomer}</SelectItem>
+                      <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
                       {customers.map((c) => (
                         <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                       ))}
