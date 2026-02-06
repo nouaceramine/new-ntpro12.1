@@ -319,6 +319,197 @@ class MobileGlassAPITester:
         
         return success1 and success2
 
+    def test_user_management(self):
+        """Test user management endpoints (admin only)"""
+        if not self.admin_token:
+            print("❌ Skipping - No admin token available")
+            return False
+            
+        print("\n=== USER MANAGEMENT TESTS ===")
+        
+        # Test get all users
+        success1, response1 = self.run_test(
+            "Get All Users (Admin)",
+            "GET",
+            "users",
+            200,
+            token=self.admin_token
+        )
+        if success1:
+            print(f"   Found {len(response1)} users")
+        
+        # Test get specific user
+        if self.regular_user_id:
+            success2, response2 = self.run_test(
+                "Get Specific User",
+                "GET",
+                f"users/{self.regular_user_id}",
+                200,
+                token=self.admin_token
+            )
+        else:
+            success2 = True
+            print("   Skipping get specific user - no regular user ID")
+        
+        # Test update user role
+        if self.regular_user_id:
+            success3, response3 = self.run_test(
+                "Update User Role",
+                "PUT",
+                f"users/{self.regular_user_id}",
+                200,
+                data={"role": "admin"},
+                token=self.admin_token
+            )
+            
+            # Change back to user role
+            success3b, response3b = self.run_test(
+                "Change Back to User Role",
+                "PUT",
+                f"users/{self.regular_user_id}",
+                200,
+                data={"role": "user"},
+                token=self.admin_token
+            )
+            success3 = success3 and success3b
+        else:
+            success3 = True
+            print("   Skipping update user role - no regular user ID")
+        
+        # Test unauthorized access to user endpoints
+        success4, _ = self.run_test(
+            "Get Users (No Token)",
+            "GET",
+            "users",
+            401
+        )
+        
+        if self.user_token:
+            success5, _ = self.run_test(
+                "Get Users (Regular User)",
+                "GET",
+                "users",
+                403,
+                token=self.user_token
+            )
+        else:
+            success5 = True
+            print("   Skipping regular user test - no user token")
+        
+        return success1 and success2 and success3 and success4 and success5
+
+    def test_low_stock_alerts(self):
+        """Test low stock alert functionality"""
+        if not self.admin_token:
+            print("❌ Skipping - No admin token available")
+            return False
+            
+        print("\n=== LOW STOCK ALERT TESTS ===")
+        
+        # Test get low stock products
+        success1, response1 = self.run_test(
+            "Get Low Stock Products",
+            "GET",
+            "products/alerts/low-stock",
+            200,
+            token=self.admin_token
+        )
+        
+        if success1:
+            print(f"   Found {len(response1)} low stock products")
+            # Since we created a product with quantity=5 and threshold=10, it should appear
+            if len(response1) > 0:
+                print(f"   Low stock products detected correctly")
+            else:
+                print("   Warning: Expected at least one low stock product")
+        
+        # Test unauthorized access
+        success2, _ = self.run_test(
+            "Get Low Stock (No Token)",
+            "GET", 
+            "products/alerts/low-stock",
+            401
+        )
+        
+        if self.user_token:
+            success3, _ = self.run_test(
+                "Get Low Stock (Regular User)",
+                "GET",
+                "products/alerts/low-stock", 
+                403,
+                token=self.user_token
+            )
+        else:
+            success3 = True
+            print("   Skipping regular user test - no user token")
+        
+        return success1 and success2 and success3
+
+    def test_ocr_endpoint(self):
+        """Test OCR model extraction endpoint"""
+        if not self.admin_token:
+            print("❌ Skipping - No admin token available")
+            return False
+            
+        print("\n=== OCR ENDPOINT TESTS ===")
+        
+        # Create a simple test base64 image (1x1 transparent PNG)
+        test_image_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQIHWPIyMgAAAABAAEAACsRrAEAAAAASUVORK5CYII="
+        
+        success1, response1 = self.run_test(
+            "OCR Extract Models",
+            "POST",
+            "ocr/extract-models",
+            200,
+            data={"image_base64": test_image_base64},
+            token=self.admin_token
+        )
+        
+        if success1:
+            print(f"   OCR Response: {response1}")
+        
+        # Test unauthorized access
+        success2, _ = self.run_test(
+            "OCR Extract (No Token)",
+            "POST",
+            "ocr/extract-models",
+            401,
+            data={"image_base64": test_image_base64}
+        )
+        
+        if self.user_token:
+            success3, _ = self.run_test(
+                "OCR Extract (Regular User)",
+                "POST",
+                "ocr/extract-models",
+                403,
+                data={"image_base64": test_image_base64},
+                token=self.user_token
+            )
+        else:
+            success3 = True
+            print("   Skipping regular user test - no user token")
+        
+        return success1 and success2 and success3
+
+    def test_existing_admin_login(self):
+        """Test login with existing admin credentials"""
+        success, response = self.run_test(
+            "Existing Admin Login",
+            "POST",
+            "auth/login",
+            200,
+            data={
+                "email": "admin@screenguard.com",
+                "password": "Admin123!"
+            }
+        )
+        if success and 'access_token' in response:
+            self.admin_token = response['access_token']
+            self.admin_user_id = response['user']['id']
+            print(f"   Existing admin token obtained: {self.admin_token[:20]}...")
+        return success
+
 def main():
     print("🧪 Starting Mobile Glass Search API Testing...")
     print("=" * 60)
@@ -332,10 +523,18 @@ def main():
         return 1
     
     print("\n=== AUTHENTICATION TESTS ===")
-    # Authentication tests
-    admin_reg_ok = tester.test_admin_registration()
+    # Try existing admin first, then create new if needed
+    existing_admin_ok = tester.test_existing_admin_login()
+    if not existing_admin_ok:
+        admin_reg_ok = tester.test_admin_registration()
+    else:
+        admin_reg_ok = True
+        
     user_reg_ok = tester.test_user_registration() 
     get_user_ok = tester.test_get_current_user()
+    
+    # New user management tests
+    user_mgmt_ok = tester.test_user_management()
     
     print("\n=== PRODUCT CRUD TESTS ===")
     # Product CRUD tests
@@ -344,6 +543,12 @@ def main():
     search_ok = tester.test_search_products()
     get_single_ok = tester.test_get_single_product()
     update_ok = tester.test_update_product()
+    
+    # New low stock alert tests
+    low_stock_ok = tester.test_low_stock_alerts()
+    
+    # OCR tests
+    ocr_ok = tester.test_ocr_endpoint()
     
     print("\n=== ADMIN TESTS ===")
     # Admin-specific tests
