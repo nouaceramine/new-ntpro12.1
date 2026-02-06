@@ -80,6 +80,30 @@ export default function SettingsPage() {
   const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
   const [userPermissions, setUserPermissions] = useState({});
   const [savingPermissions, setSavingPermissions] = useState(false);
+  
+  // USB SIM Settings
+  const [usbSettings, setUsbSettings] = useState({
+    enabled: false,
+    port: '',
+    baudRate: '9600',
+    simSlots: [
+      { id: 1, operator: '', phone: '', enabled: false },
+      { id: 2, operator: '', phone: '', enabled: false }
+    ]
+  });
+  
+  // Printer Settings
+  const [printerSettings, setPrinterSettings] = useState({
+    enabled: false,
+    type: 'thermal', // thermal, laser, inkjet
+    connectionType: 'usb', // usb, network, bluetooth
+    name: '',
+    ipAddress: '',
+    port: '9100',
+    paperWidth: '80', // 58, 80
+    autoPrint: false,
+    printCopies: 1
+  });
 
   useEffect(() => {
     fetchData();
