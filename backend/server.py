@@ -2415,6 +2415,95 @@ async def get_debts_summary(user: dict = Depends(get_current_user)):
         "debts": sorted(result, key=lambda x: x["total_debt"], reverse=True)
     }
 
+@api_router.get("/debts/export")
+async def export_debts_to_excel(user: dict = Depends(get_current_user)):
+    """Export all customer debts to Excel file"""
+    from io import BytesIO
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    
+    # Get all debts
+    pipeline = [
+        {"$match": {"debt_amount": {"$gt": 0}}},
+        {"$group": {
+            "_id": "$customer_id",
+            "total_debt": {"$sum": "$debt_amount"},
+            "sales_count": {"$sum": 1}
+        }}
+    ]
+    debts_by_customer = await db.sales.aggregate(pipeline).to_list(1000)
+    
+    # Create workbook
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Customer Debts"
+    
+    # Styles
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    border = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
+    
+    # Headers
+    headers = ["#", "اسم الزبون", "رقم الهاتف", "عدد الفواتير", "إجمالي الدين (دج)"]
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal='center')
+        cell.border = border
+    
+    # Data rows
+    row_num = 2
+    total_debt = 0
+    for idx, debt in enumerate(debts_by_customer, 1):
+        customer = await db.customers.find_one({"id": debt["_id"]}, {"_id": 0})
+        if not customer:
+            continue
+        
+        ws.cell(row=row_num, column=1, value=idx).border = border
+        ws.cell(row=row_num, column=2, value=customer.get("name", "")).border = border
+        ws.cell(row=row_num, column=3, value=customer.get("phone", "")).border = border
+        ws.cell(row=row_num, column=4, value=debt["sales_count"]).border = border
+        cell = ws.cell(row=row_num, column=5, value=debt["total_debt"])
+        cell.border = border
+        cell.number_format = '#,##0.00'
+        
+        total_debt += debt["total_debt"]
+        row_num += 1
+    
+    # Total row
+    ws.cell(row=row_num, column=4, value="الإجمالي:").font = Font(bold=True)
+    total_cell = ws.cell(row=row_num, column=5, value=total_debt)
+    total_cell.font = Font(bold=True, color="FF0000")
+    total_cell.number_format = '#,##0.00'
+    
+    # Column widths
+    ws.column_dimensions['A'].width = 5
+    ws.column_dimensions['B'].width = 25
+    ws.column_dimensions['C'].width = 15
+    ws.column_dimensions['D'].width = 12
+    ws.column_dimensions['E'].width = 18
+    
+    # RTL
+    ws.sheet_view.rightToLeft = True
+    
+    # Save to bytes
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=debts_{datetime.now().strftime('%Y%m%d')}.xlsx"}
+    )
+
 # ============ PRODUCT FAMILIES ROUTES ============
 
 @api_router.post("/product-families", response_model=ProductFamilyResponse)
