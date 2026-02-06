@@ -755,6 +755,31 @@ const translations = {
     debtPaid: 'تم تسجيل دفعة الدين',
     viewDebts: 'عرض الديون',
     customerRequired: 'يرجى اختيار زبون للبيع بالدين',
+    
+    // SMS Reminders
+    smsReminders: 'تذكيرات SMS',
+    sendReminder: 'إرسال تذكير',
+    sendBulkReminder: 'إرسال للجميع',
+    smsSettings: 'إعدادات SMS',
+    smsLogs: 'سجل الرسائل',
+    smsTemplate: 'قالب الرسالة',
+    selectTemplate: 'اختر قالب',
+    customMessage: 'رسالة مخصصة',
+    autoReminder: 'تذكير تلقائي',
+    reminderFrequency: 'تكرار التذكير',
+    daily: 'يومي',
+    weekly: 'أسبوعي',
+    monthly: 'شهري',
+    reminderDay: 'يوم التذكير',
+    reminderTime: 'وقت التذكير',
+    minDebtAmount: 'الحد الأدنى للدين',
+    smsSent: 'تم الإرسال',
+    smsFailed: 'فشل الإرسال',
+    sendingReminders: 'جاري إرسال التذكيرات...',
+    remindersSent: 'تم إرسال التذكيرات بنجاح',
+    noCustomersSelected: 'يرجى اختيار الزبائن',
+    smsProvider: 'مزود SMS',
+    providerMocked: 'محاكاة (غير متصل)',
   }
 };
 
