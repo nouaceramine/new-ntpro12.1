@@ -2001,7 +2001,7 @@ async def get_invoice_pdf(sale_id: str, user: dict = Depends(get_current_user)):
     </head>
     <body>
         <div class="header">
-            <h1>سكرين جارد برو</h1>
+            <h1>NT</h1>
             <p>فاتورة مبيعات</p>
         </div>
         
@@ -2617,7 +2617,7 @@ DEFAULT_SMS_SETTINGS = {
     "reminder_day": 1,
     "reminder_time": "09:00",
     "min_debt_amount": 100,
-    "message_template": "السلام عليكم {customer_name}، نذكركم بأن لديكم مبلغ {debt_amount} دج مستحق. شكراً لتعاملكم معنا - ScreenGuard Pro"
+    "message_template": "السلام عليكم {customer_name}، نذكركم بأن لديكم مبلغ {debt_amount} دج مستحق. شكراً لتعاملكم معنا - NT"
 }
 
 async def send_sms_mock(phone: str, message: str) -> dict:
@@ -2819,7 +2819,7 @@ async def get_sms_templates():
                 "id": "payment_thanks",
                 "name_ar": "شكر على الدفع",
                 "name_en": "Payment Thanks",
-                "template": "شكراً {customer_name} على سداد مستحقاتكم. نقدر تعاملكم معنا - ScreenGuard Pro"
+                "template": "شكراً {customer_name} على سداد مستحقاتكم. نقدر تعاملكم معنا - NT"
             }
         ]
     }
@@ -3195,7 +3195,7 @@ async def get_family_products(family_id: str, user: dict = Depends(get_current_u
 
 @api_router.get("/")
 async def root():
-    return {"message": "ScreenGuard Pro API is running"}
+    return {"message": "NT API is running"}
 
 @api_router.get("/health")
 async def health():
