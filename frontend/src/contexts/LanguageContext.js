@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 const translations = {
   en: {
     // General
-    appName: 'ScreenGuard Pro',
+    appName: 'NT',
     search: 'Search',
     searchPlaceholder: 'Search by product name, model or barcode...',
     loading: 'Loading...',
@@ -443,7 +443,7 @@ const translations = {
   },
   ar: {
     // General
-    appName: 'سكرين جارد برو',
+    appName: 'NT',
     search: 'بحث',
     searchPlaceholder: 'ابحث باسم المنتج أو الموديل أو الباركود...',
     loading: 'جاري التحميل...',

@@ -32,7 +32,7 @@ ACCESS_TOKEN_EXPIRE_HOURS = 24
 CURRENCY = "دج"  # Algerian Dinar
 
 # Create the main app
-app = FastAPI(title="ScreenGuard Pro API")
+app = FastAPI(title="NT API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
