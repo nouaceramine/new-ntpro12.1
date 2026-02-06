@@ -16,7 +16,7 @@ const translations = {
     confirm: 'Confirm',
     yes: 'Yes',
     no: 'No',
-    currency: 'DZD',
+    currency: 'دج',
     
     // Auth
     login: 'Login',
@@ -49,17 +49,22 @@ const translations = {
     cashManagement: 'Cash Management',
     reports: 'Reports',
     notifications: 'Notifications',
+    employees: 'Employees',
+    debts: 'Debts',
     
     // Dashboard
     totalProducts: 'Total Products',
     totalUsers: 'Total Users',
     totalCustomers: 'Total Customers',
     totalSuppliers: 'Total Suppliers',
+    totalEmployees: 'Total Employees',
     lowStock: 'Low Stock',
     recentProducts: 'Recent Products',
     quickStats: 'Quick Stats',
     todaySales: "Today's Sales",
     totalCash: 'Total Cash',
+    totalReceivables: 'Total Receivables',
+    totalPayables: 'Total Payables',
     
     // Products
     productName: 'Product Name',
@@ -85,35 +90,31 @@ const translations = {
     productUpdated: 'Product updated successfully',
     productDeleted: 'Product deleted successfully',
     noProducts: 'No products found',
-    noProductsSubtitle: 'Add your first screen protector product',
+    noProductsSubtitle: 'Add your first product',
     viewDetails: 'View Details',
     inStock: 'In Stock',
     outOfStock: 'Out of Stock',
     lowStockWarning: 'Low Stock',
+    importExcel: 'Import from Excel',
+    exportExcel: 'Export to Excel',
+    importSuccess: 'Import completed',
     
     // Filters
     filterByModel: 'Filter by Model',
     allModels: 'All Models',
     clearFilters: 'Clear Filters',
     
-    // Low Stock Alerts
+    // Low Stock & OCR
     lowStockAlerts: 'Low Stock Alerts',
     lowStockThreshold: 'Low Stock Threshold',
-    lowStockThresholdHelp: 'Alert when quantity falls below this number',
-    viewLowStockProducts: 'View Low Stock Products',
-    noLowStockProducts: 'No low stock products',
-    belowThreshold: 'Below threshold',
-    
-    // OCR
+    lowStockThresholdHelp: 'Alert when quantity falls below this',
     extractFromImage: 'Extract from Image',
-    uploadImage: 'Upload Image',
-    extractingModels: 'Extracting models...',
-    modelsExtracted: 'Models extracted successfully',
-    ocrFailed: 'Failed to extract models from image',
-    dropImageHere: 'Drop image here or click to upload',
-    supportedFormats: 'Supported formats: JPG, PNG, WEBP',
+    extractingModels: 'Extracting...',
+    modelsExtracted: 'Models extracted',
+    ocrFailed: 'Extraction failed',
+    supportedFormats: 'Formats: JPG, PNG, WEBP',
     
-    // Customers
+    // Customers & Suppliers
     addCustomer: 'Add Customer',
     editCustomer: 'Edit Customer',
     customerName: 'Customer Name',
@@ -123,18 +124,16 @@ const translations = {
     totalPurchases: 'Total Purchases',
     balance: 'Balance',
     noCustomers: 'No customers found',
-    customerAdded: 'Customer added successfully',
-    customerUpdated: 'Customer updated successfully',
-    customerDeleted: 'Customer deleted successfully',
-    
-    // Suppliers
+    customerAdded: 'Customer added',
+    customerUpdated: 'Customer updated',
+    customerDeleted: 'Customer deleted',
     addSupplier: 'Add Supplier',
     editSupplier: 'Edit Supplier',
     supplierName: 'Supplier Name',
     noSuppliers: 'No suppliers found',
-    supplierAdded: 'Supplier added successfully',
-    supplierUpdated: 'Supplier updated successfully',
-    supplierDeleted: 'Supplier deleted successfully',
+    supplierAdded: 'Supplier added',
+    supplierUpdated: 'Supplier updated',
+    supplierDeleted: 'Supplier deleted',
     
     // POS / Sales
     newSale: 'New Sale',
@@ -152,18 +151,16 @@ const translations = {
     wallet: 'E-Wallet',
     completeSale: 'Complete Sale',
     printInvoice: 'Print Invoice',
-    saleCompleted: 'Sale completed successfully',
+    saleCompleted: 'Sale completed',
     invoiceNumber: 'Invoice Number',
     selectCustomer: 'Select Customer',
     walkInCustomer: 'Walk-in Customer',
     scanBarcode: 'Scan Barcode',
     returnSale: 'Return Sale',
-    saleReturned: 'Sale returned successfully',
-    
-    // Purchases
+    saleReturned: 'Sale returned',
     newPurchase: 'New Purchase',
     selectSupplier: 'Select Supplier',
-    purchaseCompleted: 'Purchase completed successfully',
+    purchaseCompleted: 'Purchase completed',
     
     // Cash Management
     cashBox: 'Cash Box',
@@ -174,7 +171,7 @@ const translations = {
     fromBox: 'From',
     toBox: 'To',
     amount: 'Amount',
-    transferCompleted: 'Transfer completed successfully',
+    transferCompleted: 'Transfer completed',
     transactions: 'Transactions',
     income: 'Income',
     expense: 'Expense',
@@ -184,6 +181,59 @@ const translations = {
     partial: 'Partial',
     unpaid: 'Unpaid',
     returned: 'Returned',
+    pending: 'Pending',
+    overdue: 'Overdue',
+    
+    // Employees
+    addEmployee: 'Add Employee',
+    editEmployee: 'Edit Employee',
+    employeeName: 'Employee Name',
+    position: 'Position',
+    salary: 'Salary',
+    hireDate: 'Hire Date',
+    commissionRate: 'Commission Rate',
+    noEmployees: 'No employees found',
+    employeeAdded: 'Employee added',
+    employeeUpdated: 'Employee updated',
+    employeeDeleted: 'Employee deleted',
+    attendance: 'Attendance',
+    recordAttendance: 'Record Attendance',
+    present: 'Present',
+    absent: 'Absent',
+    late: 'Late',
+    leave: 'Leave',
+    advances: 'Advances',
+    addAdvance: 'Add Advance',
+    totalAdvances: 'Total Advances',
+    totalCommission: 'Total Commission',
+    
+    // Debts
+    addDebt: 'Add Debt',
+    receivables: 'Receivables',
+    payables: 'Payables',
+    dueDate: 'Due Date',
+    debtAmount: 'Debt Amount',
+    payDebt: 'Pay Debt',
+    debtPaid: 'Debt payment recorded',
+    noDebts: 'No debts found',
+    schedulePayment: 'Schedule Payment',
+    
+    // Reports
+    salesChart: 'Sales Chart',
+    topProducts: 'Top Products',
+    topCustomers: 'Top Customers',
+    profitReport: 'Profit Report',
+    totalRevenue: 'Total Revenue',
+    totalCost: 'Total Cost',
+    grossProfit: 'Gross Profit',
+    profitMargin: 'Profit Margin',
+    last7Days: 'Last 7 Days',
+    last30Days: 'Last 30 Days',
+    
+    // Backup
+    backup: 'Backup',
+    createBackup: 'Create Backup',
+    backupCreated: 'Backup created',
     
     // Notifications
     markAsRead: 'Mark as Read',
@@ -207,13 +257,13 @@ const translations = {
     userName: 'Name',
     changeRole: 'Change Role',
     deleteUser: 'Delete User',
-    deleteUserConfirm: 'Are you sure you want to delete this user?',
-    userDeleted: 'User deleted successfully',
-    userUpdated: 'User updated successfully',
+    deleteUserConfirm: 'Delete this user?',
+    userDeleted: 'User deleted',
+    userUpdated: 'User updated',
     noUsers: 'No users found',
     adminRole: 'Admin',
     userRoleLabel: 'User',
-    cannotDeleteSelf: 'Cannot delete your own account',
+    cannotDeleteSelf: 'Cannot delete yourself',
     createdAt: 'Created At',
   },
   ar: {
@@ -246,7 +296,7 @@ const translations = {
     registerSubtitle: 'أنشئ حساباً للبدء',
     noAccount: 'ليس لديك حساب؟',
     hasAccount: 'لديك حساب بالفعل؟',
-    invalidCredentials: 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+    invalidCredentials: 'البريد أو كلمة المرور غير صحيحة',
     registerAsAdmin: 'التسجيل كمدير',
     
     // Navigation
@@ -264,25 +314,30 @@ const translations = {
     cashManagement: 'إدارة المال',
     reports: 'التقارير',
     notifications: 'الإشعارات',
+    employees: 'العمال',
+    debts: 'الديون',
     
     // Dashboard
     totalProducts: 'إجمالي المنتجات',
     totalUsers: 'إجمالي المستخدمين',
     totalCustomers: 'إجمالي الزبائن',
     totalSuppliers: 'إجمالي الموردين',
+    totalEmployees: 'إجمالي العمال',
     lowStock: 'مخزون منخفض',
     recentProducts: 'أحدث المنتجات',
     quickStats: 'إحصائيات سريعة',
     todaySales: 'مبيعات اليوم',
     totalCash: 'إجمالي النقد',
+    totalReceivables: 'إجمالي المستحقات',
+    totalPayables: 'إجمالي الديون',
     
     // Products
     productName: 'اسم المنتج',
-    productNameEn: 'اسم المنتج (بالإنجليزية)',
-    productNameAr: 'اسم المنتج (بالعربية)',
+    productNameEn: 'اسم المنتج (إنجليزي)',
+    productNameAr: 'اسم المنتج (عربي)',
     description: 'الوصف',
-    descriptionEn: 'الوصف (بالإنجليزية)',
-    descriptionAr: 'الوصف (بالعربية)',
+    descriptionEn: 'الوصف (إنجليزي)',
+    descriptionAr: 'الوصف (عربي)',
     price: 'السعر',
     purchasePrice: 'سعر الشراء',
     wholesalePrice: 'سعر الجملة',
@@ -291,44 +346,40 @@ const translations = {
     imageUrl: 'رابط الصورة',
     barcode: 'الباركود',
     compatibleModels: 'الموديلات المتوافقة',
-    compatibleModelsHelp: 'أدخل موديلات الهواتف مفصولة بفواصل',
+    compatibleModelsHelp: 'أدخل الموديلات مفصولة بفواصل',
     addNewProduct: 'إضافة منتج جديد',
     editProduct: 'تعديل المنتج',
     deleteProduct: 'حذف المنتج',
     deleteConfirm: 'هل أنت متأكد من الحذف؟',
-    productAdded: 'تمت إضافة المنتج بنجاح',
-    productUpdated: 'تم تحديث المنتج بنجاح',
-    productDeleted: 'تم حذف المنتج بنجاح',
+    productAdded: 'تمت إضافة المنتج',
+    productUpdated: 'تم تحديث المنتج',
+    productDeleted: 'تم حذف المنتج',
     noProducts: 'لا توجد منتجات',
-    noProductsSubtitle: 'أضف أول منتج زجاج حماية',
+    noProductsSubtitle: 'أضف أول منتج',
     viewDetails: 'عرض التفاصيل',
     inStock: 'متوفر',
     outOfStock: 'غير متوفر',
     lowStockWarning: 'مخزون منخفض',
+    importExcel: 'استيراد من Excel',
+    exportExcel: 'تصدير إلى Excel',
+    importSuccess: 'تم الاستيراد بنجاح',
     
     // Filters
     filterByModel: 'تصفية حسب الموديل',
     allModels: 'جميع الموديلات',
     clearFilters: 'مسح الفلاتر',
     
-    // Low Stock Alerts
+    // Low Stock & OCR
     lowStockAlerts: 'تنبيهات المخزون المنخفض',
     lowStockThreshold: 'حد المخزون المنخفض',
-    lowStockThresholdHelp: 'تنبيه عندما تقل الكمية عن هذا الرقم',
-    viewLowStockProducts: 'عرض المنتجات منخفضة المخزون',
-    noLowStockProducts: 'لا توجد منتجات منخفضة المخزون',
-    belowThreshold: 'أقل من الحد',
-    
-    // OCR
+    lowStockThresholdHelp: 'تنبيه عندما تقل الكمية عن هذا',
     extractFromImage: 'استخراج من صورة',
-    uploadImage: 'رفع صورة',
-    extractingModels: 'جاري استخراج الموديلات...',
-    modelsExtracted: 'تم استخراج الموديلات بنجاح',
-    ocrFailed: 'فشل استخراج الموديلات من الصورة',
-    dropImageHere: 'اسحب الصورة هنا أو انقر للرفع',
-    supportedFormats: 'الصيغ المدعومة: JPG, PNG, WEBP',
+    extractingModels: 'جاري الاستخراج...',
+    modelsExtracted: 'تم الاستخراج',
+    ocrFailed: 'فشل الاستخراج',
+    supportedFormats: 'الصيغ: JPG, PNG, WEBP',
     
-    // Customers
+    // Customers & Suppliers
     addCustomer: 'إضافة زبون',
     editCustomer: 'تعديل الزبون',
     customerName: 'اسم الزبون',
@@ -338,18 +389,16 @@ const translations = {
     totalPurchases: 'إجمالي المشتريات',
     balance: 'الرصيد',
     noCustomers: 'لا يوجد زبائن',
-    customerAdded: 'تمت إضافة الزبون بنجاح',
-    customerUpdated: 'تم تحديث الزبون بنجاح',
-    customerDeleted: 'تم حذف الزبون بنجاح',
-    
-    // Suppliers
+    customerAdded: 'تمت إضافة الزبون',
+    customerUpdated: 'تم تحديث الزبون',
+    customerDeleted: 'تم حذف الزبون',
     addSupplier: 'إضافة مورد',
     editSupplier: 'تعديل المورد',
     supplierName: 'اسم المورد',
     noSuppliers: 'لا يوجد موردين',
-    supplierAdded: 'تمت إضافة المورد بنجاح',
-    supplierUpdated: 'تم تحديث المورد بنجاح',
-    supplierDeleted: 'تم حذف المورد بنجاح',
+    supplierAdded: 'تمت إضافة المورد',
+    supplierUpdated: 'تم تحديث المورد',
+    supplierDeleted: 'تم حذف المورد',
     
     // POS / Sales
     newSale: 'بيع جديد',
@@ -367,18 +416,16 @@ const translations = {
     wallet: 'محفظة إلكترونية',
     completeSale: 'إتمام البيع',
     printInvoice: 'طباعة الفاتورة',
-    saleCompleted: 'تم البيع بنجاح',
+    saleCompleted: 'تم البيع',
     invoiceNumber: 'رقم الفاتورة',
     selectCustomer: 'اختر الزبون',
     walkInCustomer: 'عميل نقدي',
     scanBarcode: 'مسح الباركود',
     returnSale: 'إرجاع البيع',
-    saleReturned: 'تم إرجاع البيع بنجاح',
-    
-    // Purchases
+    saleReturned: 'تم الإرجاع',
     newPurchase: 'شراء جديد',
     selectSupplier: 'اختر المورد',
-    purchaseCompleted: 'تم الشراء بنجاح',
+    purchaseCompleted: 'تم الشراء',
     
     // Cash Management
     cashBox: 'الصندوق النقدي',
@@ -389,7 +436,7 @@ const translations = {
     fromBox: 'من',
     toBox: 'إلى',
     amount: 'المبلغ',
-    transferCompleted: 'تم التحويل بنجاح',
+    transferCompleted: 'تم التحويل',
     transactions: 'الحركات المالية',
     income: 'دخل',
     expense: 'مصروف',
@@ -399,6 +446,59 @@ const translations = {
     partial: 'جزئي',
     unpaid: 'غير مدفوع',
     returned: 'مرتجع',
+    pending: 'معلق',
+    overdue: 'متأخر',
+    
+    // Employees
+    addEmployee: 'إضافة عامل',
+    editEmployee: 'تعديل العامل',
+    employeeName: 'اسم العامل',
+    position: 'المنصب',
+    salary: 'الراتب',
+    hireDate: 'تاريخ التوظيف',
+    commissionRate: 'نسبة العمولة',
+    noEmployees: 'لا يوجد عمال',
+    employeeAdded: 'تمت إضافة العامل',
+    employeeUpdated: 'تم تحديث العامل',
+    employeeDeleted: 'تم حذف العامل',
+    attendance: 'الحضور',
+    recordAttendance: 'تسجيل الحضور',
+    present: 'حاضر',
+    absent: 'غائب',
+    late: 'متأخر',
+    leave: 'إجازة',
+    advances: 'السلف',
+    addAdvance: 'إضافة سلفة',
+    totalAdvances: 'إجمالي السلف',
+    totalCommission: 'إجمالي العمولات',
+    
+    // Debts
+    addDebt: 'إضافة دين',
+    receivables: 'مستحقات (ديون على الزبائن)',
+    payables: 'ديون (للموردين)',
+    dueDate: 'تاريخ الاستحقاق',
+    debtAmount: 'مبلغ الدين',
+    payDebt: 'سداد الدين',
+    debtPaid: 'تم تسجيل السداد',
+    noDebts: 'لا توجد ديون',
+    schedulePayment: 'جدولة السداد',
+    
+    // Reports
+    salesChart: 'مخطط المبيعات',
+    topProducts: 'أفضل المنتجات',
+    topCustomers: 'أفضل الزبائن',
+    profitReport: 'تقرير الأرباح',
+    totalRevenue: 'إجمالي الإيرادات',
+    totalCost: 'إجمالي التكلفة',
+    grossProfit: 'صافي الربح',
+    profitMargin: 'هامش الربح',
+    last7Days: 'آخر 7 أيام',
+    last30Days: 'آخر 30 يوم',
+    
+    // Backup
+    backup: 'النسخ الاحتياطي',
+    createBackup: 'إنشاء نسخة احتياطية',
+    backupCreated: 'تم إنشاء النسخة',
     
     // Notifications
     markAsRead: 'تحديد كمقروء',
@@ -422,13 +522,13 @@ const translations = {
     userName: 'الاسم',
     changeRole: 'تغيير الدور',
     deleteUser: 'حذف المستخدم',
-    deleteUserConfirm: 'هل أنت متأكد من حذف هذا المستخدم؟',
-    userDeleted: 'تم حذف المستخدم بنجاح',
-    userUpdated: 'تم تحديث المستخدم بنجاح',
+    deleteUserConfirm: 'حذف هذا المستخدم؟',
+    userDeleted: 'تم حذف المستخدم',
+    userUpdated: 'تم تحديث المستخدم',
     noUsers: 'لا يوجد مستخدمين',
     adminRole: 'مدير',
     userRoleLabel: 'مستخدم',
-    cannotDeleteSelf: 'لا يمكن حذف حسابك الخاص',
+    cannotDeleteSelf: 'لا يمكن حذف حسابك',
     createdAt: 'تاريخ الإنشاء',
   }
 };
@@ -436,10 +536,7 @@ const translations = {
 const LanguageContext = createContext();
 
 export const LanguageProvider = ({ children }) => {
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem('language') || 'ar';
-  });
-  
+  const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'ar');
   const isRTL = language === 'ar';
   const t = translations[language];
   
@@ -449,20 +546,10 @@ export const LanguageProvider = ({ children }) => {
     document.body.dir = isRTL ? 'rtl' : 'ltr';
   }, [language, isRTL]);
   
-  const toggleLanguage = () => {
-    setLanguage(prev => prev === 'en' ? 'ar' : 'en');
-  };
-  
-  const value = {
-    language,
-    setLanguage,
-    toggleLanguage,
-    isRTL,
-    t
-  };
+  const toggleLanguage = () => setLanguage(prev => prev === 'en' ? 'ar' : 'en');
   
   return (
-    <LanguageContext.Provider value={value}>
+    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage, isRTL, t }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -470,8 +557,6 @@ export const LanguageProvider = ({ children }) => {
 
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
+  if (!context) throw new Error('useLanguage must be used within a LanguageProvider');
   return context;
 };
