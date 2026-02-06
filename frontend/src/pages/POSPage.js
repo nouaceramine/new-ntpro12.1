@@ -296,8 +296,19 @@ export default function POSPage() {
       const response = await axios.post(`${API}/sales`, saleData);
       toast.success(t.saleCompleted);
       
-      // Open invoice in new tab
-      window.open(`${API}/sales/${response.data.id}/invoice-pdf`, '_blank');
+      // Get invoice HTML and open in print dialog
+      try {
+        const invoiceResponse = await axios.get(`${API}/sales/${response.data.id}/invoice-pdf`);
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(invoiceResponse.data);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+        }, 500);
+      } catch (printError) {
+        console.error('Print error:', printError);
+      }
       
       // Reset
       setCart([]);
