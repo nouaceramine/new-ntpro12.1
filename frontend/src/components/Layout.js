@@ -20,7 +20,10 @@ import {
   Truck,
   Receipt,
   Wallet,
-  Bell
+  Bell,
+  Key,
+  Smartphone,
+  FolderTree
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
