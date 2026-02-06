@@ -77,6 +77,23 @@ const translations = {
     allModels: 'All Models',
     clearFilters: 'Clear Filters',
     
+    // Low Stock Alerts
+    lowStockAlerts: 'Low Stock Alerts',
+    lowStockThreshold: 'Low Stock Threshold',
+    lowStockThresholdHelp: 'Alert when quantity falls below this number',
+    viewLowStockProducts: 'View Low Stock Products',
+    noLowStockProducts: 'No low stock products',
+    belowThreshold: 'Below threshold',
+    
+    // OCR
+    extractFromImage: 'Extract from Image',
+    uploadImage: 'Upload Image',
+    extractingModels: 'Extracting models...',
+    modelsExtracted: 'Models extracted successfully',
+    ocrFailed: 'Failed to extract models from image',
+    dropImageHere: 'Drop image here or click to upload',
+    supportedFormats: 'Supported formats: JPG, PNG, WEBP',
+    
     // Errors
     error: 'Error',
     somethingWentWrong: 'Something went wrong',
@@ -160,6 +177,23 @@ const translations = {
     filterByModel: 'تصفية حسب الموديل',
     allModels: 'جميع الموديلات',
     clearFilters: 'مسح الفلاتر',
+    
+    // Low Stock Alerts
+    lowStockAlerts: 'تنبيهات المخزون المنخفض',
+    lowStockThreshold: 'حد المخزون المنخفض',
+    lowStockThresholdHelp: 'تنبيه عندما تقل الكمية عن هذا الرقم',
+    viewLowStockProducts: 'عرض المنتجات منخفضة المخزون',
+    noLowStockProducts: 'لا توجد منتجات منخفضة المخزون',
+    belowThreshold: 'أقل من الحد',
+    
+    // OCR
+    extractFromImage: 'استخراج من صورة',
+    uploadImage: 'رفع صورة',
+    extractingModels: 'جاري استخراج الموديلات...',
+    modelsExtracted: 'تم استخراج الموديلات بنجاح',
+    ocrFailed: 'فشل استخراج الموديلات من الصورة',
+    dropImageHere: 'اسحب الصورة هنا أو انقر للرفع',
+    supportedFormats: 'الصيغ المدعومة: JPG, PNG, WEBP',
     
     // Errors
     error: 'خطأ',
