@@ -649,9 +649,10 @@ async def generate_invoice_number(prefix: str) -> str:
 async def init_cash_boxes():
     """Initialize default cash boxes if they don't exist"""
     boxes = [
-        {"id": "cash", "name": "الصندوق النقدي", "type": "cash", "balance": 0},
-        {"id": "bank", "name": "الحساب البنكي", "type": "bank", "balance": 0},
-        {"id": "wallet", "name": "المحفظة الإلكترونية", "type": "wallet", "balance": 0}
+        {"id": "cash", "name": "الصندوق النقدي", "name_fr": "Caisse", "type": "cash", "balance": 0},
+        {"id": "bank", "name": "الحساب البنكي", "name_fr": "Compte bancaire", "type": "bank", "balance": 0},
+        {"id": "wallet", "name": "المحفظة الإلكترونية", "name_fr": "Portefeuille électronique", "type": "wallet", "balance": 0},
+        {"id": "safe", "name": "الخزنة", "name_fr": "Coffre-fort", "type": "safe", "balance": 0}
     ]
     for box in boxes:
         existing = await db.cash_boxes.find_one({"id": box["id"]})
