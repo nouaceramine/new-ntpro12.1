@@ -236,6 +236,22 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute adminOnly>
+            <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/bulk-price-update"
+        element={
+          <ProtectedRoute adminOnly>
+            <BulkPriceUpdatePage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
