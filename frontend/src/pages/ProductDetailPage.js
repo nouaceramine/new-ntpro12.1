@@ -192,7 +192,7 @@ export default function ProductDetailPage() {
                       <span className="text-sm font-medium">{t.price}</span>
                     </div>
                     <p className="text-2xl font-bold text-primary">
-                      ${product.price.toFixed(2)}
+                      ${(product.price ?? 0).toFixed(2)}
                     </p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50 border">
@@ -201,7 +201,7 @@ export default function ProductDetailPage() {
                       <span className="text-sm font-medium">{t.quantity}</span>
                     </div>
                     <p className="text-2xl font-bold">
-                      {product.quantity}
+                      {product.quantity ?? 0}
                     </p>
                   </div>
                 </div>
@@ -209,22 +209,24 @@ export default function ProductDetailPage() {
             </Card>
 
             {/* Compatible Models */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4">{t.compatibleModels}</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.compatible_models.map((model, idx) => (
-                    <span 
-                      key={idx} 
-                      className="model-badge text-sm px-3 py-1.5"
-                      data-testid={`compatible-model-${idx}`}
-                    >
-                      {model}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {product.compatible_models && product.compatible_models.length > 0 && (
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-lg mb-4">{t.compatibleModels}</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.compatible_models.map((model, idx) => (
+                      <span 
+                        key={idx} 
+                        className="model-badge text-sm px-3 py-1.5"
+                        data-testid={`compatible-model-${idx}`}
+                      >
+                        {model}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
