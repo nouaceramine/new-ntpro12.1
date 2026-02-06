@@ -102,6 +102,7 @@ class ProductUpdate(BaseModel):
     compatible_models: Optional[List[str]] = None
     low_stock_threshold: Optional[int] = None
     barcode: Optional[str] = None
+    family_id: Optional[str] = None
 
 class ProductResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
