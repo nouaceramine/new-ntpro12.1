@@ -224,19 +224,20 @@ export const Layout = ({ children }) => {
             )}
             <Button
               variant="outline"
-              className="w-full justify-start gap-2"
+              className={`w-full gap-2 ${sidebarCollapsed ? 'justify-center px-2' : 'justify-start'}`}
               onClick={handleLogout}
               data-testid="logout-btn"
+              title={sidebarCollapsed ? t.logout : ''}
             >
-              <LogOut className="h-4 w-4" />
-              {t.logout}
+              <LogOut className="h-4 w-4 flex-shrink-0" />
+              {!sidebarCollapsed && t.logout}
             </Button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className={`md:${isRTL ? 'mr-64' : 'ml-64'}`}>
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'md:ms-16' : 'md:ms-64'}`}>
         {/* Desktop Header */}
         <header className="hidden md:flex items-center justify-between h-16 px-8 bg-card/80 backdrop-blur-md border-b sticky top-0 z-40">
           {/* Search Bar */}
