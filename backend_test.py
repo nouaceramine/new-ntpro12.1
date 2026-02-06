@@ -178,20 +178,39 @@ class MobileGlassAPITester:
         return success
 
     def test_search_products(self):
-        """Test product search functionality"""
-        success1, _ = self.run_test(
+        """Test product search functionality including compatible models"""
+        # Search by name
+        success1, response1 = self.run_test(
             "Search Products by Name",
             "GET",
             "products?search=Test",
             200
         )
-        success2, _ = self.run_test(
-            "Search Products by Model",
-            "GET",
-            "products?model=iPhone",
+        
+        # Search by compatible model (new feature)
+        success2, response2 = self.run_test(
+            "Search Products by Compatible Model",
+            "GET", 
+            "products?search=iPhone",
             200
         )
-        return success1 and success2
+        
+        # Test specific model search
+        success3, response3 = self.run_test(
+            "Search Products with Model Parameter",
+            "GET",
+            "products?model=Galaxy",
+            200
+        )
+        
+        if success1:
+            print(f"   Found {len(response1)} products by name")
+        if success2:
+            print(f"   Found {len(response2)} products by compatible model")
+        if success3:
+            print(f"   Found {len(response3)} products with model parameter")
+            
+        return success1 and success2 and success3
 
     def test_get_single_product(self):
         """Test getting a single product"""
