@@ -220,10 +220,14 @@ class SaleResponse(BaseModel):
     items: List[SaleItem]
     subtotal: float
     discount: float
+    delivery_fee: float = 0
     total: float
     paid_amount: float
+    debt_amount: float = 0
     remaining: float
     payment_method: str
+    payment_type: str = "cash"
+    delivery: Optional[dict] = None
     status: str  # paid, partial, unpaid
     notes: str
     created_at: str
