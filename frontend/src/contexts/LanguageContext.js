@@ -18,6 +18,56 @@ const translations = {
     no: 'No',
     currency: 'دج',
     
+    // Settings & System
+    settings: 'Settings',
+    systemSettings: 'System Settings',
+    factoryReset: 'Factory Reset',
+    factoryResetConfirm: 'Are you sure? All data will be deleted!',
+    factoryResetCode: 'Enter confirmation code',
+    factoryResetSuccess: 'Factory reset completed',
+    dataWillBeDeleted: 'The following data will be deleted:',
+    resetConfirmCode: 'RESET-ALL-DATA',
+    
+    // Permissions
+    permissions: 'Permissions',
+    userPermissions: 'User Permissions',
+    rolePermissions: 'Role Permissions',
+    customPermissions: 'Custom Permissions',
+    resetToDefault: 'Reset to Default',
+    viewPermission: 'View',
+    addPermission: 'Add',
+    editPermission: 'Edit',
+    deletePermission: 'Delete',
+    manager: 'Manager',
+    
+    // Sidebar
+    hideSidebar: 'Hide Sidebar',
+    showSidebar: 'Show Sidebar',
+    collapseSidebar: 'Collapse Sidebar',
+    expandSidebar: 'Expand Sidebar',
+    
+    // Barcode
+    generateBarcode: 'Generate Barcode',
+    generateSku: 'Generate SKU',
+    barcodeGenerated: 'Barcode generated',
+    
+    // Bulk Price Update
+    bulkPriceUpdate: 'Bulk Price Update',
+    priceUpdateType: 'Update Type',
+    percentageChange: 'Percentage',
+    fixedAmount: 'Fixed Amount',
+    setPrice: 'Set Price',
+    priceField: 'Price Field',
+    allPrices: 'All Prices',
+    roundTo: 'Round To',
+    previewChanges: 'Preview Changes',
+    applyChanges: 'Apply Changes',
+    priceUpdated: 'Prices updated',
+    
+    // Quick Add Family
+    addNewFamily: 'Add New Family',
+    quickAddFamily: 'Quick Add',
+    
     // Auth
     login: 'Login',
     register: 'Register',
