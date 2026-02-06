@@ -346,14 +346,14 @@ export default function ProductFamiliesPage() {
               <div>
                 <Label>{t.parentFamily}</Label>
                 <Select
-                  value={form.parent_id}
-                  onValueChange={(value) => setForm({ ...form, parent_id: value })}
+                  value={form.parent_id || "no-parent"}
+                  onValueChange={(value) => setForm({ ...form, parent_id: value === "no-parent" ? "" : value })}
                 >
                   <SelectTrigger data-testid="parent-family-select">
                     <SelectValue placeholder={t.noParent} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{t.noParent}</SelectItem>
+                    <SelectItem value="no-parent">{t.noParent}</SelectItem>
                     {families
                       .filter(f => !f.parent_id && f.id !== editingFamily?.id)
                       .map((f) => (
