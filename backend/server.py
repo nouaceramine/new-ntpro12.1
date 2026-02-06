@@ -2078,6 +2078,113 @@ async def get_recharge_stats(days: int = 30, admin: dict = Depends(get_admin_use
         "period_days": days
     }
 
+# ============ PRODUCT FAMILIES ROUTES ============
+
+@api_router.post("/product-families", response_model=ProductFamilyResponse)
+async def create_product_family(family: ProductFamilyCreate, admin: dict = Depends(get_admin_user)):
+    family_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get parent name if exists
+    parent_name = ""
+    if family.parent_id:
+        parent = await db.product_families.find_one({"id": family.parent_id}, {"_id": 0, "name_ar": 1})
+        if parent:
+            parent_name = parent["name_ar"]
+    
+    family_doc = {
+        "id": family_id,
+        "name_en": family.name_en,
+        "name_ar": family.name_ar,
+        "description_en": family.description_en or "",
+        "description_ar": family.description_ar or "",
+        "parent_id": family.parent_id or "",
+        "parent_name": parent_name,
+        "product_count": 0,
+        "created_at": now
+    }
+    await db.product_families.insert_one(family_doc)
+    return ProductFamilyResponse(**family_doc)
+
+@api_router.get("/product-families", response_model=List[ProductFamilyResponse])
+async def get_product_families(user: dict = Depends(get_current_user)):
+    families = await db.product_families.find({}, {"_id": 0}).to_list(1000)
+    
+    # Update product counts
+    for family in families:
+        count = await db.products.count_documents({"family_id": family["id"]})
+        family["product_count"] = count
+    
+    return [ProductFamilyResponse(**f) for f in families]
+
+@api_router.get("/product-families/{family_id}", response_model=ProductFamilyResponse)
+async def get_product_family(family_id: str, user: dict = Depends(get_current_user)):
+    family = await db.product_families.find_one({"id": family_id}, {"_id": 0})
+    if not family:
+        raise HTTPException(status_code=404, detail="Product family not found")
+    
+    # Update product count
+    count = await db.products.count_documents({"family_id": family_id})
+    family["product_count"] = count
+    
+    return ProductFamilyResponse(**family)
+
+@api_router.put("/product-families/{family_id}", response_model=ProductFamilyResponse)
+async def update_product_family(family_id: str, updates: ProductFamilyUpdate, admin: dict = Depends(get_admin_user)):
+    family = await db.product_families.find_one({"id": family_id})
+    if not family:
+        raise HTTPException(status_code=404, detail="Product family not found")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    
+    # Update parent name if parent_id changed
+    if "parent_id" in update_data and update_data["parent_id"]:
+        parent = await db.product_families.find_one({"id": update_data["parent_id"]}, {"_id": 0, "name_ar": 1})
+        update_data["parent_name"] = parent["name_ar"] if parent else ""
+    elif "parent_id" in update_data and not update_data["parent_id"]:
+        update_data["parent_name"] = ""
+    
+    if update_data:
+        await db.product_families.update_one({"id": family_id}, {"$set": update_data})
+    
+    updated = await db.product_families.find_one({"id": family_id}, {"_id": 0})
+    count = await db.products.count_documents({"family_id": family_id})
+    updated["product_count"] = count
+    
+    return ProductFamilyResponse(**updated)
+
+@api_router.delete("/product-families/{family_id}")
+async def delete_product_family(family_id: str, admin: dict = Depends(get_admin_user)):
+    # Check if family has products
+    product_count = await db.products.count_documents({"family_id": family_id})
+    if product_count > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete family with {product_count} products")
+    
+    # Check if family has children
+    child_count = await db.product_families.count_documents({"parent_id": family_id})
+    if child_count > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete family with {child_count} sub-families")
+    
+    result = await db.product_families.delete_one({"id": family_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product family not found")
+    return {"message": "Product family deleted successfully"}
+
+@api_router.get("/product-families/{family_id}/products", response_model=List[ProductResponse])
+async def get_family_products(family_id: str, user: dict = Depends(get_current_user)):
+    """Get all products in a specific family"""
+    products = await db.products.find({"family_id": family_id}, {"_id": 0}).to_list(1000)
+    
+    # Add family names
+    for product in products:
+        if product.get("family_id"):
+            family = await db.product_families.find_one({"id": product["family_id"]}, {"_id": 0, "name_ar": 1})
+            product["family_name"] = family["name_ar"] if family else ""
+        else:
+            product["family_name"] = ""
+    
+    return [ProductResponse(**p) for p in products]
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
