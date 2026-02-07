@@ -7,7 +7,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Literal
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -15,9 +15,21 @@ import jwt
 import bcrypt
 import io
 import requests as http_requests
+import asyncio
+
+# Try to import resend
+try:
+    import resend
+    RESEND_AVAILABLE = True
+except ImportError:
+    RESEND_AVAILABLE = False
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Initialize resend if available
+if RESEND_AVAILABLE:
+    resend.api_key = os.environ.get('RESEND_API_KEY', '')
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
