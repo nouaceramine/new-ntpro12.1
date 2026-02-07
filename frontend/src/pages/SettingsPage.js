@@ -154,6 +154,16 @@ export default function SettingsPage() {
   });
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
 
+  // Email Settings
+  const [emailSettings, setEmailSettings] = useState({
+    enabled: false,
+    resend_api_key: '',
+    sender_email: 'onboarding@resend.dev',
+    sender_name: 'NT POS System'
+  });
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [testingEmail, setTestingEmail] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -163,13 +173,14 @@ export default function SettingsPage() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [usersRes, statsRes, rolesRes, sysSettingsRes, brandingRes, whatsappRes] = await Promise.all([
+      const [usersRes, statsRes, rolesRes, sysSettingsRes, brandingRes, whatsappRes, emailRes] = await Promise.all([
         axios.get(`${API}/users`, { headers }),
         axios.get(`${API}/system/stats`, { headers }).catch(() => ({ data: null })),
         axios.get(`${API}/permissions/roles`, { headers }),
         axios.get(`${API}/system/settings`, { headers }).catch(() => ({ data: null })),
         axios.get(`${API}/branding/settings`).catch(() => ({ data: null })),
-        axios.get(`${API}/whatsapp/settings`, { headers }).catch(() => ({ data: null }))
+        axios.get(`${API}/whatsapp/settings`, { headers }).catch(() => ({ data: null })),
+        axios.get(`${API}/email/settings`, { headers }).catch(() => ({ data: null }))
       ]);
       
       setUsers(usersRes.data);
