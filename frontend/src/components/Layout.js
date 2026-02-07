@@ -117,7 +117,6 @@ export const Layout = ({ children }) => {
       icon: LayoutDashboard,
       items: [
         { path: '/', icon: LayoutDashboard, label: t.dashboard },
-        { path: '/pos', icon: ShoppingCart, label: t.pos },
       ]
     },
     {
