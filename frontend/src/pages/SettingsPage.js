@@ -194,6 +194,21 @@ export default function SettingsPage() {
     }
   };
 
+  const saveSystemSettings = async () => {
+    setSavingSystemSettings(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/system/settings`, systemSettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم حفظ الإعدادات بنجاح' : 'Paramètres enregistrés');
+    } catch (error) {
+      toast.error(t.error);
+    } finally {
+      setSavingSystemSettings(false);
+    }
+  };
+
   const handleFactoryReset = async () => {
     if (resetCode !== 'RESET-ALL-DATA') {
       toast.error(language === 'ar' ? 'كود التأكيد غير صحيح' : 'Invalid confirmation code');
