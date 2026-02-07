@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import { 
   ShoppingCart, 
   Search, 
@@ -35,7 +36,8 @@ import {
   User,
   Truck,
   AlertCircle,
-  FolderTree
+  FolderTree,
+  Clock
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
