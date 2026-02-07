@@ -1247,7 +1247,7 @@ async def add_to_blacklist(entry: BlacklistEntry, user: dict = Depends(get_curre
     
     return BlacklistResponse(**blacklist_doc)
 
-@api_router.delete("/customers/blacklist/{entry_id}")
+@api_router.delete("/blacklist/{entry_id}")
 async def remove_from_blacklist(entry_id: str, user: dict = Depends(get_current_user)):
     """Remove phone from blacklist"""
     entry = await db.customer_blacklist.find_one({"id": entry_id})
@@ -1263,7 +1263,7 @@ async def remove_from_blacklist(entry_id: str, user: dict = Depends(get_current_
     await db.customer_blacklist.delete_one({"id": entry_id})
     return {"message": "تم إزالة الرقم من القائمة السوداء"}
 
-@api_router.get("/customers/check-blacklist/{phone}")
+@api_router.get("/blacklist/check/{phone}")
 async def check_blacklist(phone: str, user: dict = Depends(get_current_user)):
     """Check if a phone is blacklisted"""
     entry = await db.customer_blacklist.find_one({"phone": phone}, {"_id": 0})
