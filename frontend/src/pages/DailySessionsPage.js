@@ -441,14 +441,6 @@ export default function DailySessionsPage() {
   }
 
   function renderAllSessionsTable() {
-    const [allSessions, setAllSessions] = useState([]);
-    
-    useEffect(() => {
-      axios.get(`${API}/daily-sessions?all_users=true`)
-        .then(res => setAllSessions(res.data))
-        .catch(() => {});
-    }, []);
-
     return (
       <Card>
         <CardHeader>
