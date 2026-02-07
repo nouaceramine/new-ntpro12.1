@@ -183,15 +183,78 @@ export default function DailySessionsPage() {
         status: 'closed'
       };
       
+      // Calculate comprehensive report before closing
+      const cashSalesTotal = todaySales.filter(s => s.payment_type === 'cash').reduce((sum, s) => sum + s.total, 0);
+      const creditSalesTotal = todaySales.filter(s => s.payment_type === 'credit').reduce((sum, s) => sum + s.total, 0);
+      const partialSalesTotal = todaySales.filter(s => s.payment_type === 'partial').reduce((sum, s) => sum + s.total, 0);
+      const partialPaidAmount = todaySales.filter(s => s.payment_type === 'partial').reduce((sum, s) => sum + s.paid_amount, 0);
+      const totalSales = todaySales.reduce((sum, s) => sum + s.total, 0);
+      const totalCollected = cashSalesTotal + partialPaidAmount;
+      const totalDebts = creditSalesTotal + (partialSalesTotal - partialPaidAmount);
+      
+      // Expected cash = opening + cash sales + partial payments
+      const expectedCash = (currentSession.opening_cash || 0) + totalCollected;
+      const cashDifference = actualCash - expectedCash;
+      
+      // Calculate profit (needs purchase data - simplified)
+      const estimatedProfit = totalSales * 0.15; // Placeholder - should be actual profit
+      
+      const report = {
+        sessionId: currentSession.id,
+        openedAt: currentSession.opened_at,
+        closedAt: new Date().toISOString(),
+        openingCash: currentSession.opening_cash || 0,
+        closingCash: actualCash,
+        expectedCash: expectedCash,
+        cashDifference: cashDifference,
+        salesCount: todaySales.length,
+        totalSales: totalSales,
+        cashSales: cashSalesTotal,
+        creditSales: creditSalesTotal,
+        partialSales: partialSalesTotal,
+        partialPaid: partialPaidAmount,
+        totalCollected: totalCollected,
+        totalDebts: totalDebts,
+        estimatedProfit: estimatedProfit,
+        notes: closingNotes,
+        salesByPaymentType: [
+          { type: 'cash', label: language === 'ar' ? 'نقدي' : 'Espèces', count: todaySales.filter(s => s.payment_type === 'cash').length, total: cashSalesTotal },
+          { type: 'credit', label: language === 'ar' ? 'دين' : 'Crédit', count: todaySales.filter(s => s.payment_type === 'credit').length, total: creditSalesTotal },
+          { type: 'partial', label: language === 'ar' ? 'جزئي' : 'Partiel', count: todaySales.filter(s => s.payment_type === 'partial').length, total: partialSalesTotal }
+        ],
+        topCustomers: getTopCustomers(todaySales)
+      };
+      
       await axios.put(`${API}/daily-sessions/${currentSession.id}/close`, closingData);
-      setCurrentSession(null);
+      
+      // Set report and show it
+      setClosingReport(report);
       setShowCloseDialog(false);
+      setShowClosingReport(true);
+      
+      setCurrentSession(null);
       setClosingNotes('');
-      toast.success(language === 'ar' ? 'تم غلق الحصة بنجاح' : 'Session fermée avec succès');
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || t.somethingWentWrong);
     }
+  };
+
+  // Get top customers from sales
+  const getTopCustomers = (sales) => {
+    const customerTotals = {};
+    sales.forEach(sale => {
+      if (sale.customer_name) {
+        if (!customerTotals[sale.customer_name]) {
+          customerTotals[sale.customer_name] = { name: sale.customer_name, total: 0, count: 0 };
+        }
+        customerTotals[sale.customer_name].total += sale.total;
+        customerTotals[sale.customer_name].count += 1;
+      }
+    });
+    return Object.values(customerTotals)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
   };
 
   const viewSessionDetails = (session) => {
