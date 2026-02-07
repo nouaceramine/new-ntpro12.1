@@ -92,6 +92,15 @@ export default function SettingsPage() {
     ]
   });
   
+  // System Settings
+  const [systemSettings, setSystemSettings] = useState({
+    cash_difference_threshold: 1000,
+    low_stock_threshold: 10,
+    currency_symbol: 'دج',
+    business_name: 'NT'
+  });
+  const [savingSystemSettings, setSavingSystemSettings] = useState(false);
+  
   // Printer Settings
   const [printerSettings, setPrinterSettings] = useState({
     enabled: false,
