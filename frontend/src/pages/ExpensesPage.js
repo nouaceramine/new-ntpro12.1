@@ -598,6 +598,62 @@ export default function ExpensesPage() {
                 />
               </div>
 
+              {/* Recurring Options */}
+              <div className="p-4 border rounded-lg space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-base">{language === 'ar' ? 'تكلفة متكررة' : 'Dépense récurrente'}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ar' ? 'تفعيل التذكير التلقائي' : 'Activer le rappel automatique'}
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.recurring}
+                    onChange={(e) => setFormData(p => ({ ...p, recurring: e.target.checked }))}
+                    className="w-5 h-5 accent-primary"
+                  />
+                </div>
+                
+                {formData.recurring && (
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-2">
+                      <Label>{language === 'ar' ? 'فترة التكرار' : 'Période'}</Label>
+                      <Select 
+                        value={formData.recurring_period} 
+                        onValueChange={(v) => setFormData(p => ({ ...p, recurring_period: v }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="weekly">{language === 'ar' ? 'أسبوعي' : 'Hebdomadaire'}</SelectItem>
+                          <SelectItem value="monthly">{language === 'ar' ? 'شهري' : 'Mensuel'}</SelectItem>
+                          <SelectItem value="yearly">{language === 'ar' ? 'سنوي' : 'Annuel'}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{language === 'ar' ? 'التذكير قبل (أيام)' : 'Rappel avant (jours)'}</Label>
+                      <Select 
+                        value={formData.reminder_days_before?.toString()} 
+                        onValueChange={(v) => setFormData(p => ({ ...p, reminder_days_before: parseInt(v) }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 {language === 'ar' ? 'يوم' : 'jour'}</SelectItem>
+                          <SelectItem value="3">3 {language === 'ar' ? 'أيام' : 'jours'}</SelectItem>
+                          <SelectItem value="5">5 {language === 'ar' ? 'أيام' : 'jours'}</SelectItem>
+                          <SelectItem value="7">7 {language === 'ar' ? 'أيام' : 'jours'}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2 pt-4">
                 <Button variant="outline" className="flex-1" onClick={() => setShowAddDialog(false)}>
                   {language === 'ar' ? 'إلغاء' : 'Annuler'}
