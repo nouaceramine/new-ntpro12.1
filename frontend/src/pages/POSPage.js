@@ -89,6 +89,9 @@ export default function POSPage() {
   const [showDebtDialog, setShowDebtDialog] = useState(false);
   const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
   const [showDeliveryDialog, setShowDeliveryDialog] = useState(false);
+  const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
+  const [newCustomerData, setNewCustomerData] = useState({ name: '', phone: '', email: '', address: '' });
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   useEffect(() => {
     checkOpenSession();
