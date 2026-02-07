@@ -318,6 +318,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/woocommerce"
+        element={
+          <ProtectedRoute adminOnly>
+            <WooCommercePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/shipping"
+        element={
+          <ProtectedRoute adminOnly>
+            <ShippingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sim-management"
+        element={
+          <ProtectedRoute adminOnly>
+            <SimManagementPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
