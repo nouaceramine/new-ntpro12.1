@@ -1307,6 +1307,76 @@ export default function POSPage() {
                 placeholder="05XX XXX XXX"
                 dir="ltr"
               />
+              {newCustomerData.phone && blacklist.some(b => b.phone === newCustomerData.phone) && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <Ban className="h-3 w-3" />
+                  {language === 'ar' ? 'هذا الرقم في القائمة السوداء!' : 'Ce numéro est sur liste noire!'}
+                </p>
+              )}
+            </div>
+
+            {/* Customer Family Selection */}
+            <div>
+              <Label className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                {language === 'ar' ? 'عائلة الزبون' : 'Famille du client'}
+              </Label>
+              {!showNewFamilyInput ? (
+                <div className="flex gap-2">
+                  <Select 
+                    value={newCustomerData.family_id || 'none'} 
+                    onValueChange={(v) => setNewCustomerData(prev => ({ ...prev, family_id: v === 'none' ? '' : v }))}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder={language === 'ar' ? 'اختر العائلة' : 'Choisir famille'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{language === 'ar' ? 'بدون عائلة' : 'Sans famille'}</SelectItem>
+                      {customerFamilies.map(f => (
+                        <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowNewFamilyInput(true)}
+                    title={language === 'ar' ? 'إضافة عائلة جديدة' : 'Ajouter nouvelle famille'}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    value={newFamilyName}
+                    onChange={(e) => setNewFamilyName(e.target.value)}
+                    placeholder={language === 'ar' ? 'اسم العائلة الجديدة' : 'Nom de la nouvelle famille'}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    onClick={handleAddCustomerFamily}
+                    disabled={!newFamilyName.trim()}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      setShowNewFamilyInput(false);
+                      setNewFamilyName('');
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
 
             <div>
@@ -1334,7 +1404,9 @@ export default function POSPage() {
                 variant="outline" 
                 onClick={() => {
                   setShowNewCustomerDialog(false);
-                  setNewCustomerData({ name: '', phone: '', email: '', address: '' });
+                  setNewCustomerData({ name: '', phone: '', email: '', address: '', family_id: '' });
+                  setShowNewFamilyInput(false);
+                  setNewFamilyName('');
                 }} 
                 className="flex-1"
               >
@@ -1342,7 +1414,7 @@ export default function POSPage() {
               </Button>
               <Button 
                 onClick={handleAddCustomer} 
-                disabled={savingCustomer || !newCustomerData.name}
+                disabled={savingCustomer || !newCustomerData.name || (newCustomerData.phone && blacklist.some(b => b.phone === newCustomerData.phone))}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
                 {savingCustomer ? (language === 'ar' ? 'جاري الحفظ...' : 'Enregistrement...') : (language === 'ar' ? 'حفظ' : 'Enregistrer')}
