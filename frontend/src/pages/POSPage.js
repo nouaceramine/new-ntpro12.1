@@ -190,12 +190,48 @@ export default function POSPage() {
     }
   };
 
+  const fetchCustomerFamilies = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/customer-families`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCustomerFamilies(response.data);
+    } catch (error) {
+      console.error('Error fetching customer families:', error);
+    }
+  };
+
   const fetchWilayas = async () => {
     try {
       const response = await axios.get(`${API}/delivery/wilayas`);
       setWilayas(response.data);
     } catch (error) {
       console.error('Error fetching wilayas:', error);
+    }
+  };
+
+  const fetchBlacklist = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/customers/blacklist`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBlacklist(response.data);
+    } catch (error) {
+      console.error('Error fetching blacklist:', error);
+    }
+  };
+
+  const fetchDebtReminders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/debt-reminders/pending`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDebtReminders(response.data);
+    } catch (error) {
+      console.error('Error fetching debt reminders:', error);
     }
   };
 
@@ -206,6 +242,19 @@ export default function POSPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCustomerDebt(response.data.total_debt || 0);
+      
+      // Check if customer is blacklisted
+      const customer = customers.find(c => c.id === customerId);
+      if (customer?.phone) {
+        const isBlacklisted = blacklist.some(b => b.phone === customer.phone);
+        setSelectedCustomerBlacklisted(isBlacklisted);
+        if (isBlacklisted) {
+          const entry = blacklist.find(b => b.phone === customer.phone);
+          setBlacklistReason(entry?.reason || '');
+        } else {
+          setBlacklistReason('');
+        }
+      }
     } catch (error) {
       setCustomerDebt(0);
     }
