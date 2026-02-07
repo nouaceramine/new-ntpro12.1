@@ -1214,13 +1214,13 @@ class BlacklistResponse(BaseModel):
     added_by_name: str = ""
     created_at: str
 
-@api_router.get("/customers/blacklist")
+@api_router.get("/blacklist")
 async def get_blacklist(user: dict = Depends(get_current_user)):
     """Get all blacklisted phone numbers"""
     blacklist = await db.customer_blacklist.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return blacklist
 
-@api_router.post("/customers/blacklist")
+@api_router.post("/blacklist")
 async def add_to_blacklist(entry: BlacklistEntry, user: dict = Depends(get_current_user)):
     """Add phone to blacklist"""
     # Check if already blacklisted
