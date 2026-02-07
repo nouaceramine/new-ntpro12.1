@@ -269,7 +269,23 @@ export default function CustomersPage() {
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   {t.cancel}
                 </Button>
-                <Button type="submit" data-testid="save-customer-btn">{t.save}</Button>
+                {!selectedCustomer && (
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => handleSubmit(null, true)}
+                    disabled={saving}
+                    className="gap-2"
+                    data-testid="save-and-new-customer-btn"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer nouveau'}
+                  </Button>
+                )}
+                <Button type="submit" disabled={saving} className="gap-2" data-testid="save-customer-btn">
+                  <Save className="h-4 w-4" />
+                  {saving ? (language === 'ar' ? 'جاري الحفظ...' : 'Enregistrement...') : t.save}
+                </Button>
               </div>
             </form>
           </DialogContent>
