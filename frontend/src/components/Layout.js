@@ -40,7 +40,6 @@ import {
   Clock,
   Store,
   Zap,
-  BarChart3,
   Award
 } from 'lucide-react';
 
