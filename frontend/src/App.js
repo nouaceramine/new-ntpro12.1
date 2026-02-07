@@ -34,6 +34,9 @@ import BarcodePrintPage from "./pages/BarcodePrintPage";
 import DailySessionsPage from "./pages/DailySessionsPage";
 import CustomerFamiliesPage from "./pages/CustomerFamiliesPage";
 import SupplierFamiliesPage from "./pages/SupplierFamiliesPage";
+import WooCommercePage from "./pages/WooCommercePage";
+import ShippingPage from "./pages/ShippingPage";
+import SimManagementPage from "./pages/SimManagementPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
