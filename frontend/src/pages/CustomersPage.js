@@ -205,19 +205,42 @@ export default function CustomersPage() {
           </Button>
         </div>
 
-        {/* Search */}
+        {/* Search & Filter */}
         <Card>
           <CardContent className="p-4">
-            <div className="relative">
-              <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
-              <Input
-                type="text"
-                placeholder={t.search}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
-                data-testid="customer-search-input"
-              />
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
+                <Input
+                  type="text"
+                  placeholder={t.search}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
+                  data-testid="customer-search-input"
+                />
+              </div>
+              
+              {/* Blacklist Filter */}
+              <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+                <Ban className={`h-4 w-4 ${showBlacklistOnly ? 'text-red-600' : 'text-gray-500'}`} />
+                <Label className="text-sm cursor-pointer" htmlFor="blacklist-filter">
+                  {language === 'ar' ? 'القائمة السوداء فقط' : 'Liste noire uniquement'}
+                </Label>
+                <Switch
+                  id="blacklist-filter"
+                  checked={showBlacklistOnly}
+                  onCheckedChange={setShowBlacklistOnly}
+                  data-testid="blacklist-filter-switch"
+                />
+              </div>
+              
+              {blacklist.length > 0 && (
+                <Badge variant="destructive" className="gap-1">
+                  <Ban className="h-3 w-3" />
+                  {blacklist.length} {language === 'ar' ? 'محظور' : 'bloqué(s)'}
+                </Badge>
+              )}
             </div>
           </CardContent>
         </Card>
