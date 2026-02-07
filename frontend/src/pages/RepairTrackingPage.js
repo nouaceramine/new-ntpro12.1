@@ -264,16 +264,6 @@ export default function RepairTrackingPage() {
     }
   };
 
-  const getStats = () => {
-    const total = repairs.length;
-    const inProgress = repairs.filter(r => ['received', 'diagnosing', 'waiting_parts', 'in_repair', 'testing'].includes(r.status)).length;
-    const ready = repairs.filter(r => r.status === 'ready').length;
-    const delivered = repairs.filter(r => r.status === 'delivered').length;
-    return { total, inProgress, ready, delivered };
-  };
-
-  const stats = getStats();
-
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in" data-testid="repair-tracking-page">
