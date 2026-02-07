@@ -1081,25 +1081,75 @@ export default function DailySessionsPage() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-2 pt-4">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => window.print()}
-              >
-                <FileText className="h-4 w-4 me-2" />
-                {language === 'ar' ? 'طباعة التقرير' : 'Imprimer'}
-              </Button>
-              <Button 
-                className="flex-1"
-                onClick={() => {
-                  setShowClosingReport(false);
-                  toast.success(language === 'ar' ? 'تم غلق الحصة بنجاح' : 'Session fermée avec succès');
-                  setClosingReport(null);
-                }}
-              >
-                {language === 'ar' ? 'إغلاق' : 'Fermer'}
-              </Button>
+            <div className="space-y-4 pt-4">
+              {/* Email Section */}
+              <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg space-y-3">
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  {language === 'ar' ? 'إرسال التقرير بالإيميل' : 'Envoyer par email'}
+                </h4>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder={language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                    value={reportEmail}
+                    onChange={(e) => setReportEmail(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={async () => {
+                      if (!reportEmail) {
+                        toast.error(language === 'ar' ? 'يرجى إدخال البريد الإلكتروني' : 'Veuillez entrer l\'email');
+                        return;
+                      }
+                      setSendingEmail(true);
+                      try {
+                        await axios.post(`${API}/email/send-session-report`, {
+                          recipient_email: reportEmail,
+                          session_id: closingReport.sessionId,
+                          report_data: closingReport
+                        });
+                        toast.success(language === 'ar' ? 'تم إرسال التقرير بنجاح' : 'Rapport envoyé');
+                        setReportEmail('');
+                      } catch (error) {
+                        toast.error(error.response?.data?.detail || (language === 'ar' ? 'فشل إرسال التقرير' : 'Échec d\'envoi'));
+                      } finally {
+                        setSendingEmail(false);
+                      }
+                    }}
+                    disabled={sendingEmail || !reportEmail}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {sendingEmail ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Other Buttons */}
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => window.print()}
+                >
+                  <FileText className="h-4 w-4 me-2" />
+                  {language === 'ar' ? 'طباعة التقرير' : 'Imprimer'}
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={() => {
+                    setShowClosingReport(false);
+                    toast.success(language === 'ar' ? 'تم غلق الحصة بنجاح' : 'Session fermée avec succès');
+                    setClosingReport(null);
+                  }}
+                >
+                  {language === 'ar' ? 'إغلاق' : 'Fermer'}
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
