@@ -40,6 +40,8 @@ import ShippingPage from "./pages/ShippingPage";
 import SimManagementPage from "./pages/SimManagementPage";
 import AdvancedAnalyticsPage from "./pages/AdvancedAnalyticsPage";
 import LoyaltyPage from "./pages/LoyaltyPage";
+import WholesaleServicesPage from "./pages/WholesaleServicesPage";
+import FlexyServicePage from "./pages/FlexyServicePage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
