@@ -4009,6 +4009,7 @@ class LoyaltySettings(BaseModel):
     points_per_dinar: float = 0.01  # نقطة لكل دينار
     points_value: float = 0.1  # قيمة النقطة بالدينار
     min_redeem_points: int = 100
+    welcome_bonus: int = 0  # نقاط ترحيبية للعميل الجديد
 
 class LoyaltyTransaction(BaseModel):
     customer_id: str
