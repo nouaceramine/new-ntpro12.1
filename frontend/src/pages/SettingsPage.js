@@ -498,6 +498,10 @@ export default function SettingsPage() {
               <Usb className="h-4 w-4" />
               {language === 'ar' ? 'شرائح USB' : 'SIM USB'}
             </TabsTrigger>
+            <TabsTrigger value="email" className="gap-2">
+              <Mail className="h-4 w-4" />
+              {language === 'ar' ? 'البريد' : 'Email'}
+            </TabsTrigger>
             <TabsTrigger value="system" className="gap-2">
               <Settings className="h-4 w-4" />
               {language === 'ar' ? 'النظام' : 'Système'}
