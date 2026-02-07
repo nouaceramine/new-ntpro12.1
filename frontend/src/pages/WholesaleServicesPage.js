@@ -263,6 +263,34 @@ export default function WholesaleServicesPage() {
                 </Card>
               </Link>
             </div>
+
+            {/* Additional Quick Actions */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <Link to="/services/transfers">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardContent className="p-4 text-center">
+                    <ArrowLeft className="h-8 w-8 mx-auto text-indigo-500 mb-2" />
+                    <p className="text-sm font-medium">{language === 'ar' ? 'التحويلات' : 'Transferts'}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link to="/services/directory">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardContent className="p-4 text-center">
+                    <Gift className="h-8 w-8 mx-auto text-cyan-500 mb-2" />
+                    <p className="text-sm font-medium">{language === 'ar' ? 'دليل الهاتف' : 'Annuaire'}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+              <Link to="/services/idoom">
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardContent className="p-4 text-center">
+                    <Wallet className="h-8 w-8 mx-auto text-teal-500 mb-2" />
+                    <p className="text-sm font-medium">{language === 'ar' ? 'الإستهلاك' : 'Consommation'}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
