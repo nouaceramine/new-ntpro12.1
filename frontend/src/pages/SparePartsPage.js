@@ -249,15 +249,16 @@ export default function SparePartsPage() {
     setEditingPart(null);
     setFormData({
       name: '',
-      name_fr: '',
+      name_ar: '',
       category: '',
-      brand: '',
+      compatible_brands: [],
       compatible_models: '',
-      purchase_price: '',
+      buy_price: '',
       sell_price: '',
       quantity: '',
-      low_stock_threshold: '5',
+      min_stock: '5',
       supplier: '',
+      notes: '',
     });
     setShowAddDialog(true);
   };
