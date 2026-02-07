@@ -618,6 +618,10 @@ export default function InventoryCountPage() {
             </Button>
           ) : (
             <div className="flex gap-2 flex-wrap">
+              <Button variant="outline" onClick={() => setShowImportDialog(true)} className="gap-2">
+                <Upload className="h-4 w-4" />
+                {language === 'ar' ? 'استيراد Excel' : 'Importer Excel'}
+              </Button>
               <Button variant="outline" onClick={exportReport} className="gap-2">
                 <FileSpreadsheet className="h-4 w-4" />
                 {language === 'ar' ? 'تصدير' : 'Exporter'}
