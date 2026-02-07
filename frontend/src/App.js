@@ -409,6 +409,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/services/profits"
+        element={
+          <ProtectedRoute>
+            <ProfitRatesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services/transfers"
+        element={
+          <ProtectedRoute>
+            <TransfersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services/directory"
+        element={
+          <ProtectedRoute>
+            <PhoneDirectoryPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
