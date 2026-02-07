@@ -3573,6 +3573,14 @@ async def pay_customer_debt(customer_id: str, payment: CustomerDebtPayment, user
     }
     await db.debt_payments.insert_one(payment_record)
     
+    # Update customer total_debt and balance
+    actual_payment = payment.amount - remaining_payment
+    if actual_payment > 0:
+        await db.customers.update_one(
+            {"id": customer_id},
+            {"$inc": {"total_debt": -actual_payment, "balance": -actual_payment}}
+        )
+    
     # Update cash management
     if payment.payment_method in ["cash", "bank", "wallet"]:
         await db.cash_transactions.insert_one({
