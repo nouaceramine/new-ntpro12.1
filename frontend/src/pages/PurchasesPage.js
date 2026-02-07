@@ -889,9 +889,6 @@ export default function PurchasesPage() {
                       </TableBody>
                     </Table>
                   )}
-                        </div>
-                      ))}
-                    </div>
                   )}
                 </div>
 
