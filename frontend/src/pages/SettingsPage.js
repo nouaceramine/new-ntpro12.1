@@ -383,10 +383,14 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="permissions" className="space-y-6">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
             <TabsTrigger value="permissions" className="gap-2">
               <Shield className="h-4 w-4" />
               {t.permissions}
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="gap-2">
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
             </TabsTrigger>
             <TabsTrigger value="printer" className="gap-2">
               <Printer className="h-4 w-4" />
