@@ -131,6 +131,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers();
+    fetchBlacklist();
   }, [searchQuery]);
 
   const handleSubmit = async (e, createNew = false) => {
