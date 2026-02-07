@@ -91,27 +91,69 @@ export const Layout = ({ children }) => {
     navigate('/login');
   };
 
-  const navItems = [
-    { path: '/', icon: LayoutDashboard, label: t.dashboard },
-    { path: '/pos', icon: ShoppingCart, label: t.pos },
-    { path: '/products', icon: Package, label: t.products },
-    { path: '/sales', icon: Receipt, label: t.sales },
-    { path: '/purchases', icon: ShoppingBag, label: t.purchases },
-    { path: '/recharge', icon: Smartphone, label: t.recharge },
-    { path: '/customers', icon: Users, label: t.customers },
-    { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
-    ...(isAdmin ? [
-      { path: '/product-families', icon: FolderTree, label: t.productFamilies },
-      { path: '/bulk-price-update', icon: DollarSign, label: t.bulkPriceUpdate },
-      { path: '/suppliers', icon: Truck, label: t.suppliers },
-      { path: '/employees', icon: Users, label: t.employees },
-      { path: '/debts', icon: Receipt, label: t.debts },
-      { path: '/cash', icon: Wallet, label: t.cashManagement },
-      { path: '/reports', icon: LayoutDashboard, label: t.reports },
-      { path: '/api-keys', icon: Key, label: t.apiKeys },
-      { path: '/users', icon: Shield, label: t.users },
-      { path: '/settings', icon: Settings, label: t.settings }
-    ] : [])
+  const navSections = [
+    {
+      title: language === 'ar' ? 'الرئيسية' : 'Principal',
+      icon: LayoutDashboard,
+      items: [
+        { path: '/', icon: LayoutDashboard, label: t.dashboard },
+        { path: '/pos', icon: ShoppingCart, label: t.pos },
+      ]
+    },
+    {
+      title: language === 'ar' ? 'المخزون' : 'Stock',
+      icon: Package,
+      items: [
+        { path: '/products', icon: Package, label: t.products },
+        ...(isAdmin ? [
+          { path: '/product-families', icon: FolderTree, label: t.productFamilies },
+          { path: '/bulk-price-update', icon: DollarSign, label: t.bulkPriceUpdate },
+        ] : [])
+      ]
+    },
+    {
+      title: language === 'ar' ? 'المالية' : 'Finances',
+      icon: Wallet,
+      items: [
+        { path: '/sales', icon: Receipt, label: t.sales },
+        { path: '/purchases', icon: ShoppingBag, label: t.purchases },
+        ...(isAdmin ? [
+          { path: '/cash', icon: Wallet, label: t.cashManagement },
+          { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
+          { path: '/debts', icon: Receipt, label: t.debts },
+        ] : [
+          { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
+        ])
+      ]
+    },
+    {
+      title: language === 'ar' ? 'العلاقات' : 'Relations',
+      icon: Users,
+      items: [
+        { path: '/customers', icon: Users, label: t.customers },
+        ...(isAdmin ? [
+          { path: '/suppliers', icon: Truck, label: t.suppliers },
+          { path: '/employees', icon: Users, label: t.employees },
+        ] : [])
+      ]
+    },
+    {
+      title: language === 'ar' ? 'الخدمات' : 'Services',
+      icon: Smartphone,
+      items: [
+        { path: '/recharge', icon: Smartphone, label: t.recharge },
+      ]
+    },
+    ...(isAdmin ? [{
+      title: language === 'ar' ? 'الإدارة' : 'Administration',
+      icon: Settings,
+      items: [
+        { path: '/reports', icon: BarChart3, label: t.reports },
+        { path: '/users', icon: Shield, label: t.users },
+        { path: '/api-keys', icon: Key, label: t.apiKeys },
+        { path: '/settings', icon: Settings, label: t.settings },
+      ]
+    }] : [])
   ];
 
   const isActive = (path) => {
