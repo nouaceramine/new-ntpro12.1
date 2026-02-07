@@ -40,7 +40,9 @@ import {
   Pencil, 
   Trash2, 
   FolderTree,
-  Search
+  Search,
+  PlusCircle,
+  Save
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
