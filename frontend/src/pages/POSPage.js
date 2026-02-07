@@ -1589,6 +1589,144 @@ export default function POSPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Advanced Payment Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <DollarSign className="h-6 w-6 text-green-600" />
+              {language === 'ar' ? 'تفاصيل الدفع' : 'Détails du paiement'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Total */}
+            <div className="bg-gray-100 rounded-lg p-4 text-center">
+              <p className="text-sm text-muted-foreground mb-1">{language === 'ar' ? 'الإجمالي' : 'Total'}</p>
+              <p className="text-3xl font-bold text-primary">{formatCurrency(total)} <span className="text-base">{t.currency}</span></p>
+            </div>
+
+            {/* Cash Amount */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Banknote className="h-4 w-4 text-green-600" />
+                {language === 'ar' ? 'نقدي' : 'Espèces'}
+              </Label>
+              <Input
+                type="number"
+                value={cashAmount || ''}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  setCashAmount(value);
+                  // Auto calculate credit
+                  const newRemaining = total - value - bankAmount;
+                  setCreditAmount(Math.max(0, newRemaining));
+                }}
+                placeholder="0.00"
+                className="text-lg h-12"
+                dir="ltr"
+                data-testid="cash-amount-input"
+              />
+            </div>
+
+            {/* Bank Transfer */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-blue-600" />
+                {language === 'ar' ? 'تحويل بنكي' : 'Virement'}
+              </Label>
+              <Input
+                type="number"
+                value={bankAmount || ''}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  setBankAmount(value);
+                  // Auto calculate credit
+                  const newRemaining = total - cashAmount - value;
+                  setCreditAmount(Math.max(0, newRemaining));
+                }}
+                placeholder="0.00"
+                className="text-lg h-12"
+                dir="ltr"
+                data-testid="bank-amount-input"
+              />
+            </div>
+
+            {/* Credit (Debt) */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-amber-600" />
+                {language === 'ar' ? 'دين (كريدي)' : 'Crédit'}
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  value={creditAmount || ''}
+                  onChange={(e) => setCreditAmount(parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                  className="text-lg h-12 bg-amber-50 border-amber-300"
+                  dir="ltr"
+                  readOnly
+                  data-testid="credit-amount-input"
+                />
+              </div>
+              {creditAmount > 0 && !selectedCustomer && (
+                <p className="text-sm text-red-500 flex items-center gap-1">
+                  <AlertCircle className="h-4 w-4" />
+                  {language === 'ar' ? 'يجب اختيار زبون للدين' : 'Sélectionnez un client pour le crédit'}
+                </p>
+              )}
+              {creditAmount > 0 && selectedCustomer && (
+                <p className="text-sm text-green-600 flex items-center gap-1">
+                  <Check className="h-4 w-4" />
+                  {language === 'ar' ? 'سيتم تسجيل الدين على الزبون المختار' : 'Le crédit sera enregistré pour le client'}
+                </p>
+              )}
+            </div>
+
+            {/* Summary */}
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>{language === 'ar' ? 'المدفوع:' : 'Total payé:'}</span>
+                <span className="font-bold text-green-600">{formatCurrency(totalPaid)} {t.currency}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>{language === 'ar' ? 'الباقي للدفع:' : 'Reste à payer:'}</span>
+                <span className={`font-bold ${remainingToPay > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {formatCurrency(Math.max(0, remainingToPay))} {t.currency}
+                </span>
+              </div>
+              {changeAmount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>{language === 'ar' ? 'الباقي للعميل:' : 'Monnaie:'}</span>
+                  <span className="font-bold text-blue-600">{formatCurrency(changeAmount)} {t.currency}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowPaymentDialog(false)}
+                className="flex-1 h-12"
+              >
+                {t.cancel}
+              </Button>
+              <Button
+                onClick={completeSaleWithPayment}
+                disabled={loading || (creditAmount > 0 && !selectedCustomer)}
+                className="flex-1 h-12 bg-green-600 hover:bg-green-700 gap-2"
+                data-testid="confirm-payment-btn"
+              >
+                <Check className="h-5 w-5" />
+                {loading ? (language === 'ar' ? 'جاري...' : 'Chargement...') : (language === 'ar' ? 'تأكيد' : 'Confirmer')}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
