@@ -204,6 +204,16 @@ export default function SettingsPage() {
           business_account_id: whatsappRes.data.business_account_id || ''
         }));
       }
+      
+      if (emailRes.data) {
+        setEmailSettings(prev => ({
+          ...prev,
+          enabled: emailRes.data.enabled || false,
+          resend_api_key: emailRes.data.resend_api_key || '',
+          sender_email: emailRes.data.sender_email || 'onboarding@resend.dev',
+          sender_name: emailRes.data.sender_name || 'NT POS System'
+        }));
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error(t.error);
