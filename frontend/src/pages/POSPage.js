@@ -219,7 +219,7 @@ export default function POSPage() {
   const fetchBlacklist = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API}/customers/blacklist`, {
+      const response = await axios.get(`${API}/blacklist`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setBlacklist(response.data);
