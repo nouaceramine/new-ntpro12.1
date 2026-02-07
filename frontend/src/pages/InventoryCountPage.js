@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Layout } from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
@@ -58,6 +59,9 @@ import {
   Minus,
   FileText,
   Download,
+  Upload,
+  FileUp,
+  Table as TableIcon,
   Calendar,
   ScanLine,
   Filter,
