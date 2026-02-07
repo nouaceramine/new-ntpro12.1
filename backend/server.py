@@ -3890,6 +3890,60 @@ async def close_daily_session(session_id: str, closing_data: DailySessionClose, 
     if "user_name" not in updated:
         updated["user_name"] = session.get("user_name", session.get("created_by", ""))
     
+    # Check for significant cash difference and create notifications
+    DIFFERENCE_THRESHOLD = 1000  # 1000 دج
+    expected_cash = session.get("opening_cash", 0) + cash_sales
+    actual_cash = closing_data.closing_cash
+    difference = actual_cash - expected_cash
+    
+    if abs(difference) >= DIFFERENCE_THRESHOLD:
+        employee_name = session.get("user_name", session.get("created_by", "موظف"))
+        now = datetime.now(timezone.utc).isoformat()
+        
+        if difference < 0:
+            # Deficit notification
+            notification_type = "cash_deficit"
+            title_ar = f"عجز في صندوق {employee_name}"
+            title_fr = f"Déficit caisse {employee_name}"
+            message_ar = f"تم تسجيل عجز بقيمة {abs(difference):.2f} دج في حصة {employee_name}"
+            message_fr = f"Déficit de {abs(difference):.2f} DA dans la session de {employee_name}"
+        else:
+            # Surplus notification
+            notification_type = "cash_surplus"
+            title_ar = f"فائض في صندوق {employee_name}"
+            title_fr = f"Excédent caisse {employee_name}"
+            message_ar = f"تم تسجيل فائض بقيمة {difference:.2f} دج في حصة {employee_name}"
+            message_fr = f"Excédent de {difference:.2f} DA dans la session de {employee_name}"
+        
+        # Get all admin users
+        admin_users = await db.users.find({"role": "admin"}, {"_id": 0, "id": 1}).to_list(50)
+        admin_ids = [u["id"] for u in admin_users]
+        
+        # Recipients: admins + the employee
+        recipients = list(set(admin_ids + [session_user_id]))
+        
+        for recipient_id in recipients:
+            notification_doc = {
+                "id": str(uuid.uuid4()),
+                "user_id": recipient_id,
+                "type": notification_type,
+                "title": title_ar,
+                "title_fr": title_fr,
+                "message": message_ar,
+                "message_fr": message_fr,
+                "data": {
+                    "session_id": session_id,
+                    "employee_id": session_user_id,
+                    "employee_name": employee_name,
+                    "difference": difference,
+                    "expected": expected_cash,
+                    "actual": actual_cash
+                },
+                "read": False,
+                "created_at": now
+            }
+            await db.notifications.insert_one(notification_doc)
+    
     return DailySessionResponse(**updated)
 
 @api_router.delete("/daily-sessions/{session_id}")
