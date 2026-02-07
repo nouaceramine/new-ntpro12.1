@@ -1838,7 +1838,7 @@ async def create_sale(sale: SaleCreate, user: dict = Depends(get_current_user)):
     if sale.customer_id:
         await db.customers.update_one(
             {"id": sale.customer_id},
-            {"$inc": {"total_purchases": final_total, "balance": debt_amount}}
+            {"$inc": {"total_purchases": final_total, "balance": debt_amount, "total_debt": debt_amount}}
         )
     
     # Update cash box
