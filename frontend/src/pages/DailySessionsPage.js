@@ -907,4 +907,200 @@ export default function DailySessionsPage() {
       </Dialog>
     );
   }
+
+  function renderClosingReportDialog() {
+    if (!closingReport) return null;
+    
+    const formatCurrency = (amount) => {
+      return new Intl.NumberFormat('ar-DZ', { minimumFractionDigits: 2 }).format(amount || 0);
+    };
+
+    return (
+      <Dialog open={showClosingReport} onOpenChange={(open) => {
+        setShowClosingReport(open);
+        if (!open) {
+          toast.success(language === 'ar' ? 'تم غلق الحصة بنجاح' : 'Session fermée avec succès');
+          setClosingReport(null);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <FileText className="h-6 w-6 text-primary" />
+              {language === 'ar' ? 'تقرير غلق الحصة' : 'Rapport de clôture'}
+            </DialogTitle>
+            <DialogDescription>
+              {language === 'ar' ? 'ملخص شامل لنشاط الحصة' : 'Résumé complet de l\'activité de la session'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            {/* Time Info */}
+            <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">{language === 'ar' ? 'وقت الفتح' : 'Ouverture'}</p>
+                <p className="font-medium">{new Date(closingReport.openedAt).toLocaleTimeString('ar-DZ')}</p>
+              </div>
+              <div className="text-center">
+                <Clock className="h-5 w-5 text-muted-foreground mx-auto" />
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">{language === 'ar' ? 'وقت الغلق' : 'Fermeture'}</p>
+                <p className="font-medium">{new Date(closingReport.closedAt).toLocaleTimeString('ar-DZ')}</p>
+              </div>
+            </div>
+
+            {/* Cash Summary */}
+            <div className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Banknote className="h-5 w-5 text-green-600" />
+                {language === 'ar' ? 'ملخص الصندوق' : 'Résumé de la caisse'}
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                  <p className="text-xs text-muted-foreground">{language === 'ar' ? 'رصيد الافتتاح' : 'Solde d\'ouverture'}</p>
+                  <p className="text-lg font-bold text-blue-600">{formatCurrency(closingReport.openingCash)} {t.currency}</p>
+                </div>
+                <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                  <p className="text-xs text-muted-foreground">{language === 'ar' ? 'المبلغ المحصل' : 'Montant collecté'}</p>
+                  <p className="text-lg font-bold text-green-600">{formatCurrency(closingReport.totalCollected)} {t.currency}</p>
+                </div>
+                <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg">
+                  <p className="text-xs text-muted-foreground">{language === 'ar' ? 'المتوقع في الصندوق' : 'Attendu en caisse'}</p>
+                  <p className="text-lg font-bold text-purple-600">{formatCurrency(closingReport.expectedCash)} {t.currency}</p>
+                </div>
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+                  <p className="text-xs text-muted-foreground">{language === 'ar' ? 'الفعلي في الصندوق' : 'Réel en caisse'}</p>
+                  <p className="text-lg font-bold text-amber-600">{formatCurrency(closingReport.closingCash)} {t.currency}</p>
+                </div>
+              </div>
+              
+              {/* Difference */}
+              <div className={`p-3 rounded-lg flex items-center justify-between ${
+                closingReport.cashDifference >= 0 
+                  ? 'bg-green-100 dark:bg-green-950/50' 
+                  : 'bg-red-100 dark:bg-red-950/50'
+              }`}>
+                <span className="font-medium">
+                  {language === 'ar' ? 'الفرق' : 'Différence'}
+                </span>
+                <span className={`text-lg font-bold flex items-center gap-1 ${
+                  closingReport.cashDifference >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {closingReport.cashDifference >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                  {closingReport.cashDifference >= 0 ? '+' : ''}{formatCurrency(closingReport.cashDifference)} {t.currency}
+                </span>
+              </div>
+            </div>
+
+            {/* Sales Summary */}
+            <div className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'ملخص المبيعات' : 'Résumé des ventes'}
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 border rounded-lg text-center">
+                  <p className="text-2xl font-bold text-primary">{closingReport.salesCount}</p>
+                  <p className="text-xs text-muted-foreground">{language === 'ar' ? 'عدد المبيعات' : 'Nombre de ventes'}</p>
+                </div>
+                <div className="p-3 border rounded-lg text-center">
+                  <p className="text-2xl font-bold text-green-600">{formatCurrency(closingReport.totalSales)}</p>
+                  <p className="text-xs text-muted-foreground">{language === 'ar' ? 'إجمالي المبيعات' : 'Total des ventes'}</p>
+                </div>
+              </div>
+
+              {/* Sales by Payment Type */}
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>{language === 'ar' ? 'طريقة الدفع' : 'Mode de paiement'}</TableHead>
+                      <TableHead className="text-center">{language === 'ar' ? 'العدد' : 'Nombre'}</TableHead>
+                      <TableHead className="text-left">{language === 'ar' ? 'المبلغ' : 'Montant'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {closingReport.salesByPaymentType.map(item => (
+                      <TableRow key={item.type}>
+                        <TableCell className="font-medium">{item.label}</TableCell>
+                        <TableCell className="text-center">{item.count}</TableCell>
+                        <TableCell>{formatCurrency(item.total)} {t.currency}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Debts */}
+            <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg space-y-2">
+              <h3 className="font-semibold flex items-center gap-2 text-red-700 dark:text-red-400">
+                <Lock className="h-5 w-5" />
+                {language === 'ar' ? 'الديون' : 'Créances'}
+              </h3>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">{language === 'ar' ? 'إجمالي الديون الجديدة' : 'Total nouvelles créances'}</span>
+                <span className="text-lg font-bold text-red-600">{formatCurrency(closingReport.totalDebts)} {t.currency}</span>
+              </div>
+            </div>
+
+            {/* Top Customers */}
+            {closingReport.topCustomers && closingReport.topCustomers.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  {language === 'ar' ? 'أكثر الزبائن شراءً' : 'Meilleurs clients'}
+                </h3>
+                <div className="space-y-2">
+                  {closingReport.topCustomers.map((customer, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                          {index + 1}
+                        </span>
+                        <span>{customer.name}</span>
+                        <Badge variant="outline" className="text-xs">{customer.count} {language === 'ar' ? 'عملية' : 'op.'}</Badge>
+                      </div>
+                      <span className="font-semibold">{formatCurrency(customer.total)} {t.currency}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {closingReport.notes && (
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-400">{language === 'ar' ? 'ملاحظات' : 'Notes'}:</p>
+                <p className="text-amber-600 dark:text-amber-300">{closingReport.notes}</p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => window.print()}
+              >
+                <FileText className="h-4 w-4 me-2" />
+                {language === 'ar' ? 'طباعة التقرير' : 'Imprimer'}
+              </Button>
+              <Button 
+                className="flex-1"
+                onClick={() => {
+                  setShowClosingReport(false);
+                  toast.success(language === 'ar' ? 'تم غلق الحصة بنجاح' : 'Session fermée avec succès');
+                  setClosingReport(null);
+                }}
+              >
+                {language === 'ar' ? 'إغلاق' : 'Fermer'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 }
