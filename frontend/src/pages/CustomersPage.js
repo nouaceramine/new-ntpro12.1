@@ -257,60 +257,103 @@ export default function CustomersPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {customers.map(customer => (
-              <Card key={customer.id} className="hover:shadow-md transition-shadow" data-testid={`customer-card-${customer.id}`}>
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{customer.name}</h3>
-                      {customer.phone && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                          <Phone className="h-4 w-4" />
-                          <span dir="ltr">{customer.phone}</span>
+            {customers
+              .filter(customer => !showBlacklistOnly || isBlacklisted(customer.phone))
+              .map(customer => {
+                const customerIsBlacklisted = isBlacklisted(customer.phone);
+                return (
+                  <Card 
+                    key={customer.id} 
+                    className={`hover:shadow-md transition-shadow ${customerIsBlacklisted ? 'border-red-300 bg-red-50/50' : ''}`} 
+                    data-testid={`customer-card-${customer.id}`}
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-lg">{customer.name}</h3>
+                            {customerIsBlacklisted && (
+                              <Badge variant="destructive" className="text-xs gap-1">
+                                <Ban className="h-3 w-3" />
+                                {language === 'ar' ? 'محظور' : 'Bloqué'}
+                              </Badge>
+                            )}
+                          </div>
+                          {customer.phone && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                              <Phone className="h-4 w-4" />
+                              <span dir="ltr">{customer.phone}</span>
+                            </div>
+                          )}
+                          {customer.email && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                              <Mail className="h-4 w-4" />
+                              <span>{customer.email}</span>
+                            </div>
+                          )}
+                          {customer.address && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                              <MapPin className="h-4 w-4" />
+                              <span>{customer.address}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {customer.email && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <Mail className="h-4 w-4" />
-                          <span>{customer.email}</span>
+                        <div className="flex flex-col gap-1">
+                          {/* Blacklist Toggle Button */}
+                          {customer.phone && (
+                            customerIsBlacklisted ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-green-600 border-green-300 hover:bg-green-50 gap-1"
+                                onClick={() => handleRemoveFromBlacklist(customer.phone)}
+                                title={language === 'ar' ? 'إزالة من القائمة السوداء' : 'Retirer de la liste noire'}
+                                data-testid={`unblock-customer-${customer.id}`}
+                              >
+                                <ShieldOff className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 border-red-300 hover:bg-red-50 gap-1"
+                                onClick={() => { setBlacklistCustomer(customer); setBlacklistDialogOpen(true); }}
+                                title={language === 'ar' ? 'إضافة للقائمة السوداء' : 'Ajouter à la liste noire'}
+                                data-testid={`block-customer-${customer.id}`}
+                              >
+                                <Shield className="h-4 w-4" />
+                              </Button>
+                            )
+                          )}
+                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(customer)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive"
+                            onClick={() => { setSelectedCustomer(customer); setDeleteDialogOpen(true); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                      )}
-                      {customer.address && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <MapPin className="h-4 w-4" />
-                          <span>{customer.address}</span>
+                      </div>
+                      <div className="flex gap-4 mt-4 pt-4 border-t">
+                        <div>
+                          <p className="text-xs text-muted-foreground">{t.totalPurchases}</p>
+                          <p className="font-semibold">{customer.total_purchases.toFixed(2)} {t.currency}</p>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(customer)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive"
-                        onClick={() => { setSelectedCustomer(customer); setDeleteDialogOpen(true); }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex gap-4 mt-4 pt-4 border-t">
-                    <div>
-                      <p className="text-xs text-muted-foreground">{t.totalPurchases}</p>
-                      <p className="font-semibold">{customer.total_purchases.toFixed(2)} {t.currency}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">{t.balance}</p>
-                      <p className={`font-semibold ${customer.balance > 0 ? 'text-amber-600' : ''}`}>
-                        {customer.balance.toFixed(2)} {t.currency}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                        <div>
+                          <p className="text-xs text-muted-foreground">{t.balance}</p>
+                          <p className={`font-semibold ${customer.balance > 0 ? 'text-amber-600' : ''}`}>
+                            {customer.balance.toFixed(2)} {t.currency}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
           </div>
         )}
 
