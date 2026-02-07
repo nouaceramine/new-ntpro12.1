@@ -157,8 +157,25 @@ export default function AddProductPage() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const resetForm = () => {
+    setFormData({
+      name_en: '',
+      name_ar: '',
+      description_en: '',
+      description_ar: '',
+      purchase_price: '',
+      wholesale_price: '',
+      retail_price: '',
+      image_url: '',
+      barcode: '',
+      family_id: '',
+      compatible_models: '',
+      low_stock_threshold: '10'
+    });
+  };
+
+  const handleSubmit = async (e, createNew = false) => {
+    e?.preventDefault();
     
     // Manual validation for prices
     if (!formData.name_en.trim() || !formData.name_ar.trim()) {
@@ -182,6 +199,7 @@ export default function AddProductPage() {
     }
     
     setLoading(true);
+    setSaveAndNew(createNew);
 
     try {
       const payload = {
@@ -192,7 +210,7 @@ export default function AddProductPage() {
         purchase_price: parseFloat(formData.purchase_price) || 0,
         wholesale_price: parseFloat(formData.wholesale_price) || 0,
         retail_price: parseFloat(formData.retail_price) || 0,
-        quantity: 0, // الكمية تبدأ من 0 وتزيد فقط من خلال عمليات الشراء
+        quantity: 0,
         image_url: formData.image_url,
         barcode: formData.barcode,
         family_id: formData.family_id || null,
@@ -202,11 +220,19 @@ export default function AddProductPage() {
 
       await axios.post(`${API}/products`, payload);
       toast.success(t.productAdded);
-      navigate('/products');
+      
+      if (createNew) {
+        resetForm();
+        // Focus on first input
+        document.querySelector('[data-testid="product-name-en-input"]')?.focus();
+      } else {
+        navigate('/products');
+      }
     } catch (error) {
       toast.error(error.response?.data?.detail || t.somethingWentWrong);
     } finally {
       setLoading(false);
+      setSaveAndNew(false);
     }
   };
 
