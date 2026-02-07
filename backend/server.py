@@ -1988,6 +1988,50 @@ async def get_stats(admin: dict = Depends(get_admin_user)):
         "currency": CURRENCY
     }
 
+@api_router.get("/dashboard/sales-stats")
+async def get_sales_stats(user: dict = Depends(get_current_user)):
+    """Get sales statistics for today, month, and year"""
+    now = datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    month_start = now.strftime("%Y-%m-01")
+    year_start = now.strftime("%Y-01-01")
+    
+    # Today's sales
+    today_pipeline = [
+        {"$match": {"created_at": {"$gte": today}, "status": {"$ne": "returned"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}, "count": {"$sum": 1}}}
+    ]
+    today_result = await db.sales.aggregate(today_pipeline).to_list(1)
+    
+    # This month's sales
+    month_pipeline = [
+        {"$match": {"created_at": {"$gte": month_start}, "status": {"$ne": "returned"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}, "count": {"$sum": 1}}}
+    ]
+    month_result = await db.sales.aggregate(month_pipeline).to_list(1)
+    
+    # This year's sales
+    year_pipeline = [
+        {"$match": {"created_at": {"$gte": year_start}, "status": {"$ne": "returned"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}, "count": {"$sum": 1}}}
+    ]
+    year_result = await db.sales.aggregate(year_pipeline).to_list(1)
+    
+    return {
+        "today": {
+            "total": today_result[0]["total"] if today_result else 0,
+            "count": today_result[0]["count"] if today_result else 0
+        },
+        "month": {
+            "total": month_result[0]["total"] if month_result else 0,
+            "count": month_result[0]["count"] if month_result else 0
+        },
+        "year": {
+            "total": year_result[0]["total"] if year_result else 0,
+            "count": year_result[0]["count"] if year_result else 0
+        }
+    }
+
 # ============ CHARTS & ANALYTICS ============
 
 @api_router.get("/reports/sales-chart")
