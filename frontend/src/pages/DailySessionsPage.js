@@ -95,7 +95,19 @@ export default function DailySessionsPage() {
     if (isAdmin && activeTab === 'reports') {
       fetchSummary();
     }
-  }, [summaryDays, activeTab]);
+    if (isAdmin && activeTab === 'all-sessions') {
+      fetchAllSessions();
+    }
+  }, [summaryDays, activeTab, isAdmin]);
+
+  const fetchAllSessions = async () => {
+    try {
+      const response = await axios.get(`${API}/daily-sessions?all_users=true`);
+      setAllSessions(response.data);
+    } catch (error) {
+      console.error('Error fetching all sessions:', error);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
