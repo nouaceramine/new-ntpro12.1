@@ -946,21 +946,21 @@ export default function PurchasesPage() {
                   {language === 'ar' ? 'إلغاء' : 'Annuler'}
                 </Button>
                 <Button
-                  className="flex-1"
-                  onClick={handleAddSupplier}
+                  variant="outline"
+                  onClick={() => handleAddSupplier(true)}
                   disabled={addingSupplier || !newSupplierData.name.trim()}
+                  className="gap-2"
                 >
-                  {addingSupplier ? (
-                    <span className="flex items-center gap-2">
-                      <span className="animate-spin">⏳</span>
-                      {language === 'ar' ? 'جاري الإضافة...' : 'Ajout...'}
-                    </span>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 me-2" />
-                      {language === 'ar' ? 'إضافة' : 'Ajouter'}
-                    </>
-                  )}
+                  <PlusCircle className="h-4 w-4" />
+                  {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer nouveau'}
+                </Button>
+                <Button
+                  onClick={() => handleAddSupplier(false)}
+                  disabled={addingSupplier || !newSupplierData.name.trim()}
+                  className="gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  {addingSupplier ? (language === 'ar' ? 'جاري الحفظ...' : 'Enregistrement...') : (language === 'ar' ? 'حفظ' : 'Enregistrer')}
                 </Button>
               </div>
             </div>
