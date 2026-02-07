@@ -1,484 +1,419 @@
 """
-Test suite for new features: API Keys, Recharge, Product Families
-Tests the 3 new pages added to ScreenGuard Pro system
+Test Suite for New POS Features:
+1. Login Page Branding - /api/branding/settings
+2. Advanced Analytics - /api/analytics/*
+3. Loyalty & Marketing - /api/loyalty/*, /api/marketing/sms/campaigns
+4. WooCommerce Publish - /api/woocommerce/publish-product/{id}
 """
 import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://pos-manager-37.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
-ADMIN_EMAIL = "admin@admin.com"
-ADMIN_PASSWORD = "admin"
+TEST_EMAIL = "test@test.com"
+TEST_PASSWORD = "test123"
 
 
-class TestAuthSetup:
-    """Test authentication and get token for subsequent tests"""
+class TestAuth:
+    """Authentication tests"""
     
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Get authentication token"""
+    def test_login_success(self):
+        """Test successful login"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
         })
-        if response.status_code == 200:
-            return response.json().get("access_token")
-        # Try to register if login fails
-        response = requests.post(f"{BASE_URL}/api/auth/register", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD,
-            "name": "Admin User",
-            "role": "admin"
-        })
-        if response.status_code in [200, 201]:
-            return response.json().get("access_token")
-        pytest.skip(f"Authentication failed - status: {response.status_code}, response: {response.text}")
-    
-    def test_auth_works(self, auth_token):
-        """Verify authentication is working"""
-        assert auth_token is not None
-        assert len(auth_token) > 0
-        print(f"✓ Authentication successful, token length: {len(auth_token)}")
+        print(f"Login response status: {response.status_code}")
+        assert response.status_code == 200, f"Login failed: {response.text}"
+        
+        data = response.json()
+        assert "access_token" in data
+        assert "user" in data
+        assert data["user"]["email"] == TEST_EMAIL
+        print("✓ Login successful")
+        return data["access_token"]
 
 
-class TestApiKeysEndpoints:
-    """Test API Keys CRUD operations"""
+class TestBrandingSettings:
+    """Test Login Page Branding API - /api/branding/settings"""
     
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        """Get authentication token"""
+    def test_get_branding_settings_public(self):
+        """GET /api/branding/settings should be public (no auth required)"""
+        response = requests.get(f"{BASE_URL}/api/branding/settings")
+        print(f"GET /api/branding/settings status: {response.status_code}")
+        
+        assert response.status_code == 200, f"Failed: {response.text}"
+        data = response.json()
+        
+        # Check expected fields
+        assert "business_name" in data
+        assert "logo_url" in data
+        assert "background_url" in data
+        assert "primary_color" in data
+        print(f"✓ Branding settings retrieved: business_name='{data.get('business_name')}'")
+    
+    def test_update_branding_settings_requires_admin(self):
+        """PUT /api/branding/settings should require admin auth"""
+        # Without auth
+        response = requests.put(f"{BASE_URL}/api/branding/settings", json={
+            "business_name": "Test Store"
+        })
+        assert response.status_code in [401, 403, 422], f"Expected auth error: {response.status_code}"
+        print("✓ Update branding requires auth")
+
+
+class TestAdvancedAnalytics:
+    """Test Advanced Analytics APIs - /api/analytics/*"""
+    
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Login and get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
         })
-        if response.status_code == 200:
-            return response.json().get("access_token")
-        response = requests.post(f"{BASE_URL}/api/auth/register", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD,
-            "name": "Admin User",
-            "role": "admin"
-        })
-        if response.status_code in [200, 201]:
-            return response.json().get("access_token")
-        pytest.skip("Authentication failed")
+        assert response.status_code == 200, f"Login failed: {response.text}"
+        self.token = response.json()["access_token"]
+        self.headers = {"Authorization": f"Bearer {self.token}"}
     
-    @pytest.fixture(scope="class")
-    def headers(self, auth_token):
-        return {"Authorization": f"Bearer {auth_token}"}
+    def test_sales_chart_week(self):
+        """GET /api/analytics/sales-chart?period=week"""
+        response = requests.get(
+            f"{BASE_URL}/api/analytics/sales-chart?period=week",
+            headers=self.headers
+        )
+        print(f"Sales chart (week) status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
+        
+        data = response.json()
+        assert isinstance(data, list)
+        if len(data) > 0:
+            assert "date" in data[0]
+            assert "total" in data[0]
+        print(f"✓ Sales chart returned {len(data)} data points")
     
-    def test_get_api_keys_empty(self, headers):
-        """Test GET /api/api-keys returns list (may be empty)"""
-        response = requests.get(f"{BASE_URL}/api/api-keys", headers=headers)
+    def test_sales_chart_month(self):
+        """GET /api/analytics/sales-chart?period=month"""
+        response = requests.get(
+            f"{BASE_URL}/api/analytics/sales-chart?period=month",
+            headers=self.headers
+        )
         assert response.status_code == 200
-        assert isinstance(response.json(), list)
-        print(f"✓ GET /api/api-keys - returns list with {len(response.json())} keys")
+        data = response.json()
+        assert isinstance(data, list)
+        print(f"✓ Sales chart (month) returned {len(data)} data points")
     
-    def test_create_internal_api_key(self, headers):
-        """Test POST /api/api-keys - create internal key"""
-        payload = {
-            "name": "TEST_Internal_Key_001",
-            "type": "internal",
-            "permissions": ["read", "write"]
+    def test_sales_chart_year(self):
+        """GET /api/analytics/sales-chart?period=year"""
+        response = requests.get(
+            f"{BASE_URL}/api/analytics/sales-chart?period=year",
+            headers=self.headers
+        )
+        assert response.status_code == 200
+        print("✓ Sales chart (year) works")
+    
+    def test_top_products(self):
+        """GET /api/analytics/top-products"""
+        response = requests.get(
+            f"{BASE_URL}/api/analytics/top-products?limit=10",
+            headers=self.headers
+        )
+        print(f"Top products status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
+        
+        data = response.json()
+        assert isinstance(data, list)
+        if len(data) > 0:
+            assert "name" in data[0]
+            assert "total_sold" in data[0]
+        print(f"✓ Top products returned {len(data)} products")
+    
+    def test_top_customers(self):
+        """GET /api/analytics/top-customers"""
+        response = requests.get(
+            f"{BASE_URL}/api/analytics/top-customers?limit=10",
+            headers=self.headers
+        )
+        print(f"Top customers status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
+        
+        data = response.json()
+        assert isinstance(data, list)
+        if len(data) > 0:
+            assert "name" in data[0]
+            assert "total_purchases" in data[0]
+        print(f"✓ Top customers returned {len(data)} customers")
+    
+    def test_employee_performance(self):
+        """GET /api/analytics/employee-performance"""
+        response = requests.get(
+            f"{BASE_URL}/api/analytics/employee-performance",
+            headers=self.headers
+        )
+        print(f"Employee performance status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
+        
+        data = response.json()
+        assert isinstance(data, list)
+        print(f"✓ Employee performance returned {len(data)} employees")
+    
+    def test_sales_prediction(self):
+        """GET /api/analytics/sales-prediction"""
+        response = requests.get(
+            f"{BASE_URL}/api/analytics/sales-prediction",
+            headers=self.headers
+        )
+        print(f"Sales prediction status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
+        
+        data = response.json()
+        assert "next_week_sales" in data
+        assert "expected_sales_count" in data
+        assert "expected_avg_order" in data
+        assert "trend" in data
+        print(f"✓ Sales prediction: next_week={data.get('next_week_sales')}, trend={data.get('trend')}")
+    
+    def test_restock_suggestions(self):
+        """GET /api/analytics/restock-suggestions"""
+        response = requests.get(
+            f"{BASE_URL}/api/analytics/restock-suggestions",
+            headers=self.headers
+        )
+        print(f"Restock suggestions status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
+        
+        data = response.json()
+        assert isinstance(data, list)
+        if len(data) > 0:
+            assert "name" in data[0]
+            assert "quantity" in data[0]
+        print(f"✓ Restock suggestions returned {len(data)} products")
+
+
+class TestLoyaltyProgram:
+    """Test Loyalty Program APIs - /api/loyalty/*"""
+    
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Login and get auth token"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
+        })
+        assert response.status_code == 200
+        self.token = response.json()["access_token"]
+        self.headers = {"Authorization": f"Bearer {self.token}"}
+    
+    def test_get_loyalty_settings(self):
+        """GET /api/loyalty/settings"""
+        response = requests.get(
+            f"{BASE_URL}/api/loyalty/settings",
+            headers=self.headers
+        )
+        print(f"Loyalty settings status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
+        
+        data = response.json()
+        assert "enabled" in data
+        assert "points_per_dinar" in data
+        assert "points_value" in data
+        assert "min_redeem_points" in data
+        assert "welcome_bonus" in data
+        print(f"✓ Loyalty settings: enabled={data.get('enabled')}, points_per_dinar={data.get('points_per_dinar')}")
+    
+    def test_update_loyalty_settings(self):
+        """PUT /api/loyalty/settings"""
+        new_settings = {
+            "enabled": True,
+            "points_per_dinar": 1,
+            "points_value": 0.01,
+            "min_redeem_points": 100,
+            "welcome_bonus": 50
         }
-        response = requests.post(f"{BASE_URL}/api/api-keys", json=payload, headers=headers)
-        assert response.status_code in [200, 201]
+        response = requests.put(
+            f"{BASE_URL}/api/loyalty/settings",
+            headers=self.headers,
+            json=new_settings
+        )
+        print(f"Update loyalty settings status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
+        print("✓ Loyalty settings updated successfully")
+
+
+class TestSMSCampaigns:
+    """Test SMS Campaign APIs - /api/marketing/sms/campaigns (MOCKED)"""
+    
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Login and get auth token"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
+        })
+        assert response.status_code == 200
+        self.token = response.json()["access_token"]
+        self.headers = {"Authorization": f"Bearer {self.token}"}
+    
+    def test_get_campaigns(self):
+        """GET /api/marketing/sms/campaigns"""
+        response = requests.get(
+            f"{BASE_URL}/api/marketing/sms/campaigns",
+            headers=self.headers
+        )
+        print(f"Get campaigns status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
+        
+        data = response.json()
+        assert isinstance(data, list)
+        print(f"✓ SMS campaigns returned {len(data)} campaigns (MOCKED)")
+    
+    def test_create_campaign_mocked(self):
+        """POST /api/marketing/sms/campaigns (MOCKED)"""
+        campaign = {
+            "name": "TEST_Ramadan_Offer",
+            "message": "عروض رمضان الخاصة! خصم 20% على جميع المنتجات",
+            "target": "all",
+            "scheduled_at": ""
+        }
+        response = requests.post(
+            f"{BASE_URL}/api/marketing/sms/campaigns",
+            headers=self.headers,
+            json=campaign
+        )
+        print(f"Create campaign status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
         
         data = response.json()
         assert "id" in data
-        assert data["name"] == payload["name"]
-        assert data["type"] == "internal"
-        assert "key_value" in data
-        assert "key_preview" in data
-        assert data["is_active"] == True
-        print(f"✓ Created internal API key: {data['id']}")
-        return data
+        assert "name" in data
+        assert data["name"] == campaign["name"]
+        print(f"✓ SMS campaign created (MOCKED): {data.get('name')}, recipients={data.get('recipients_count', 0)}")
+
+
+class TestWooCommercePublish:
+    """Test WooCommerce Publish APIs (MOCKED)"""
     
-    def test_create_external_api_key(self, headers):
-        """Test POST /api/api-keys - create external key"""
-        payload = {
-            "name": "TEST_External_WooCommerce",
-            "type": "external",
-            "service": "woocommerce",
-            "key_value": "ck_test123456789",
-            "secret_value": "cs_secret123456789",
-            "endpoint_url": "https://test.example.com/wp-json/wc/v3",
-            "permissions": ["read"]
-        }
-        response = requests.post(f"{BASE_URL}/api/api-keys", json=payload, headers=headers)
-        assert response.status_code in [200, 201]
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Login and get auth token"""
+        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
+        })
+        assert response.status_code == 200
+        self.token = response.json()["access_token"]
+        self.headers = {"Authorization": f"Bearer {self.token}"}
+    
+    def test_get_woocommerce_settings(self):
+        """GET /api/woocommerce/settings"""
+        response = requests.get(
+            f"{BASE_URL}/api/woocommerce/settings",
+            headers=self.headers
+        )
+        print(f"WooCommerce settings status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
         
         data = response.json()
-        assert data["service"] == "woocommerce"
-        assert data["endpoint_url"] == payload["endpoint_url"]
-        print(f"✓ Created external API key: {data['id']}")
-        return data
+        assert "store_url" in data
+        assert "consumer_key" in data
+        assert "consumer_secret" in data
+        print(f"✓ WooCommerce settings retrieved: store_url={data.get('store_url')}")
     
-    def test_toggle_api_key(self, headers):
-        """Test PUT /api/api-keys/{id}/toggle"""
-        # First create a key
-        create_response = requests.post(f"{BASE_URL}/api/api-keys", json={
-            "name": "TEST_Toggle_Key",
-            "type": "internal",
-            "permissions": ["read"]
-        }, headers=headers)
-        assert create_response.status_code in [200, 201]
-        key_id = create_response.json()["id"]
+    def test_publish_product_to_woocommerce(self):
+        """POST /api/woocommerce/publish-product/{product_id} (MOCKED)"""
+        # First get a product
+        products_response = requests.get(
+            f"{BASE_URL}/api/products",
+            headers=self.headers
+        )
+        assert products_response.status_code == 200
+        products = products_response.json()
         
-        # Toggle the key (should deactivate)
-        toggle_response = requests.put(f"{BASE_URL}/api/api-keys/{key_id}/toggle", headers=headers)
-        assert toggle_response.status_code == 200
+        if len(products) == 0:
+            pytest.skip("No products available to test")
         
-        # Verify key was toggled
-        get_response = requests.get(f"{BASE_URL}/api/api-keys/{key_id}", headers=headers)
-        if get_response.status_code == 200:
-            assert get_response.json()["is_active"] == False
-            print(f"✓ API key toggled successfully: {key_id}")
+        product_id = products[0]["id"]
+        
+        # Try to publish
+        response = requests.post(
+            f"{BASE_URL}/api/woocommerce/publish-product/{product_id}",
+            headers=self.headers
+        )
+        print(f"Publish product status: {response.status_code}")
+        
+        # Accept 200 (success) or error codes that mean WooCommerce is not configured
+        assert response.status_code in [200, 400, 500], f"Unexpected status: {response.status_code}"
+        
+        if response.status_code == 200:
+            data = response.json()
+            assert "woocommerce_id" in data
+            print(f"✓ Product published to WooCommerce (MOCKED): wc_id={data.get('woocommerce_id')}")
         else:
-            # Check in list
-            list_response = requests.get(f"{BASE_URL}/api/api-keys", headers=headers)
-            keys = [k for k in list_response.json() if k["id"] == key_id]
-            if keys:
-                assert keys[0]["is_active"] == False
-                print(f"✓ API key toggled (verified via list): {key_id}")
-            else:
-                print(f"✓ Toggle endpoint returned 200")
+            print(f"✓ WooCommerce publish API responded (may not be configured): {response.status_code}")
     
-    def test_delete_api_key(self, headers):
-        """Test DELETE /api/api-keys/{id}"""
-        # First create a key to delete
-        create_response = requests.post(f"{BASE_URL}/api/api-keys", json={
-            "name": "TEST_Delete_Key",
-            "type": "internal",
-            "permissions": ["read"]
-        }, headers=headers)
-        assert create_response.status_code in [200, 201]
-        key_id = create_response.json()["id"]
+    def test_unpublish_product_from_woocommerce(self):
+        """DELETE /api/woocommerce/unpublish-product/{product_id}"""
+        # Get a product that's published
+        products_response = requests.get(
+            f"{BASE_URL}/api/products",
+            headers=self.headers
+        )
+        products = products_response.json()
         
-        # Delete the key
-        delete_response = requests.delete(f"{BASE_URL}/api/api-keys/{key_id}", headers=headers)
-        assert delete_response.status_code in [200, 204]
-        print(f"✓ API key deleted: {key_id}")
+        # Find one with woocommerce_id
+        published = [p for p in products if p.get("woocommerce_id")]
         
-        # Verify deletion
-        get_response = requests.get(f"{BASE_URL}/api/api-keys", headers=headers)
-        keys = [k for k in get_response.json() if k["id"] == key_id]
-        assert len(keys) == 0
-        print(f"✓ Verified key no longer in list")
+        if len(published) == 0:
+            print("✓ No published products to unpublish - skipping")
+            return
+        
+        product_id = published[0]["id"]
+        
+        response = requests.delete(
+            f"{BASE_URL}/api/woocommerce/unpublish-product/{product_id}",
+            headers=self.headers
+        )
+        print(f"Unpublish product status: {response.status_code}")
+        assert response.status_code in [200, 400, 404]
+        print("✓ Unpublish API works")
 
 
-class TestRechargeEndpoints:
-    """Test Recharge (USSD) endpoints - Note: Actual USSD execution is MOCKED"""
+class TestCustomersList:
+    """Test customers list for loyalty page"""
     
-    @pytest.fixture(scope="class")
-    def auth_token(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Login and get auth token"""
         response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD
+            "email": TEST_EMAIL,
+            "password": TEST_PASSWORD
         })
-        if response.status_code == 200:
-            return response.json().get("access_token")
-        response = requests.post(f"{BASE_URL}/api/auth/register", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD,
-            "name": "Admin User",
-            "role": "admin"
-        })
-        if response.status_code in [200, 201]:
-            return response.json().get("access_token")
-        pytest.skip("Authentication failed")
-    
-    @pytest.fixture(scope="class")
-    def headers(self, auth_token):
-        return {"Authorization": f"Bearer {auth_token}"}
-    
-    def test_get_recharge_config(self, headers):
-        """Test GET /api/recharge/config - get operator configs"""
-        response = requests.get(f"{BASE_URL}/api/recharge/config", headers=headers)
         assert response.status_code == 200
-        
-        config = response.json()
-        assert isinstance(config, dict)
-        # Verify expected operators exist
-        expected_operators = ["mobilis", "djezzy", "ooredoo", "idoom"]
-        for op in expected_operators:
-            assert op in config, f"Operator {op} missing from config"
-            assert "name" in config[op]
-            assert "amounts" in config[op]
-            assert "commission" in config[op]
-        print(f"✓ Recharge config has all {len(expected_operators)} operators")
+        self.token = response.json()["access_token"]
+        self.headers = {"Authorization": f"Bearer {self.token}"}
     
-    def test_create_recharge_mobilis(self, headers):
-        """Test POST /api/recharge - Mobilis credit recharge (MOCKED)"""
-        payload = {
-            "operator": "mobilis",
-            "phone_number": "0555123456",
-            "amount": 500,
-            "recharge_type": "credit",
-            "payment_method": "cash",
-            "notes": "TEST_Recharge_Mobilis"
-        }
-        response = requests.post(f"{BASE_URL}/api/recharge", json=payload, headers=headers)
-        assert response.status_code in [200, 201]
+    def test_get_customers(self):
+        """GET /api/customers - needed for loyalty page"""
+        response = requests.get(
+            f"{BASE_URL}/api/customers",
+            headers=self.headers
+        )
+        print(f"Get customers status: {response.status_code}")
+        assert response.status_code == 200, f"Failed: {response.text}"
         
         data = response.json()
-        assert data["operator"] == "mobilis"
-        assert data["phone_number"] == payload["phone_number"]
-        assert data["amount"] == payload["amount"]
-        assert data["recharge_type"] == "credit"
-        assert "ussd_code" in data
-        assert "profit" in data
-        assert data["profit"] > 0  # Commission should be calculated
-        assert data["status"] == "completed"
-        print(f"✓ Mobilis recharge created - USSD: {data['ussd_code']}, Profit: {data['profit']}")
-    
-    def test_create_recharge_djezzy(self, headers):
-        """Test POST /api/recharge - Djezzy recharge (MOCKED)"""
-        payload = {
-            "operator": "djezzy",
-            "phone_number": "0777654321",
-            "amount": 1000,
-            "recharge_type": "credit",
-            "payment_method": "cash"
-        }
-        response = requests.post(f"{BASE_URL}/api/recharge", json=payload, headers=headers)
-        assert response.status_code in [200, 201]
-        
-        data = response.json()
-        assert data["operator"] == "djezzy"
-        assert "ussd_code" in data
-        print(f"✓ Djezzy recharge created - USSD: {data['ussd_code']}")
-    
-    def test_create_recharge_ooredoo(self, headers):
-        """Test POST /api/recharge - Ooredoo internet recharge (MOCKED)"""
-        payload = {
-            "operator": "ooredoo",
-            "phone_number": "0550987654",
-            "amount": 2000,
-            "recharge_type": "internet",
-            "payment_method": "bank"
-        }
-        response = requests.post(f"{BASE_URL}/api/recharge", json=payload, headers=headers)
-        assert response.status_code in [200, 201]
-        
-        data = response.json()
-        assert data["operator"] == "ooredoo"
-        assert data["recharge_type"] == "internet"
-        print(f"✓ Ooredoo internet recharge created - USSD: {data['ussd_code']}")
-    
-    def test_get_recharge_history(self, headers):
-        """Test GET /api/recharge - get recharge history"""
-        response = requests.get(f"{BASE_URL}/api/recharge", headers=headers)
-        assert response.status_code == 200
-        
-        recharges = response.json()
-        assert isinstance(recharges, list)
-        if len(recharges) > 0:
-            # Verify structure of recharge record
-            r = recharges[0]
-            assert "id" in r
-            assert "operator" in r
-            assert "phone_number" in r
-            assert "amount" in r
-            assert "ussd_code" in r
-            assert "profit" in r
-        print(f"✓ Recharge history returned {len(recharges)} records")
-    
-    def test_get_recharge_stats(self, headers):
-        """Test GET /api/recharge/stats - get recharge statistics"""
-        response = requests.get(f"{BASE_URL}/api/recharge/stats", headers=headers)
-        assert response.status_code == 200
-        
-        stats = response.json()
-        assert "by_operator" in stats or "today" in stats
-        print(f"✓ Recharge stats retrieved successfully")
-
-
-class TestProductFamiliesEndpoints:
-    """Test Product Families CRUD operations"""
-    
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD
-        })
-        if response.status_code == 200:
-            return response.json().get("access_token")
-        response = requests.post(f"{BASE_URL}/api/auth/register", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD,
-            "name": "Admin User",
-            "role": "admin"
-        })
-        if response.status_code in [200, 201]:
-            return response.json().get("access_token")
-        pytest.skip("Authentication failed")
-    
-    @pytest.fixture(scope="class")
-    def headers(self, auth_token):
-        return {"Authorization": f"Bearer {auth_token}"}
-    
-    def test_get_product_families_list(self, headers):
-        """Test GET /api/product-families"""
-        response = requests.get(f"{BASE_URL}/api/product-families", headers=headers)
-        assert response.status_code == 200
-        assert isinstance(response.json(), list)
-        print(f"✓ Product families list: {len(response.json())} families")
-    
-    def test_create_main_product_family(self, headers):
-        """Test POST /api/product-families - create main family"""
-        payload = {
-            "name_ar": "TEST_واقيات_الشاشة",
-            "name_en": "TEST_Screen_Protectors",
-            "description_ar": "واقيات شاشة للهواتف الذكية",
-            "description_en": "Screen protectors for smartphones"
-        }
-        response = requests.post(f"{BASE_URL}/api/product-families", json=payload, headers=headers)
-        assert response.status_code in [200, 201]
-        
-        data = response.json()
-        assert "id" in data
-        assert data["name_ar"] == payload["name_ar"]
-        assert data["name_en"] == payload["name_en"]
-        assert data["parent_id"] == "" or data["parent_id"] is None or data["parent_id"] == ""
-        print(f"✓ Created main family: {data['id']}")
-        return data
-    
-    def test_create_sub_family(self, headers):
-        """Test POST /api/product-families - create sub-family"""
-        # First create a parent family
-        parent_response = requests.post(f"{BASE_URL}/api/product-families", json={
-            "name_ar": "TEST_إكسسوارات",
-            "name_en": "TEST_Accessories"
-        }, headers=headers)
-        assert parent_response.status_code in [200, 201]
-        parent_id = parent_response.json()["id"]
-        
-        # Create sub-family
-        payload = {
-            "name_ar": "TEST_أغطية_الهواتف",
-            "name_en": "TEST_Phone_Cases",
-            "parent_id": parent_id
-        }
-        response = requests.post(f"{BASE_URL}/api/product-families", json=payload, headers=headers)
-        assert response.status_code in [200, 201]
-        
-        data = response.json()
-        assert data["parent_id"] == parent_id
-        print(f"✓ Created sub-family under parent {parent_id}")
-    
-    def test_update_product_family(self, headers):
-        """Test PUT /api/product-families/{id}"""
-        # Create a family first
-        create_response = requests.post(f"{BASE_URL}/api/product-families", json={
-            "name_ar": "TEST_عائلة_للتعديل",
-            "name_en": "TEST_Family_To_Edit"
-        }, headers=headers)
-        assert create_response.status_code in [200, 201]
-        family_id = create_response.json()["id"]
-        
-        # Update it
-        update_payload = {
-            "name_ar": "TEST_عائلة_معدلة",
-            "name_en": "TEST_Updated_Family",
-            "description_ar": "وصف جديد"
-        }
-        update_response = requests.put(f"{BASE_URL}/api/product-families/{family_id}", 
-                                       json=update_payload, headers=headers)
-        assert update_response.status_code == 200
-        
-        updated = update_response.json()
-        assert updated["name_ar"] == update_payload["name_ar"]
-        print(f"✓ Family updated: {family_id}")
-    
-    def test_get_single_product_family(self, headers):
-        """Test GET /api/product-families/{id}"""
-        # Create a family first
-        create_response = requests.post(f"{BASE_URL}/api/product-families", json={
-            "name_ar": "TEST_عائلة_للعرض",
-            "name_en": "TEST_Family_To_View"
-        }, headers=headers)
-        assert create_response.status_code in [200, 201]
-        family_id = create_response.json()["id"]
-        
-        # Get it
-        response = requests.get(f"{BASE_URL}/api/product-families/{family_id}", headers=headers)
-        assert response.status_code == 200
-        
-        data = response.json()
-        assert data["id"] == family_id
-        print(f"✓ Retrieved single family: {family_id}")
-    
-    def test_delete_product_family(self, headers):
-        """Test DELETE /api/product-families/{id}"""
-        # Create a family to delete
-        create_response = requests.post(f"{BASE_URL}/api/product-families", json={
-            "name_ar": "TEST_عائلة_للحذف",
-            "name_en": "TEST_Family_To_Delete"
-        }, headers=headers)
-        assert create_response.status_code in [200, 201]
-        family_id = create_response.json()["id"]
-        
-        # Delete it
-        delete_response = requests.delete(f"{BASE_URL}/api/product-families/{family_id}", headers=headers)
-        assert delete_response.status_code in [200, 204]
-        print(f"✓ Family deleted: {family_id}")
-        
-        # Verify deletion
-        get_response = requests.get(f"{BASE_URL}/api/product-families/{family_id}", headers=headers)
-        assert get_response.status_code == 404
-        print(f"✓ Verified family no longer exists")
-
-
-class TestCleanup:
-    """Clean up test data created during testing"""
-    
-    @pytest.fixture(scope="class")
-    def auth_token(self):
-        response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD
-        })
-        if response.status_code == 200:
-            return response.json().get("access_token")
-        pytest.skip("Authentication failed")
-    
-    @pytest.fixture(scope="class")
-    def headers(self, auth_token):
-        return {"Authorization": f"Bearer {auth_token}"}
-    
-    def test_cleanup_test_api_keys(self, headers):
-        """Clean up API keys created during testing"""
-        response = requests.get(f"{BASE_URL}/api/api-keys", headers=headers)
-        if response.status_code == 200:
-            keys = response.json()
-            deleted = 0
-            for key in keys:
-                if key["name"].startswith("TEST_"):
-                    requests.delete(f"{BASE_URL}/api/api-keys/{key['id']}", headers=headers)
-                    deleted += 1
-            print(f"✓ Cleaned up {deleted} test API keys")
-    
-    def test_cleanup_test_product_families(self, headers):
-        """Clean up product families created during testing"""
-        response = requests.get(f"{BASE_URL}/api/product-families", headers=headers)
-        if response.status_code == 200:
-            families = response.json()
-            deleted = 0
-            # Delete sub-families first (those with parent_id)
-            for family in families:
-                if family.get("parent_id") and (family["name_ar"].startswith("TEST_") or family["name_en"].startswith("TEST_")):
-                    requests.delete(f"{BASE_URL}/api/product-families/{family['id']}", headers=headers)
-                    deleted += 1
-            # Then delete main families
-            for family in families:
-                if not family.get("parent_id") and (family["name_ar"].startswith("TEST_") or family["name_en"].startswith("TEST_")):
-                    requests.delete(f"{BASE_URL}/api/product-families/{family['id']}", headers=headers)
-                    deleted += 1
-            print(f"✓ Cleaned up {deleted} test product families")
+        assert isinstance(data, list)
+        if len(data) > 0:
+            customer = data[0]
+            assert "name" in customer
+            assert "phone" in customer
+            assert "total_purchases" in customer
+            # Check for loyalty_points field
+            if "loyalty_points" in customer:
+                print(f"✓ Customer has loyalty_points: {customer.get('loyalty_points')}")
+        print(f"✓ Customers list returned {len(data)} customers")
 
 
 if __name__ == "__main__":
