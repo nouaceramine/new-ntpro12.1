@@ -83,6 +83,8 @@ export default function DailySessionsPage() {
   const [showClosingReport, setShowClosingReport] = useState(false);
   const [closingReport, setClosingReport] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
+  const [reportEmail, setReportEmail] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
   
   // Form
   const [openingCash, setOpeningCash] = useState(0);
