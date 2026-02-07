@@ -363,6 +363,29 @@ export default function POSPage() {
   return (
     <Layout>
       <div className="h-[calc(100vh-8rem)] flex gap-6" data-testid="pos-page">
+        {/* No Session Warning */}
+        {!checkingSession && !hasOpenSession && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
+            <div className="bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-700 rounded-lg p-4 shadow-lg flex items-center gap-3">
+              <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+              <div>
+                <p className="font-medium text-amber-800 dark:text-amber-200">
+                  {language === 'ar' ? 'لا توجد حصة مفتوحة' : 'Aucune session ouverte'}
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  {language === 'ar' ? 'يجب فتح حصة جديدة قبل البيع' : 'Vous devez ouvrir une session pour vendre'}
+                </p>
+              </div>
+              <Link to="/daily-sessions">
+                <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
+                  <Clock className="h-4 w-4 me-2" />
+                  {language === 'ar' ? 'فتح حصة' : 'Ouvrir'}
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+        
         {/* Products Section */}
         <div className="flex-1 flex flex-col">
           {/* Search & Filters */}
