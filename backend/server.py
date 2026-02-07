@@ -6032,6 +6032,182 @@ async def sync_spare_parts_with_products(user: dict = Depends(get_current_user))
     
     return {"success": True, "synced_count": synced}
 
+# ============ EMAIL REPORTS ============
+
+class SessionReportEmail(BaseModel):
+    recipient_email: EmailStr
+    session_id: str
+    report_data: dict
+
+def generate_session_report_html(report: dict, language: str = 'ar') -> str:
+    """Generate HTML email for session closing report"""
+    
+    def format_currency(amount):
+        return f"{amount:,.2f}"
+    
+    currency = "دج" if language == 'ar' else "DA"
+    
+    # Determine difference color
+    diff = report.get('cashDifference', 0)
+    diff_color = '#22c55e' if diff >= 0 else '#ef4444'
+    diff_sign = '+' if diff >= 0 else ''
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html dir="rtl" lang="ar">
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <body style="font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f3f4f6; margin: 0; padding: 20px;">
+        <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 30px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 24px;">📊 تقرير غلق الحصة</h1>
+                <p style="color: rgba(255,255,255,0.9); margin-top: 10px;">
+                    {datetime.fromisoformat(report.get('closedAt', '')).strftime('%Y-%m-%d %H:%M') if report.get('closedAt') else ''}
+                </p>
+            </div>
+            
+            <!-- Cash Summary -->
+            <div style="padding: 20px;">
+                <h2 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; font-size: 18px;">💵 ملخص الصندوق</h2>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                    <tr>
+                        <td style="padding: 12px; background: #dbeafe; border-radius: 8px; margin: 5px;">
+                            <span style="color: #6b7280; font-size: 12px;">رصيد الافتتاح</span><br>
+                            <strong style="color: #2563eb; font-size: 18px;">{format_currency(report.get('openingCash', 0))} {currency}</strong>
+                        </td>
+                        <td style="padding: 12px; background: #dcfce7; border-radius: 8px; margin: 5px;">
+                            <span style="color: #6b7280; font-size: 12px;">المبلغ المحصل</span><br>
+                            <strong style="color: #16a34a; font-size: 18px;">{format_currency(report.get('totalCollected', 0))} {currency}</strong>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; background: #f3e8ff; border-radius: 8px; margin: 5px;">
+                            <span style="color: #6b7280; font-size: 12px;">المتوقع في الصندوق</span><br>
+                            <strong style="color: #9333ea; font-size: 18px;">{format_currency(report.get('expectedCash', 0))} {currency}</strong>
+                        </td>
+                        <td style="padding: 12px; background: #fef3c7; border-radius: 8px; margin: 5px;">
+                            <span style="color: #6b7280; font-size: 12px;">الفعلي في الصندوق</span><br>
+                            <strong style="color: #d97706; font-size: 18px;">{format_currency(report.get('closingCash', 0))} {currency}</strong>
+                        </td>
+                    </tr>
+                </table>
+                
+                <!-- Difference -->
+                <div style="margin-top: 15px; padding: 15px; background: {'#dcfce7' if diff >= 0 else '#fee2e2'}; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #374151; font-weight: 600;">الفرق</span>
+                    <span style="color: {diff_color}; font-size: 20px; font-weight: bold;">{diff_sign}{format_currency(diff)} {currency}</span>
+                </div>
+            </div>
+            
+            <!-- Sales Summary -->
+            <div style="padding: 20px; background: #f9fafb;">
+                <h2 style="color: #1f2937; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; font-size: 18px;">📈 ملخص المبيعات</h2>
+                <div style="display: flex; gap: 15px; margin-top: 15px;">
+                    <div style="flex: 1; text-align: center; padding: 15px; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        <span style="font-size: 28px; font-weight: bold; color: #3b82f6;">{report.get('salesCount', 0)}</span><br>
+                        <span style="color: #6b7280; font-size: 12px;">عدد المبيعات</span>
+                    </div>
+                    <div style="flex: 1; text-align: center; padding: 15px; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
+                        <span style="font-size: 28px; font-weight: bold; color: #22c55e;">{format_currency(report.get('totalSales', 0))}</span><br>
+                        <span style="color: #6b7280; font-size: 12px;">إجمالي المبيعات</span>
+                    </div>
+                </div>
+                
+                <!-- Sales by Type -->
+                <table style="width: 100%; margin-top: 15px; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                    <tr style="background: #f3f4f6;">
+                        <th style="padding: 10px; text-align: right; font-size: 12px; color: #6b7280;">طريقة الدفع</th>
+                        <th style="padding: 10px; text-align: center; font-size: 12px; color: #6b7280;">العدد</th>
+                        <th style="padding: 10px; text-align: left; font-size: 12px; color: #6b7280;">المبلغ</th>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px;">نقدي</td>
+                        <td style="padding: 10px; text-align: center;">{len([s for s in report.get('salesByPaymentType', []) if s.get('type') == 'cash'])}</td>
+                        <td style="padding: 10px;">{format_currency(report.get('cashSales', 0))} {currency}</td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 10px;">دين</td>
+                        <td style="padding: 10px; text-align: center;">{len([s for s in report.get('salesByPaymentType', []) if s.get('type') == 'credit'])}</td>
+                        <td style="padding: 10px;">{format_currency(report.get('creditSales', 0))} {currency}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px;">جزئي</td>
+                        <td style="padding: 10px; text-align: center;">{len([s for s in report.get('salesByPaymentType', []) if s.get('type') == 'partial'])}</td>
+                        <td style="padding: 10px;">{format_currency(report.get('partialSales', 0))} {currency}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Debts -->
+            <div style="padding: 20px;">
+                <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 15px;">
+                    <h3 style="color: #dc2626; margin: 0 0 10px 0; font-size: 16px;">🔒 الديون الجديدة</h3>
+                    <span style="font-size: 24px; font-weight: bold; color: #dc2626;">{format_currency(report.get('totalDebts', 0))} {currency}</span>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: #1f2937; padding: 20px; text-align: center;">
+                <p style="color: #9ca3af; margin: 0; font-size: 12px;">
+                    تم إنشاء هذا التقرير تلقائياً من نظام NT POS
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+@api_router.post("/email/send-session-report")
+async def send_session_report_email(
+    report_email: SessionReportEmail,
+    user: dict = Depends(get_current_user)
+):
+    """Send session closing report via email"""
+    if not RESEND_AVAILABLE:
+        raise HTTPException(status_code=500, detail="خدمة البريد الإلكتروني غير متوفرة")
+    
+    api_key = os.environ.get('RESEND_API_KEY')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="مفتاح API للبريد غير موجود. يرجى إضافة RESEND_API_KEY في الإعدادات")
+    
+    sender_email = os.environ.get('SENDER_EMAIL', 'onboarding@resend.dev')
+    
+    # Generate HTML report
+    html_content = generate_session_report_html(report_email.report_data)
+    
+    params = {
+        "from": sender_email,
+        "to": [report_email.recipient_email],
+        "subject": f"تقرير غلق الحصة - {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        "html": html_content
+    }
+    
+    try:
+        email = await asyncio.to_thread(resend.Emails.send, params)
+        
+        # Log the email
+        await db.email_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "type": "session_report",
+            "recipient": report_email.recipient_email,
+            "session_id": report_email.session_id,
+            "status": "sent",
+            "sent_at": datetime.now(timezone.utc).isoformat(),
+            "sent_by": user["id"]
+        })
+        
+        return {
+            "success": True,
+            "message": f"تم إرسال التقرير إلى {report_email.recipient_email}",
+            "email_id": email.get("id")
+        }
+    except Exception as e:
+        logger.error(f"Failed to send email: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"فشل إرسال البريد: {str(e)}")
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
