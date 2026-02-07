@@ -369,6 +369,7 @@ export default function DailySessionsPage() {
         {renderStartDialog()}
         {renderCloseDialog()}
         {renderDetailsDialog()}
+        {renderClosingReportDialog()}
       </div>
     </Layout>
   );
