@@ -279,7 +279,7 @@ export default function PurchasesPage() {
   };
 
   // Add new supplier
-  const handleAddSupplier = async () => {
+  const handleAddSupplier = async (createNew = false) => {
     if (!newSupplierData.name.trim()) {
       toast.error(language === 'ar' ? 'يرجى إدخال اسم المورد' : 'Veuillez entrer le nom du fournisseur');
       return;
@@ -294,9 +294,12 @@ export default function PurchasesPage() {
       setSuppliers(prev => [...prev, response.data]);
       setSelectedSupplier(response.data.id);
       
-      // Reset and close dialog
+      // Reset form
       setNewSupplierData({ name: '', phone: '', email: '', address: '' });
-      setShowNewSupplierDialog(false);
+      
+      if (!createNew) {
+        setShowNewSupplierDialog(false);
+      }
     } catch (error) {
       console.error('Error adding supplier:', error);
       toast.error(error.response?.data?.detail || t.somethingWentWrong);
