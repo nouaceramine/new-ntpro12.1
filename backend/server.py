@@ -187,6 +187,7 @@ class CustomerCreate(BaseModel):
     email: Optional[str] = ""
     address: Optional[str] = ""
     notes: Optional[str] = ""
+    family_id: Optional[str] = None
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = None
@@ -194,6 +195,7 @@ class CustomerUpdate(BaseModel):
     email: Optional[str] = None
     address: Optional[str] = None
     notes: Optional[str] = None
+    family_id: Optional[str] = None
 
 class CustomerResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -203,6 +205,8 @@ class CustomerResponse(BaseModel):
     email: str
     address: str
     notes: str
+    family_id: str = ""
+    family_name: str = ""
     total_purchases: float = 0
     balance: float = 0  # رصيد الزبون (دين)
     created_at: str
