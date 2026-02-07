@@ -472,6 +472,7 @@ export default function ExpensesPage() {
                     <TableHead>{language === 'ar' ? 'الوصف' : 'Description'}</TableHead>
                     <TableHead>{language === 'ar' ? 'المبلغ' : 'Montant'}</TableHead>
                     <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'النوع' : 'Type'}</TableHead>
                     <TableHead>{language === 'ar' ? 'إجراءات' : 'Actions'}</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -499,6 +500,17 @@ export default function ExpensesPage() {
                           <span className="font-bold text-red-600">{formatCurrency(expense.amount)} {t.currency}</span>
                         </TableCell>
                         <TableCell>{formatDate(expense.date)}</TableCell>
+                        <TableCell>
+                          {expense.recurring ? (
+                            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                              {expense.recurring_period === 'monthly' ? (language === 'ar' ? 'شهري' : 'Mensuel') :
+                               expense.recurring_period === 'weekly' ? (language === 'ar' ? 'أسبوعي' : 'Hebdo') :
+                               expense.recurring_period === 'yearly' ? (language === 'ar' ? 'سنوي' : 'Annuel') : ''}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">{language === 'ar' ? 'مرة واحدة' : 'Une fois'}</Badge>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             <Button variant="ghost" size="icon" onClick={() => openEditDialog(expense)}>
