@@ -398,7 +398,7 @@ export default function POSPage() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-5rem)] flex flex-col bg-slate-900 text-white -mx-6 -mt-6" data-testid="pos-page">
+      <div className="min-h-screen flex flex-col bg-slate-900 text-white fixed inset-0 z-40 mt-16" data-testid="pos-page">
         
         {/* No Session Warning */}
         {!checkingSession && !hasOpenSession && (
