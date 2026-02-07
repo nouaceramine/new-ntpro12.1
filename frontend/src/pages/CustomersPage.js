@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Plus, Search, Edit, Trash2, Phone, Mail, MapPin } from 'lucide-react';
+import { Users, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, PlusCircle, Save } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
