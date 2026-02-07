@@ -601,7 +601,19 @@ export default function PurchasesPage() {
               <div className="space-y-4">
                 {/* Supplier Selection */}
                 <div>
-                  <Label>{t.selectSupplier}</Label>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label>{t.selectSupplier}</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowNewSupplierDialog(true)}
+                      className="gap-1 h-7"
+                    >
+                      <Plus className="h-3 w-3" />
+                      {language === 'ar' ? 'مورد جديد' : 'Nouveau'}
+                    </Button>
+                  </div>
                   <Select value={selectedSupplier || ''} onValueChange={setSelectedSupplier}>
                     <SelectTrigger>
                       <Truck className="h-4 w-4 me-2" />
