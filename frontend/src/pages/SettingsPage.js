@@ -341,15 +341,26 @@ export default function SettingsPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openPermissionsDialog(u.id)}
-                            disabled={u.id === user?.id}
-                          >
-                            <Shield className="h-4 w-4 me-1" />
-                            {t.permissions}
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openPermissionsDialog(u.id)}
+                              disabled={u.id === user?.id}
+                            >
+                              <Shield className="h-4 w-4 me-1" />
+                              {t.permissions}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openPasswordDialog(u)}
+                              disabled={u.id === user?.id}
+                            >
+                              <Key className="h-4 w-4 me-1" />
+                              {language === 'ar' ? 'كلمة المرور' : 'Mot de passe'}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
