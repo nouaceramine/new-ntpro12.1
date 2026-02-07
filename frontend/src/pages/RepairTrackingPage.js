@@ -1,0 +1,564 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useLanguage } from '../contexts/LanguageContext';
+import { Layout } from '../components/Layout';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
+import { toast } from 'sonner';
+import {
+  Wrench,
+  Search,
+  Filter,
+  Eye,
+  Edit,
+  Phone,
+  MessageSquare,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Smartphone,
+  User,
+  Calendar,
+  DollarSign,
+  ArrowRight,
+  RefreshCw,
+  Printer,
+  Package
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// Repair statuses
+const REPAIR_STATUSES = [
+  { id: 'received', label: { ar: 'مستلم', fr: 'Reçu' }, color: 'bg-blue-500', icon: Package },
+  { id: 'diagnosing', label: { ar: 'قيد الفحص', fr: 'En diagnostic' }, color: 'bg-purple-500', icon: Search },
+  { id: 'waiting_parts', label: { ar: 'بانتظار القطع', fr: 'En attente pièces' }, color: 'bg-orange-500', icon: Clock },
+  { id: 'in_repair', label: { ar: 'قيد الإصلاح', fr: 'En réparation' }, color: 'bg-amber-500', icon: Wrench },
+  { id: 'testing', label: { ar: 'قيد الاختبار', fr: 'En test' }, color: 'bg-cyan-500', icon: RefreshCw },
+  { id: 'ready', label: { ar: 'جاهز للتسليم', fr: 'Prêt' }, color: 'bg-emerald-500', icon: CheckCircle2 },
+  { id: 'delivered', label: { ar: 'تم التسليم', fr: 'Livré' }, color: 'bg-gray-500', icon: CheckCircle2 },
+  { id: 'cancelled', label: { ar: 'ملغي', fr: 'Annulé' }, color: 'bg-red-500', icon: XCircle },
+];
+
+// Sample repairs data
+const SAMPLE_REPAIRS = [
+  {
+    id: '1',
+    ticket_number: 'REP-260207-0001',
+    customer_name: 'أحمد محمد',
+    customer_phone: '0612345678',
+    device_brand: 'Samsung',
+    device_model: 'Galaxy S23',
+    device_color: 'black',
+    problems: ['screen_broken'],
+    problem_description: 'شاشة مكسورة من السقوط',
+    status: 'in_repair',
+    technician: 'محمد الفني',
+    estimated_cost: 15000,
+    actual_cost: 14500,
+    advance_payment: 5000,
+    estimated_days: 2,
+    created_at: '2026-02-07T09:00:00',
+    updated_at: '2026-02-07T14:30:00',
+  },
+  {
+    id: '2',
+    ticket_number: 'REP-260207-0002',
+    customer_name: 'سارة علي',
+    customer_phone: '0712345678',
+    device_brand: 'Apple',
+    device_model: 'iPhone 14 Pro',
+    device_color: 'gold',
+    problems: ['battery', 'charging'],
+    problem_description: 'البطارية لا تشحن بشكل صحيح',
+    status: 'ready',
+    technician: 'علي التقني',
+    estimated_cost: 8000,
+    actual_cost: 8000,
+    advance_payment: 3000,
+    estimated_days: 1,
+    created_at: '2026-02-06T11:00:00',
+    updated_at: '2026-02-07T10:00:00',
+  },
+  {
+    id: '3',
+    ticket_number: 'REP-260206-0003',
+    customer_name: 'خالد أحمد',
+    customer_phone: '0512345678',
+    device_brand: 'Xiaomi',
+    device_model: 'Redmi Note 12',
+    device_color: 'blue',
+    problems: ['software'],
+    problem_description: 'الهاتف لا يشتغل بعد التحديث',
+    status: 'diagnosing',
+    technician: '',
+    estimated_cost: 3000,
+    actual_cost: 0,
+    advance_payment: 1000,
+    estimated_days: 1,
+    created_at: '2026-02-06T15:00:00',
+    updated_at: '2026-02-06T15:00:00',
+  },
+  {
+    id: '4',
+    ticket_number: 'REP-260205-0004',
+    customer_name: 'فاطمة سعيد',
+    customer_phone: '0698765432',
+    device_brand: 'Huawei',
+    device_model: 'P50 Pro',
+    device_color: 'white',
+    problems: ['camera'],
+    problem_description: 'الكاميرا الخلفية لا تعمل',
+    status: 'waiting_parts',
+    technician: 'محمد الفني',
+    estimated_cost: 12000,
+    actual_cost: 0,
+    advance_payment: 4000,
+    estimated_days: 5,
+    created_at: '2026-02-05T10:00:00',
+    updated_at: '2026-02-06T09:00:00',
+  },
+];
+
+export default function RepairTrackingPage() {
+  const { language } = useLanguage();
+  const [repairs, setRepairs] = useState(SAMPLE_REPAIRS);
+  const [filteredRepairs, setFilteredRepairs] = useState(SAMPLE_REPAIRS);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedRepair, setSelectedRepair] = useState(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [updateForm, setUpdateForm] = useState({ status: '', notes: '', actual_cost: '' });
+
+  useEffect(() => {
+    filterRepairs();
+  }, [searchQuery, statusFilter, repairs]);
+
+  const filterRepairs = () => {
+    let filtered = [...repairs];
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(r =>
+        r.ticket_number.toLowerCase().includes(query) ||
+        r.customer_name.toLowerCase().includes(query) ||
+        r.customer_phone.includes(query) ||
+        r.device_brand.toLowerCase().includes(query) ||
+        r.device_model.toLowerCase().includes(query)
+      );
+    }
+
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(r => r.status === statusFilter);
+    }
+
+    setFilteredRepairs(filtered);
+  };
+
+  const getStatusInfo = (statusId) => {
+    return REPAIR_STATUSES.find(s => s.id === statusId) || REPAIR_STATUSES[0];
+  };
+
+  const handleViewDetails = (repair) => {
+    setSelectedRepair(repair);
+    setShowDetailsDialog(true);
+  };
+
+  const handleOpenUpdate = (repair) => {
+    setSelectedRepair(repair);
+    setUpdateForm({
+      status: repair.status,
+      notes: '',
+      actual_cost: repair.actual_cost?.toString() || ''
+    });
+    setShowUpdateDialog(true);
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!selectedRepair) return;
+
+    try {
+      // In production, this would be an API call
+      setRepairs(prev => prev.map(r =>
+        r.id === selectedRepair.id
+          ? {
+              ...r,
+              status: updateForm.status,
+              actual_cost: parseFloat(updateForm.actual_cost) || r.actual_cost,
+              updated_at: new Date().toISOString()
+            }
+          : r
+      ));
+
+      toast.success(language === 'ar' ? 'تم تحديث الحالة بنجاح' : 'Statut mis à jour');
+      setShowUpdateDialog(false);
+    } catch (error) {
+      toast.error(language === 'ar' ? 'فشل في تحديث الحالة' : 'Échec de mise à jour');
+    }
+  };
+
+  const getStats = () => {
+    const total = repairs.length;
+    const inProgress = repairs.filter(r => ['received', 'diagnosing', 'waiting_parts', 'in_repair', 'testing'].includes(r.status)).length;
+    const ready = repairs.filter(r => r.status === 'ready').length;
+    const delivered = repairs.filter(r => r.status === 'delivered').length;
+    return { total, inProgress, ready, delivered };
+  };
+
+  const stats = getStats();
+
+  return (
+    <Layout>
+      <div className="space-y-6 animate-fade-in" data-testid="repair-tracking-page">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <Wrench className="h-8 w-8 text-blue-500" />
+              </div>
+              {language === 'ar' ? 'تتبع الصيانة' : 'Suivi des réparations'}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {language === 'ar' ? 'إدارة ومتابعة طلبات الصيانة' : 'Gérer et suivre les demandes de réparation'}
+            </p>
+          </div>
+          <Link to="/repairs/new">
+            <Button>
+              <Wrench className="h-4 w-4 me-2" />
+              {language === 'ar' ? 'استقبال جهاز جديد' : 'Nouveau appareil'}
+            </Button>
+          </Link>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4 text-center">
+              <p className="text-3xl font-bold text-primary">{stats.total}</p>
+              <p className="text-sm text-muted-foreground">{language === 'ar' ? 'إجمالي الطلبات' : 'Total demandes'}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <p className="text-3xl font-bold text-amber-500">{stats.inProgress}</p>
+              <p className="text-sm text-muted-foreground">{language === 'ar' ? 'قيد العمل' : 'En cours'}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <p className="text-3xl font-bold text-emerald-500">{stats.ready}</p>
+              <p className="text-sm text-muted-foreground">{language === 'ar' ? 'جاهز للتسليم' : 'Prêts'}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <p className="text-3xl font-bold text-gray-500">{stats.delivered}</p>
+              <p className="text-sm text-muted-foreground">{language === 'ar' ? 'تم التسليم' : 'Livrés'}</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={language === 'ar' ? 'بحث برقم التذكرة، الاسم، الهاتف...' : 'Rechercher par ticket, nom, téléphone...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pe-10"
+                  />
+                </div>
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder={language === 'ar' ? 'الحالة' : 'Statut'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{language === 'ar' ? 'جميع الحالات' : 'Tous les statuts'}</SelectItem>
+                  {REPAIR_STATUSES.map(status => (
+                    <SelectItem key={status.id} value={status.id}>
+                      {language === 'ar' ? status.label.ar : status.label.fr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Repairs Table */}
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{language === 'ar' ? 'رقم التذكرة' : 'N° Ticket'}</TableHead>
+                  <TableHead>{language === 'ar' ? 'العميل' : 'Client'}</TableHead>
+                  <TableHead>{language === 'ar' ? 'الجهاز' : 'Appareil'}</TableHead>
+                  <TableHead>{language === 'ar' ? 'الحالة' : 'Statut'}</TableHead>
+                  <TableHead>{language === 'ar' ? 'التكلفة' : 'Coût'}</TableHead>
+                  <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                  <TableHead>{language === 'ar' ? 'إجراءات' : 'Actions'}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRepairs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                      <Wrench className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>{language === 'ar' ? 'لا توجد طلبات صيانة' : 'Aucune demande de réparation'}</p>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredRepairs.map(repair => {
+                    const statusInfo = getStatusInfo(repair.status);
+                    const StatusIcon = statusInfo.icon;
+                    return (
+                      <TableRow key={repair.id}>
+                        <TableCell className="font-mono font-bold">{repair.ticket_number}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{repair.customer_name}</p>
+                            <p className="text-xs text-muted-foreground">{repair.customer_phone}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{repair.device_brand}</p>
+                            <p className="text-xs text-muted-foreground">{repair.device_model}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${statusInfo.color} text-white`}>
+                            <StatusIcon className="h-3 w-3 me-1" />
+                            {language === 'ar' ? statusInfo.label.ar : statusInfo.label.fr}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-bold">{repair.estimated_cost} دج</p>
+                            {repair.advance_payment > 0 && (
+                              <p className="text-xs text-emerald-600">
+                                {language === 'ar' ? 'مقدم' : 'Avance'}: {repair.advance_payment} دج
+                              </p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">
+                          {new Date(repair.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => handleViewDetails(repair)} title={language === 'ar' ? 'عرض التفاصيل' : 'Voir détails'}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleOpenUpdate(repair)} title={language === 'ar' ? 'تحديث الحالة' : 'Mettre à jour'}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title={language === 'ar' ? 'اتصال' : 'Appeler'}>
+                              <Phone className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Details Dialog */}
+        <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5" />
+                {language === 'ar' ? 'تفاصيل طلب الصيانة' : 'Détails de la réparation'}
+              </DialogTitle>
+            </DialogHeader>
+            {selectedRepair && (
+              <div className="space-y-4 py-4">
+                <div className="p-4 bg-muted rounded-lg text-center">
+                  <p className="text-sm text-muted-foreground">{language === 'ar' ? 'رقم التذكرة' : 'N° Ticket'}</p>
+                  <p className="text-2xl font-bold font-mono">{selectedRepair.ticket_number}</p>
+                  <Badge className={`${getStatusInfo(selectedRepair.status).color} text-white mt-2`}>
+                    {language === 'ar' ? getStatusInfo(selectedRepair.status).label.ar : getStatusInfo(selectedRepair.status).label.fr}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {language === 'ar' ? 'العميل' : 'Client'}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="font-bold">{selectedRepair.customer_name}</p>
+                      <p className="text-sm text-muted-foreground">{selectedRepair.customer_phone}</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Smartphone className="h-4 w-4" />
+                        {language === 'ar' ? 'الجهاز' : 'Appareil'}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="font-bold">{selectedRepair.device_brand} {selectedRepair.device_model}</p>
+                      <p className="text-sm text-muted-foreground">{selectedRepair.device_color}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      {language === 'ar' ? 'المشكلة' : 'Problème'}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p>{selectedRepair.problem_description}</p>
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <p className="text-sm text-muted-foreground">{language === 'ar' ? 'التكلفة المقدرة' : 'Coût estimé'}</p>
+                      <p className="text-xl font-bold">{selectedRepair.estimated_cost} دج</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <p className="text-sm text-muted-foreground">{language === 'ar' ? 'المقدم' : 'Avance'}</p>
+                      <p className="text-xl font-bold text-emerald-600">{selectedRepair.advance_payment} دج</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <p className="text-sm text-muted-foreground">{language === 'ar' ? 'المتبقي' : 'Reste'}</p>
+                      <p className="text-xl font-bold text-red-500">{selectedRepair.estimated_cost - selectedRepair.advance_payment} دج</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+                {language === 'ar' ? 'إغلاق' : 'Fermer'}
+              </Button>
+              <Button>
+                <Printer className="h-4 w-4 me-2" />
+                {language === 'ar' ? 'طباعة' : 'Imprimer'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Update Status Dialog */}
+        <Dialog open={showUpdateDialog} onOpenChange={setShowUpdateDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                {language === 'ar' ? 'تحديث حالة الصيانة' : 'Mettre à jour le statut'}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedRepair?.ticket_number}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الحالة الجديدة' : 'Nouveau statut'}</Label>
+                <Select value={updateForm.status} onValueChange={(value) => setUpdateForm(prev => ({ ...prev, status: value }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REPAIR_STATUSES.map(status => (
+                      <SelectItem key={status.id} value={status.id}>
+                        {language === 'ar' ? status.label.ar : status.label.fr}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'التكلفة الفعلية' : 'Coût réel'}</Label>
+                <Input
+                  type="number"
+                  value={updateForm.actual_cost}
+                  onChange={(e) => setUpdateForm(prev => ({ ...prev, actual_cost: e.target.value }))}
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
+                <Textarea
+                  value={updateForm.notes}
+                  onChange={(e) => setUpdateForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder={language === 'ar' ? 'ملاحظات إضافية...' : 'Notes supplémentaires...'}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowUpdateDialog(false)}>
+                {language === 'ar' ? 'إلغاء' : 'Annuler'}
+              </Button>
+              <Button onClick={handleUpdateStatus}>
+                <CheckCircle2 className="h-4 w-4 me-2" />
+                {language === 'ar' ? 'تحديث' : 'Mettre à jour'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </Layout>
+  );
+}
