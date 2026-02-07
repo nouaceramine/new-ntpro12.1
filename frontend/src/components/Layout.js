@@ -31,7 +31,9 @@ import {
   PanelLeftClose,
   PanelLeft,
   DollarSign,
-  ShoppingBag
+  ShoppingBag,
+  BarChart3,
+  ChevronDown
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
