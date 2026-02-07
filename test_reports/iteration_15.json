@@ -1,0 +1,92 @@
+{
+  "summary": "Tested 'Save and Create New' button feature across 6 pages/dialogs. All 6 locations have the button implemented correctly with Arabic text 'حفظ وإنشاء جديد'.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Dialog Components",
+        "issues": ["Console warnings: Missing `Description` or `aria-describedby={undefined}` for {DialogContent} - should add DialogDescription for accessibility"]
+      }
+    ]
+  },
+
+  "passed_tests": [
+    "Add Product page (/products/add): 'Save and Create New' button present with data-testid='save-and-new-btn'",
+    "Product Families dialog: 'Save and Create New' button present with data-testid='save-and-new-family-btn'",
+    "Customer Families dialog: 'Save and Create New' button present with data-testid='save-and-new-family-btn'",
+    "Customers page Add Customer dialog: 'Save and Create New' button present with data-testid='save-and-new-customer-btn'",
+    "Purchases page Add Supplier dialog: 'Save and Create New' button present (text: 'حفظ وإنشاء جديد')",
+    "POS page Add Customer dialog: 'Save and Create New' button present (text: 'حفظ وإنشاء جديد')"
+  ],
+
+  "test_report_links": [
+    ".screenshots/supplier_dialog.png",
+    ".screenshots/pos_customer_dialog.png"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [
+    "All 'Save and Create New' buttons are properly implemented with PlusCircle icon",
+    "Button text is correctly displayed in Arabic as 'حفظ وإنشاء جديد'",
+    "All buttons have consistent styling: variant='outline' with gap-2 class",
+    "Add Product page button has proper data-testid='save-and-new-btn'",
+    "Family dialogs have data-testid='save-and-new-family-btn'",
+    "Customer dialog on Customers page has data-testid='save-and-new-customer-btn'",
+    "Minor: Supplier dialog on Purchases page could add a data-testid attribute for testing",
+    "Minor: Customer dialog on POS page could add a data-testid attribute for testing"
+  ],
+
+  "updated_files": [],
+
+  "success_rate": {
+    "backend": "N/A - Frontend only test",
+    "frontend": "100% - 6/6 buttons verified"
+  },
+
+  "test_credentials": {
+    "email": "test@test.com",
+    "password": "test123"
+  },
+
+  "seed_data_creation": "No new seed data created",
+
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "All 'Save and Create New' buttons verified: 1) Add Product page has save-and-new-btn, 2) Product Families dialog has save-and-new-family-btn, 3) Customer Families dialog has save-and-new-family-btn, 4) Customers Add dialog has save-and-new-customer-btn, 5) Purchases Supplier dialog has the button (no data-testid), 6) POS Customer dialog has the button (no data-testid). All buttons display 'حفظ وإنشاء جديد' in Arabic.",
+
+  "features_tested": {
+    "Add Product Page - Save and Create New": {
+      "status": "WORKING",
+      "details": "Button with data-testid='save-and-new-btn', displays 'حفظ وإنشاء جديد', uses PlusCircle icon"
+    },
+    "Product Families Dialog - Save and Create New": {
+      "status": "WORKING",
+      "details": "Button with data-testid='save-and-new-family-btn', only shown when NOT editing"
+    },
+    "Customer Families Dialog - Save and Create New": {
+      "status": "WORKING",
+      "details": "Button with data-testid='save-and-new-family-btn', only shown when NOT editing"
+    },
+    "Customers Page Add Dialog - Save and Create New": {
+      "status": "WORKING",
+      "details": "Button with data-testid='save-and-new-customer-btn', only shown when NOT editing"
+    },
+    "Purchases Page Add Supplier Dialog - Save and Create New": {
+      "status": "WORKING",
+      "details": "Button present with text 'حفظ وإنشاء جديد' and PlusCircle icon"
+    },
+    "POS Page Add Customer Dialog - Save and Create New": {
+      "status": "WORKING",
+      "details": "Button present with text 'حفظ وإنشاء جديد' and PlusCircle icon"
+    }
+  }
+}
