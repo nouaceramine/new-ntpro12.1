@@ -58,21 +58,30 @@ export default function CustomersPage() {
     fetchCustomers();
   }, [searchQuery]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, createNew = false) => {
+    e?.preventDefault();
+    setSaving(true);
     try {
       if (selectedCustomer) {
         await axios.put(`${API}/customers/${selectedCustomer.id}`, formData);
         toast.success(t.customerUpdated);
+        setDialogOpen(false);
+        resetForm();
       } else {
         await axios.post(`${API}/customers`, formData);
         toast.success(t.customerAdded);
+        if (createNew) {
+          resetForm();
+        } else {
+          setDialogOpen(false);
+          resetForm();
+        }
       }
-      setDialogOpen(false);
-      resetForm();
       fetchCustomers();
     } catch (error) {
       toast.error(t.somethingWentWrong);
+    } finally {
+      setSaving(false);
     }
   };
 
