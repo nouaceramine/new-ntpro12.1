@@ -833,61 +833,85 @@ export default function POSPage() {
           </CardContent>
         </Card>
 
-        {/* Debt Reminders Panel */}
-        {showDebtRemindersPanel && debtReminders.length > 0 && (
-          <Card className="border-amber-200 bg-amber-50">
+        {/* Debt Reminders Panel - Always visible when debts exist */}
+        {debtReminders.length > 0 && (
+          <Card className="border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-amber-800 flex items-center gap-2 text-base">
-                  <Bell className="h-5 w-5" />
-                  {language === 'ar' ? 'تذكيرات ديون الزبائن' : 'Rappels de dettes clients'}
-                  <Badge className="bg-amber-600">{debtReminders.length}</Badge>
+                  <div className="p-2 bg-amber-200 rounded-lg">
+                    <DollarSign className="h-5 w-5 text-amber-700" />
+                  </div>
+                  {language === 'ar' ? 'ديون الزبائن المستحقة' : 'Dettes clients en attente'}
+                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white">{debtReminders.length}</Badge>
                 </CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowDebtRemindersPanel(false)}
+                  onClick={() => setShowDebtRemindersPanel(!showDebtRemindersPanel)}
+                  className="text-amber-700 hover:bg-amber-200"
                 >
-                  <X className="h-4 w-4" />
+                  {showDebtRemindersPanel ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-2 max-h-40 overflow-auto">
-                {debtReminders.slice(0, 5).map((reminder) => (
-                  <div 
-                    key={reminder.customer_id}
-                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-amber-100 ${
-                      reminder.is_urgent ? 'bg-red-100 border border-red-200' : 'bg-white'
-                    }`}
-                    onClick={() => {
-                      setSelectedCustomer(reminder.customer_id);
-                      setShowDebtRemindersPanel(false);
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <User className={`h-4 w-4 ${reminder.is_urgent ? 'text-red-600' : 'text-amber-600'}`} />
-                      <div>
-                        <p className="font-medium text-sm">{reminder.customer_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {reminder.phone || '---'} • {language === 'ar' ? `منذ ${reminder.days_since_last_purchase} يوم` : `Il y a ${reminder.days_since_last_purchase} jours`}
+            {showDebtRemindersPanel && (
+              <CardContent className="pt-0">
+                <div className="space-y-2 max-h-60 overflow-auto">
+                  {debtReminders.map((reminder) => (
+                    <div 
+                      key={reminder.customer_id}
+                      className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] ${
+                        reminder.is_urgent 
+                          ? 'bg-gradient-to-r from-red-100 to-red-50 border border-red-300 shadow-sm' 
+                          : 'bg-white border border-amber-200 shadow-sm'
+                      }`}
+                      onClick={() => {
+                        setSelectedCustomer(reminder.customer_id);
+                        setDebtPaymentAmount(reminder.total_debt);
+                        setShowDebtDialog(true);
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${reminder.is_urgent ? 'bg-red-200' : 'bg-amber-200'}`}>
+                          <User className={`h-4 w-4 ${reminder.is_urgent ? 'text-red-600' : 'text-amber-600'}`} />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{reminder.customer_name}</p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {reminder.phone || '---'} 
+                            <span className="mx-1">•</span>
+                            <Clock className="h-3 w-3" />
+                            {language === 'ar' ? `منذ ${reminder.days_since_last_purchase} يوم` : `Il y a ${reminder.days_since_last_purchase}j`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-end">
+                        <p className={`font-bold text-lg ${reminder.is_urgent ? 'text-red-600' : 'text-amber-700'}`}>
+                          {formatCurrency(reminder.total_debt)}
+                          <span className="text-xs ms-1 font-normal">{t.currency}</span>
                         </p>
+                        {reminder.is_urgent && (
+                          <Badge variant="destructive" className="text-xs animate-pulse">
+                            <AlertCircle className="h-3 w-3 me-1" />
+                            {language === 'ar' ? 'عاجل!' : 'Urgent!'}
+                          </Badge>
+                        )}
                       </div>
                     </div>
-                    <div className="text-end">
-                      <p className={`font-bold ${reminder.is_urgent ? 'text-red-600' : 'text-amber-700'}`}>
-                        {formatCurrency(reminder.total_debt)} {t.currency}
-                      </p>
-                      {reminder.is_urgent && (
-                        <Badge variant="destructive" className="text-xs">
-                          {language === 'ar' ? 'عاجل' : 'Urgent'}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
+                  ))}
+                </div>
+                <div className="mt-3 pt-3 border-t border-amber-200 flex items-center justify-between">
+                  <p className="text-sm text-amber-700">
+                    {language === 'ar' ? 'إجمالي الديون المستحقة:' : 'Total des dettes:'}
+                  </p>
+                  <p className="font-bold text-xl text-amber-800">
+                    {formatCurrency(debtReminders.reduce((sum, r) => sum + r.total_debt, 0))} {t.currency}
+                  </p>
+                </div>
+              </CardContent>
+            )}
           </Card>
         )}
 
