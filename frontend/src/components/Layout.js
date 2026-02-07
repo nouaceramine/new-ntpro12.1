@@ -128,7 +128,7 @@ export const Layout = ({ children }) => {
           { path: '/product-families', icon: FolderTree, label: t.productFamilies },
           { path: '/warehouses', icon: Warehouse, label: language === 'ar' ? 'المخازن' : 'Entrepôts' },
           { path: '/inventory-count', icon: ClipboardList, label: language === 'ar' ? 'جرد المخزون' : 'Inventaire' },
-          { path: '/barcode-print', icon: Barcode, label: language === 'ar' ? 'طباعة الباركود' : 'Codes-barres' },
+          { path: '/barcode-print', icon: QrCode, label: language === 'ar' ? 'طباعة الباركود' : 'Codes-barres' },
           { path: '/bulk-price-update', icon: DollarSign, label: t.bulkPriceUpdate },
         ] : [])
       ]
