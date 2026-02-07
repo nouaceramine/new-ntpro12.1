@@ -386,8 +386,11 @@ export const Layout = ({ children }) => {
                     ) : (
                       notifications.map(notif => (
                         <div key={notif.id} className="p-4 border-b hover:bg-muted/50">
-                          <p className="text-sm">
-                            {language === 'ar' ? notif.message_ar : notif.message_en}
+                          <p className="font-medium text-sm mb-1">
+                            {language === 'ar' ? (notif.title || notif.title_ar) : (notif.title_fr || notif.title_en || notif.title)}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {language === 'ar' ? (notif.message || notif.message_ar) : (notif.message_fr || notif.message_en || notif.message)}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
                             {new Date(notif.created_at).toLocaleString()}
