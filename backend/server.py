@@ -1049,6 +1049,157 @@ async def delete_customer(customer_id: str, admin: dict = Depends(get_admin_user
         raise HTTPException(status_code=404, detail="Customer not found")
     return {"message": "Customer deleted successfully"}
 
+# ============ WAREHOUSE ROUTES ============
+
+@api_router.post("/warehouses", response_model=WarehouseResponse)
+async def create_warehouse(warehouse: WarehouseCreate, admin: dict = Depends(get_admin_user)):
+    warehouse_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # If this is set as main, unset any existing main warehouse
+    if warehouse.is_main:
+        await db.warehouses.update_many({"is_main": True}, {"$set": {"is_main": False}})
+    
+    warehouse_doc = {
+        "id": warehouse_id,
+        "name": warehouse.name,
+        "address": warehouse.address or "",
+        "is_main": warehouse.is_main,
+        "created_at": now
+    }
+    await db.warehouses.insert_one(warehouse_doc)
+    return WarehouseResponse(**warehouse_doc)
+
+@api_router.get("/warehouses", response_model=List[WarehouseResponse])
+async def get_warehouses(user: dict = Depends(get_current_user)):
+    warehouses = await db.warehouses.find({}, {"_id": 0}).to_list(100)
+    return [WarehouseResponse(**w) for w in warehouses]
+
+@api_router.put("/warehouses/{warehouse_id}", response_model=WarehouseResponse)
+async def update_warehouse(warehouse_id: str, updates: WarehouseUpdate, admin: dict = Depends(get_admin_user)):
+    warehouse = await db.warehouses.find_one({"id": warehouse_id})
+    if not warehouse:
+        raise HTTPException(status_code=404, detail="Warehouse not found")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    
+    # If setting as main, unset others
+    if update_data.get("is_main"):
+        await db.warehouses.update_many({"is_main": True}, {"$set": {"is_main": False}})
+    
+    if update_data:
+        await db.warehouses.update_one({"id": warehouse_id}, {"$set": update_data})
+    
+    updated = await db.warehouses.find_one({"id": warehouse_id}, {"_id": 0})
+    return WarehouseResponse(**updated)
+
+@api_router.delete("/warehouses/{warehouse_id}")
+async def delete_warehouse(warehouse_id: str, admin: dict = Depends(get_admin_user)):
+    warehouse = await db.warehouses.find_one({"id": warehouse_id})
+    if not warehouse:
+        raise HTTPException(status_code=404, detail="Warehouse not found")
+    if warehouse.get("is_main"):
+        raise HTTPException(status_code=400, detail="Cannot delete main warehouse")
+    
+    result = await db.warehouses.delete_one({"id": warehouse_id})
+    return {"message": "Warehouse deleted successfully"}
+
+# ============ STOCK TRANSFER ROUTES ============
+
+@api_router.post("/stock-transfers")
+async def create_stock_transfer(transfer: StockTransferCreate, admin: dict = Depends(get_admin_user)):
+    # Validate warehouses
+    from_wh = await db.warehouses.find_one({"id": transfer.from_warehouse})
+    to_wh = await db.warehouses.find_one({"id": transfer.to_warehouse})
+    if not from_wh or not to_wh:
+        raise HTTPException(status_code=404, detail="Warehouse not found")
+    
+    # Validate product
+    product = await db.products.find_one({"id": transfer.product_id})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Check quantity
+    if product.get("quantity", 0) < transfer.quantity:
+        raise HTTPException(status_code=400, detail="Insufficient quantity")
+    
+    transfer_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    transfer_doc = {
+        "id": transfer_id,
+        "from_warehouse": transfer.from_warehouse,
+        "from_warehouse_name": from_wh["name"],
+        "to_warehouse": transfer.to_warehouse,
+        "to_warehouse_name": to_wh["name"],
+        "product_id": transfer.product_id,
+        "product_name": product.get("name_ar", product.get("name_en", "")),
+        "quantity": transfer.quantity,
+        "created_at": now
+    }
+    
+    await db.stock_transfers.insert_one(transfer_doc)
+    
+    # Update product warehouse_id if needed (for tracking)
+    # Note: In a full multi-warehouse system, you'd track quantity per warehouse
+    
+    return transfer_doc
+
+@api_router.get("/stock-transfers")
+async def get_stock_transfers(user: dict = Depends(get_current_user)):
+    transfers = await db.stock_transfers.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return transfers
+
+# ============ INVENTORY SESSION ROUTES ============
+
+@api_router.post("/inventory-sessions")
+async def create_inventory_session(session: InventorySessionCreate, admin: dict = Depends(get_admin_user)):
+    # Check for existing active session
+    existing = await db.inventory_sessions.find_one({"status": "active"})
+    if existing:
+        raise HTTPException(status_code=400, detail="An active inventory session already exists")
+    
+    session_id = str(uuid.uuid4())
+    
+    session_doc = {
+        "id": session_id,
+        "name": session.name,
+        "family_filter": session.family_filter,
+        "status": "active",
+        "started_at": session.started_at,
+        "completed_at": None,
+        "applied_changes": False,
+        "counted_items": session.counted_items
+    }
+    
+    await db.inventory_sessions.insert_one(session_doc)
+    return session_doc
+
+@api_router.get("/inventory-sessions")
+async def get_inventory_sessions(user: dict = Depends(get_current_user)):
+    sessions = await db.inventory_sessions.find({}, {"_id": 0}).sort("started_at", -1).to_list(100)
+    return sessions
+
+@api_router.put("/inventory-sessions/{session_id}")
+async def update_inventory_session(session_id: str, updates: InventorySessionUpdate, admin: dict = Depends(get_admin_user)):
+    session = await db.inventory_sessions.find_one({"id": session_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="Inventory session not found")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    if update_data:
+        await db.inventory_sessions.update_one({"id": session_id}, {"$set": update_data})
+    
+    updated = await db.inventory_sessions.find_one({"id": session_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/inventory-sessions/{session_id}")
+async def delete_inventory_session(session_id: str, admin: dict = Depends(get_admin_user)):
+    result = await db.inventory_sessions.delete_one({"id": session_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Inventory session not found")
+    return {"message": "Inventory session deleted successfully"}
+
 # ============ SUPPLIER ROUTES ============
 
 @api_router.post("/suppliers", response_model=SupplierResponse)
