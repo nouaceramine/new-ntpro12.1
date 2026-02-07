@@ -926,6 +926,85 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
 
+            {/* Login Page Branding */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  {language === 'ar' ? 'تخصيص صفحة الدخول' : 'Personnalisation de la page de connexion'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'تغيير الشعار والاسم والصورة في صفحة تسجيل الدخول' 
+                    : 'Modifier le logo, le nom et l\'image sur la page de connexion'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'اسم النظام/المتجر' : 'Nom du système/magasin'}</Label>
+                    <Input
+                      value={brandingSettings.business_name}
+                      onChange={(e) => setBrandingSettings(prev => ({ ...prev, business_name: e.target.value }))}
+                      placeholder="NT"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'رابط الشعار (Logo URL)' : 'URL du logo'}</Label>
+                    <Input
+                      value={brandingSettings.logo_url}
+                      onChange={(e) => setBrandingSettings(prev => ({ ...prev, logo_url: e.target.value }))}
+                      placeholder="https://example.com/logo.png"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'رابط صورة الخلفية' : 'URL de l\'image de fond'}</Label>
+                  <Input
+                    value={brandingSettings.background_image_url}
+                    onChange={(e) => setBrandingSettings(prev => ({ ...prev, background_image_url: e.target.value }))}
+                    placeholder="https://example.com/background.jpg"
+                    dir="ltr"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'الشعار النصي (عربي)' : 'Slogan (arabe)'}</Label>
+                    <Input
+                      value={brandingSettings.tagline_ar}
+                      onChange={(e) => setBrandingSettings(prev => ({ ...prev, tagline_ar: e.target.value }))}
+                      placeholder="إدارة مخزون زجاج الحماية بسهولة"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'الشعار النصي (فرنسي)' : 'Slogan (français)'}</Label>
+                    <Input
+                      value={brandingSettings.tagline_fr}
+                      onChange={(e) => setBrandingSettings(prev => ({ ...prev, tagline_fr: e.target.value }))}
+                      placeholder="Gestion facile de stock de protection"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={saveBrandingSettings} 
+                  disabled={savingBranding}
+                  className="gap-2"
+                >
+                  {savingBranding ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {language === 'ar' ? 'حفظ إعدادات صفحة الدخول' : 'Enregistrer'}
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Factory Reset */}
             <Card className="border-red-200 dark:border-red-900">
               <CardHeader>
