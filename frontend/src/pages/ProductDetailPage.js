@@ -25,7 +25,11 @@ import {
   Trash2, 
   Package,
   DollarSign,
-  Boxes
+  Boxes,
+  ShoppingBag,
+  ExternalLink,
+  RefreshCw,
+  XCircle
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -40,6 +44,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
@@ -72,6 +78,36 @@ export default function ProductDetailPage() {
     } finally {
       setDeleting(false);
       setDeleteDialogOpen(false);
+    }
+  };
+
+  const handlePublishToWooCommerce = async () => {
+    setPublishing(true);
+    try {
+      const response = await axios.post(`${API}/woocommerce/publish-product/${id}`);
+      toast.success(language === 'ar' ? 'تم نشر المنتج على المتجر' : 'Produit publié sur la boutique');
+      // Refresh product data
+      const productRes = await axios.get(`${API}/products/${id}`);
+      setProduct(productRes.data);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || (language === 'ar' ? 'خطأ في النشر' : 'Erreur de publication'));
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const handleUnpublishFromWooCommerce = async () => {
+    setUnpublishing(true);
+    try {
+      await axios.delete(`${API}/woocommerce/unpublish-product/${id}`);
+      toast.success(language === 'ar' ? 'تم إلغاء نشر المنتج' : 'Produit retiré de la boutique');
+      // Refresh product data
+      const productRes = await axios.get(`${API}/products/${id}`);
+      setProduct(productRes.data);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || (language === 'ar' ? 'خطأ في الإلغاء' : 'Erreur de retrait'));
+    } finally {
+      setUnpublishing(false);
     }
   };
 
@@ -156,7 +192,39 @@ export default function ProductDetailPage() {
                   </div>
                   
                   {isAdmin && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {/* WooCommerce Publish Button */}
+                      {product.woocommerce_id ? (
+                        <Button 
+                          variant="outline" 
+                          className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                          onClick={handleUnpublishFromWooCommerce}
+                          disabled={unpublishing}
+                          data-testid="unpublish-woo-btn"
+                        >
+                          {unpublishing ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <XCircle className="h-4 w-4" />
+                          )}
+                          {language === 'ar' ? 'إلغاء النشر' : 'Retirer'}
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          className="gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                          onClick={handlePublishToWooCommerce}
+                          disabled={publishing}
+                          data-testid="publish-woo-btn"
+                        >
+                          {publishing ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ShoppingBag className="h-4 w-4" />
+                          )}
+                          {language === 'ar' ? 'نشر على WooCommerce' : 'Publier WooCommerce'}
+                        </Button>
+                      )}
                       <Link to={`/products/${id}/edit`}>
                         <Button variant="outline" className="gap-2" data-testid="edit-product-btn">
                           <Edit className="h-4 w-4" />
@@ -183,6 +251,36 @@ export default function ProductDetailPage() {
                     {language === 'ar' ? product.description_ar : product.description_en}
                   </p>
                 </div>
+
+                {/* WooCommerce Status */}
+                {product.woocommerce_id && (
+                  <div className="mt-6 p-4 rounded-xl bg-purple-50 border border-purple-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ShoppingBag className="h-5 w-5 text-purple-600" />
+                        <span className="font-medium text-purple-700">
+                          {language === 'ar' ? 'منشور على WooCommerce' : 'Publié sur WooCommerce'}
+                        </span>
+                      </div>
+                      {product.woocommerce_url && (
+                        <a 
+                          href={product.woocommerce_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-sm text-purple-600 hover:underline"
+                        >
+                          {language === 'ar' ? 'عرض' : 'Voir'}
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
+                    {product.woocommerce_synced_at && (
+                      <p className="text-xs text-purple-600 mt-1">
+                        {language === 'ar' ? 'آخر مزامنة' : 'Dernière sync'}: {new Date(product.woocommerce_synced_at).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {/* Price & Quantity */}
                 <div className="grid grid-cols-2 gap-4 mt-6">
