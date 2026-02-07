@@ -158,6 +158,28 @@ export default function AddProductPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Manual validation for prices
+    if (!formData.name_en.trim() || !formData.name_ar.trim()) {
+      toast.error(language === 'ar' ? 'يرجى إدخال اسم المنتج' : 'Veuillez entrer le nom du produit');
+      return;
+    }
+    
+    if (!formData.purchase_price || parseFloat(formData.purchase_price) < 0) {
+      toast.error(language === 'ar' ? 'يرجى إدخال سعر الشراء' : 'Veuillez entrer le prix d\'achat');
+      return;
+    }
+    
+    if (!formData.wholesale_price || parseFloat(formData.wholesale_price) < 0) {
+      toast.error(language === 'ar' ? 'يرجى إدخال سعر الجملة' : 'Veuillez entrer le prix de gros');
+      return;
+    }
+    
+    if (!formData.retail_price || parseFloat(formData.retail_price) < 0) {
+      toast.error(language === 'ar' ? 'يرجى إدخال سعر التجزئة' : 'Veuillez entrer le prix de détail');
+      return;
+    }
+    
     setLoading(true);
 
     try {
