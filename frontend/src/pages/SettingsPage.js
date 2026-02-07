@@ -82,6 +82,16 @@ export default function SettingsPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
   
+  // Add New User
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'seller'
+  });
+  const [addingUser, setAddingUser] = useState(false);
+  
   // Password Change
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [passwordUser, setPasswordUser] = useState(null);
