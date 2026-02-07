@@ -172,19 +172,6 @@ export default function LoginPage() {
                   {loading ? t.loading : t.login}
                 </Button>
               </form>
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {t.noAccount}{' '}
-                  <Link 
-                    to="/register" 
-                    className="text-primary font-medium hover:underline"
-                    data-testid="go-to-register"
-                  >
-                    {t.register}
-                  </Link>
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
