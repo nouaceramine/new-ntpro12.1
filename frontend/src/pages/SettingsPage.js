@@ -59,7 +59,9 @@ import {
   Monitor,
   Key,
   ImageIcon,
-  MessageCircle
+  MessageCircle,
+  Mail,
+  Send
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
