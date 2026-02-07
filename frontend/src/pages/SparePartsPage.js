@@ -279,36 +279,55 @@ export default function SparePartsPage() {
     setShowAddDialog(true);
   };
 
-  const handleSave = () => {
-    if (!formData.name || !formData.category || !formData.brand) {
+  const handleSave = async () => {
+    if (!formData.name || !formData.category) {
       toast.error(language === 'ar' ? 'يرجى ملء الحقول المطلوبة' : 'Veuillez remplir les champs requis');
       return;
     }
 
     const partData = {
-      ...formData,
-      compatible_models: formData.compatible_models.split(',').map(m => m.trim()).filter(m => m),
-      purchase_price: parseFloat(formData.purchase_price) || 0,
+      name: formData.name,
+      name_ar: formData.name_ar || formData.name,
+      category: formData.category,
+      compatible_brands: formData.compatible_brands || [],
+      compatible_models: formData.compatible_models,
+      buy_price: parseFloat(formData.buy_price) || 0,
       sell_price: parseFloat(formData.sell_price) || 0,
       quantity: parseInt(formData.quantity) || 0,
-      low_stock_threshold: parseInt(formData.low_stock_threshold) || 5,
+      min_stock: parseInt(formData.min_stock) || 5,
+      supplier: formData.supplier || '',
+      notes: formData.notes || '',
     };
 
-    if (editingPart) {
-      setParts(prev => prev.map(p => p.id === editingPart.id ? { ...p, ...partData } : p));
-      toast.success(language === 'ar' ? 'تم تحديث القطعة' : 'Pièce mise à jour');
-    } else {
-      const newPart = { ...partData, id: Date.now().toString() };
-      setParts(prev => [newPart, ...prev]);
-      toast.success(language === 'ar' ? 'تمت إضافة القطعة' : 'Pièce ajoutée');
-    }
+    try {
+      if (editingPart) {
+        await axios.put(`${API}/spare-parts/${editingPart.id}`, partData);
+        toast.success(language === 'ar' ? 'تم تحديث القطعة' : 'Pièce mise à jour');
+      } else {
+        await axios.post(`${API}/spare-parts`, partData);
+        toast.success(language === 'ar' ? 'تمت إضافة القطعة' : 'Pièce ajoutée');
+      }
 
-    setShowAddDialog(false);
+      // Refresh data
+      await fetchParts();
+      await fetchStats();
+      setShowAddDialog(false);
+    } catch (error) {
+      console.error('Error saving spare part:', error);
+      toast.error(language === 'ar' ? 'فشل في حفظ القطعة' : 'Échec de l\'enregistrement');
+    }
   };
 
-  const handleDelete = (partId) => {
-    setParts(prev => prev.filter(p => p.id !== partId));
-    toast.success(language === 'ar' ? 'تم حذف القطعة' : 'Pièce supprimée');
+  const handleDelete = async (partId) => {
+    try {
+      await axios.delete(`${API}/spare-parts/${partId}`);
+      await fetchParts();
+      await fetchStats();
+      toast.success(language === 'ar' ? 'تم حذف القطعة' : 'Pièce supprimée');
+    } catch (error) {
+      console.error('Error deleting spare part:', error);
+      toast.error(language === 'ar' ? 'فشل في حذف القطعة' : 'Échec de la suppression');
+    }
   };
 
   const lowStockParts = getLowStockParts();
