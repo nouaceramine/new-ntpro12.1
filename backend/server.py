@@ -3207,6 +3207,407 @@ async def update_system_settings(settings: SystemSettingsUpdate, admin: dict = D
     
     return {"message": "تم تحديث الإعدادات بنجاح"}
 
+# ============ SIM BALANCE MANAGEMENT ============
+
+class SimSlotBalance(BaseModel):
+    slot_id: int  # 1 أو 2
+    operator: str  # موبيليس، جازي، أوريدو
+    phone: str
+    balance: float = 0
+    last_updated: str = ""
+
+class SimBalanceUpdate(BaseModel):
+    balance: float
+    notes: Optional[str] = ""
+
+@api_router.get("/sim/slots")
+async def get_sim_slots(admin: dict = Depends(get_admin_user)):
+    """Get all SIM slots with their balances"""
+    slots = await db.sim_slots.find({}, {"_id": 0}).to_list(10)
+    if not slots:
+        # Create default slots
+        default_slots = [
+            {"slot_id": 1, "operator": "موبيليس", "phone": "", "balance": 0, "last_updated": "", "prefix": "06"},
+            {"slot_id": 2, "operator": "جازي", "phone": "", "balance": 0, "last_updated": "", "prefix": "07"},
+            {"slot_id": 3, "operator": "أوريدو", "phone": "", "balance": 0, "last_updated": "", "prefix": "05"}
+        ]
+        await db.sim_slots.insert_many(default_slots)
+        slots = default_slots
+    return slots
+
+@api_router.put("/sim/slots/{slot_id}")
+async def update_sim_slot(slot_id: int, slot_data: dict, admin: dict = Depends(get_admin_user)):
+    """Update SIM slot info"""
+    now = datetime.now(timezone.utc).isoformat()
+    update_data = {**slot_data, "last_updated": now}
+    
+    await db.sim_slots.update_one(
+        {"slot_id": slot_id},
+        {"$set": update_data},
+        upsert=True
+    )
+    return {"message": "تم تحديث الشريحة بنجاح"}
+
+@api_router.put("/sim/slots/{slot_id}/balance")
+async def update_sim_balance(slot_id: int, balance_data: SimBalanceUpdate, admin: dict = Depends(get_admin_user)):
+    """Update SIM slot balance"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get current slot
+    slot = await db.sim_slots.find_one({"slot_id": slot_id})
+    old_balance = slot.get("balance", 0) if slot else 0
+    
+    await db.sim_slots.update_one(
+        {"slot_id": slot_id},
+        {"$set": {"balance": balance_data.balance, "last_updated": now}}
+    )
+    
+    # Log the balance change
+    log_entry = {
+        "id": str(uuid.uuid4()),
+        "slot_id": slot_id,
+        "old_balance": old_balance,
+        "new_balance": balance_data.balance,
+        "change": balance_data.balance - old_balance,
+        "notes": balance_data.notes or "",
+        "created_at": now,
+        "created_by": admin.get("name", "")
+    }
+    await db.sim_balance_logs.insert_one(log_entry)
+    
+    return {"message": "تم تحديث الرصيد بنجاح"}
+
+@api_router.get("/sim/slots/{slot_id}/logs")
+async def get_sim_balance_logs(slot_id: int, admin: dict = Depends(get_admin_user)):
+    """Get balance change history for a SIM slot"""
+    logs = await db.sim_balance_logs.find({"slot_id": slot_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    return logs
+
+# ============ AUTO RECHARGE BY OPERATOR ============
+
+@api_router.post("/recharge/auto")
+async def auto_recharge(phone: str, amount: float, user: dict = Depends(get_current_user)):
+    """Auto-select SIM slot based on phone number prefix"""
+    
+    # Clean phone number
+    clean_phone = phone.replace(" ", "").replace("-", "")
+    if clean_phone.startswith("+213"):
+        clean_phone = "0" + clean_phone[4:]
+    elif clean_phone.startswith("213"):
+        clean_phone = "0" + clean_phone[3:]
+    
+    # Determine operator by prefix
+    prefix = clean_phone[:2] if len(clean_phone) >= 2 else ""
+    
+    operator_map = {
+        "06": {"name": "موبيليس", "name_fr": "Mobilis"},
+        "07": {"name": "جازي", "name_fr": "Djezzy"},
+        "05": {"name": "أوريدو", "name_fr": "Ooredoo"}
+    }
+    
+    if prefix not in operator_map:
+        raise HTTPException(status_code=400, detail="رقم هاتف غير صالح. يجب أن يبدأ بـ 05, 06, أو 07")
+    
+    operator = operator_map[prefix]
+    
+    # Find the appropriate SIM slot
+    slot = await db.sim_slots.find_one({"prefix": prefix}, {"_id": 0})
+    
+    if not slot or not slot.get("phone"):
+        raise HTTPException(status_code=400, detail=f"شريحة {operator['name']} غير مفعلة")
+    
+    if slot.get("balance", 0) < amount:
+        raise HTTPException(status_code=400, detail=f"رصيد شريحة {operator['name']} غير كافي")
+    
+    # Log the recharge (MOCKED)
+    now = datetime.now(timezone.utc).isoformat()
+    recharge_log = {
+        "id": str(uuid.uuid4()),
+        "phone": clean_phone,
+        "amount": amount,
+        "operator": operator["name"],
+        "slot_id": slot["slot_id"],
+        "status": "success",  # MOCKED
+        "created_at": now,
+        "created_by": user.get("name", "")
+    }
+    await db.recharge_logs.insert_one(recharge_log)
+    
+    # Deduct from SIM balance
+    await db.sim_slots.update_one(
+        {"slot_id": slot["slot_id"]},
+        {"$inc": {"balance": -amount}, "$set": {"last_updated": now}}
+    )
+    
+    return {
+        "success": True,
+        "phone": clean_phone,
+        "amount": amount,
+        "operator": operator["name"],
+        "message": f"تم شحن {amount} دج لـ {clean_phone} عبر {operator['name']}"
+    }
+
+# ============ WOOCOMMERCE INTEGRATION (UI Ready) ============
+
+class WooCommerceSettings(BaseModel):
+    enabled: bool = False
+    store_url: str = ""
+    consumer_key: str = ""
+    consumer_secret: str = ""
+    sync_products: bool = True
+    sync_orders: bool = True
+    sync_customers: bool = True
+    last_sync: str = ""
+
+@api_router.get("/woocommerce/settings")
+async def get_woocommerce_settings(admin: dict = Depends(get_admin_user)):
+    """Get WooCommerce integration settings"""
+    settings = await db.woocommerce_settings.find_one({"id": "global"}, {"_id": 0})
+    if not settings:
+        settings = {
+            "id": "global",
+            "enabled": False,
+            "store_url": "",
+            "consumer_key": "",
+            "consumer_secret": "",
+            "sync_products": True,
+            "sync_orders": True,
+            "sync_customers": True,
+            "last_sync": ""
+        }
+        await db.woocommerce_settings.insert_one(settings)
+    return settings
+
+@api_router.put("/woocommerce/settings")
+async def update_woocommerce_settings(settings: WooCommerceSettings, admin: dict = Depends(get_admin_user)):
+    """Update WooCommerce integration settings"""
+    update_data = settings.model_dump()
+    
+    await db.woocommerce_settings.update_one(
+        {"id": "global"},
+        {"$set": update_data},
+        upsert=True
+    )
+    return {"message": "تم حفظ إعدادات WooCommerce"}
+
+@api_router.post("/woocommerce/test-connection")
+async def test_woocommerce_connection(admin: dict = Depends(get_admin_user)):
+    """Test WooCommerce connection (MOCKED)"""
+    settings = await db.woocommerce_settings.find_one({"id": "global"}, {"_id": 0})
+    
+    if not settings or not settings.get("store_url"):
+        raise HTTPException(status_code=400, detail="يرجى إدخال رابط المتجر أولاً")
+    
+    # MOCKED - In production, actually test the API connection
+    return {
+        "success": True,
+        "message": "تم الاتصال بالمتجر بنجاح (وضع المحاكاة)",
+        "store_info": {
+            "name": "متجرك",
+            "url": settings.get("store_url"),
+            "version": "8.0.0"
+        }
+    }
+
+# ============ SHIPPING/DELIVERY MANAGEMENT ============
+
+ALGERIAN_SHIPPING_COMPANIES = [
+    {"id": "yalidine", "name": "Yalidine", "name_ar": "ياليدين", "website": "https://yalidine.com", "has_api": True},
+    {"id": "zr_express", "name": "ZR Express", "name_ar": "زد آر إكسبريس", "website": "https://zrexpress.com", "has_api": True},
+    {"id": "maystro", "name": "Maystro Delivery", "name_ar": "مايسترو", "website": "https://maystro-delivery.com", "has_api": True},
+    {"id": "ecotrack", "name": "EcoTrack", "name_ar": "إيكو تراك", "website": "https://ecotrack.dz", "has_api": True},
+    {"id": "guepex", "name": "Guepex", "name_ar": "قيبكس", "website": "https://guepex.com", "has_api": True},
+    {"id": "procolis", "name": "Procolis", "name_ar": "بروكوليس", "website": "https://procolis.com", "has_api": False},
+    {"id": "other", "name": "Autre", "name_ar": "أخرى", "website": "", "has_api": False}
+]
+
+class ShippingCompanySettings(BaseModel):
+    company_id: str
+    enabled: bool = False
+    api_key: str = ""
+    api_secret: str = ""
+    default_wilaya: str = ""
+    default_commune: str = ""
+
+class ShippingRateRequest(BaseModel):
+    from_wilaya: str
+    to_wilaya: str
+    weight: float = 0.5  # kg
+    company_id: str = ""
+
+@api_router.get("/shipping/companies")
+async def get_shipping_companies(user: dict = Depends(get_current_user)):
+    """Get list of Algerian shipping companies"""
+    return ALGERIAN_SHIPPING_COMPANIES
+
+@api_router.get("/shipping/settings")
+async def get_shipping_settings(admin: dict = Depends(get_admin_user)):
+    """Get shipping integration settings"""
+    settings = await db.shipping_settings.find({}, {"_id": 0}).to_list(20)
+    
+    # Add default settings for companies not configured
+    configured_ids = {s["company_id"] for s in settings}
+    for company in ALGERIAN_SHIPPING_COMPANIES:
+        if company["id"] not in configured_ids:
+            settings.append({
+                "company_id": company["id"],
+                "enabled": False,
+                "api_key": "",
+                "api_secret": "",
+                "default_wilaya": "",
+                "default_commune": ""
+            })
+    
+    return settings
+
+@api_router.put("/shipping/settings/{company_id}")
+async def update_shipping_settings(company_id: str, settings: ShippingCompanySettings, admin: dict = Depends(get_admin_user)):
+    """Update shipping company settings"""
+    await db.shipping_settings.update_one(
+        {"company_id": company_id},
+        {"$set": settings.model_dump()},
+        upsert=True
+    )
+    return {"message": "تم حفظ إعدادات شركة الشحن"}
+
+@api_router.post("/shipping/calculate-rate")
+async def calculate_shipping_rate(request: ShippingRateRequest, user: dict = Depends(get_current_user)):
+    """Calculate shipping rate (MOCKED - returns estimated prices)"""
+    
+    # MOCKED shipping rates by wilaya distance
+    base_rates = {
+        "yalidine": 400,
+        "zr_express": 350,
+        "maystro": 380,
+        "ecotrack": 420,
+        "guepex": 390,
+        "procolis": 450,
+        "other": 500
+    }
+    
+    # Same wilaya = lower rate
+    is_same_wilaya = request.from_wilaya == request.to_wilaya
+    
+    rates = []
+    for company in ALGERIAN_SHIPPING_COMPANIES:
+        base = base_rates.get(company["id"], 400)
+        if is_same_wilaya:
+            price = base * 0.6
+        else:
+            price = base + (request.weight * 50)
+        
+        rates.append({
+            "company_id": company["id"],
+            "company_name": company["name"],
+            "company_name_ar": company["name_ar"],
+            "price": round(price, 2),
+            "estimated_days": 2 if is_same_wilaya else 4,
+            "currency": "دج"
+        })
+    
+    return {"rates": sorted(rates, key=lambda x: x["price"])}
+
+@api_router.get("/shipping/wilayas")
+async def get_wilayas(user: dict = Depends(get_current_user)):
+    """Get list of Algerian wilayas"""
+    wilayas = [
+        {"code": "01", "name": "أدرار", "name_fr": "Adrar"},
+        {"code": "02", "name": "الشلف", "name_fr": "Chlef"},
+        {"code": "03", "name": "الأغواط", "name_fr": "Laghouat"},
+        {"code": "04", "name": "أم البواقي", "name_fr": "Oum El Bouaghi"},
+        {"code": "05", "name": "باتنة", "name_fr": "Batna"},
+        {"code": "06", "name": "بجاية", "name_fr": "Béjaïa"},
+        {"code": "07", "name": "بسكرة", "name_fr": "Biskra"},
+        {"code": "08", "name": "بشار", "name_fr": "Béchar"},
+        {"code": "09", "name": "البليدة", "name_fr": "Blida"},
+        {"code": "10", "name": "البويرة", "name_fr": "Bouira"},
+        {"code": "11", "name": "تمنراست", "name_fr": "Tamanrasset"},
+        {"code": "12", "name": "تبسة", "name_fr": "Tébessa"},
+        {"code": "13", "name": "تلمسان", "name_fr": "Tlemcen"},
+        {"code": "14", "name": "تيارت", "name_fr": "Tiaret"},
+        {"code": "15", "name": "تيزي وزو", "name_fr": "Tizi Ouzou"},
+        {"code": "16", "name": "الجزائر", "name_fr": "Alger"},
+        {"code": "17", "name": "الجلفة", "name_fr": "Djelfa"},
+        {"code": "18", "name": "جيجل", "name_fr": "Jijel"},
+        {"code": "19", "name": "سطيف", "name_fr": "Sétif"},
+        {"code": "20", "name": "سعيدة", "name_fr": "Saïda"},
+        {"code": "21", "name": "سكيكدة", "name_fr": "Skikda"},
+        {"code": "22", "name": "سيدي بلعباس", "name_fr": "Sidi Bel Abbès"},
+        {"code": "23", "name": "عنابة", "name_fr": "Annaba"},
+        {"code": "24", "name": "قالمة", "name_fr": "Guelma"},
+        {"code": "25", "name": "قسنطينة", "name_fr": "Constantine"},
+        {"code": "26", "name": "المدية", "name_fr": "Médéa"},
+        {"code": "27", "name": "مستغانم", "name_fr": "Mostaganem"},
+        {"code": "28", "name": "المسيلة", "name_fr": "M'Sila"},
+        {"code": "29", "name": "معسكر", "name_fr": "Mascara"},
+        {"code": "30", "name": "ورقلة", "name_fr": "Ouargla"},
+        {"code": "31", "name": "وهران", "name_fr": "Oran"},
+        {"code": "32", "name": "البيض", "name_fr": "El Bayadh"},
+        {"code": "33", "name": "إليزي", "name_fr": "Illizi"},
+        {"code": "34", "name": "برج بوعريريج", "name_fr": "Bordj Bou Arreridj"},
+        {"code": "35", "name": "بومرداس", "name_fr": "Boumerdès"},
+        {"code": "36", "name": "الطارف", "name_fr": "El Tarf"},
+        {"code": "37", "name": "تندوف", "name_fr": "Tindouf"},
+        {"code": "38", "name": "تيسمسيلت", "name_fr": "Tissemsilt"},
+        {"code": "39", "name": "الوادي", "name_fr": "El Oued"},
+        {"code": "40", "name": "خنشلة", "name_fr": "Khenchela"},
+        {"code": "41", "name": "سوق أهراس", "name_fr": "Souk Ahras"},
+        {"code": "42", "name": "تيبازة", "name_fr": "Tipaza"},
+        {"code": "43", "name": "ميلة", "name_fr": "Mila"},
+        {"code": "44", "name": "عين الدفلى", "name_fr": "Aïn Defla"},
+        {"code": "45", "name": "النعامة", "name_fr": "Naâma"},
+        {"code": "46", "name": "عين تموشنت", "name_fr": "Aïn Témouchent"},
+        {"code": "47", "name": "غرداية", "name_fr": "Ghardaïa"},
+        {"code": "48", "name": "غليزان", "name_fr": "Relizane"},
+        {"code": "49", "name": "تميمون", "name_fr": "Timimoun"},
+        {"code": "50", "name": "برج باجي مختار", "name_fr": "Bordj Badji Mokhtar"},
+        {"code": "51", "name": "أولاد جلال", "name_fr": "Ouled Djellal"},
+        {"code": "52", "name": "بني عباس", "name_fr": "Béni Abbès"},
+        {"code": "53", "name": "عين صالح", "name_fr": "In Salah"},
+        {"code": "54", "name": "عين قزام", "name_fr": "In Guezzam"},
+        {"code": "55", "name": "توقرت", "name_fr": "Touggourt"},
+        {"code": "56", "name": "جانت", "name_fr": "Djanet"},
+        {"code": "57", "name": "المغير", "name_fr": "El M'Ghair"},
+        {"code": "58", "name": "المنيعة", "name_fr": "El Meniaa"}
+    ]
+    return wilayas
+
+# ============ LOGIN PAGE CUSTOMIZATION ============
+
+class LoginPageSettings(BaseModel):
+    logo_url: str = ""
+    business_name: str = "NT"
+    background_image_url: str = ""
+    tagline_ar: str = "إدارة مخزون زجاج الحماية بسهولة"
+    tagline_fr: str = "Gestion facile de stock de protection"
+
+@api_router.get("/branding/settings")
+async def get_branding_settings():
+    """Get login page branding settings (public)"""
+    settings = await db.branding_settings.find_one({"id": "global"}, {"_id": 0})
+    if not settings:
+        settings = {
+            "id": "global",
+            "logo_url": "",
+            "business_name": "NT",
+            "background_image_url": "",
+            "tagline_ar": "إدارة مخزون زجاج الحماية بسهولة",
+            "tagline_fr": "Gestion facile de stock de protection"
+        }
+    return settings
+
+@api_router.put("/branding/settings")
+async def update_branding_settings(settings: LoginPageSettings, admin: dict = Depends(get_admin_user)):
+    """Update login page branding settings"""
+    update_data = settings.model_dump()
+    
+    await db.branding_settings.update_one(
+        {"id": "global"},
+        {"$set": update_data},
+        upsert=True
+    )
+    return {"message": "تم تحديث إعدادات العلامة التجارية"}
+
 # ============ SMS REMINDER SYSTEM ============
 
 class SMSReminderRequest(BaseModel):
