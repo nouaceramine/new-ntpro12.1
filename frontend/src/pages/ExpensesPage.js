@@ -244,6 +244,64 @@ export default function ExpensesPage() {
   return (
     <Layout>
       <div className="space-y-6" data-testid="expenses-page">
+        {/* Reminders Alert */}
+        {reminders.length > 0 && (
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-full">
+                <Calendar className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-800 dark:text-amber-200">
+                  {language === 'ar' ? '⏰ تنبيهات الدفع القادمة' : '⏰ Rappels de paiement'}
+                </h3>
+                <div className="mt-2 space-y-2">
+                  {reminders.map((reminder, idx) => (
+                    <div 
+                      key={idx}
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        reminder.is_urgent 
+                          ? 'bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800' 
+                          : 'bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-1.5 rounded-lg ${getCategoryInfo(reminder.category).color}`}>
+                          {(() => {
+                            const Icon = getCategoryInfo(reminder.category).icon;
+                            return <Icon className="h-4 w-4 text-white" />;
+                          })()}
+                        </div>
+                        <div>
+                          <p className="font-medium">{reminder.title}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {reminder.days_until_due === 0 
+                              ? (language === 'ar' ? '⚠️ اليوم!' : '⚠️ Aujourd\'hui!')
+                              : reminder.days_until_due === 1
+                                ? (language === 'ar' ? 'غداً' : 'Demain')
+                                : (language === 'ar' ? `خلال ${reminder.days_until_due} أيام` : `Dans ${reminder.days_until_due} jours`)
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold text-red-600">{formatCurrency(reminder.amount)} {t.currency}</span>
+                        <Button 
+                          size="sm" 
+                          variant={reminder.is_urgent ? "destructive" : "default"}
+                          onClick={() => handleMarkPaid(reminder.expense_id)}
+                        >
+                          {language === 'ar' ? 'تم الدفع' : 'Payé'}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
