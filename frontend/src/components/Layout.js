@@ -89,15 +89,36 @@ export const Layout = ({ children }) => {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setShowInstallBtn(false);
+    if (deferredPrompt) {
+      // If we have native prompt, use it
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setShowInstallBtn(false);
+      }
+      setDeferredPrompt(null);
+    } else {
+      // Show manual instructions
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      if (isIOS) {
+        toast.info(language === 'ar' 
+          ? 'اضغط على زر المشاركة ثم "إضافة إلى الشاشة الرئيسية"'
+          : 'Appuyez sur Partager puis "Ajouter à l\'écran d\'accueil"'
+        );
+      } else if (isAndroid) {
+        toast.info(language === 'ar'
+          ? 'اضغط على القائمة ⋮ ثم "إضافة إلى الشاشة الرئيسية"'
+          : 'Appuyez sur le menu ⋮ puis "Ajouter à l\'écran d\'accueil"'
+        );
+      } else {
+        toast.info(language === 'ar'
+          ? 'يمكنك تثبيت التطبيق من إعدادات المتصفح'
+          : 'Vous pouvez installer l\'app depuis les paramètres du navigateur'
+        );
+      }
     }
-    setDeferredPrompt(null);
   };
 
 
