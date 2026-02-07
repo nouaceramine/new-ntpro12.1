@@ -1198,6 +1198,229 @@ async def delete_customer(customer_id: str, admin: dict = Depends(get_admin_user
         raise HTTPException(status_code=404, detail="Customer not found")
     return {"message": "Customer deleted successfully"}
 
+# ============ CUSTOMER BLACKLIST ============
+
+class BlacklistEntry(BaseModel):
+    phone: str
+    reason: str = ""
+    notes: str = ""
+
+class BlacklistResponse(BaseModel):
+    id: str
+    phone: str
+    reason: str
+    notes: str
+    added_by: str
+    added_by_name: str = ""
+    created_at: str
+
+@api_router.get("/customers/blacklist")
+async def get_blacklist(user: dict = Depends(get_current_user)):
+    """Get all blacklisted phone numbers"""
+    blacklist = await db.customer_blacklist.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return blacklist
+
+@api_router.post("/customers/blacklist")
+async def add_to_blacklist(entry: BlacklistEntry, user: dict = Depends(get_current_user)):
+    """Add phone to blacklist"""
+    # Check if already blacklisted
+    existing = await db.customer_blacklist.find_one({"phone": entry.phone})
+    if existing:
+        raise HTTPException(status_code=400, detail="هذا الرقم موجود بالفعل في القائمة السوداء")
+    
+    blacklist_doc = {
+        "id": str(uuid.uuid4()),
+        "phone": entry.phone,
+        "reason": entry.reason,
+        "notes": entry.notes,
+        "added_by": user["id"],
+        "added_by_name": user.get("name", ""),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.customer_blacklist.insert_one(blacklist_doc)
+    
+    # Mark any customers with this phone as blacklisted
+    await db.customers.update_many(
+        {"phone": entry.phone},
+        {"$set": {"is_blacklisted": True, "blacklist_reason": entry.reason}}
+    )
+    
+    return BlacklistResponse(**blacklist_doc)
+
+@api_router.delete("/customers/blacklist/{entry_id}")
+async def remove_from_blacklist(entry_id: str, user: dict = Depends(get_current_user)):
+    """Remove phone from blacklist"""
+    entry = await db.customer_blacklist.find_one({"id": entry_id})
+    if not entry:
+        raise HTTPException(status_code=404, detail="لم يتم العثور على السجل")
+    
+    # Remove blacklist flag from customers with this phone
+    await db.customers.update_many(
+        {"phone": entry["phone"]},
+        {"$set": {"is_blacklisted": False, "blacklist_reason": ""}}
+    )
+    
+    await db.customer_blacklist.delete_one({"id": entry_id})
+    return {"message": "تم إزالة الرقم من القائمة السوداء"}
+
+@api_router.get("/customers/check-blacklist/{phone}")
+async def check_blacklist(phone: str, user: dict = Depends(get_current_user)):
+    """Check if a phone is blacklisted"""
+    entry = await db.customer_blacklist.find_one({"phone": phone}, {"_id": 0})
+    return {"is_blacklisted": entry is not None, "entry": entry}
+
+# ============ DEBT REMINDERS ============
+
+class DebtReminderSettings(BaseModel):
+    enabled: bool = True
+    reminder_days: List[int] = [7, 14, 30]  # Days after debt to remind
+    min_debt_amount: float = 1000  # Minimum debt to trigger reminder
+
+@api_router.get("/debt-reminders/settings")
+async def get_debt_reminder_settings(user: dict = Depends(get_current_user)):
+    """Get debt reminder settings"""
+    settings = await db.system_settings.find_one({"type": "debt_reminders"}, {"_id": 0})
+    if not settings:
+        return DebtReminderSettings().model_dump()
+    return settings
+
+@api_router.put("/debt-reminders/settings")
+async def update_debt_reminder_settings(settings: DebtReminderSettings, user: dict = Depends(get_current_user)):
+    """Update debt reminder settings"""
+    await db.system_settings.update_one(
+        {"type": "debt_reminders"},
+        {"$set": {**settings.model_dump(), "type": "debt_reminders", "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"success": True, "message": "تم حفظ إعدادات التذكير"}
+
+@api_router.get("/debt-reminders/pending")
+async def get_pending_debt_reminders(user: dict = Depends(get_current_user)):
+    """Get customers with pending debt reminders"""
+    settings = await db.system_settings.find_one({"type": "debt_reminders"})
+    if not settings or not settings.get("enabled", True):
+        return []
+    
+    reminder_days = settings.get("reminder_days", [7, 14, 30])
+    min_amount = settings.get("min_debt_amount", 1000)
+    
+    # Get all customers with debt
+    customers_with_debt = await db.customers.find(
+        {"total_debt": {"$gte": min_amount}},
+        {"_id": 0}
+    ).to_list(500)
+    
+    reminders = []
+    now = datetime.now(timezone.utc)
+    
+    for customer in customers_with_debt:
+        # Get last sale date for this customer
+        last_sale = await db.sales.find_one(
+            {"customer_id": customer["id"], "payment_type": {"$in": ["credit", "partial"]}},
+            sort=[("created_at", -1)]
+        )
+        
+        if last_sale:
+            try:
+                sale_date_str = last_sale.get("created_at", now.isoformat())
+                if 'T' in sale_date_str:
+                    sale_date = datetime.fromisoformat(sale_date_str.replace('Z', '+00:00'))
+                else:
+                    sale_date = datetime.strptime(sale_date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+            except:
+                sale_date = now
+            
+            days_since = (now - sale_date).days
+            
+            # Check if we should remind based on settings
+            for reminder_day in reminder_days:
+                if days_since >= reminder_day:
+                    reminders.append({
+                        "customer_id": customer["id"],
+                        "customer_name": customer["name"],
+                        "phone": customer.get("phone", ""),
+                        "total_debt": customer["total_debt"],
+                        "days_since_last_purchase": days_since,
+                        "reminder_level": reminder_day,
+                        "is_urgent": days_since >= 30
+                    })
+                    break  # Only one reminder per customer
+    
+    # Sort by urgency and debt amount
+    reminders.sort(key=lambda x: (-x["days_since_last_purchase"], -x["total_debt"]))
+    return reminders
+
+@api_router.post("/debt-reminders/dismiss/{customer_id}")
+async def dismiss_debt_reminder(customer_id: str, days: int = 7, user: dict = Depends(get_current_user)):
+    """Dismiss a debt reminder for a period"""
+    await db.debt_reminder_dismissals.update_one(
+        {"customer_id": customer_id},
+        {"$set": {
+            "customer_id": customer_id,
+            "dismissed_until": (datetime.now(timezone.utc) + timedelta(days=days)).isoformat(),
+            "dismissed_by": user["id"]
+        }},
+        upsert=True
+    )
+    return {"message": f"تم تأجيل التذكير لمدة {days} أيام"}
+
+# ============ NOTIFICATIONS ============
+
+@api_router.get("/notifications")
+async def get_notifications(user: dict = Depends(get_current_user)):
+    """Get all notifications for current user"""
+    notifications = await db.notifications.find(
+        {"$or": [{"user_id": user["id"]}, {"user_id": None}]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    return notifications
+
+@api_router.post("/notifications")
+async def create_notification(
+    title: str,
+    message: str,
+    notification_type: str = "info",
+    user_id: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Create a notification"""
+    notification_doc = {
+        "id": str(uuid.uuid4()),
+        "title": title,
+        "message": message,
+        "type": notification_type,  # info, warning, error, debt
+        "user_id": user_id,  # None = all users
+        "is_read": False,
+        "created_by": user["id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.notifications.insert_one(notification_doc)
+    return notification_doc
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, user: dict = Depends(get_current_user)):
+    """Mark notification as read"""
+    await db.notifications.update_one(
+        {"id": notification_id},
+        {"$set": {"is_read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": "تم تحديد الإشعار كمقروء"}
+
+@api_router.delete("/notifications/{notification_id}")
+async def delete_notification(notification_id: str, user: dict = Depends(get_current_user)):
+    """Delete a notification"""
+    await db.notifications.delete_one({"id": notification_id})
+    return {"message": "تم حذف الإشعار"}
+
+@api_router.get("/notifications/unread-count")
+async def get_unread_notification_count(user: dict = Depends(get_current_user)):
+    """Get count of unread notifications"""
+    count = await db.notifications.count_documents({
+        "$or": [{"user_id": user["id"]}, {"user_id": None}],
+        "is_read": False
+    })
+    return {"count": count}
+
 # ============ WAREHOUSE ROUTES ============
 
 @api_router.post("/warehouses", response_model=WarehouseResponse)
