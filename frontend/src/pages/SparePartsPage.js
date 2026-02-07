@@ -138,26 +138,75 @@ const SAMPLE_PARTS = [
 
 export default function SparePartsPage() {
   const { language } = useLanguage();
-  const [parts, setParts] = useState(SAMPLE_PARTS);
-  const [filteredParts, setFilteredParts] = useState(SAMPLE_PARTS);
+  const [parts, setParts] = useState([]);
+  const [filteredParts, setFilteredParts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [brandFilter, setBrandFilter] = useState('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingPart, setEditingPart] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, lowStock: 0, totalValue: 0 });
 
   const [formData, setFormData] = useState({
     name: '',
-    name_fr: '',
+    name_ar: '',
     category: '',
-    brand: '',
+    compatible_brands: [],
     compatible_models: '',
-    purchase_price: '',
+    buy_price: '',
     sell_price: '',
     quantity: '',
-    low_stock_threshold: '5',
+    min_stock: '5',
     supplier: '',
+    notes: '',
   });
+
+  // Fetch spare parts from API
+  const fetchParts = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/spare-parts`);
+      const data = response.data || [];
+      // Map API fields to frontend fields
+      const mappedData = data.map(p => ({
+        ...p,
+        name_fr: p.name_ar || p.name,
+        brand: p.compatible_brands?.[0] || 'Universal',
+        compatible_models: Array.isArray(p.compatible_models) ? p.compatible_models : 
+          (p.compatible_models ? p.compatible_models.split(',').map(m => m.trim()) : []),
+        purchase_price: p.buy_price || 0,
+        sell_price: p.sell_price || 0,
+        low_stock_threshold: p.min_stock || 5,
+      }));
+      setParts(mappedData);
+    } catch (error) {
+      console.error('Error fetching spare parts:', error);
+      toast.error(language === 'ar' ? 'فشل في تحميل البيانات' : 'Échec du chargement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch stats from API
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get(`${API}/spare-parts/stats`);
+      const data = response.data;
+      setStats({
+        total: data.total || 0,
+        lowStock: data.low_stock || 0,
+        totalValue: data.total_sell_value || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchParts();
+    fetchStats();
+  }, []);
 
   useEffect(() => {
     filterParts();
