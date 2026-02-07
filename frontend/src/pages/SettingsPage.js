@@ -318,6 +318,21 @@ export default function SettingsPage() {
     }
   };
 
+  const saveWhatsappSettings = async () => {
+    setSavingWhatsapp(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/whatsapp/settings`, whatsappSettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم حفظ إعدادات WhatsApp' : 'Paramètres WhatsApp enregistrés');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    } finally {
+      setSavingWhatsapp(false);
+    }
+  };
+
   const updatePermission = (category, action, value) => {
     setUserPermissions(prev => {
       const updated = { ...prev };
