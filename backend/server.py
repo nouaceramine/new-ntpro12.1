@@ -3947,7 +3947,10 @@ async def close_daily_session(session_id: str, closing_data: DailySessionClose, 
         updated["user_name"] = session.get("user_name", session.get("created_by", ""))
     
     # Check for significant cash difference and create notifications
-    DIFFERENCE_THRESHOLD = 1000  # 1000 دج
+    # Get threshold from system settings
+    system_settings = await db.system_settings.find_one({"id": "global"}, {"_id": 0})
+    DIFFERENCE_THRESHOLD = system_settings.get("cash_difference_threshold", 1000) if system_settings else 1000
+    
     expected_cash = session.get("opening_cash", 0) + cash_sales
     actual_cash = closing_data.closing_cash
     difference = actual_cash - expected_cash
