@@ -174,6 +174,8 @@ export const Layout = ({ children }) => {
       title: language === 'ar' ? 'الخدمات' : 'Services',
       icon: Smartphone,
       items: [
+        { path: '/services', icon: Store, label: language === 'ar' ? 'الصفحة الرئيسية' : 'Accueil services' },
+        { path: '/services/flexy', icon: Smartphone, label: language === 'ar' ? 'فليكسي' : 'Flexy' },
         { path: '/recharge', icon: Smartphone, label: t.recharge },
         ...(isAdmin ? [
           { path: '/sim-management', icon: Zap, label: language === 'ar' ? 'إدارة الشرائح' : 'Gestion SIM' },
