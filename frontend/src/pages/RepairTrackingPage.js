@@ -252,6 +252,13 @@ export default function RepairTrackingPage() {
         final_cost: parseFloat(updateForm.actual_cost) || selectedRepair.estimated_cost
       });
 
+      // Try to send WhatsApp notification (silent fail if not configured)
+      try {
+        await axios.post(`${API}/whatsapp/notify-repair/${selectedRepair.id}`);
+      } catch (e) {
+        console.log('WhatsApp notification skipped:', e.response?.data?.message || e.message);
+      }
+
       // Refresh data
       await fetchRepairs();
       await fetchStats();
@@ -261,6 +268,21 @@ export default function RepairTrackingPage() {
     } catch (error) {
       console.error('Error updating repair:', error);
       toast.error(language === 'ar' ? 'فشل في تحديث الحالة' : 'Échec de mise à jour');
+    }
+  };
+
+  // Send WhatsApp notification manually
+  const sendWhatsAppNotification = async (repairId) => {
+    try {
+      const result = await axios.post(`${API}/whatsapp/notify-repair/${repairId}`);
+      if (result.data.success) {
+        toast.success(language === 'ar' ? 'تم إرسال إشعار WhatsApp' : 'Notification WhatsApp envoyée');
+      } else {
+        toast.error(result.data.message || (language === 'ar' ? 'فشل في الإرسال' : 'Échec d\'envoi'));
+      }
+    } catch (error) {
+      const msg = error.response?.data?.detail || (language === 'ar' ? 'WhatsApp غير مفعل' : 'WhatsApp non configuré');
+      toast.error(msg);
     }
   };
 
