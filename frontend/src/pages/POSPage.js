@@ -558,6 +558,11 @@ export default function POSPage() {
       });
       toast.success(language === 'ar' ? 'تمت عملية البيع بنجاح' : 'Vente effectuée avec succès');
       
+      // Update debt reminders if sale was on credit
+      if (paymentType === 'credit' || paymentType === 'partial') {
+        fetchDebtReminders();
+      }
+      
       try {
         const invoiceResponse = await axios.get(`${API}/sales/${response.data.id}/invoice-pdf`, {
           headers: { Authorization: `Bearer ${token}` }
