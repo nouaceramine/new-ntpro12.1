@@ -797,37 +797,98 @@ export default function PurchasesPage() {
                 </div>
 
                 {/* Cart Items */}
-                <div className="border rounded-lg p-3 max-h-[200px] overflow-y-auto">
+                <div className="border rounded-lg max-h-[300px] overflow-y-auto">
                   {cart.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-4">{t.emptyCart}</p>
+                    <p className="text-center text-muted-foreground py-8">{t.emptyCart}</p>
                   ) : (
-                    <div className="space-y-2">
-                      {cart.map(item => (
-                        <div key={item.product_id} className="flex items-center justify-between gap-2 p-2 bg-muted/30 rounded">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{item.product_name}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number"
-                              value={item.unit_price}
-                              onChange={(e) => updatePrice(item.product_id, parseFloat(e.target.value) || 0)}
-                              className="w-20 h-8 text-center"
-                            />
-                            <div className="flex items-center gap-1">
-                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, -1)}>
-                                <Minus className="h-3 w-3" />
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead className="w-8"></TableHead>
+                          <TableHead>{language === 'ar' ? 'المنتج' : 'Produit'}</TableHead>
+                          <TableHead className="text-center">{language === 'ar' ? 'سعر الشراء' : 'Prix achat'}</TableHead>
+                          <TableHead className="text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
+                          <TableHead className="text-center">{language === 'ar' ? 'المجموع' : 'Total'}</TableHead>
+                          <TableHead className="w-20"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {cart.map(item => (
+                          <TableRow key={item.product_id} className={item.updatePrices ? 'bg-green-50' : ''}>
+                            <TableCell className="p-2">
+                              {item.productImage ? (
+                                <img 
+                                  src={item.productImage} 
+                                  alt="" 
+                                  className="w-10 h-10 rounded object-cover"
+                                />
+                              ) : (
+                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                                  <Package className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium text-sm">{item.product_name}</p>
+                                {item.updatePrices && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <Badge variant="outline" className="text-xs bg-green-100 text-green-700">
+                                      <RefreshCw className="h-3 w-3 me-1" />
+                                      {language === 'ar' ? 'سيتم التحديث' : 'Sera mis à jour'}
+                                    </Badge>
+                                  </div>
+                                )}
+                                {item.originalPurchasePrice !== item.unit_price && (
+                                  <p className="text-xs text-amber-600 mt-1">
+                                    {language === 'ar' ? 'السعر القديم:' : 'Ancien:'} {item.originalPurchasePrice.toFixed(2)}
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="p-2">
+                              <div className="flex items-center gap-1 justify-center">
+                                <Input
+                                  type="number"
+                                  value={item.unit_price}
+                                  onChange={(e) => updatePrice(item.product_id, parseFloat(e.target.value) || 0)}
+                                  className="w-24 h-8 text-center"
+                                />
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                  onClick={() => openEditPricesDialog(item)}
+                                  title={language === 'ar' ? 'تعديل الأسعار' : 'Modifier les prix'}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                            <TableCell className="p-2">
+                              <div className="flex items-center gap-1 justify-center">
+                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, -1)}>
+                                  <Minus className="h-3 w-3" />
+                                </Button>
+                                <span className="w-10 text-center font-medium">{item.quantity}</span>
+                                <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, 1)}>
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center font-semibold">
+                              {item.total.toFixed(2)}
+                            </TableCell>
+                            <TableCell className="p-2">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeFromCart(item.product_id)}>
+                                <Trash2 className="h-4 w-4" />
                               </Button>
-                              <span className="w-8 text-center font-medium">{item.quantity}</span>
-                              <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, 1)}>
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                            <span className="font-semibold w-20 text-end">{item.total.toFixed(2)}</span>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => removeFromCart(item.product_id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
                         </div>
                       ))}
                     </div>
