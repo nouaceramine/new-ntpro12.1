@@ -45,6 +45,9 @@ import FlexyServicePage from "./pages/FlexyServicePage";
 import IdoomServicePage from "./pages/IdoomServicePage";
 import CardsServicePage from "./pages/CardsServicePage";
 import OperationsPage from "./pages/OperationsPage";
+import ProfitRatesPage from "./pages/ProfitRatesPage";
+import TransfersPage from "./pages/TransfersPage";
+import PhoneDirectoryPage from "./pages/PhoneDirectoryPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
