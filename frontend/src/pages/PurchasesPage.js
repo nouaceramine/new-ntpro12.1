@@ -276,6 +276,33 @@ export default function PurchasesPage() {
     }
   };
 
+  // Add new supplier
+  const handleAddSupplier = async () => {
+    if (!newSupplierData.name.trim()) {
+      toast.error(language === 'ar' ? 'يرجى إدخال اسم المورد' : 'Veuillez entrer le nom du fournisseur');
+      return;
+    }
+
+    setAddingSupplier(true);
+    try {
+      const response = await axios.post(`${API}/suppliers`, newSupplierData);
+      toast.success(language === 'ar' ? 'تمت إضافة المورد بنجاح' : 'Fournisseur ajouté avec succès');
+      
+      // Add to suppliers list and select it
+      setSuppliers(prev => [...prev, response.data]);
+      setSelectedSupplier(response.data.id);
+      
+      // Reset and close dialog
+      setNewSupplierData({ name: '', phone: '', email: '', address: '' });
+      setShowNewSupplierDialog(false);
+    } catch (error) {
+      console.error('Error adding supplier:', error);
+      toast.error(error.response?.data?.detail || t.somethingWentWrong);
+    } finally {
+      setAddingSupplier(false);
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat(language === 'ar' ? 'ar-SA' : 'fr-FR', {
