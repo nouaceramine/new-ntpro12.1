@@ -179,6 +179,9 @@ export const Layout = ({ children }) => {
         { path: '/services/idoom', icon: Zap, label: language === 'ar' ? 'تعبئة أيدوم' : 'Recharge Idoom' },
         { path: '/services/cards', icon: CreditCard, label: language === 'ar' ? 'بطاقات' : 'Cartes' },
         { path: '/services/operations', icon: Clock, label: language === 'ar' ? 'كل العمليات' : 'Opérations' },
+        { path: '/services/profits', icon: DollarSign, label: language === 'ar' ? 'نسب الأرباح' : 'Taux profits' },
+        { path: '/services/transfers', icon: Receipt, label: language === 'ar' ? 'التحويلات' : 'Transferts' },
+        { path: '/services/directory', icon: Users, label: language === 'ar' ? 'دليل الهاتف' : 'Annuaire' },
         { path: '/recharge', icon: Smartphone, label: t.recharge },
         ...(isAdmin ? [
           { path: '/sim-management', icon: Zap, label: language === 'ar' ? 'إدارة الشرائح' : 'Gestion SIM' },
