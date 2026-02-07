@@ -415,11 +415,40 @@ export default function POSPage() {
     }
   };
 
+  // Add new customer family
+  const handleAddCustomerFamily = async () => {
+    if (!newFamilyName.trim()) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/customer-families`, 
+        { name: newFamilyName.trim() },
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+      setCustomerFamilies([...customerFamilies, response.data]);
+      setNewCustomerData(prev => ({ ...prev, family_id: response.data.id }));
+      setNewFamilyName('');
+      setShowNewFamilyInput(false);
+      toast.success(language === 'ar' ? 'تمت إضافة العائلة' : 'Famille ajoutée');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    }
+  };
+
   // Add new customer
   const handleAddCustomer = async () => {
     if (!newCustomerData.name) {
       toast.error(language === 'ar' ? 'يرجى إدخال اسم الزبون' : 'Veuillez entrer le nom du client');
       return;
+    }
+
+    // Check if phone is blacklisted
+    if (newCustomerData.phone) {
+      const isBlacklisted = blacklist.some(b => b.phone === newCustomerData.phone);
+      if (isBlacklisted) {
+        toast.error(language === 'ar' ? 'هذا الرقم في القائمة السوداء!' : 'Ce numéro est sur liste noire!');
+        return;
+      }
     }
 
     setSavingCustomer(true);
@@ -430,7 +459,7 @@ export default function POSPage() {
       });
       toast.success(language === 'ar' ? 'تمت إضافة الزبون بنجاح' : 'Client ajouté avec succès');
       setShowNewCustomerDialog(false);
-      setNewCustomerData({ name: '', phone: '', email: '', address: '' });
+      setNewCustomerData({ name: '', phone: '', email: '', address: '', family_id: '' });
       fetchCustomers();
       // Auto-select the new customer
       if (response.data?.id) {
