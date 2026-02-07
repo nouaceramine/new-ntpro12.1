@@ -50,6 +50,72 @@ export default function CustomersPage() {
   const [formData, setFormData] = useState({
     name: '', phone: '', email: '', address: '', notes: ''
   });
+  
+  // Blacklist state
+  const [blacklist, setBlacklist] = useState([]);
+  const [showBlacklistOnly, setShowBlacklistOnly] = useState(false);
+  const [blacklistDialogOpen, setBlacklistDialogOpen] = useState(false);
+  const [blacklistCustomer, setBlacklistCustomer] = useState(null);
+  const [blacklistReason, setBlacklistReason] = useState('');
+
+  const fetchBlacklist = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/blacklist`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBlacklist(response.data);
+    } catch (error) {
+      console.error('Error fetching blacklist:', error);
+    }
+  };
+
+  const handleAddToBlacklist = async () => {
+    if (!blacklistCustomer?.phone) {
+      toast.error(language === 'ar' ? 'يجب أن يكون للزبون رقم هاتف' : 'Le client doit avoir un numéro de téléphone');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/blacklist`, {
+        phone: blacklistCustomer.phone,
+        reason: blacklistReason,
+        notes: `${language === 'ar' ? 'الزبون:' : 'Client:'} ${blacklistCustomer.name}`
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تمت إضافة الزبون للقائمة السوداء' : 'Client ajouté à la liste noire');
+      setBlacklistDialogOpen(false);
+      setBlacklistReason('');
+      setBlacklistCustomer(null);
+      fetchBlacklist();
+      fetchCustomers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || (language === 'ar' ? 'حدث خطأ' : 'Une erreur est survenue'));
+    }
+  };
+
+  const handleRemoveFromBlacklist = async (phone) => {
+    const entry = blacklist.find(b => b.phone === phone);
+    if (!entry) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/blacklist/${entry.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تمت إزالة الزبون من القائمة السوداء' : 'Client retiré de la liste noire');
+      fetchBlacklist();
+      fetchCustomers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || (language === 'ar' ? 'حدث خطأ' : 'Une erreur est survenue'));
+    }
+  };
+
+  const isBlacklisted = (phone) => {
+    return phone && blacklist.some(b => b.phone === phone);
+  };
 
   const fetchCustomers = async () => {
     try {
