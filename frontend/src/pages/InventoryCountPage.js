@@ -100,6 +100,20 @@ export default function InventoryCountPage() {
   const [selectedFamily, setSelectedFamily] = useState('all');
   const [families, setFamilies] = useState([]);
   
+  // Excel Import
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importData, setImportData] = useState([]);
+  const [importPreview, setImportPreview] = useState([]);
+  const [importFileName, setImportFileName] = useState('');
+  const [importMapping, setImportMapping] = useState({
+    barcode: '',
+    quantity: '',
+    name: ''
+  });
+  const [excelColumns, setExcelColumns] = useState([]);
+  const [importStep, setImportStep] = useState(1); // 1: upload, 2: mapping, 3: preview
+  const fileInputRef = useRef(null);
+  
   // Enhanced features
   const [viewMode, setViewMode] = useState('all'); // all, counted, uncounted, differences
   const [sortBy, setSortBy] = useState('name'); // name, barcode, difference
