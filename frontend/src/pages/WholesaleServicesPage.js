@@ -98,21 +98,6 @@ export default function WholesaleServicesPage() {
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in" data-testid="wholesale-services-page">
-        {/* Alert Banner */}
-        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-            <AlertTriangle className="h-5 w-5" />
-            <span className="text-sm">
-              {language === 'ar' 
-                ? 'الحماية الثنائية غير مفعلة. يرجى تفعيلها من هنا'
-                : 'Authentification à deux facteurs non activée. Activez-la ici'}
-            </span>
-          </div>
-          <Button variant="link" size="sm" className="text-amber-700 dark:text-amber-400">
-            {language === 'ar' ? 'تفعيل' : 'Activer'}
-          </Button>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Stats Sidebar */}
           <div className="lg:col-span-1 space-y-4">
