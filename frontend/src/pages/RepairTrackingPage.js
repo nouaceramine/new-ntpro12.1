@@ -152,14 +152,51 @@ const SAMPLE_REPAIRS = [
 
 export default function RepairTrackingPage() {
   const { language } = useLanguage();
-  const [repairs, setRepairs] = useState(SAMPLE_REPAIRS);
-  const [filteredRepairs, setFilteredRepairs] = useState(SAMPLE_REPAIRS);
+  const [repairs, setRepairs] = useState([]);
+  const [filteredRepairs, setFilteredRepairs] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRepair, setSelectedRepair] = useState(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [updateForm, setUpdateForm] = useState({ status: '', notes: '', actual_cost: '' });
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ total: 0, inProgress: 0, ready: 0, delivered: 0 });
+
+  // Fetch repairs from API
+  const fetchRepairs = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/repairs`);
+      setRepairs(response.data || []);
+    } catch (error) {
+      console.error('Error fetching repairs:', error);
+      toast.error(language === 'ar' ? 'فشل في تحميل البيانات' : 'Échec du chargement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch stats from API
+  const fetchStats = async () => {
+    try {
+      const response = await axios.get(`${API}/repairs/stats`);
+      const data = response.data;
+      setStats({
+        total: data.total || 0,
+        inProgress: (data.received || 0) + (data.diagnosing || 0) + (data.in_progress || 0) + (data.waiting_parts || 0),
+        ready: data.completed || 0,
+        delivered: data.delivered || 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRepairs();
+    fetchStats();
+  }, []);
 
   useEffect(() => {
     filterRepairs();
