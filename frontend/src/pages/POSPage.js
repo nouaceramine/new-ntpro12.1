@@ -249,6 +249,7 @@ export default function POSPage() {
       removeFromCart(productId);
       return;
     }
+    // Only check stock for existing products, not custom items
     if (product && newQty > product.quantity) {
       toast.error(t.outOfStock);
       return;
@@ -256,6 +257,26 @@ export default function POSPage() {
     setCart(cart.map(item => {
       if (item.product_id === productId) {
         return { ...item, quantity: newQty, total: newQty * item.unit_price - item.discount };
+      }
+      return item;
+    }));
+  };
+
+  const updateCartItemName = (productId, newName) => {
+    setCart(cart.map(item => {
+      if (item.product_id === productId) {
+        return { ...item, product_name: newName };
+      }
+      return item;
+    }));
+  };
+
+  const updateCartItemPrice = (productId, newPrice) => {
+    const price = parseFloat(newPrice) || 0;
+    setCart(cart.map(item => {
+      if (item.product_id === productId) {
+        const newTotal = item.quantity * price - item.discount;
+        return { ...item, unit_price: price, total: newTotal };
       }
       return item;
     }));
@@ -269,6 +290,21 @@ export default function POSPage() {
       }
       return item;
     }));
+  };
+
+  // Add custom product to cart
+  const addCustomProduct = () => {
+    const customId = `custom-${Date.now()}`;
+    setCart([...cart, {
+      product_id: customId,
+      product_name: language === 'ar' ? 'منتج مخصص' : 'Article personnalisé',
+      barcode: '',
+      quantity: 1,
+      unit_price: 0,
+      discount: 0,
+      total: 0,
+      is_custom: true
+    }]);
   };
 
   const removeFromCart = (productId) => {
