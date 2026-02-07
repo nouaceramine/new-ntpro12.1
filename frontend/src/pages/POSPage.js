@@ -287,20 +287,29 @@ export default function POSPage() {
     const price = priceType === 'wholesale' ? product.wholesale_price : product.retail_price;
     
     if (existingItem) {
-      if (existingItem.quantity >= product.quantity) {
-        toast.error(t.outOfStock);
-        return;
+      // Allow adding even if it exceeds stock (will go negative)
+      const newQty = existingItem.quantity + 1;
+      const willBeNegative = newQty > product.quantity;
+      
+      if (willBeNegative) {
+        toast.warning(language === 'ar' 
+          ? `تنبيه: المخزون سيصبح سالب (${product.quantity - newQty})` 
+          : `Attention: Stock sera négatif (${product.quantity - newQty})`);
       }
+      
       setCart(cart.map(item => 
         item.product_id === product.id
-          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
+          ? { ...item, quantity: newQty, total: newQty * item.unit_price }
           : item
       ));
     } else {
+      // Allow adding out-of-stock products
       if (product.quantity <= 0) {
-        toast.error(t.outOfStock);
-        return;
+        toast.warning(language === 'ar' 
+          ? 'تنبيه: هذا المنتج غير متوفر - سيتم حساب المخزون بالسالب' 
+          : 'Attention: Produit non disponible - stock sera négatif');
       }
+      
       setCart([...cart, {
         product_id: product.id,
         product_name: language === 'ar' ? product.name_ar : product.name_en,
@@ -308,7 +317,8 @@ export default function POSPage() {
         quantity: 1,
         unit_price: price,
         discount: 0,
-        total: price
+        total: price,
+        available_stock: product.quantity // Store original stock for reference
       }]);
     }
     
