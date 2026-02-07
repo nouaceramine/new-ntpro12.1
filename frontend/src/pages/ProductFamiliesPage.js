@@ -74,7 +74,7 @@ export default function ProductFamiliesPage() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (createNew = false) => {
     if (!form.name_ar && !form.name_en) {
       toast.error(t.familyName + ' ' + t.error);
       return;
@@ -94,15 +94,21 @@ export default function ProductFamiliesPage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success(t.familyUpdated);
+        setShowDialog(false);
+        resetForm();
       } else {
         await axios.post(`${API}/product-families`, data, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success(t.familyAdded);
+        if (createNew) {
+          resetForm();
+        } else {
+          setShowDialog(false);
+          resetForm();
+        }
       }
 
-      setShowDialog(false);
-      resetForm();
       fetchFamilies();
     } catch (error) {
       console.error('Error saving family:', error);
