@@ -748,6 +748,108 @@ export default function SettingsPage() {
               </Card>
             )}
 
+            {/* System Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  {language === 'ar' ? 'إعدادات عامة' : 'Paramètres généraux'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'تخصيص إعدادات النظام والتنبيهات' 
+                    : 'Personnaliser les paramètres du système et les alertes'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Cash Difference Threshold */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                      {language === 'ar' ? 'حد تنبيه العجز/الفائض' : 'Seuil d\'alerte écart caisse'}
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={systemSettings.cash_difference_threshold}
+                        onChange={(e) => setSystemSettings(prev => ({ 
+                          ...prev, 
+                          cash_difference_threshold: parseFloat(e.target.value) || 0 
+                        }))}
+                        className="w-32"
+                      />
+                      <span className="text-muted-foreground">{systemSettings.currency_symbol}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ar' 
+                        ? 'سيتم إرسال إشعار عند تجاوز هذا المبلغ' 
+                        : 'Une notification sera envoyée si ce montant est dépassé'}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      {language === 'ar' ? 'حد المخزون المنخفض' : 'Seuil de stock bas'}
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        value={systemSettings.low_stock_threshold}
+                        onChange={(e) => setSystemSettings(prev => ({ 
+                          ...prev, 
+                          low_stock_threshold: parseInt(e.target.value) || 0 
+                        }))}
+                        className="w-32"
+                      />
+                      <span className="text-muted-foreground">{language === 'ar' ? 'وحدة' : 'unités'}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ar' 
+                        ? 'تنبيه عندما يصل المخزون لهذا الحد' 
+                        : 'Alerte quand le stock atteint ce niveau'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Business Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'اسم المتجر' : 'Nom du magasin'}</Label>
+                    <Input
+                      value={systemSettings.business_name}
+                      onChange={(e) => setSystemSettings(prev => ({ ...prev, business_name: e.target.value }))}
+                      placeholder="NT"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'رمز العملة' : 'Symbole de devise'}</Label>
+                    <Input
+                      value={systemSettings.currency_symbol}
+                      onChange={(e) => setSystemSettings(prev => ({ ...prev, currency_symbol: e.target.value }))}
+                      placeholder="دج"
+                      className="w-24"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={saveSystemSettings} 
+                  disabled={savingSystemSettings}
+                  className="gap-2"
+                >
+                  {savingSystemSettings ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {language === 'ar' ? 'حفظ الإعدادات' : 'Enregistrer'}
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* Factory Reset */}
             <Card className="border-red-200 dark:border-red-900">
               <CardHeader>
