@@ -48,7 +48,6 @@ export default function AddProductPage() {
     purchase_price: '',
     wholesale_price: '',
     retail_price: '',
-    quantity: '',
     image_url: '',
     barcode: '',
     family_id: '',
