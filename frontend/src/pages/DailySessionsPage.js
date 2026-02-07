@@ -67,6 +67,7 @@ export default function DailySessionsPage() {
   const isAdmin = user?.role === 'admin';
   
   const [sessions, setSessions] = useState([]);
+  const [allSessions, setAllSessions] = useState([]);
   const [currentSession, setCurrentSession] = useState(null);
   const [todaySales, setTodaySales] = useState([]);
   const [cashBoxes, setCashBoxes] = useState([]);
