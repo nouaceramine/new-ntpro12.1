@@ -246,21 +246,20 @@ export default function RepairTrackingPage() {
     if (!selectedRepair) return;
 
     try {
-      // In production, this would be an API call
-      setRepairs(prev => prev.map(r =>
-        r.id === selectedRepair.id
-          ? {
-              ...r,
-              status: updateForm.status,
-              actual_cost: parseFloat(updateForm.actual_cost) || r.actual_cost,
-              updated_at: new Date().toISOString()
-            }
-          : r
-      ));
+      // Call API to update repair status
+      await axios.put(`${API}/repairs/${selectedRepair.id}`, {
+        status: updateForm.status,
+        final_cost: parseFloat(updateForm.actual_cost) || selectedRepair.estimated_cost
+      });
+
+      // Refresh data
+      await fetchRepairs();
+      await fetchStats();
 
       toast.success(language === 'ar' ? 'تم تحديث الحالة بنجاح' : 'Statut mis à jour');
       setShowUpdateDialog(false);
     } catch (error) {
+      console.error('Error updating repair:', error);
       toast.error(language === 'ar' ? 'فشل في تحديث الحالة' : 'Échec de mise à jour');
     }
   };
