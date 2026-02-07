@@ -61,6 +61,9 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
     permissions: Optional[dict] = None
 
+class PasswordUpdate(BaseModel):
+    new_password: str
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
