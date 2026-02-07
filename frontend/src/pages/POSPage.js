@@ -60,6 +60,10 @@ export default function POSPage() {
   const [loading, setLoading] = useState(false);
   const [priceType, setPriceType] = useState('retail');
   
+  // Session state
+  const [hasOpenSession, setHasOpenSession] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  
   // Delivery state
   const [deliveryEnabled, setDeliveryEnabled] = useState(false);
   const [selectedWilaya, setSelectedWilaya] = useState('');
@@ -73,11 +77,28 @@ export default function POSPage() {
   const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
 
   useEffect(() => {
+    checkOpenSession();
     fetchProducts();
     fetchCustomers();
     fetchFamilies();
     fetchWilayas();
   }, []);
+
+  // Check if user has an open session
+  const checkOpenSession = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/sessions/my-open`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setHasOpenSession(!!response.data);
+    } catch (error) {
+      // No open session or error
+      setHasOpenSession(false);
+    } finally {
+      setCheckingSession(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedCustomer) {
