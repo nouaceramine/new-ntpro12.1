@@ -568,6 +568,15 @@ export default function RepairTrackingPage() {
                             >
                               <MessageCircle className="h-4 w-4" />
                             </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => printRepairReceipt(repair)}
+                              title={language === 'ar' ? 'طباعة إيصال' : 'Imprimer reçu'}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-100"
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
