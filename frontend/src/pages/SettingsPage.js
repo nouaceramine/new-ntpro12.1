@@ -107,6 +107,16 @@ export default function SettingsPage() {
   });
   const [savingSystemSettings, setSavingSystemSettings] = useState(false);
   
+  // Branding Settings
+  const [brandingSettings, setBrandingSettings] = useState({
+    logo_url: '',
+    business_name: 'NT',
+    background_image_url: '',
+    tagline_ar: 'إدارة مخزون زجاج الحماية بسهولة',
+    tagline_fr: 'Gestion facile de stock de protection'
+  });
+  const [savingBranding, setSavingBranding] = useState(false);
+  
   // Printer Settings
   const [printerSettings, setPrinterSettings] = useState({
     enabled: false,
