@@ -415,7 +415,7 @@ export default function POSPage() {
         subtotal,
         discount,
         total: subtotal - discount,
-        paid_amount: paymentType === 'credit' ? 0 : paidAmount,
+        paid_amount: paymentType === 'credit' ? 0 : (paidAmount || total),
         payment_method: paymentMethod,
         payment_type: paymentType,
         notes: '',
@@ -430,16 +430,22 @@ export default function POSPage() {
         } : null
       };
 
-      const response = await axios.post(`${API}/sales`, saleData);
-      toast.success(t.saleCompleted);
+      const response = await axios.post(`${API}/sales`, saleData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تمت عملية البيع بنجاح' : 'Vente effectuée avec succès');
       
       try {
-        const invoiceResponse = await axios.get(`${API}/sales/${response.data.id}/invoice-pdf`);
+        const invoiceResponse = await axios.get(`${API}/sales/${response.data.id}/invoice-pdf`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         const printWindow = window.open('', '_blank');
-        printWindow.document.write(invoiceResponse.data);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => printWindow.print(), 500);
+        if (printWindow) {
+          printWindow.document.write(invoiceResponse.data);
+          printWindow.document.close();
+          printWindow.focus();
+          setTimeout(() => printWindow.print(), 500);
+        }
       } catch (printError) {
         console.error('Print error:', printError);
       }
@@ -447,7 +453,8 @@ export default function POSPage() {
       clearCart();
       fetchProducts();
     } catch (error) {
-      toast.error(error.response?.data?.detail || t.somethingWentWrong);
+      console.error('Sale error:', error);
+      toast.error(error.response?.data?.detail || (language === 'ar' ? 'حدث خطأ أثناء البيع' : 'Erreur lors de la vente'));
     } finally {
       setLoading(false);
     }
