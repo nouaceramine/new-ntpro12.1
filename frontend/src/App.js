@@ -32,6 +32,8 @@ import WarehousesPage from "./pages/WarehousesPage";
 import InventoryCountPage from "./pages/InventoryCountPage";
 import BarcodePrintPage from "./pages/BarcodePrintPage";
 import DailySessionsPage from "./pages/DailySessionsPage";
+import CustomerFamiliesPage from "./pages/CustomerFamiliesPage";
+import SupplierFamiliesPage from "./pages/SupplierFamiliesPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -294,6 +296,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute adminOnly>
             <DailySessionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/customer-families"
+        element={
+          <ProtectedRoute adminOnly>
+            <CustomerFamiliesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/supplier-families"
+        element={
+          <ProtectedRoute adminOnly>
+            <SupplierFamiliesPage />
           </ProtectedRoute>
         }
       />
