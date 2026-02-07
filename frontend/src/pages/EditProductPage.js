@@ -72,7 +72,7 @@ export default function EditProductPage() {
         purchase_price: parseFloat(formData.purchase_price) || 0,
         wholesale_price: parseFloat(formData.wholesale_price) || 0,
         retail_price: parseFloat(formData.retail_price) || 0,
-        quantity: parseInt(formData.quantity) || 0,
+        // الكمية لا تُرسل - تُحدّث فقط من خلال عمليات الشراء
         image_url: formData.image_url,
         barcode: formData.barcode,
         compatible_models: formData.compatible_models.split(',').map(m => m.trim()).filter(m => m),
