@@ -51,6 +51,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export const Layout = ({ children }) => {
   const { t, language, toggleLanguage, isRTL } = useLanguage();
   const { user, logout, isAdmin } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
