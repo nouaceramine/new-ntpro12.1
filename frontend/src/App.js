@@ -382,6 +382,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/services/idoom"
+        element={
+          <ProtectedRoute>
+            <IdoomServicePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services/cards"
+        element={
+          <ProtectedRoute>
+            <CardsServicePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services/operations"
+        element={
+          <ProtectedRoute>
+            <OperationsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
