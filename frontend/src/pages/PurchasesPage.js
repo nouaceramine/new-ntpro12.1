@@ -8,6 +8,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Textarea } from '../components/ui/textarea';
+import { Checkbox } from '../components/ui/checkbox';
+import { Switch } from '../components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -58,7 +60,15 @@ import {
   History,
   AlertCircle,
   PlusCircle,
-  Save
+  Save,
+  Edit,
+  Image,
+  Upload,
+  X,
+  Check,
+  RefreshCw,
+  Percent,
+  Tag
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
