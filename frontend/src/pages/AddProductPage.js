@@ -262,15 +262,15 @@ export default function AddProductPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="purchase_price">{t.purchasePrice} ({t.currency}) *</Label>
-                  <Input id="purchase_price" name="purchase_price" type="number" step="0.01" min="0" value={formData.purchase_price} onChange={handleChange} required className="h-11" data-testid="purchase-price-input" />
+                  <Input id="purchase_price" name="purchase_price" type="number" step="0.01" min="0" value={formData.purchase_price} onChange={handleChange} className="h-11" data-testid="purchase-price-input" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="wholesale_price">{t.wholesalePrice} ({t.currency}) *</Label>
-                  <Input id="wholesale_price" name="wholesale_price" type="number" step="0.01" min="0" value={formData.wholesale_price} onChange={handleChange} required className="h-11" data-testid="wholesale-price-input" />
+                  <Input id="wholesale_price" name="wholesale_price" type="number" step="0.01" min="0" value={formData.wholesale_price} onChange={handleChange} className="h-11" data-testid="wholesale-price-input" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="retail_price">{t.retailPrice} ({t.currency}) *</Label>
-                  <Input id="retail_price" name="retail_price" type="number" step="0.01" min="0" value={formData.retail_price} onChange={handleChange} required className="h-11" data-testid="retail-price-input" />
+                  <Input id="retail_price" name="retail_price" type="number" step="0.01" min="0" value={formData.retail_price} onChange={handleChange} className="h-11" data-testid="retail-price-input" />
                 </div>
               </div>
 
