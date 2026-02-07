@@ -398,7 +398,14 @@ export default function ProductFamiliesPage() {
                 <Button variant="outline" onClick={() => setShowDialog(false)}>
                   {t.cancel}
                 </Button>
-                <Button onClick={handleSubmit} data-testid="save-family-btn">
+                {!editingFamily && (
+                  <Button variant="outline" onClick={() => handleSubmit(true)} className="gap-2" data-testid="save-and-new-family-btn">
+                    <PlusCircle className="h-4 w-4" />
+                    {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer nouveau'}
+                  </Button>
+                )}
+                <Button onClick={() => handleSubmit(false)} className="gap-2" data-testid="save-family-btn">
+                  <Save className="h-4 w-4" />
                   {t.save}
                 </Button>
               </div>
