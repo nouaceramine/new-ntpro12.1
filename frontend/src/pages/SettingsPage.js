@@ -139,11 +139,12 @@ export default function SettingsPage() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [usersRes, statsRes, rolesRes, sysSettingsRes] = await Promise.all([
+      const [usersRes, statsRes, rolesRes, sysSettingsRes, brandingRes] = await Promise.all([
         axios.get(`${API}/users`, { headers }),
         axios.get(`${API}/system/stats`, { headers }).catch(() => ({ data: null })),
         axios.get(`${API}/permissions/roles`, { headers }),
-        axios.get(`${API}/system/settings`, { headers }).catch(() => ({ data: null }))
+        axios.get(`${API}/system/settings`, { headers }).catch(() => ({ data: null })),
+        axios.get(`${API}/branding/settings`).catch(() => ({ data: null }))
       ]);
       
       setUsers(usersRes.data);
@@ -153,6 +154,10 @@ export default function SettingsPage() {
       
       if (sysSettingsRes.data) {
         setSystemSettings(sysSettingsRes.data);
+      }
+      
+      if (brandingRes.data) {
+        setBrandingSettings(brandingRes.data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
