@@ -656,18 +656,23 @@ export default function POSPage() {
                         key={product.id}
                         onClick={() => addToCart(product)}
                         className={`px-4 py-3 cursor-pointer hover:bg-blue-50 border-b last:border-b-0 flex items-center justify-between ${
-                          product.quantity <= 0 ? 'opacity-50 bg-red-50' : ''
+                          product.quantity <= 0 ? 'bg-amber-50 border-amber-200' : ''
                         }`}
                         data-testid={`search-result-${product.id}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
-                            <Package className="h-5 w-5 text-gray-400" />
+                          <div className={`w-10 h-10 rounded flex items-center justify-center ${
+                            product.quantity <= 0 ? 'bg-amber-100' : 'bg-gray-100'
+                          }`}>
+                            <Package className={`h-5 w-5 ${product.quantity <= 0 ? 'text-amber-600' : 'text-gray-400'}`} />
                           </div>
                           <div>
                             <p className="font-medium">{language === 'ar' ? product.name_ar : product.name_en}</p>
                             <p className="text-sm text-muted-foreground">
-                              {product.barcode || '---'} • {language === 'ar' ? 'المخزون:' : 'Stock:'} {product.quantity}
+                              {product.barcode || '---'} • {language === 'ar' ? 'المخزون:' : 'Stock:'} 
+                              <span className={product.quantity <= 0 ? 'text-red-600 font-bold' : ''}>
+                                {' '}{product.quantity}
+                              </span>
                             </p>
                           </div>
                         </div>
@@ -676,7 +681,9 @@ export default function POSPage() {
                             {formatCurrency(priceType === 'wholesale' ? product.wholesale_price : product.retail_price)} {t.currency}
                           </p>
                           {product.quantity <= 0 && (
-                            <Badge variant="destructive" className="text-xs">{t.outOfStock}</Badge>
+                            <Badge className="text-xs bg-amber-500">
+                              {language === 'ar' ? 'سيصبح سالب' : 'Sera négatif'}
+                            </Badge>
                           )}
                         </div>
                       </div>
