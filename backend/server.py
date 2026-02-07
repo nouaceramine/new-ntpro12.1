@@ -6103,7 +6103,8 @@ class ExpenseCreate(BaseModel):
     date: Optional[str] = None
     notes: Optional[str] = ""
     recurring: bool = False
-    recurring_period: Optional[str] = "monthly"
+    recurring_period: Optional[str] = "monthly"  # monthly, weekly, yearly
+    reminder_days_before: int = 3  # Days before due date to send reminder
 
 class ExpenseUpdate(BaseModel):
     title: Optional[str] = None
@@ -6113,6 +6114,7 @@ class ExpenseUpdate(BaseModel):
     notes: Optional[str] = None
     recurring: Optional[bool] = None
     recurring_period: Optional[str] = None
+    reminder_days_before: Optional[int] = None
 
 @api_router.get("/expenses")
 async def get_expenses(
