@@ -1049,6 +1049,158 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
+          {/* Email Settings Tab */}
+          <TabsContent value="email" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5 text-blue-600" />
+                  {language === 'ar' ? 'إعدادات البريد الإلكتروني' : 'Paramètres Email'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'إعداد البريد الإلكتروني لإرسال التقارير والإشعارات'
+                    : 'Configurer l\'email pour l\'envoi de rapports et notifications'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Enable Email */}
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${emailSettings.enabled ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                      <Mail className={`h-5 w-5 ${emailSettings.enabled ? 'text-blue-600' : 'text-gray-400'}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium">
+                        {language === 'ar' ? 'تفعيل البريد الإلكتروني' : 'Activer l\'email'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' ? 'إرسال تقارير الحصص والإشعارات بالبريد' : 'Envoyer les rapports et notifications par email'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={emailSettings.enabled}
+                    onCheckedChange={(checked) => setEmailSettings(prev => ({ ...prev, enabled: checked }))}
+                  />
+                </div>
+
+                {emailSettings.enabled && (
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                    {/* Resend API Key */}
+                    <div className="space-y-2">
+                      <Label>{language === 'ar' ? 'مفتاح Resend API' : 'Clé API Resend'}</Label>
+                      <Input
+                        type="password"
+                        placeholder="re_xxxxxxxx..."
+                        value={emailSettings.resend_api_key}
+                        onChange={(e) => setEmailSettings(prev => ({ ...prev, resend_api_key: e.target.value }))}
+                        dir="ltr"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'احصل على مفتاح API من resend.com/api-keys'
+                          : 'Obtenez votre clé API sur resend.com/api-keys'}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {/* Sender Email */}
+                      <div className="space-y-2">
+                        <Label>{language === 'ar' ? 'بريد المرسل' : 'Email expéditeur'}</Label>
+                        <Input
+                          type="email"
+                          placeholder="noreply@yourdomain.com"
+                          value={emailSettings.sender_email}
+                          onChange={(e) => setEmailSettings(prev => ({ ...prev, sender_email: e.target.value }))}
+                          dir="ltr"
+                        />
+                      </div>
+
+                      {/* Sender Name */}
+                      <div className="space-y-2">
+                        <Label>{language === 'ar' ? 'اسم المرسل' : 'Nom expéditeur'}</Label>
+                        <Input
+                          placeholder="NT POS System"
+                          value={emailSettings.sender_name}
+                          onChange={(e) => setEmailSettings(prev => ({ ...prev, sender_name: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Setup Instructions */}
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                        {language === 'ar' ? '📋 خطوات الإعداد:' : '📋 Étapes de configuration:'}
+                      </h4>
+                      <ol className="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-decimal list-inside">
+                        <li>{language === 'ar' ? 'أنشئ حساب على resend.com' : 'Créez un compte sur resend.com'}</li>
+                        <li>{language === 'ar' ? 'انتقل إلى API Keys وأنشئ مفتاح جديد' : 'Allez sur API Keys et créez une nouvelle clé'}</li>
+                        <li>{language === 'ar' ? 'انسخ المفتاح والصقه هنا' : 'Copiez la clé et collez-la ici'}</li>
+                        <li>{language === 'ar' ? 'أضف نطاقك (Domain) للحصول على بريد مخصص' : 'Ajoutez votre domaine pour un email personnalisé'}</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 justify-end">
+                  {emailSettings.enabled && emailSettings.resend_api_key && (
+                    <Button variant="outline" onClick={testEmailSettings} disabled={testingEmail}>
+                      {testingEmail ? (
+                        <RefreshCw className="h-4 w-4 me-2 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4 me-2" />
+                      )}
+                      {language === 'ar' ? 'إرسال اختباري' : 'Test email'}
+                    </Button>
+                  )}
+                  <Button onClick={saveEmailSettings} disabled={savingEmail}>
+                    {savingEmail ? (
+                      <RefreshCw className="h-4 w-4 me-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 me-2" />
+                    )}
+                    {language === 'ar' ? 'حفظ الإعدادات' : 'Enregistrer'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Email Usage Guide */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  {language === 'ar' ? '📧 استخدامات البريد الإلكتروني' : '📧 Utilisations de l\'email'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium flex items-center gap-2 mb-2">
+                      📊 {language === 'ar' ? 'تقارير الحصص' : 'Rapports de session'}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ar' 
+                        ? 'إرسال تقرير مفصل عند إغلاق كل حصة يومية يتضمن المبيعات والديون والفروقات'
+                        : 'Envoyer un rapport détaillé à la clôture de chaque session avec ventes, dettes et écarts'}
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <h4 className="font-medium flex items-center gap-2 mb-2">
+                      ⏰ {language === 'ar' ? 'تنبيهات المصروفات' : 'Alertes dépenses'}
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ar' 
+                        ? 'تنبيهات تلقائية قبل مواعيد دفع المصروفات المتكررة مثل الإيجار'
+                        : 'Alertes automatiques avant les échéances des dépenses récurrentes'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* System Tab */}
           <TabsContent value="system" className="space-y-6">
             {/* System Stats */}
