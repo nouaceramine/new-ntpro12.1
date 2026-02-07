@@ -520,6 +520,21 @@ export const Layout = ({ children }) => {
                 <Moon className="h-5 w-5 text-slate-600" />
               )}
             </button>
+
+            {/* Install App Button */}
+            {showInstallBtn && (
+              <button
+                onClick={handleInstallClick}
+                className="p-2 hover:bg-muted rounded-lg transition-colors flex items-center gap-2 bg-primary/10 text-primary"
+                data-testid="install-app-btn"
+                title={language === 'ar' ? 'تثبيت التطبيق' : 'Installer l\'app'}
+              >
+                <Download className="h-5 w-5" />
+                <span className="hidden lg:inline text-sm font-medium">
+                  {language === 'ar' ? 'تثبيت' : 'Installer'}
+                </span>
+              </button>
+            )}
           </div>
         </header>
 
