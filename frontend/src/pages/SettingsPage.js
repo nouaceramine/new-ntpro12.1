@@ -151,12 +151,13 @@ export default function SettingsPage() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [usersRes, statsRes, rolesRes, sysSettingsRes, brandingRes] = await Promise.all([
+      const [usersRes, statsRes, rolesRes, sysSettingsRes, brandingRes, whatsappRes] = await Promise.all([
         axios.get(`${API}/users`, { headers }),
         axios.get(`${API}/system/stats`, { headers }).catch(() => ({ data: null })),
         axios.get(`${API}/permissions/roles`, { headers }),
         axios.get(`${API}/system/settings`, { headers }).catch(() => ({ data: null })),
-        axios.get(`${API}/branding/settings`).catch(() => ({ data: null }))
+        axios.get(`${API}/branding/settings`).catch(() => ({ data: null })),
+        axios.get(`${API}/whatsapp/settings`, { headers }).catch(() => ({ data: null }))
       ]);
       
       setUsers(usersRes.data);
@@ -170,6 +171,15 @@ export default function SettingsPage() {
       
       if (brandingRes.data) {
         setBrandingSettings(brandingRes.data);
+      }
+      
+      if (whatsappRes.data) {
+        setWhatsappSettings(prev => ({
+          ...prev,
+          enabled: whatsappRes.data.enabled || false,
+          phone_number_id: whatsappRes.data.phone_number_id || '',
+          business_account_id: whatsappRes.data.business_account_id || ''
+        }));
       }
     } catch (error) {
       console.error('Error fetching data:', error);
