@@ -393,13 +393,24 @@ export default function AddProductPage() {
               </div>
 
               {/* Submit */}
-              <div className="flex justify-end gap-4 pt-4">
+              <div className="flex justify-end gap-3 pt-4">
                 <Link to="/products">
                   <Button type="button" variant="outline">{t.cancel}</Button>
                 </Link>
+                <Button 
+                  type="button" 
+                  variant="outline"
+                  onClick={() => handleSubmit(null, true)} 
+                  disabled={loading} 
+                  className="gap-2" 
+                  data-testid="save-and-new-btn"
+                >
+                  <PlusCircle className="h-4 w-4" />
+                  {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer nouveau'}
+                </Button>
                 <Button type="submit" disabled={loading} className="gap-2" data-testid="save-product-btn">
                   <Save className="h-4 w-4" />
-                  {loading ? t.loading : t.save}
+                  {loading && !saveAndNew ? t.loading : t.save}
                 </Button>
               </div>
             </form>
