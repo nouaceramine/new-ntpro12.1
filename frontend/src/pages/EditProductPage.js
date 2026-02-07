@@ -16,7 +16,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export default function EditProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t, isRTL } = useLanguage();
+  const { t, language, isRTL } = useLanguage();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   
   const [loading, setLoading] = useState(false);
