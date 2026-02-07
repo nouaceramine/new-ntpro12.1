@@ -363,6 +363,22 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/services"
+        element={
+          <ProtectedRoute>
+            <WholesaleServicesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/services/flexy"
+        element={
+          <ProtectedRoute>
+            <FlexyServicePage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
