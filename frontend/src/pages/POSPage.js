@@ -752,19 +752,6 @@ export default function POSPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => removeFromCart(item.product_id)}}
-                            className="w-16 h-8 text-center"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center font-bold text-green-600">
-                          {formatCurrency(item.total)}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => removeFromCart(item.product_id)}
                           >
                             <X className="h-4 w-4" />
                           </Button>
