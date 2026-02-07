@@ -228,13 +228,22 @@ export const Layout = ({ children }) => {
           
           <h1 className="font-bold text-lg">{t.appName}</h1>
           
-          <button
-            onClick={toggleLanguage}
-            className="p-2 hover:bg-muted rounded-lg"
-            data-testid="mobile-lang-toggle"
-          >
-            <Globe className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleTheme}
+              className="p-2 hover:bg-muted rounded-lg"
+              data-testid="mobile-theme-toggle"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            <button
+              onClick={toggleLanguage}
+              className="p-2 hover:bg-muted rounded-lg"
+              data-testid="mobile-lang-toggle"
+            >
+              <Globe className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </header>
 
