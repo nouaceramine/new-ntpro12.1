@@ -474,6 +474,107 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
+          {/* WhatsApp Settings Tab */}
+          <TabsContent value="whatsapp" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5 text-green-600" />
+                  {language === 'ar' ? 'إعدادات WhatsApp Business' : 'Paramètres WhatsApp Business'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'قم بربط حسابك في WhatsApp Business لإرسال إشعارات تلقائية للعملاء'
+                    : 'Connectez votre compte WhatsApp Business pour envoyer des notifications automatiques'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${whatsappSettings.enabled ? 'bg-green-100' : 'bg-gray-100'}`}>
+                      <MessageCircle className={`h-5 w-5 ${whatsappSettings.enabled ? 'text-green-600' : 'text-gray-400'}`} />
+                    </div>
+                    <div>
+                      <p className="font-medium">
+                        {language === 'ar' ? 'تفعيل إشعارات WhatsApp' : 'Activer les notifications WhatsApp'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' ? 'إرسال إشعارات تلقائية عند تغيير حالة الصيانة' : 'Envoyer des notifications automatiques lors du changement de statut'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={whatsappSettings.enabled}
+                    onCheckedChange={(checked) => setWhatsappSettings(prev => ({ ...prev, enabled: checked }))}
+                  />
+                </div>
+
+                {whatsappSettings.enabled && (
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>{language === 'ar' ? 'Phone Number ID' : 'Phone Number ID'}</Label>
+                        <Input
+                          placeholder="123456789012345"
+                          value={whatsappSettings.phone_number_id}
+                          onChange={(e) => setWhatsappSettings(prev => ({ ...prev, phone_number_id: e.target.value }))}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'ar' ? 'تجده في Meta Business Suite' : 'Trouvable dans Meta Business Suite'}
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{language === 'ar' ? 'Business Account ID' : 'Business Account ID'}</Label>
+                        <Input
+                          placeholder="123456789012345"
+                          value={whatsappSettings.business_account_id}
+                          onChange={(e) => setWhatsappSettings(prev => ({ ...prev, business_account_id: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{language === 'ar' ? 'Access Token' : 'Access Token'}</Label>
+                      <Input
+                        type="password"
+                        placeholder="EAAxxxxxxx..."
+                        value={whatsappSettings.access_token}
+                        onChange={(e) => setWhatsappSettings(prev => ({ ...prev, access_token: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'احصل على Access Token من Meta for Developers > WhatsApp > API Setup'
+                          : 'Obtenez le Access Token depuis Meta for Developers > WhatsApp > API Setup'}
+                      </p>
+                    </div>
+                    
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                        {language === 'ar' ? '📋 خطوات الإعداد:' : '📋 Étapes de configuration:'}
+                      </h4>
+                      <ol className="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-decimal list-inside">
+                        <li>{language === 'ar' ? 'انتقل إلى developers.facebook.com' : 'Allez sur developers.facebook.com'}</li>
+                        <li>{language === 'ar' ? 'أنشئ تطبيق Business جديد' : 'Créez une nouvelle application Business'}</li>
+                        <li>{language === 'ar' ? 'أضف WhatsApp product' : 'Ajoutez le produit WhatsApp'}</li>
+                        <li>{language === 'ar' ? 'انسخ Phone Number ID و Access Token' : 'Copiez le Phone Number ID et Access Token'}</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end">
+                  <Button onClick={saveWhatsappSettings} disabled={savingWhatsapp}>
+                    {savingWhatsapp ? (
+                      <RefreshCw className="h-4 w-4 me-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 me-2" />
+                    )}
+                    {language === 'ar' ? 'حفظ الإعدادات' : 'Enregistrer'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Printer Settings Tab */}
           <TabsContent value="printer" className="space-y-6">
             <Card>
