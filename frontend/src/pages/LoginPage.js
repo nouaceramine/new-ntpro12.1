@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -8,6 +9,8 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { toast } from 'sonner';
 import { Shield, Globe, Eye, EyeOff } from 'lucide-react';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function LoginPage() {
   const { t, language, toggleLanguage, isRTL } = useLanguage();
@@ -18,6 +21,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [branding, setBranding] = useState({
+    business_name: '',
+    logo_url: '',
+    background_url: '',
+    primary_color: ''
+  });
+
+  useEffect(() => {
+    const fetchBranding = async () => {
+      try {
+        const response = await axios.get(`${API}/branding/settings`);
+        if (response.data) {
+          setBranding(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching branding:', error);
+      }
+    };
+    fetchBranding();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,20 +58,27 @@ export default function LoginPage() {
     }
   };
 
+  const displayName = branding.business_name || t.appName;
+  const backgroundImage = branding.background_url || 'https://images.unsplash.com/photo-1758631279366-8e8aeaf94082?crop=entropy&cs=srgb&fm=jpg&q=85';
+
   return (
     <div className="min-h-screen flex" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Left Side - Hero Image */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-slate-900">
         <img
-          src="https://images.unsplash.com/photo-1758631279366-8e8aeaf94082?crop=entropy&cs=srgb&fm=jpg&q=85"
-          alt="Modern Mobile Shop"
+          src={backgroundImage}
+          alt={displayName}
           className="absolute inset-0 w-full h-full object-cover opacity-60"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/50 to-transparent" />
         <div className="relative z-10 flex flex-col justify-end p-12 text-white">
           <div className="flex items-center gap-3 mb-6">
-            <Shield className="h-10 w-10 text-primary" />
-            <span className="text-3xl font-bold">{t.appName}</span>
+            {branding.logo_url ? (
+              <img src={branding.logo_url} alt={displayName} className="h-12 w-12 object-contain rounded-lg" />
+            ) : (
+              <Shield className="h-10 w-10 text-primary" />
+            )}
+            <span className="text-3xl font-bold">{displayName}</span>
           </div>
           <h2 className="text-4xl font-bold mb-4">
             {isRTL ? 'إدارة مخزون زجاج الحماية بسهولة' : 'Manage Your Screen Protectors Inventory Effortlessly'}
@@ -80,8 +110,12 @@ export default function LoginPage() {
 
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <Shield className="h-10 w-10 text-primary" />
-            <span className="text-2xl font-bold">{t.appName}</span>
+            {branding.logo_url ? (
+              <img src={branding.logo_url} alt={displayName} className="h-10 w-10 object-contain rounded-lg" />
+            ) : (
+              <Shield className="h-10 w-10 text-primary" />
+            )}
+            <span className="text-2xl font-bold">{displayName}</span>
           </div>
 
           <Card className="border-0 shadow-xl">
