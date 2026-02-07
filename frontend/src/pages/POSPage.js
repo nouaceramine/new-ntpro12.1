@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Layout } from '../components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -21,6 +20,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { 
@@ -37,7 +44,13 @@ import {
   Truck,
   AlertCircle,
   FolderTree,
-  Clock
+  Clock,
+  Package,
+  Receipt,
+  X,
+  Check,
+  RotateCcw,
+  FileText
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -58,7 +71,7 @@ export default function POSPage() {
   const [discount, setDiscount] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('cash');
-  const [paymentType, setPaymentType] = useState('cash'); // cash, credit, partial
+  const [paymentType, setPaymentType] = useState('cash');
   const [loading, setLoading] = useState(false);
   const [priceType, setPriceType] = useState('retail');
   
@@ -77,6 +90,12 @@ export default function POSPage() {
   // Debt dialog
   const [showDebtDialog, setShowDebtDialog] = useState(false);
   const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
+  
+  // Delivery dialog
+  const [showDeliveryDialog, setShowDeliveryDialog] = useState(false);
+
+  // Active tab in left panel
+  const [activeTab, setActiveTab] = useState('products');
 
   useEffect(() => {
     checkOpenSession();
@@ -86,7 +105,6 @@ export default function POSPage() {
     fetchWilayas();
   }, []);
 
-  // Check if user has an open session
   const checkOpenSession = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -95,7 +113,6 @@ export default function POSPage() {
       });
       setHasOpenSession(!!response.data);
     } catch (error) {
-      // No open session or error
       setHasOpenSession(false);
     } finally {
       setCheckingSession(false);
@@ -111,7 +128,6 @@ export default function POSPage() {
   }, [selectedCustomer]);
 
   useEffect(() => {
-    // Calculate delivery fee when wilaya or type changes
     if (selectedWilaya && deliveryEnabled) {
       const wilaya = wilayas.find(w => w.code === selectedWilaya);
       if (wilaya) {
@@ -175,12 +191,9 @@ export default function POSPage() {
   };
 
   const filteredProducts = products.filter(p => {
-    // Filter by family
     if (selectedFamily !== 'all' && p.family_id !== selectedFamily) {
       return false;
     }
-    
-    // Filter by search
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -213,6 +226,7 @@ export default function POSPage() {
       setCart([...cart, {
         product_id: product.id,
         product_name: language === 'ar' ? product.name_ar : product.name_en,
+        barcode: product.barcode,
         quantity: 1,
         unit_price: price,
         discount: 0,
@@ -224,27 +238,29 @@ export default function POSPage() {
     searchInputRef.current?.focus();
   };
 
-  const updateCartItemQuantity = (productId, delta) => {
+  const updateCartItemQuantity = (productId, newQty) => {
     const product = products.find(p => p.id === productId);
+    if (newQty <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    if (newQty > product.quantity) {
+      toast.error(t.outOfStock);
+      return;
+    }
     setCart(cart.map(item => {
       if (item.product_id === productId) {
-        const newQty = item.quantity + delta;
-        if (newQty <= 0) return item;
-        if (newQty > product.quantity) {
-          toast.error(t.outOfStock);
-          return item;
-        }
         return { ...item, quantity: newQty, total: newQty * item.unit_price - item.discount };
       }
       return item;
     }));
   };
 
-  const updateCartItemDiscount = (productId, discountValue) => {
+  const updateCartItemDiscount = (productId, discountPercent) => {
     setCart(cart.map(item => {
       if (item.product_id === productId) {
-        const disc = parseFloat(discountValue) || 0;
-        return { ...item, discount: disc, total: item.quantity * item.unit_price - disc };
+        const disc = (parseFloat(discountPercent) || 0) / 100 * item.quantity * item.unit_price;
+        return { ...item, discount: disc, discount_percent: discountPercent, total: item.quantity * item.unit_price - disc };
       }
       return item;
     }));
@@ -254,8 +270,21 @@ export default function POSPage() {
     setCart(cart.filter(item => item.product_id !== productId));
   };
 
+  const clearCart = () => {
+    setCart([]);
+    setDiscount(0);
+    setPaidAmount(0);
+    setSelectedCustomer(null);
+    setDeliveryEnabled(false);
+    setSelectedWilaya('');
+    setDeliveryAddress('');
+    setDeliveryCity('');
+    setPaymentType('cash');
+  };
+
   const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const total = subtotal - discount + (deliveryEnabled ? deliveryFee : 0);
+  const taxAmount = subtotal * 0; // No TVA for now, can be configured
+  const total = subtotal - discount + taxAmount + (deliveryEnabled ? deliveryFee : 0);
   const remaining = total - paidAmount;
 
   const handlePayDebt = async () => {
@@ -280,11 +309,10 @@ export default function POSPage() {
   };
 
   const completeSale = async () => {
-    // Check for open session first
     if (!hasOpenSession) {
       toast.error(language === 'ar' 
-        ? 'يجب فتح حصة جديدة قبل البيع. اذهب إلى صفحة حصص البيع اليومية'
-        : 'Vous devez ouvrir une session avant de vendre. Allez à la page des sessions de vente');
+        ? 'يجب فتح حصة جديدة قبل البيع'
+        : 'Vous devez ouvrir une session avant de vendre');
       return;
     }
     
@@ -293,7 +321,6 @@ export default function POSPage() {
       return;
     }
 
-    // Validate credit sale requires customer
     if (paymentType !== 'cash' && !selectedCustomer) {
       toast.error(t.customerRequired);
       return;
@@ -308,7 +335,7 @@ export default function POSPage() {
         items: cart,
         subtotal,
         discount,
-        total: subtotal - discount, // Without delivery for backend calculation
+        total: subtotal - discount,
         paid_amount: paymentType === 'credit' ? 0 : paidAmount,
         payment_method: paymentMethod,
         payment_type: paymentType,
@@ -327,7 +354,6 @@ export default function POSPage() {
       const response = await axios.post(`${API}/sales`, saleData);
       toast.success(t.saleCompleted);
       
-      // Get invoice HTML and open in print dialog
       try {
         const invoiceResponse = await axios.get(`${API}/sales/${response.data.id}/invoice-pdf`);
         const printWindow = window.open('', '_blank');
@@ -341,16 +367,7 @@ export default function POSPage() {
         console.error('Print error:', printError);
       }
       
-      // Reset
-      setCart([]);
-      setDiscount(0);
-      setPaidAmount(0);
-      setSelectedCustomer(null);
-      setDeliveryEnabled(false);
-      setSelectedWilaya('');
-      setDeliveryAddress('');
-      setDeliveryCity('');
-      setPaymentType('cash');
+      clearCart();
       fetchProducts();
     } catch (error) {
       console.error('Error completing sale:', error);
@@ -360,458 +377,521 @@ export default function POSPage() {
     }
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === 'Enter') {
+        completeSale();
+      }
+      if (e.key === 'Escape') {
+        setSearchQuery('');
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [cart, hasOpenSession]);
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('ar-DZ', { minimumFractionDigits: 2 }).format(amount || 0);
+  };
+
   return (
     <Layout>
-      <div className="h-[calc(100vh-8rem)] flex gap-6" data-testid="pos-page">
+      <div className="h-[calc(100vh-5rem)] flex flex-col bg-slate-900 text-white -m-6 p-0" data-testid="pos-page">
+        
         {/* No Session Warning */}
         {!checkingSession && !hasOpenSession && (
-          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
-            <div className="bg-amber-100 dark:bg-amber-900/50 border border-amber-300 dark:border-amber-700 rounded-lg p-4 shadow-lg flex items-center gap-3">
-              <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-              <div>
-                <p className="font-medium text-amber-800 dark:text-amber-200">
-                  {language === 'ar' ? 'لا توجد حصة مفتوحة' : 'Aucune session ouverte'}
-                </p>
-                <p className="text-sm text-amber-700 dark:text-amber-300">
-                  {language === 'ar' ? 'يجب فتح حصة جديدة قبل البيع' : 'Vous devez ouvrir une session pour vendre'}
-                </p>
-              </div>
-              <Link to="/daily-sessions">
-                <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
-                  <Clock className="h-4 w-4 me-2" />
-                  {language === 'ar' ? 'فتح حصة' : 'Ouvrir'}
-                </Button>
-              </Link>
+          <div className="bg-amber-600 text-white px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              <span className="font-medium">
+                {language === 'ar' ? 'لا توجد حصة مفتوحة - يجب فتح حصة جديدة قبل البيع' : 'Aucune session ouverte - Ouvrez une session pour vendre'}
+              </span>
             </div>
+            <Link to="/daily-sessions">
+              <Button size="sm" variant="secondary" className="gap-2">
+                <Clock className="h-4 w-4" />
+                {language === 'ar' ? 'فتح حصة' : 'Ouvrir session'}
+              </Button>
+            </Link>
           </div>
         )}
-        
-        {/* Products Section */}
-        <div className="flex-1 flex flex-col">
-          {/* Search & Filters */}
-          <div className="mb-4 flex gap-4 flex-wrap">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
+
+        {/* Top Header Bar */}
+        <div className="bg-slate-800 border-b border-slate-700 px-4 py-2">
+          <div className="flex items-center justify-between gap-4">
+            {/* Search */}
+            <div className="relative flex-1 max-w-md">
+              <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 ${isRTL ? 'right-3' : 'left-3'}`} />
               <Input
                 ref={searchInputRef}
                 type="text"
-                placeholder={t.searchPlaceholder}
+                placeholder={language === 'ar' ? 'البحث عن منتج بالاسم أو الباركود...' : 'Rechercher un article...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`h-12 ${isRTL ? 'pr-10' : 'pl-10'}`}
+                className={`h-10 bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 ${isRTL ? 'pr-10' : 'pl-10'}`}
                 data-testid="pos-search-input"
               />
             </div>
-            
-            {/* Family Filter */}
-            <Select value={selectedFamily} onValueChange={setSelectedFamily}>
-              <SelectTrigger className="w-48 h-12" data-testid="family-filter">
-                <FolderTree className="h-4 w-4 me-2" />
-                <SelectValue placeholder={t.allFamilies} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t.allFamilies}</SelectItem>
-                {families.map(f => (
-                  <SelectItem key={f.id} value={f.id}>
-                    {language === 'ar' ? f.name_ar : f.name_en}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={priceType} onValueChange={setPriceType}>
-              <SelectTrigger className="w-40 h-12" data-testid="price-type-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="retail">{t.retailPrice}</SelectItem>
-                <SelectItem value="wholesale">{t.wholesalePrice}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
-          {/* Products Grid */}
-          <div className="flex-1 overflow-auto">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {filteredProducts.map(product => (
-                <button
-                  key={product.id}
-                  onClick={() => addToCart(product)}
-                  disabled={product.quantity <= 0}
-                  className={`p-3 rounded-xl border text-start transition-all hover:shadow-md ${
-                    product.quantity <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary'
-                  }`}
-                  data-testid={`pos-product-${product.id}`}
+            {/* Quick Filters */}
+            <div className="flex items-center gap-2">
+              <Select value={selectedFamily} onValueChange={setSelectedFamily}>
+                <SelectTrigger className="w-44 h-10 bg-slate-700 border-slate-600 text-white">
+                  <FolderTree className="h-4 w-4 me-2 text-slate-400" />
+                  <SelectValue placeholder={t.allFamilies} />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectItem value="all" className="text-white hover:bg-slate-700">{t.allFamilies}</SelectItem>
+                  {families.map(f => (
+                    <SelectItem key={f.id} value={f.id} className="text-white hover:bg-slate-700">
+                      {language === 'ar' ? f.name_ar : f.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={priceType} onValueChange={setPriceType}>
+                <SelectTrigger className="w-36 h-10 bg-slate-700 border-slate-600 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectItem value="retail" className="text-white hover:bg-slate-700">{t.retailPrice}</SelectItem>
+                  <SelectItem value="wholesale" className="text-white hover:bg-slate-700">{t.wholesalePrice}</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Customer Selection */}
+              <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
+                <SelectTrigger className="w-48 h-10 bg-slate-700 border-slate-600 text-white" data-testid="customer-select">
+                  <User className="h-4 w-4 me-2 text-slate-400" />
+                  <SelectValue placeholder={t.selectCustomer} />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectItem value="walk-in" className="text-white hover:bg-slate-700">{t.walkInCustomer}</SelectItem>
+                  {customers.map(c => (
+                    <SelectItem key={c.id} value={c.id} className="text-white hover:bg-slate-700">{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Customer Debt Badge */}
+              {selectedCustomer && customerDebt > 0 && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setDebtPaymentAmount(customerDebt);
+                    setShowDebtDialog(true);
+                  }}
+                  className="gap-1"
                 >
-                  <div className="aspect-square rounded-lg bg-muted mb-2 overflow-hidden">
-                    <img
-                      src={product.image_url || 'https://images.unsplash.com/photo-1634403665443-81dc4d75843a?crop=entropy&cs=srgb&fm=jpg&q=85'}
-                      alt={language === 'ar' ? product.name_ar : product.name_en}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <h3 className="font-medium text-sm line-clamp-1">
-                    {language === 'ar' ? product.name_ar : product.name_en}
-                  </h3>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-primary font-bold">
-                      {(priceType === 'wholesale' ? product.wholesale_price : product.retail_price).toFixed(2)} {t.currency}
-                    </span>
-                    <Badge variant={product.quantity > 0 ? 'secondary' : 'destructive'} className="text-xs">
-                      {product.quantity}
-                    </Badge>
-                  </div>
-                </button>
-              ))}
+                  <AlertCircle className="h-4 w-4" />
+                  {formatCurrency(customerDebt)} {t.currency}
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Cart Section */}
-        <Card className="w-[420px] flex flex-col">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              {t.cart}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col overflow-hidden">
-            {/* Customer Selection with Debt Info */}
-            <div className="mb-4">
-              <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
-                <SelectTrigger data-testid="customer-select">
-                  <User className="h-4 w-4 me-2" />
-                  <SelectValue placeholder={t.selectCustomer} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
-                  {customers.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              {/* Customer Debt Warning */}
-              {selectedCustomer && customerDebt > 0 && (
-                <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-amber-600">
-                      <AlertCircle className="h-4 w-4" />
-                      <span className="text-sm font-medium">{t.customerDebt}: {customerDebt.toLocaleString()} {t.currency}</span>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setDebtPaymentAmount(customerDebt);
-                        setShowDebtDialog(true);
-                      }}
-                      className="text-xs"
-                    >
-                      {t.payDebt}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Payment Type Selection */}
-            <div className="mb-4">
-              <Label className="text-sm mb-2 block">{t.paymentType}</Label>
+        {/* Main Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          
+          {/* Cart/Order Table - Left Side */}
+          <div className="w-[55%] flex flex-col border-e border-slate-700 bg-slate-850">
+            {/* Cart Header */}
+            <div className="bg-slate-800 px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ShoppingCart className="h-5 w-5 text-blue-400" />
+                <span className="font-semibold text-lg">
+                  {language === 'ar' ? 'سلة المشتريات' : 'Panier'}
+                </span>
+                <Badge className="bg-blue-600 text-white">{cart.length}</Badge>
+              </div>
               <div className="flex gap-2">
                 <Button
-                  type="button"
-                  variant={paymentType === 'cash' ? 'default' : 'outline'}
+                  variant="ghost"
                   size="sm"
-                  onClick={() => setPaymentType('cash')}
-                  className="flex-1"
+                  onClick={clearCart}
+                  className="text-slate-400 hover:text-white hover:bg-slate-700"
                 >
-                  {t.cashPayment}
-                </Button>
-                <Button
-                  type="button"
-                  variant={paymentType === 'credit' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPaymentType('credit')}
-                  className="flex-1"
-                >
-                  {t.creditPayment}
-                </Button>
-                <Button
-                  type="button"
-                  variant={paymentType === 'partial' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPaymentType('partial')}
-                  className="flex-1"
-                >
-                  {t.partialPayment}
+                  <RotateCcw className="h-4 w-4 me-1" />
+                  {language === 'ar' ? 'مسح' : 'Effacer'}
                 </Button>
               </div>
             </div>
 
-            {/* Cart Items */}
-            <div className="flex-1 overflow-auto space-y-2 mb-4">
-              {cart.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  <ShoppingCart className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>{t.emptyCart}</p>
-                </div>
-              ) : (
-                cart.map(item => (
-                  <div key={item.product_id} className="p-3 rounded-lg border bg-muted/30">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{item.product_name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.unit_price.toFixed(2)} {t.currency}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => removeFromCart(item.product_id)}
-                        className="text-destructive hover:bg-destructive/10 p-1 rounded"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => updateCartItemQuantity(item.product_id, -1)}
-                          className="p-1 rounded bg-muted hover:bg-muted/80"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <button
-                          onClick={() => updateCartItemQuantity(item.product_id, 1)}
-                          className="p-1 rounded bg-muted hover:bg-muted/80"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder={t.discount}
-                        value={item.discount || ''}
-                        onChange={(e) => updateCartItemDiscount(item.product_id, e.target.value)}
-                        className="w-20 h-8 text-sm"
-                      />
-                      <span className="font-bold text-sm">
-                        {item.total.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Delivery Section */}
-            <div className="mb-4 p-3 rounded-lg border bg-muted/30">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Truck className="h-4 w-4" />
-                  <Label>{t.deliveryService}</Label>
-                </div>
-                <Switch
-                  checked={deliveryEnabled}
-                  onCheckedChange={setDeliveryEnabled}
-                  data-testid="delivery-toggle"
-                />
-              </div>
-              
-              {deliveryEnabled && (
-                <div className="space-y-3">
-                  <Select value={selectedWilaya} onValueChange={setSelectedWilaya}>
-                    <SelectTrigger data-testid="wilaya-select">
-                      <SelectValue placeholder={t.selectWilaya} />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {wilayas.map(w => (
-                        <SelectItem key={w.code} value={w.code}>
-                          {w.code} - {language === 'ar' ? w.name_ar : w.name_en}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={deliveryType === 'desk' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setDeliveryType('desk')}
-                      className="flex-1"
-                    >
-                      {t.officeDelivery}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={deliveryType === 'home' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setDeliveryType('home')}
-                      className="flex-1"
-                    >
-                      {t.homeDelivery}
-                    </Button>
-                  </div>
-                  
-                  <Input
-                    placeholder={t.deliveryCity}
-                    value={deliveryCity}
-                    onChange={(e) => setDeliveryCity(e.target.value)}
-                    className="h-9"
-                  />
-                  
-                  <Input
-                    placeholder={t.deliveryAddress}
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    className="h-9"
-                  />
-                  
-                  {deliveryFee > 0 && (
-                    <div className="flex justify-between text-sm font-medium text-primary">
-                      <span>{t.deliveryFee}</span>
-                      <span>{deliveryFee.toLocaleString()} {t.currency}</span>
-                    </div>
+            {/* Cart Table */}
+            <div className="flex-1 overflow-auto">
+              <Table>
+                <TableHeader className="bg-slate-800 sticky top-0">
+                  <TableRow className="border-slate-700 hover:bg-slate-800">
+                    <TableHead className="text-slate-300 w-[80px]">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
+                    <TableHead className="text-slate-300">{language === 'ar' ? 'المنتج' : 'Article'}</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                    <TableHead className="text-slate-300 w-[80px] text-center">{language === 'ar' ? 'خصم %' : 'R. %'}</TableHead>
+                    <TableHead className="text-slate-300 w-[120px] text-center">{language === 'ar' ? 'المجموع' : 'Montant'}</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {cart.length === 0 ? (
+                    <TableRow className="border-slate-700">
+                      <TableCell colSpan={7} className="text-center py-12 text-slate-500">
+                        <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                        <p>{language === 'ar' ? 'السلة فارغة - قم باختيار منتجات' : 'Panier vide - Sélectionnez des articles'}</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    cart.map((item, index) => (
+                      <TableRow key={item.product_id} className="border-slate-700 hover:bg-slate-800/50">
+                        <TableCell className="font-mono text-xs text-slate-400">
+                          {item.barcode?.slice(-6) || '---'}
+                        </TableCell>
+                        <TableCell className="font-medium">{item.product_name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => updateCartItemQuantity(item.product_id, item.quantity - 1)}
+                              className="p-1 rounded bg-slate-700 hover:bg-slate-600 text-white"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) => updateCartItemQuantity(item.product_id, parseInt(e.target.value) || 1)}
+                              className="w-14 h-8 text-center bg-slate-700 border-slate-600 text-white p-1"
+                            />
+                            <button
+                              onClick={() => updateCartItemQuantity(item.product_id, item.quantity + 1)}
+                              className="p-1 rounded bg-slate-700 hover:bg-slate-600 text-white"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center text-slate-300">
+                          {formatCurrency(item.unit_price)}
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            placeholder="0"
+                            value={item.discount_percent || ''}
+                            onChange={(e) => updateCartItemDiscount(item.product_id, e.target.value)}
+                            className="w-16 h-8 text-center bg-slate-700 border-slate-600 text-white p-1"
+                          />
+                        </TableCell>
+                        <TableCell className="text-center font-bold text-green-400">
+                          {formatCurrency(item.total)}
+                        </TableCell>
+                        <TableCell>
+                          <button
+                            onClick={() => removeFromCart(item.product_id)}
+                            className="p-1 rounded text-red-400 hover:bg-red-500/20"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
-                </div>
-              )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Products List - Right Side */}
+          <div className="flex-1 flex flex-col bg-slate-900">
+            {/* Products Header */}
+            <div className="bg-slate-800 px-4 py-3 border-b border-slate-700 flex items-center gap-3">
+              <Package className="h-5 w-5 text-green-400" />
+              <span className="font-semibold text-lg">
+                {language === 'ar' ? 'قائمة المنتجات' : 'Liste des articles'}
+              </span>
+              <Badge variant="outline" className="text-slate-300 border-slate-600">{filteredProducts.length}</Badge>
             </div>
 
-            {/* Totals */}
-            <div className="space-y-3 border-t pt-4">
-              <div className="flex justify-between text-sm">
-                <span>{t.subtotal}</span>
-                <span>{subtotal.toFixed(2)} {t.currency}</span>
-              </div>
+            {/* Products Table */}
+            <div className="flex-1 overflow-auto">
+              <Table>
+                <TableHeader className="bg-slate-800 sticky top-0">
+                  <TableRow className="border-slate-700 hover:bg-slate-800">
+                    <TableHead className="text-slate-300 w-[80px]">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
+                    <TableHead className="text-slate-300">{language === 'ar' ? 'اسم المنتج' : 'Nom d\'article'}</TableHead>
+                    <TableHead className="text-slate-300 w-[80px] text-center">{language === 'ar' ? 'المخزون' : 'Stock'}</TableHead>
+                    <TableHead className="text-slate-300 w-[100px] text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredProducts.map(product => (
+                    <TableRow 
+                      key={product.id} 
+                      className={`border-slate-700 cursor-pointer transition-colors ${
+                        product.quantity <= 0 
+                          ? 'opacity-50 bg-red-900/10' 
+                          : 'hover:bg-blue-900/20'
+                      }`}
+                      onClick={() => product.quantity > 0 && addToCart(product)}
+                      data-testid={`pos-product-${product.id}`}
+                    >
+                      <TableCell className="font-mono text-xs text-slate-400">
+                        {product.barcode?.slice(-6) || product.id.slice(-6)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{language === 'ar' ? product.name_ar : product.name_en}</span>
+                          {product.quantity <= 5 && product.quantity > 0 && (
+                            <Badge variant="outline" className="text-amber-400 border-amber-600 text-xs">
+                              {language === 'ar' ? 'منخفض' : 'Bas'}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge className={`${
+                          product.quantity <= 0 
+                            ? 'bg-red-600' 
+                            : product.quantity <= 5 
+                              ? 'bg-amber-600' 
+                              : 'bg-green-600'
+                        } text-white`}>
+                          {product.quantity}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center font-bold text-blue-400">
+                        {formatCurrency(priceType === 'wholesale' ? product.wholesale_price : product.retail_price)}
+                      </TableCell>
+                      <TableCell>
+                        {product.quantity > 0 && (
+                          <button className="p-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white">
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Footer Bar - Totals & Actions */}
+        <div className="bg-slate-800 border-t border-slate-700">
+          {/* Payment Type & Delivery Row */}
+          <div className="px-4 py-2 border-b border-slate-700 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Payment Type */}
               <div className="flex items-center gap-2">
-                <Label className="text-sm w-20">{t.discount}</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={discount || ''}
-                  onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                  className="h-9"
-                  data-testid="total-discount-input"
-                />
+                <Label className="text-slate-400 text-sm">{language === 'ar' ? 'نوع الدفع:' : 'Type:'}</Label>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant={paymentType === 'cash' ? 'default' : 'outline'}
+                    onClick={() => setPaymentType('cash')}
+                    className={paymentType === 'cash' ? 'bg-green-600 hover:bg-green-700' : 'border-slate-600 text-slate-300'}
+                  >
+                    {language === 'ar' ? 'نقدي' : 'Comptant'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={paymentType === 'credit' ? 'default' : 'outline'}
+                    onClick={() => setPaymentType('credit')}
+                    className={paymentType === 'credit' ? 'bg-amber-600 hover:bg-amber-700' : 'border-slate-600 text-slate-300'}
+                  >
+                    {language === 'ar' ? 'دين' : 'Crédit'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={paymentType === 'partial' ? 'default' : 'outline'}
+                    onClick={() => setPaymentType('partial')}
+                    className={paymentType === 'partial' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-600 text-slate-300'}
+                  >
+                    {language === 'ar' ? 'جزئي' : 'Partiel'}
+                  </Button>
+                </div>
               </div>
-              {deliveryEnabled && deliveryFee > 0 && (
-                <div className="flex justify-between text-sm text-primary">
-                  <span>{t.deliveryFee}</span>
-                  <span>+{deliveryFee.toLocaleString()} {t.currency}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-bold text-lg">
-                <span>{t.total}</span>
-                <span className="text-primary">{total.toFixed(2)} {t.currency}</span>
-              </div>
-              
-              {/* Payment - only show for cash or partial */}
-              {paymentType !== 'credit' && (
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm w-20">{t.paidAmount}</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={paidAmount || ''}
-                    onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
-                    className="h-9"
-                    data-testid="paid-amount-input"
-                  />
-                </div>
-              )}
-              
-              {paymentType === 'credit' && (
-                <div className="flex justify-between text-sm text-amber-600 font-medium">
-                  <span>{t.debtAmount}</span>
-                  <span>{total.toFixed(2)} {t.currency}</span>
-                </div>
-              )}
-              
-              {paymentType === 'partial' && remaining > 0 && (
-                <div className="flex justify-between text-sm text-amber-600">
-                  <span>{t.debtAmount}</span>
-                  <span>{remaining.toFixed(2)} {t.currency}</span>
-                </div>
-              )}
 
               {/* Payment Method */}
               {paymentType !== 'credit' && (
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPaymentMethod('cash')}
-                    className="flex-1 gap-1"
-                  >
-                    <Banknote className="h-4 w-4" />
-                    {t.cash}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={paymentMethod === 'bank' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPaymentMethod('bank')}
-                    className="flex-1 gap-1"
-                  >
-                    <CreditCard className="h-4 w-4" />
-                    {t.bank}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPaymentMethod('wallet')}
-                    className="flex-1 gap-1"
-                  >
-                    <Wallet className="h-4 w-4" />
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <Label className="text-slate-400 text-sm">{language === 'ar' ? 'الوسيلة:' : 'Mode:'}</Label>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                      onClick={() => setPaymentMethod('cash')}
+                      className={paymentMethod === 'cash' ? 'bg-slate-600' : 'border-slate-600 text-slate-300'}
+                    >
+                      <Banknote className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={paymentMethod === 'bank' ? 'default' : 'outline'}
+                      onClick={() => setPaymentMethod('bank')}
+                      className={paymentMethod === 'bank' ? 'bg-slate-600' : 'border-slate-600 text-slate-300'}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
+                      onClick={() => setPaymentMethod('wallet')}
+                      className={paymentMethod === 'wallet' ? 'bg-slate-600' : 'border-slate-600 text-slate-300'}
+                    >
+                      <Wallet className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              {/* Complete Sale Button */}
+              {/* Delivery Toggle */}
+              <div className="flex items-center gap-2">
+                <Truck className="h-4 w-4 text-slate-400" />
+                <Label className="text-slate-400 text-sm">{language === 'ar' ? 'توصيل' : 'Livraison'}</Label>
+                <Switch
+                  checked={deliveryEnabled}
+                  onCheckedChange={setDeliveryEnabled}
+                  className="data-[state=checked]:bg-blue-600"
+                />
+                {deliveryEnabled && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowDeliveryDialog(true)}
+                    className="border-slate-600 text-slate-300"
+                  >
+                    {selectedWilaya || (language === 'ar' ? 'إعداد' : 'Config')}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Paid Amount Input */}
+            {paymentType !== 'credit' && (
+              <div className="flex items-center gap-2">
+                <Label className="text-slate-400 text-sm">{language === 'ar' ? 'المدفوع:' : 'Payé:'}</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={paidAmount || ''}
+                  onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
+                  className="w-32 h-9 bg-slate-700 border-slate-600 text-white"
+                  data-testid="paid-amount-input"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Totals Row */}
+          <div className="px-4 py-3 flex items-center justify-between">
+            {/* Left - Totals Display */}
+            <div className="flex items-center gap-6">
+              {/* Subtotal */}
+              <div className="text-center">
+                <p className="text-xs text-slate-400 mb-1">{language === 'ar' ? 'المجموع الفرعي' : 'Sous total'}</p>
+                <p className="text-xl font-bold text-white">{formatCurrency(subtotal)}</p>
+              </div>
+
+              {/* Discount */}
+              <div className="text-center">
+                <p className="text-xs text-slate-400 mb-1">{language === 'ar' ? 'الخصم' : 'Remise'}</p>
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={discount || ''}
+                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                    className="w-24 h-8 bg-slate-700 border-slate-600 text-white text-center"
+                    data-testid="total-discount-input"
+                  />
+                </div>
+              </div>
+
+              {/* Delivery Fee */}
+              {deliveryEnabled && deliveryFee > 0 && (
+                <div className="text-center">
+                  <p className="text-xs text-slate-400 mb-1">{language === 'ar' ? 'التوصيل' : 'Livraison'}</p>
+                  <p className="text-xl font-bold text-blue-400">+{formatCurrency(deliveryFee)}</p>
+                </div>
+              )}
+
+              {/* Debt Amount */}
+              {(paymentType === 'credit' || (paymentType === 'partial' && remaining > 0)) && (
+                <div className="text-center">
+                  <p className="text-xs text-slate-400 mb-1">{language === 'ar' ? 'الدين' : 'Crédit'}</p>
+                  <p className="text-xl font-bold text-amber-400">
+                    {formatCurrency(paymentType === 'credit' ? total : remaining)}
+                  </p>
+                </div>
+              )}
+
+              {/* Total */}
+              <div className="text-center px-4 py-2 bg-blue-600 rounded-lg">
+                <p className="text-xs text-blue-200 mb-1">{language === 'ar' ? 'الإجمالي' : 'Total'}</p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(total)} <span className="text-sm">{t.currency}</span></p>
+              </div>
+            </div>
+
+            {/* Right - Action Buttons */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={clearCart}
+                className="h-12 px-6 border-slate-600 text-slate-300 hover:bg-slate-700"
+              >
+                <RotateCcw className="h-5 w-5 me-2" />
+                {language === 'ar' ? 'إلغاء' : 'Annuler'}
+              </Button>
+
               <Button
                 onClick={completeSale}
-                disabled={loading || cart.length === 0}
-                className="w-full h-12 text-lg gap-2"
+                disabled={loading || cart.length === 0 || !hasOpenSession}
+                className="h-12 px-8 bg-green-600 hover:bg-green-700 text-white text-lg gap-2"
                 data-testid="complete-sale-btn"
               >
-                <Printer className="h-5 w-5" />
-                {loading ? t.loading : t.completeSale}
+                <Check className="h-5 w-5" />
+                {loading ? (language === 'ar' ? 'جاري...' : 'Chargement...') : (language === 'ar' ? 'تأكيد البيع' : 'Valider')}
+                <span className="text-xs opacity-70">(Ctrl+Enter)</span>
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Debt Payment Dialog */}
       <Dialog open={showDebtDialog} onOpenChange={setShowDebtDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm bg-slate-800 border-slate-700 text-white">
           <DialogHeader>
-            <DialogTitle>{t.payDebt}</DialogTitle>
+            <DialogTitle className="text-white">{t.payDebt}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>{t.totalDebt}</Label>
-              <p className="text-xl font-bold text-amber-600">{customerDebt.toLocaleString()} {t.currency}</p>
+              <Label className="text-slate-300">{t.totalDebt}</Label>
+              <p className="text-xl font-bold text-amber-400">{formatCurrency(customerDebt)} {t.currency}</p>
             </div>
             <div>
-              <Label>{t.amount}</Label>
+              <Label className="text-slate-300">{t.amount}</Label>
               <Input
                 type="number"
                 min="0"
                 max={customerDebt}
                 value={debtPaymentAmount}
                 onChange={(e) => setDebtPaymentAmount(parseFloat(e.target.value) || 0)}
+                className="bg-slate-700 border-slate-600 text-white"
                 data-testid="debt-payment-input"
               />
             </div>
             <div className="flex gap-2">
               <Button
-                type="button"
                 variant={paymentMethod === 'cash' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setPaymentMethod('cash')}
@@ -821,7 +901,6 @@ export default function POSPage() {
                 {t.cash}
               </Button>
               <Button
-                type="button"
                 variant={paymentMethod === 'bank' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setPaymentMethod('bank')}
@@ -832,10 +911,92 @@ export default function POSPage() {
               </Button>
             </div>
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowDebtDialog(false)} className="flex-1">
+              <Button variant="outline" onClick={() => setShowDebtDialog(false)} className="flex-1 border-slate-600">
                 {t.cancel}
               </Button>
-              <Button onClick={handlePayDebt} className="flex-1" disabled={debtPaymentAmount <= 0}>
+              <Button onClick={handlePayDebt} className="flex-1 bg-green-600 hover:bg-green-700" disabled={debtPaymentAmount <= 0}>
+                {t.confirm}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delivery Settings Dialog */}
+      <Dialog open={showDeliveryDialog} onOpenChange={setShowDeliveryDialog}>
+        <DialogContent className="max-w-md bg-slate-800 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              {language === 'ar' ? 'إعدادات التوصيل' : 'Paramètres de livraison'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-slate-300">{t.selectWilaya}</Label>
+              <Select value={selectedWilaya} onValueChange={setSelectedWilaya}>
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white" data-testid="wilaya-select">
+                  <SelectValue placeholder={t.selectWilaya} />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
+                  {wilayas.map(w => (
+                    <SelectItem key={w.code} value={w.code} className="text-white hover:bg-slate-700">
+                      {w.code} - {language === 'ar' ? w.name_ar : w.name_en}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant={deliveryType === 'desk' ? 'default' : 'outline'}
+                onClick={() => setDeliveryType('desk')}
+                className={`flex-1 ${deliveryType === 'desk' ? 'bg-blue-600' : 'border-slate-600 text-slate-300'}`}
+              >
+                {t.officeDelivery}
+              </Button>
+              <Button
+                variant={deliveryType === 'home' ? 'default' : 'outline'}
+                onClick={() => setDeliveryType('home')}
+                className={`flex-1 ${deliveryType === 'home' ? 'bg-blue-600' : 'border-slate-600 text-slate-300'}`}
+              >
+                {t.homeDelivery}
+              </Button>
+            </div>
+
+            <div>
+              <Label className="text-slate-300">{t.deliveryCity}</Label>
+              <Input
+                value={deliveryCity}
+                onChange={(e) => setDeliveryCity(e.target.value)}
+                className="bg-slate-700 border-slate-600 text-white"
+              />
+            </div>
+
+            <div>
+              <Label className="text-slate-300">{t.deliveryAddress}</Label>
+              <Input
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                className="bg-slate-700 border-slate-600 text-white"
+              />
+            </div>
+
+            {deliveryFee > 0 && (
+              <div className="p-3 bg-blue-900/30 rounded-lg border border-blue-700">
+                <div className="flex justify-between text-lg font-bold">
+                  <span className="text-slate-300">{t.deliveryFee}</span>
+                  <span className="text-blue-400">{formatCurrency(deliveryFee)} {t.currency}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowDeliveryDialog(false)} className="flex-1 border-slate-600">
+                {t.cancel}
+              </Button>
+              <Button onClick={() => setShowDeliveryDialog(false)} className="flex-1 bg-blue-600 hover:bg-blue-700">
                 {t.confirm}
               </Button>
             </div>
