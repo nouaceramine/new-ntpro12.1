@@ -5392,6 +5392,353 @@ async def delete_supplier_family(family_id: str, admin: dict = Depends(get_admin
         raise HTTPException(status_code=404, detail="عائلة الموردين غير موجودة")
     return {"message": "تم حذف عائلة الموردين بنجاح"}
 
+# ============ REPAIRS MANAGEMENT ============
+
+class RepairCreate(BaseModel):
+    ticket_number: str
+    customer_name: str
+    customer_phone: str
+    customer_phone2: Optional[str] = ""
+    device_brand: str
+    device_model: str
+    device_color: Optional[str] = ""
+    device_imei: Optional[str] = ""
+    device_password: Optional[str] = ""
+    problems: List[str] = []
+    problem_description: Optional[str] = ""
+    device_condition: Optional[str] = ""
+    accessories: Optional[str] = ""
+    estimated_cost: float = 0
+    estimated_days: int = 0
+    advance_payment: float = 0
+    technician_notes: Optional[str] = ""
+    status: str = "received"
+
+class RepairUpdate(BaseModel):
+    customer_name: Optional[str] = None
+    customer_phone: Optional[str] = None
+    customer_phone2: Optional[str] = None
+    device_brand: Optional[str] = None
+    device_model: Optional[str] = None
+    device_color: Optional[str] = None
+    device_imei: Optional[str] = None
+    device_password: Optional[str] = None
+    problems: Optional[List[str]] = None
+    problem_description: Optional[str] = None
+    device_condition: Optional[str] = None
+    accessories: Optional[str] = None
+    estimated_cost: Optional[float] = None
+    estimated_days: Optional[int] = None
+    advance_payment: Optional[float] = None
+    technician_notes: Optional[str] = None
+    status: Optional[str] = None
+    final_cost: Optional[float] = None
+    completed_at: Optional[str] = None
+    delivered_at: Optional[str] = None
+
+class SparePartCreate(BaseModel):
+    name: str
+    name_ar: Optional[str] = ""
+    category: str
+    compatible_brands: List[str] = []
+    compatible_models: Optional[str] = ""
+    quantity: int = 0
+    buy_price: float = 0
+    sell_price: float = 0
+    min_stock: int = 5
+    supplier: Optional[str] = ""
+    notes: Optional[str] = ""
+
+class SparePartUpdate(BaseModel):
+    name: Optional[str] = None
+    name_ar: Optional[str] = None
+    category: Optional[str] = None
+    compatible_brands: Optional[List[str]] = None
+    compatible_models: Optional[str] = None
+    quantity: Optional[int] = None
+    buy_price: Optional[float] = None
+    sell_price: Optional[float] = None
+    min_stock: Optional[int] = None
+    supplier: Optional[str] = None
+    notes: Optional[str] = None
+
+# Repairs endpoints
+@api_router.get("/repairs")
+async def get_repairs(
+    status: Optional[str] = None,
+    search: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get all repair tickets"""
+    query = {}
+    if status:
+        query["status"] = status
+    if search:
+        query["$or"] = [
+            {"ticket_number": {"$regex": search, "$options": "i"}},
+            {"customer_name": {"$regex": search, "$options": "i"}},
+            {"customer_phone": {"$regex": search, "$options": "i"}},
+            {"device_brand": {"$regex": search, "$options": "i"}},
+            {"device_model": {"$regex": search, "$options": "i"}},
+        ]
+    
+    repairs = await db.repairs.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return repairs
+
+@api_router.get("/repairs/stats")
+async def get_repair_stats(user: dict = Depends(get_current_user)):
+    """Get repair statistics"""
+    total = await db.repairs.count_documents({})
+    received = await db.repairs.count_documents({"status": "received"})
+    diagnosing = await db.repairs.count_documents({"status": "diagnosing"})
+    in_progress = await db.repairs.count_documents({"status": "in_progress"})
+    waiting_parts = await db.repairs.count_documents({"status": "waiting_parts"})
+    completed = await db.repairs.count_documents({"status": "completed"})
+    delivered = await db.repairs.count_documents({"status": "delivered"})
+    cancelled = await db.repairs.count_documents({"status": "cancelled"})
+    
+    # Revenue stats
+    pipeline = [
+        {"$match": {"status": {"$in": ["completed", "delivered"]}}},
+        {"$group": {
+            "_id": None,
+            "total_revenue": {"$sum": "$final_cost"},
+            "total_advance": {"$sum": "$advance_payment"}
+        }}
+    ]
+    revenue_data = await db.repairs.aggregate(pipeline).to_list(1)
+    revenue = revenue_data[0] if revenue_data else {"total_revenue": 0, "total_advance": 0}
+    
+    # Today's repairs
+    today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    today_repairs = await db.repairs.count_documents({
+        "created_at": {"$gte": today_start.isoformat()}
+    })
+    
+    return {
+        "total": total,
+        "received": received,
+        "diagnosing": diagnosing,
+        "in_progress": in_progress,
+        "waiting_parts": waiting_parts,
+        "completed": completed,
+        "delivered": delivered,
+        "cancelled": cancelled,
+        "today_repairs": today_repairs,
+        "total_revenue": revenue.get("total_revenue", 0),
+        "total_advance": revenue.get("total_advance", 0)
+    }
+
+@api_router.get("/repairs/{repair_id}")
+async def get_repair(repair_id: str, user: dict = Depends(get_current_user)):
+    """Get a single repair ticket"""
+    repair = await db.repairs.find_one({"id": repair_id}, {"_id": 0})
+    if not repair:
+        repair = await db.repairs.find_one({"ticket_number": repair_id}, {"_id": 0})
+    if not repair:
+        raise HTTPException(status_code=404, detail="طلب الصيانة غير موجود")
+    return repair
+
+@api_router.post("/repairs")
+async def create_repair(repair: RepairCreate, user: dict = Depends(get_current_user)):
+    """Create a new repair ticket"""
+    repair_data = repair.model_dump()
+    repair_data["id"] = str(uuid.uuid4())
+    repair_data["created_at"] = datetime.now(timezone.utc).isoformat()
+    repair_data["created_by"] = user["id"]
+    repair_data["history"] = [{
+        "status": "received",
+        "timestamp": repair_data["created_at"],
+        "user": user["name"],
+        "note": "تم استلام الجهاز"
+    }]
+    
+    await db.repairs.insert_one(repair_data)
+    del repair_data["_id"] if "_id" in repair_data else None
+    return repair_data
+
+@api_router.put("/repairs/{repair_id}")
+async def update_repair(repair_id: str, repair: RepairUpdate, user: dict = Depends(get_current_user)):
+    """Update a repair ticket"""
+    existing = await db.repairs.find_one({"id": repair_id}, {"_id": 0})
+    if not existing:
+        existing = await db.repairs.find_one({"ticket_number": repair_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="طلب الصيانة غير موجود")
+    
+    update_data = {k: v for k, v in repair.model_dump().items() if v is not None}
+    
+    # Track status change
+    if "status" in update_data and update_data["status"] != existing.get("status"):
+        history_entry = {
+            "status": update_data["status"],
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "user": user["name"],
+            "note": get_status_note(update_data["status"])
+        }
+        await db.repairs.update_one(
+            {"id": existing["id"]},
+            {"$push": {"history": history_entry}}
+        )
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.repairs.update_one({"id": existing["id"]}, {"$set": update_data})
+    updated = await db.repairs.find_one({"id": existing["id"]}, {"_id": 0})
+    return updated
+
+def get_status_note(status: str) -> str:
+    """Get Arabic note for status change"""
+    notes = {
+        "received": "تم استلام الجهاز",
+        "diagnosing": "جاري التشخيص",
+        "in_progress": "جاري الإصلاح",
+        "waiting_parts": "في انتظار قطع الغيار",
+        "completed": "تم الإصلاح",
+        "delivered": "تم التسليم للزبون",
+        "cancelled": "تم إلغاء الطلب"
+    }
+    return notes.get(status, "تم تحديث الحالة")
+
+@api_router.delete("/repairs/{repair_id}")
+async def delete_repair(repair_id: str, user: dict = Depends(get_current_user)):
+    """Delete a repair ticket"""
+    result = await db.repairs.delete_one({"id": repair_id})
+    if result.deleted_count == 0:
+        result = await db.repairs.delete_one({"ticket_number": repair_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="طلب الصيانة غير موجود")
+    return {"message": "تم حذف طلب الصيانة بنجاح"}
+
+# Spare Parts endpoints
+@api_router.get("/spare-parts")
+async def get_spare_parts(
+    category: Optional[str] = None,
+    search: Optional[str] = None,
+    low_stock: Optional[bool] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get all spare parts"""
+    query = {}
+    if category:
+        query["category"] = category
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"name_ar": {"$regex": search, "$options": "i"}},
+            {"compatible_models": {"$regex": search, "$options": "i"}},
+        ]
+    if low_stock:
+        query["$expr"] = {"$lte": ["$quantity", "$min_stock"]}
+    
+    parts = await db.spare_parts.find(query, {"_id": 0}).sort("name", 1).to_list(1000)
+    return parts
+
+@api_router.get("/spare-parts/stats")
+async def get_spare_parts_stats(user: dict = Depends(get_current_user)):
+    """Get spare parts statistics"""
+    total = await db.spare_parts.count_documents({})
+    
+    # Low stock count
+    pipeline = [
+        {"$match": {"$expr": {"$lte": ["$quantity", "$min_stock"]}}},
+        {"$count": "count"}
+    ]
+    low_stock_result = await db.spare_parts.aggregate(pipeline).to_list(1)
+    low_stock = low_stock_result[0]["count"] if low_stock_result else 0
+    
+    # Total value
+    value_pipeline = [
+        {"$group": {
+            "_id": None,
+            "total_buy_value": {"$sum": {"$multiply": ["$quantity", "$buy_price"]}},
+            "total_sell_value": {"$sum": {"$multiply": ["$quantity", "$sell_price"]}}
+        }}
+    ]
+    value_result = await db.spare_parts.aggregate(value_pipeline).to_list(1)
+    values = value_result[0] if value_result else {"total_buy_value": 0, "total_sell_value": 0}
+    
+    # Categories count
+    categories_pipeline = [
+        {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    categories = await db.spare_parts.aggregate(categories_pipeline).to_list(20)
+    
+    return {
+        "total": total,
+        "low_stock": low_stock,
+        "total_buy_value": values.get("total_buy_value", 0),
+        "total_sell_value": values.get("total_sell_value", 0),
+        "categories": [{"name": c["_id"], "count": c["count"]} for c in categories if c["_id"]]
+    }
+
+@api_router.get("/spare-parts/{part_id}")
+async def get_spare_part(part_id: str, user: dict = Depends(get_current_user)):
+    """Get a single spare part"""
+    part = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
+    if not part:
+        raise HTTPException(status_code=404, detail="قطعة الغيار غير موجودة")
+    return part
+
+@api_router.post("/spare-parts")
+async def create_spare_part(part: SparePartCreate, user: dict = Depends(get_current_user)):
+    """Create a new spare part"""
+    part_data = part.model_dump()
+    part_data["id"] = str(uuid.uuid4())
+    part_data["created_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.spare_parts.insert_one(part_data)
+    del part_data["_id"] if "_id" in part_data else None
+    return part_data
+
+@api_router.put("/spare-parts/{part_id}")
+async def update_spare_part(part_id: str, part: SparePartUpdate, user: dict = Depends(get_current_user)):
+    """Update a spare part"""
+    existing = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="قطعة الغيار غير موجودة")
+    
+    update_data = {k: v for k, v in part.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.spare_parts.update_one({"id": part_id}, {"$set": update_data})
+    updated = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/spare-parts/{part_id}")
+async def delete_spare_part(part_id: str, user: dict = Depends(get_current_user)):
+    """Delete a spare part"""
+    result = await db.spare_parts.delete_one({"id": part_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="قطعة الغيار غير موجودة")
+    return {"message": "تم حذف قطعة الغيار بنجاح"}
+
+@api_router.put("/spare-parts/{part_id}/stock")
+async def update_spare_part_stock(
+    part_id: str,
+    quantity_change: int,
+    operation: str,  # "add" or "subtract"
+    user: dict = Depends(get_current_user)
+):
+    """Update spare part stock"""
+    existing = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="قطعة الغيار غير موجودة")
+    
+    current_qty = existing.get("quantity", 0)
+    if operation == "add":
+        new_qty = current_qty + quantity_change
+    else:
+        new_qty = max(0, current_qty - quantity_change)
+    
+    await db.spare_parts.update_one(
+        {"id": part_id},
+        {"$set": {"quantity": new_qty, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    return {"quantity": new_qty}
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
