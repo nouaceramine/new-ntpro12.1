@@ -343,6 +343,39 @@ export default function SettingsPage() {
     }
   };
 
+  // Add new user/employee
+  const handleAddUser = async () => {
+    if (!newUserData.name || !newUserData.email || !newUserData.password) {
+      toast.error(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Veuillez remplir tous les champs');
+      return;
+    }
+    
+    setAddingUser(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/auth/register`, newUserData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تمت إضافة العامل بنجاح' : 'Employé ajouté avec succès');
+      setShowAddUserDialog(false);
+      setNewUserData({ name: '', email: '', password: '', role: 'seller' });
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.somethingWentWrong);
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
+  // Available roles
+  const availableRoles = [
+    { value: 'seller', label_ar: 'بائع', label_fr: 'Vendeur', color: 'bg-green-500' },
+    { value: 'ecommerce_manager', label_ar: 'مسؤول متجر إلكتروني', label_fr: 'E-commerce Manager', color: 'bg-purple-500' },
+    { value: 'accountant', label_ar: 'محاسب', label_fr: 'Comptable', color: 'bg-amber-500' },
+    { value: 'manager', label_ar: 'مشرف', label_fr: 'Manager', color: 'bg-blue-500' },
+    { value: 'user', label_ar: 'مستخدم عادي', label_fr: 'Utilisateur', color: 'bg-gray-500' },
+  ];
+
   const updatePermission = (category, action, value) => {
     setUserPermissions(prev => {
       const updated = { ...prev };
