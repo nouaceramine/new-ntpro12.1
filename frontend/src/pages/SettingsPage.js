@@ -133,6 +133,15 @@ export default function SettingsPage() {
     printCopies: 1
   });
 
+  // WhatsApp Settings
+  const [whatsappSettings, setWhatsappSettings] = useState({
+    enabled: false,
+    phone_number_id: '',
+    access_token: '',
+    business_account_id: ''
+  });
+  const [savingWhatsapp, setSavingWhatsapp] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
