@@ -366,6 +366,38 @@ export default function SettingsPage() {
     }
   };
 
+  // Save Email Settings
+  const saveEmailSettings = async () => {
+    setSavingEmail(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/email/settings`, emailSettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم حفظ إعدادات البريد الإلكتروني' : 'Paramètres email enregistrés');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    } finally {
+      setSavingEmail(false);
+    }
+  };
+
+  // Test Email Settings
+  const testEmailSettings = async () => {
+    setTestingEmail(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/email/test`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(response.data.message || (language === 'ar' ? 'تم إرسال البريد الاختباري' : 'Email test envoyé'));
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    } finally {
+      setTestingEmail(false);
+    }
+  };
+
   // Add new user/employee
   const handleAddUser = async () => {
     if (!newUserData.name || !newUserData.email || !newUserData.password) {
