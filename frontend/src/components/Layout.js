@@ -204,6 +204,7 @@ export const Layout = ({ children }) => {
         { path: '/daily-sessions', icon: Clock, label: language === 'ar' ? 'حصص البيع اليومية' : 'Sessions journalières' },
         { path: '/sales', icon: Receipt, label: t.sales },
         { path: '/purchases', icon: ShoppingBag, label: t.purchases },
+        { path: '/expenses', icon: Receipt, label: language === 'ar' ? 'التكاليف' : 'Dépenses' },
         ...(isAdmin ? [
           { path: '/cash', icon: Wallet, label: t.cashManagement },
           { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
