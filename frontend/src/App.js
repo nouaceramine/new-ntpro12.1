@@ -436,6 +436,30 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/repairs"
+        element={
+          <ProtectedRoute>
+            <RepairTrackingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/repairs/new"
+        element={
+          <ProtectedRoute>
+            <RepairReceptionPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/repairs/parts"
+        element={
+          <ProtectedRoute>
+            <SparePartsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
