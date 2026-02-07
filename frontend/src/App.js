@@ -28,6 +28,9 @@ import CustomerDebtsPage from "./pages/CustomerDebtsPage";
 import SettingsPage from "./pages/SettingsPage";
 import BulkPriceUpdatePage from "./pages/BulkPriceUpdatePage";
 import PurchasesPage from "./pages/PurchasesPage";
+import WarehousesPage from "./pages/WarehousesPage";
+import InventoryCountPage from "./pages/InventoryCountPage";
+import BarcodePrintPage from "./pages/BarcodePrintPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
