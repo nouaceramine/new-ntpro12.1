@@ -453,13 +453,21 @@ export default function SettingsPage() {
           <TabsContent value="permissions" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  {t.userPermissions}
-                </CardTitle>
-                <CardDescription>
-                  {language === 'ar' ? 'انقر على مستخدم لتعديل صلاحياته' : 'Click on a user to edit their permissions'}
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      {t.userPermissions}
+                    </CardTitle>
+                    <CardDescription>
+                      {language === 'ar' ? 'إدارة المستخدمين وصلاحياتهم' : 'Gérer les utilisateurs et leurs permissions'}
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setShowAddUserDialog(true)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    {language === 'ar' ? 'إضافة عامل' : 'Ajouter'}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
