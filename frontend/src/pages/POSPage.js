@@ -602,18 +602,32 @@ export default function POSPage() {
               </Select>
 
               {/* Customer Selection */}
-              <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
-                <SelectTrigger className="w-48 h-11" data-testid="customer-select">
-                  <User className="h-4 w-4 me-2 text-muted-foreground" />
-                  <SelectValue placeholder={t.selectCustomer} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
-                  {customers.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
+                  <SelectTrigger className="w-48 h-11" data-testid="customer-select">
+                    <User className="h-4 w-4 me-2 text-muted-foreground" />
+                    <SelectValue placeholder={t.selectCustomer} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
+                    {customers.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Add New Customer Button */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11"
+                  onClick={() => setShowNewCustomerDialog(true)}
+                  title={language === 'ar' ? 'إضافة زبون جديد' : 'Ajouter client'}
+                  data-testid="add-customer-btn"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
 
               {selectedCustomer && customerDebt > 0 && (
                 <Button
