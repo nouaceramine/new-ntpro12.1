@@ -1383,6 +1383,139 @@ export default function SettingsPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Add User Dialog */}
+        <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'إضافة عامل جديد' : 'Ajouter un employé'}
+              </DialogTitle>
+              <DialogDescription>
+                {language === 'ar' ? 'أدخل بيانات العامل الجديد' : 'Entrez les informations du nouvel employé'}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الاسم الكامل *' : 'Nom complet *'}</Label>
+                <Input
+                  value={newUserData.name}
+                  onChange={(e) => setNewUserData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder={language === 'ar' ? 'اسم العامل' : 'Nom de l\'employé'}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'البريد الإلكتروني *' : 'Email *'}</Label>
+                <Input
+                  type="email"
+                  value={newUserData.email}
+                  onChange={(e) => setNewUserData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="employee@example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'كلمة المرور *' : 'Mot de passe *'}</Label>
+                <Input
+                  type="password"
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الدور الوظيفي *' : 'Rôle *'}</Label>
+                <Select 
+                  value={newUserData.role} 
+                  onValueChange={(v) => setNewUserData(prev => ({ ...prev, role: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles.map(role => (
+                      <SelectItem key={role.value} value={role.value}>
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${role.color}`}></span>
+                          {language === 'ar' ? role.label_ar : role.label_fr}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Role description */}
+              <div className="p-3 bg-muted rounded-lg text-sm">
+                <p className="font-medium mb-1">{language === 'ar' ? 'صلاحيات الدور:' : 'Permissions du rôle:'}</p>
+                <ul className="text-muted-foreground text-xs space-y-1">
+                  {newUserData.role === 'seller' && (
+                    <>
+                      <li>• {language === 'ar' ? 'البيع ونقطة البيع' : 'Vente et POS'}</li>
+                      <li>• {language === 'ar' ? 'عرض المنتجات والزبائن' : 'Voir produits et clients'}</li>
+                      <li>• {language === 'ar' ? 'استقبال أجهزة الصيانة' : 'Réception réparations'}</li>
+                    </>
+                  )}
+                  {newUserData.role === 'ecommerce_manager' && (
+                    <>
+                      <li>• {language === 'ar' ? 'إدارة المنتجات والزبائن' : 'Gérer produits et clients'}</li>
+                      <li>• {language === 'ar' ? 'عرض المبيعات والتقارير' : 'Voir ventes et rapports'}</li>
+                      <li>• {language === 'ar' ? 'إدارة WooCommerce' : 'Gérer WooCommerce'}</li>
+                    </>
+                  )}
+                  {newUserData.role === 'accountant' && (
+                    <>
+                      <li>• {language === 'ar' ? 'إدارة التكاليف والديون' : 'Gérer dépenses et créances'}</li>
+                      <li>• {language === 'ar' ? 'عرض كل البيانات المالية' : 'Voir toutes les données financières'}</li>
+                      <li>• {language === 'ar' ? 'التقارير المحاسبية' : 'Rapports comptables'}</li>
+                    </>
+                  )}
+                  {newUserData.role === 'manager' && (
+                    <>
+                      <li>• {language === 'ar' ? 'كل صلاحيات البائع' : 'Toutes les permissions vendeur'}</li>
+                      <li>• {language === 'ar' ? 'إدارة المنتجات والمشتريات' : 'Gérer produits et achats'}</li>
+                      <li>• {language === 'ar' ? 'التقارير والإحصائيات' : 'Rapports et statistiques'}</li>
+                    </>
+                  )}
+                  {newUserData.role === 'user' && (
+                    <>
+                      <li>• {language === 'ar' ? 'صلاحيات محدودة' : 'Permissions limitées'}</li>
+                      <li>• {language === 'ar' ? 'البيع الأساسي فقط' : 'Vente de base uniquement'}</li>
+                    </>
+                  )}
+                </ul>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    setShowAddUserDialog(false);
+                    setNewUserData({ name: '', email: '', password: '', role: 'seller' });
+                  }}
+                >
+                  {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={handleAddUser}
+                  disabled={addingUser || !newUserData.name || !newUserData.email || !newUserData.password}
+                >
+                  {addingUser ? (
+                    <RefreshCw className="h-4 w-4 animate-spin me-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 me-2" />
+                  )}
+                  {language === 'ar' ? 'إضافة' : 'Ajouter'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
