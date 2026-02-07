@@ -1273,6 +1273,17 @@ export default function POSPage() {
                   {language === 'ar' ? 'إلغاء' : 'Annuler'}
                 </Button>
 
+                {/* Payment Dialog Button (Credit/Partial) */}
+                <Button
+                  onClick={openPaymentDialog}
+                  disabled={loading || cart.length === 0 || !hasOpenSession}
+                  className="h-12 px-6 bg-amber-500 hover:bg-amber-600 text-white gap-2"
+                  data-testid="open-payment-dialog-btn"
+                >
+                  <DollarSign className="h-5 w-5" />
+                  {language === 'ar' ? 'دفع متقدم' : 'Paiement'}
+                </Button>
+
                 <Button
                   onClick={completeSale}
                   disabled={loading || cart.length === 0 || !hasOpenSession}
