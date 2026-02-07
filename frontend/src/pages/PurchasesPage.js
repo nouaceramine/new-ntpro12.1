@@ -886,6 +886,81 @@ export default function PurchasesPage() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* New Supplier Dialog */}
+        <Dialog open={showNewSupplierDialog} onOpenChange={setShowNewSupplierDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {language === 'ar' ? 'إضافة مورد جديد' : 'Ajouter un fournisseur'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'اسم المورد *' : 'Nom du fournisseur *'}</Label>
+                <Input
+                  value={newSupplierData.name}
+                  onChange={(e) => setNewSupplierData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder={language === 'ar' ? 'اسم المورد' : 'Nom'}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'رقم الهاتف' : 'Téléphone'}</Label>
+                <Input
+                  value={newSupplierData.phone}
+                  onChange={(e) => setNewSupplierData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="0555 123 456"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'البريد الإلكتروني' : 'Email'}</Label>
+                <Input
+                  type="email"
+                  value={newSupplierData.email}
+                  onChange={(e) => setNewSupplierData(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="supplier@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'العنوان' : 'Adresse'}</Label>
+                <Input
+                  value={newSupplierData.address}
+                  onChange={(e) => setNewSupplierData(prev => ({ ...prev, address: e.target.value }))}
+                  placeholder={language === 'ar' ? 'عنوان المورد' : 'Adresse'}
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowNewSupplierDialog(false);
+                    setNewSupplierData({ name: '', phone: '', email: '', address: '' });
+                  }}
+                >
+                  {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={handleAddSupplier}
+                  disabled={addingSupplier || !newSupplierData.name.trim()}
+                >
+                  {addingSupplier ? (
+                    <span className="flex items-center gap-2">
+                      <span className="animate-spin">⏳</span>
+                      {language === 'ar' ? 'جاري الإضافة...' : 'Ajout...'}
+                    </span>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 me-2" />
+                      {language === 'ar' ? 'إضافة' : 'Ajouter'}
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
