@@ -5554,7 +5554,7 @@ async def create_repair(repair: RepairCreate, user: dict = Depends(get_current_u
     }]
     
     await db.repairs.insert_one(repair_data)
-    del repair_data["_id"] if "_id" in repair_data else None
+    repair_data.pop("_id", None)
     return repair_data
 
 @api_router.put("/repairs/{repair_id}")
@@ -5689,7 +5689,7 @@ async def create_spare_part(part: SparePartCreate, user: dict = Depends(get_curr
     part_data["created_at"] = datetime.now(timezone.utc).isoformat()
     
     await db.spare_parts.insert_one(part_data)
-    del part_data["_id"] if "_id" in part_data else None
+    part_data.pop("_id", None)
     return part_data
 
 @api_router.put("/spare-parts/{part_id}")
