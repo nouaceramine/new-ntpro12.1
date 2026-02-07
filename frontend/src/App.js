@@ -48,6 +48,9 @@ import OperationsPage from "./pages/OperationsPage";
 import ProfitRatesPage from "./pages/ProfitRatesPage";
 import TransfersPage from "./pages/TransfersPage";
 import PhoneDirectoryPage from "./pages/PhoneDirectoryPage";
+import RepairReceptionPage from "./pages/RepairReceptionPage";
+import RepairTrackingPage from "./pages/RepairTrackingPage";
+import SparePartsPage from "./pages/SparePartsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
