@@ -149,11 +149,29 @@ export default function EditProductPage() {
                 </div>
               </div>
 
-              {/* Quantity & Barcode */}
+              {/* Quantity (Read-only), Threshold & Barcode */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label>{t.quantity}</Label>
-                  <Input name="quantity" type="number" min="0" value={formData.quantity} onChange={handleChange} className="h-11" />
+                  <Label className="flex items-center gap-2">
+                    {t.quantity}
+                    <span className="text-xs text-muted-foreground">
+                      ({language === 'ar' ? 'للقراءة فقط' : 'lecture seule'})
+                    </span>
+                  </Label>
+                  <Input 
+                    name="quantity" 
+                    type="number" 
+                    value={formData.quantity} 
+                    readOnly 
+                    disabled
+                    className="h-11 bg-muted cursor-not-allowed" 
+                  />
+                  <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    {language === 'ar' 
+                      ? 'يتم تحديث المخزون من خلال المشتريات فقط'
+                      : 'Stock mis à jour via les achats uniquement'}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>{t.lowStockThreshold}</Label>
