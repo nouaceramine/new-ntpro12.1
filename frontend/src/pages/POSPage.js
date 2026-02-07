@@ -783,6 +783,64 @@ export default function POSPage() {
           </CardContent>
         </Card>
 
+        {/* Debt Reminders Panel */}
+        {showDebtRemindersPanel && debtReminders.length > 0 && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-amber-800 flex items-center gap-2 text-base">
+                  <Bell className="h-5 w-5" />
+                  {language === 'ar' ? 'تذكيرات ديون الزبائن' : 'Rappels de dettes clients'}
+                  <Badge className="bg-amber-600">{debtReminders.length}</Badge>
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDebtRemindersPanel(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2 max-h-40 overflow-auto">
+                {debtReminders.slice(0, 5).map((reminder) => (
+                  <div 
+                    key={reminder.customer_id}
+                    className={`flex items-center justify-between p-2 rounded-lg cursor-pointer hover:bg-amber-100 ${
+                      reminder.is_urgent ? 'bg-red-100 border border-red-200' : 'bg-white'
+                    }`}
+                    onClick={() => {
+                      setSelectedCustomer(reminder.customer_id);
+                      setShowDebtRemindersPanel(false);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <User className={`h-4 w-4 ${reminder.is_urgent ? 'text-red-600' : 'text-amber-600'}`} />
+                      <div>
+                        <p className="font-medium text-sm">{reminder.customer_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {reminder.phone || '---'} • {language === 'ar' ? `منذ ${reminder.days_since_last_purchase} يوم` : `Il y a ${reminder.days_since_last_purchase} jours`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-end">
+                      <p className={`font-bold ${reminder.is_urgent ? 'text-red-600' : 'text-amber-700'}`}>
+                        {formatCurrency(reminder.total_debt)} {t.currency}
+                      </p>
+                      {reminder.is_urgent && (
+                        <Badge variant="destructive" className="text-xs">
+                          {language === 'ar' ? 'عاجل' : 'Urgent'}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Main Content - Cart */}
         <Card>
           <CardHeader className="pb-3">
