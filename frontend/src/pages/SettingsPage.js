@@ -123,16 +123,21 @@ export default function SettingsPage() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [usersRes, statsRes, rolesRes] = await Promise.all([
+      const [usersRes, statsRes, rolesRes, sysSettingsRes] = await Promise.all([
         axios.get(`${API}/users`, { headers }),
         axios.get(`${API}/system/stats`, { headers }).catch(() => ({ data: null })),
-        axios.get(`${API}/permissions/roles`, { headers })
+        axios.get(`${API}/permissions/roles`, { headers }),
+        axios.get(`${API}/system/settings`, { headers }).catch(() => ({ data: null }))
       ]);
       
       setUsers(usersRes.data);
       setSystemStats(statsRes.data);
       setRoles(rolesRes.data.roles);
       setDefaultPermissions(rolesRes.data.default_permissions);
+      
+      if (sysSettingsRes.data) {
+        setSystemSettings(sysSettingsRes.data);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error(t.error);
