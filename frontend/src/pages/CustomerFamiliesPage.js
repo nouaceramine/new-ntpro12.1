@@ -95,7 +95,7 @@ export default function CustomerFamiliesPage() {
     setShowDialog(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (createNew = false) => {
     if (!formData.name.trim()) {
       toast.error(language === 'ar' ? 'اسم العائلة مطلوب' : 'Le nom est requis');
       return;
@@ -105,11 +105,16 @@ export default function CustomerFamiliesPage() {
       if (editingFamily) {
         await axios.put(`${API}/customer-families/${editingFamily.id}`, formData);
         toast.success(language === 'ar' ? 'تم تحديث العائلة بنجاح' : 'Famille mise à jour');
+        setShowDialog(false);
       } else {
         await axios.post(`${API}/customer-families`, formData);
         toast.success(language === 'ar' ? 'تم إضافة العائلة بنجاح' : 'Famille ajoutée');
+        if (createNew) {
+          setFormData({ name: '', description: '' });
+        } else {
+          setShowDialog(false);
+        }
       }
-      setShowDialog(false);
       fetchFamilies();
     } catch (error) {
       toast.error(error.response?.data?.detail || t.somethingWentWrong);
