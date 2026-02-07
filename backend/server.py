@@ -3102,6 +3102,49 @@ async def export_debts_to_excel(user: dict = Depends(get_current_user)):
         headers={"Content-Disposition": f"attachment; filename=debts_{datetime.now().strftime('%Y%m%d')}.xlsx"}
     )
 
+# ============ SYSTEM SETTINGS ============
+
+class SystemSettingsUpdate(BaseModel):
+    cash_difference_threshold: float = 1000  # حد التنبيه للعجز/الفائض
+    low_stock_threshold: int = 10  # حد المخزون المنخفض
+    currency_symbol: str = "دج"
+    business_name: str = "NT"
+
+DEFAULT_SYSTEM_SETTINGS = {
+    "id": "global",
+    "cash_difference_threshold": 1000,
+    "low_stock_threshold": 10,
+    "currency_symbol": "دج",
+    "business_name": "NT"
+}
+
+@api_router.get("/system/settings")
+async def get_system_settings(user: dict = Depends(get_current_user)):
+    """Get system settings"""
+    settings = await db.system_settings.find_one({"id": "global"}, {"_id": 0})
+    if not settings:
+        settings = {**DEFAULT_SYSTEM_SETTINGS}
+        await db.system_settings.insert_one(settings)
+    else:
+        settings = {k: v for k, v in settings.items() if k != "_id"}
+    return settings
+
+@api_router.put("/system/settings")
+async def update_system_settings(settings: SystemSettingsUpdate, admin: dict = Depends(get_admin_user)):
+    """Update system settings (admin only)"""
+    update_data = settings.model_dump()
+    
+    existing = await db.system_settings.find_one({"id": "global"})
+    if existing:
+        await db.system_settings.update_one(
+            {"id": "global"},
+            {"$set": update_data}
+        )
+    else:
+        await db.system_settings.insert_one({**update_data, "id": "global"})
+    
+    return {"message": "تم تحديث الإعدادات بنجاح"}
+
 # ============ SMS REMINDER SYSTEM ============
 
 class SMSReminderRequest(BaseModel):
