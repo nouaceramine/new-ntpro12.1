@@ -230,6 +230,21 @@ export default function SettingsPage() {
     }
   };
 
+  const saveBrandingSettings = async () => {
+    setSavingBranding(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/branding/settings`, brandingSettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم حفظ إعدادات صفحة الدخول' : 'Paramètres de connexion enregistrés');
+    } catch (error) {
+      toast.error(t.error);
+    } finally {
+      setSavingBranding(false);
+    }
+  };
+
   const openPasswordDialog = (u) => {
     setPasswordUser(u);
     setNewPassword('');
