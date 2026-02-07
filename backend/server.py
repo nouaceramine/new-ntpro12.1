@@ -6448,6 +6448,108 @@ async def send_session_report_email(
         logger.error(f"Failed to send email: {str(e)}")
         raise HTTPException(status_code=500, detail=f"فشل إرسال البريد: {str(e)}")
 
+# ============ EMAIL SETTINGS ============
+
+class EmailSettings(BaseModel):
+    enabled: bool = False
+    resend_api_key: str = ""
+    sender_email: str = "onboarding@resend.dev"
+    sender_name: str = "NT POS System"
+
+@api_router.get("/email/settings")
+async def get_email_settings(user: dict = Depends(get_current_user)):
+    """Get email settings"""
+    settings = await db.system_settings.find_one({"type": "email_settings"}, {"_id": 0})
+    if not settings:
+        return EmailSettings().model_dump()
+    
+    # Don't expose full API key
+    if settings.get("resend_api_key"):
+        key = settings["resend_api_key"]
+        settings["resend_api_key"] = key[:8] + "..." + key[-4:] if len(key) > 12 else "***configured***"
+    
+    return settings
+
+@api_router.put("/email/settings")
+async def update_email_settings(settings: EmailSettings, user: dict = Depends(get_current_user)):
+    """Update email settings"""
+    # Check if user is admin
+    if user.get("role") not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="غير مصرح لك بتعديل إعدادات البريد")
+    
+    # Get existing settings to preserve API key if not changed
+    existing = await db.system_settings.find_one({"type": "email_settings"})
+    
+    settings_dict = settings.model_dump()
+    
+    # If API key looks like masked value, keep the old one
+    if settings.resend_api_key and ("..." in settings.resend_api_key or settings.resend_api_key == "***configured***"):
+        if existing and existing.get("resend_api_key"):
+            settings_dict["resend_api_key"] = existing["resend_api_key"]
+    
+    # Update in database
+    await db.system_settings.update_one(
+        {"type": "email_settings"},
+        {"$set": {**settings_dict, "type": "email_settings", "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    # Update environment variable for resend
+    if settings_dict.get("resend_api_key") and not ("..." in settings_dict["resend_api_key"]):
+        os.environ['RESEND_API_KEY'] = settings_dict["resend_api_key"]
+        if RESEND_AVAILABLE:
+            resend.api_key = settings_dict["resend_api_key"]
+    
+    if settings_dict.get("sender_email"):
+        os.environ['SENDER_EMAIL'] = settings_dict["sender_email"]
+    
+    return {"success": True, "message": "تم حفظ إعدادات البريد بنجاح"}
+
+@api_router.post("/email/test")
+async def test_email_settings(user: dict = Depends(get_current_user)):
+    """Send a test email to verify settings"""
+    if not RESEND_AVAILABLE:
+        raise HTTPException(status_code=500, detail="مكتبة Resend غير متوفرة")
+    
+    # Get settings from database
+    settings = await db.system_settings.find_one({"type": "email_settings"})
+    if not settings or not settings.get("resend_api_key"):
+        raise HTTPException(status_code=400, detail="يرجى إدخال مفتاح API أولاً")
+    
+    api_key = settings.get("resend_api_key")
+    sender_email = settings.get("sender_email", "onboarding@resend.dev")
+    
+    # Set API key
+    resend.api_key = api_key
+    
+    # Get user's email
+    user_record = await db.users.find_one({"id": user["id"]})
+    if not user_record or not user_record.get("email"):
+        raise HTTPException(status_code=400, detail="لم يتم العثور على بريدك الإلكتروني")
+    
+    try:
+        params = {
+            "from": sender_email,
+            "to": [user_record["email"]],
+            "subject": "🧪 اختبار إعدادات البريد - NT POS",
+            "html": """
+            <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f3f4f6;">
+                <div style="max-width: 400px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; text-align: center;">
+                    <h2 style="color: #22c55e;">✅ إعدادات البريد تعمل بنجاح!</h2>
+                    <p style="color: #6b7280;">هذه رسالة اختبار من نظام NT POS</p>
+                    <p style="color: #9ca3af; font-size: 12px; margin-top: 20px;">
+                        إذا وصلتك هذه الرسالة، فإن إعدادات البريد الإلكتروني تعمل بشكل صحيح.
+                    </p>
+                </div>
+            </div>
+            """
+        }
+        
+        result = await asyncio.to_thread(resend.Emails.send, params)
+        return {"success": True, "message": f"تم إرسال بريد اختباري إلى {user_record['email']}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"فشل إرسال البريد: {str(e)}")
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
