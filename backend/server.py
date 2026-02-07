@@ -3580,6 +3580,133 @@ async def get_family_products(family_id: str, user: dict = Depends(get_current_u
     
     return [ProductResponse(**p) for p in products]
 
+# ============ DAILY SESSIONS ============
+
+class DailySessionCreate(BaseModel):
+    opening_cash: float
+    opened_at: str
+    status: str = "open"
+
+class DailySessionClose(BaseModel):
+    closing_cash: float
+    closed_at: str
+    notes: Optional[str] = ""
+    status: str = "closed"
+
+class DailySessionResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    opening_cash: float
+    closing_cash: Optional[float] = None
+    opened_at: str
+    closed_at: Optional[str] = None
+    total_sales: float = 0
+    cash_sales: float = 0
+    credit_sales: float = 0
+    sales_count: int = 0
+    status: str
+    notes: str = ""
+    created_by: str = ""
+
+@api_router.post("/daily-sessions", response_model=DailySessionResponse)
+async def create_daily_session(session: DailySessionCreate, user: dict = Depends(get_current_user)):
+    """Start a new daily cash session"""
+    
+    # Check if there's already an open session
+    existing = await db.daily_sessions.find_one({"status": "open"})
+    if existing:
+        raise HTTPException(status_code=400, detail="هناك حصة مفتوحة بالفعل / Session déjà ouverte")
+    
+    session_id = str(uuid.uuid4())
+    
+    session_doc = {
+        "id": session_id,
+        "opening_cash": session.opening_cash,
+        "closing_cash": None,
+        "opened_at": session.opened_at,
+        "closed_at": None,
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "open",
+        "notes": "",
+        "created_by": user.get("name", "")
+    }
+    
+    await db.daily_sessions.insert_one(session_doc)
+    return DailySessionResponse(**session_doc)
+
+@api_router.get("/daily-sessions", response_model=List[DailySessionResponse])
+async def get_daily_sessions(user: dict = Depends(get_current_user)):
+    """Get all daily sessions"""
+    sessions = await db.daily_sessions.find({}, {"_id": 0}).sort("opened_at", -1).to_list(100)
+    return [DailySessionResponse(**s) for s in sessions]
+
+@api_router.get("/daily-sessions/current")
+async def get_current_session(user: dict = Depends(get_current_user)):
+    """Get the current open session"""
+    session = await db.daily_sessions.find_one({"status": "open"}, {"_id": 0})
+    if not session:
+        return None
+    return DailySessionResponse(**session)
+
+@api_router.put("/daily-sessions/{session_id}/close", response_model=DailySessionResponse)
+async def close_daily_session(session_id: str, closing_data: DailySessionClose, user: dict = Depends(get_current_user)):
+    """Close a daily cash session"""
+    
+    session = await db.daily_sessions.find_one({"id": session_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="الحصة غير موجودة / Session non trouvée")
+    
+    if session["status"] == "closed":
+        raise HTTPException(status_code=400, detail="الحصة مغلقة بالفعل / Session déjà fermée")
+    
+    # Calculate sales for this session period
+    opened_at = session["opened_at"]
+    closed_at = closing_data.closed_at
+    
+    # Get all sales during this session
+    sales = await db.sales.find({
+        "created_at": {"$gte": opened_at, "$lte": closed_at},
+        "status": {"$ne": "returned"}
+    }, {"_id": 0}).to_list(1000)
+    
+    total_sales = sum(s.get("total", 0) for s in sales)
+    cash_sales = sum(s.get("paid_amount", 0) for s in sales if s.get("payment_method") == "cash")
+    credit_sales = sum(s.get("remaining", 0) for s in sales)
+    sales_count = len(sales)
+    
+    update_data = {
+        "closing_cash": closing_data.closing_cash,
+        "closed_at": closing_data.closed_at,
+        "notes": closing_data.notes or "",
+        "status": "closed",
+        "total_sales": total_sales,
+        "cash_sales": cash_sales,
+        "credit_sales": credit_sales,
+        "sales_count": sales_count
+    }
+    
+    await db.daily_sessions.update_one({"id": session_id}, {"$set": update_data})
+    
+    updated = await db.daily_sessions.find_one({"id": session_id}, {"_id": 0})
+    return DailySessionResponse(**updated)
+
+@api_router.delete("/daily-sessions/{session_id}")
+async def delete_daily_session(session_id: str, admin: dict = Depends(get_admin_user)):
+    """Delete a daily session (admin only)"""
+    
+    session = await db.daily_sessions.find_one({"id": session_id})
+    if not session:
+        raise HTTPException(status_code=404, detail="الحصة غير موجودة / Session non trouvée")
+    
+    if session["status"] == "open":
+        raise HTTPException(status_code=400, detail="لا يمكن حذف حصة مفتوحة / Impossible de supprimer une session ouverte")
+    
+    result = await db.daily_sessions.delete_one({"id": session_id})
+    return {"message": "تم حذف الحصة بنجاح / Session supprimée"}
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
