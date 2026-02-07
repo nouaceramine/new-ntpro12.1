@@ -73,6 +73,7 @@ export default function ExpensesPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all'); // all, today, week, month
   const [stats, setStats] = useState({ total: 0, thisMonth: 0, lastMonth: 0, byCategory: [] });
+  const [reminders, setReminders] = useState([]);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -81,12 +82,14 @@ export default function ExpensesPage() {
     date: new Date().toISOString().split('T')[0],
     notes: '',
     recurring: false,
-    recurring_period: 'monthly'
+    recurring_period: 'monthly',
+    reminder_days_before: 3
   });
 
   useEffect(() => {
     fetchExpenses();
     fetchStats();
+    fetchReminders();
   }, []);
 
   const fetchExpenses = async () => {
@@ -99,6 +102,15 @@ export default function ExpensesPage() {
       toast.error(language === 'ar' ? 'فشل في تحميل التكاليف' : 'Échec du chargement');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchReminders = async () => {
+    try {
+      const response = await axios.get(`${API}/expenses/reminders`);
+      setReminders(response.data || []);
+    } catch (error) {
+      console.error('Error fetching reminders:', error);
     }
   };
 
