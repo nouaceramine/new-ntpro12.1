@@ -441,7 +441,7 @@ export default function POSPage() {
   };
 
   // Add new customer
-  const handleAddCustomer = async () => {
+  const handleAddCustomer = async (createNew = false) => {
     if (!newCustomerData.name) {
       toast.error(language === 'ar' ? 'يرجى إدخال اسم الزبون' : 'Veuillez entrer le nom du client');
       return;
@@ -463,12 +463,19 @@ export default function POSPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success(language === 'ar' ? 'تمت إضافة الزبون بنجاح' : 'Client ajouté avec succès');
-      setShowNewCustomerDialog(false);
+      
+      // Reset form
       setNewCustomerData({ name: '', phone: '', email: '', address: '', family_id: '' });
       fetchCustomers();
-      // Auto-select the new customer
-      if (response.data?.id) {
-        setSelectedCustomer(response.data.id);
+      
+      if (createNew) {
+        // Keep dialog open for new entry
+      } else {
+        setShowNewCustomerDialog(false);
+        // Auto-select the new customer
+        if (response.data?.id) {
+          setSelectedCustomer(response.data.id);
+        }
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || t.error);
