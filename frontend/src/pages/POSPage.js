@@ -114,6 +114,12 @@ export default function POSPage() {
   // Debt reminders
   const [debtReminders, setDebtReminders] = useState([]);
   const [showDebtRemindersPanel, setShowDebtRemindersPanel] = useState(false);
+  
+  // Payment Dialog state (like the image)
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [cashAmount, setCashAmount] = useState(0);
+  const [bankAmount, setBankAmount] = useState(0);
+  const [creditAmount, setCreditAmount] = useState(0);
 
   useEffect(() => {
     checkOpenSession();
