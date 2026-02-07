@@ -3409,6 +3409,145 @@ async def test_woocommerce_connection(admin: dict = Depends(get_admin_user)):
         }
     }
 
+@api_router.post("/woocommerce/publish-product/{product_id}")
+async def publish_product_to_woocommerce(product_id: str, admin: dict = Depends(get_admin_user)):
+    """Publish a single product to WooCommerce (MOCKED)"""
+    
+    # Check WooCommerce settings
+    wc_settings = await db.woocommerce_settings.find_one({"id": "global"}, {"_id": 0})
+    if not wc_settings or not wc_settings.get("enabled"):
+        raise HTTPException(status_code=400, detail="WooCommerce غير مفعل")
+    
+    # Get product
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="المنتج غير موجود")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # MOCKED - In production, actually call WooCommerce API
+    wc_product_id = f"wc_{product_id[:8]}"
+    
+    # Update product with WooCommerce info
+    await db.products.update_one(
+        {"id": product_id},
+        {"$set": {
+            "woocommerce_id": wc_product_id,
+            "woocommerce_status": "published",
+            "woocommerce_url": f"{wc_settings.get('store_url')}/product/{product.get('name_en', '').lower().replace(' ', '-')}",
+            "woocommerce_synced_at": now
+        }}
+    )
+    
+    return {
+        "success": True,
+        "message": f"تم نشر المنتج '{product.get('name_en')}' على المتجر",
+        "woocommerce_id": wc_product_id,
+        "product_url": f"{wc_settings.get('store_url')}/product/{product.get('name_en', '').lower().replace(' ', '-')}"
+    }
+
+@api_router.post("/woocommerce/publish-products")
+async def publish_multiple_products_to_woocommerce(product_ids: List[str], admin: dict = Depends(get_admin_user)):
+    """Publish multiple products to WooCommerce (MOCKED)"""
+    
+    # Check WooCommerce settings
+    wc_settings = await db.woocommerce_settings.find_one({"id": "global"}, {"_id": 0})
+    if not wc_settings or not wc_settings.get("enabled"):
+        raise HTTPException(status_code=400, detail="WooCommerce غير مفعل")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    published = []
+    failed = []
+    
+    for product_id in product_ids:
+        product = await db.products.find_one({"id": product_id}, {"_id": 0})
+        if not product:
+            failed.append({"id": product_id, "error": "المنتج غير موجود"})
+            continue
+        
+        # MOCKED
+        wc_product_id = f"wc_{product_id[:8]}"
+        
+        await db.products.update_one(
+            {"id": product_id},
+            {"$set": {
+                "woocommerce_id": wc_product_id,
+                "woocommerce_status": "published",
+                "woocommerce_url": f"{wc_settings.get('store_url')}/product/{product.get('name_en', '').lower().replace(' ', '-')}",
+                "woocommerce_synced_at": now
+            }}
+        )
+        
+        published.append({
+            "id": product_id,
+            "name": product.get("name_en"),
+            "woocommerce_id": wc_product_id
+        })
+    
+    return {
+        "success": True,
+        "message": f"تم نشر {len(published)} منتج على المتجر",
+        "published": published,
+        "failed": failed
+    }
+
+@api_router.delete("/woocommerce/unpublish-product/{product_id}")
+async def unpublish_product_from_woocommerce(product_id: str, admin: dict = Depends(get_admin_user)):
+    """Remove a product from WooCommerce (MOCKED)"""
+    
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="المنتج غير موجود")
+    
+    # Remove WooCommerce info
+    await db.products.update_one(
+        {"id": product_id},
+        {"$unset": {
+            "woocommerce_id": "",
+            "woocommerce_status": "",
+            "woocommerce_url": "",
+            "woocommerce_synced_at": ""
+        }}
+    )
+    
+    return {
+        "success": True,
+        "message": f"تم إلغاء نشر المنتج '{product.get('name_en')}' من المتجر"
+    }
+
+@api_router.post("/woocommerce/sync-inventory")
+async def sync_inventory_to_woocommerce(admin: dict = Depends(get_admin_user)):
+    """Sync all published products inventory to WooCommerce (MOCKED)"""
+    
+    # Get all products with woocommerce_id
+    products = await db.products.find(
+        {"woocommerce_id": {"$exists": True, "$ne": ""}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    now = datetime.now(timezone.utc).isoformat()
+    synced_count = 0
+    
+    for product in products:
+        # MOCKED - In production, update WooCommerce stock
+        await db.products.update_one(
+            {"id": product["id"]},
+            {"$set": {"woocommerce_synced_at": now}}
+        )
+        synced_count += 1
+    
+    # Update last sync time
+    await db.woocommerce_settings.update_one(
+        {"id": "global"},
+        {"$set": {"last_sync": now}}
+    )
+    
+    return {
+        "success": True,
+        "message": f"تم مزامنة {synced_count} منتج",
+        "synced_at": now
+    }
+
 # ============ SHIPPING/DELIVERY MANAGEMENT ============
 
 ALGERIAN_SHIPPING_COMPANIES = [
