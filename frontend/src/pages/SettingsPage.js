@@ -56,7 +56,9 @@ import {
   Smartphone,
   Wifi,
   Cable,
-  Monitor
+  Monitor,
+  Key,
+  ImageIcon
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
