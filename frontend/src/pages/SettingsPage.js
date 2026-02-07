@@ -481,7 +481,7 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="permissions" className="space-y-6">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5">
+          <TabsList className="grid w-full max-w-4xl grid-cols-6">
             <TabsTrigger value="permissions" className="gap-2">
               <Shield className="h-4 w-4" />
               {t.permissions}
