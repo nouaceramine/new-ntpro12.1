@@ -351,6 +351,34 @@ export default function POSPage() {
     }
   };
 
+  // Add new customer
+  const handleAddCustomer = async () => {
+    if (!newCustomerData.name) {
+      toast.error(language === 'ar' ? 'يرجى إدخال اسم الزبون' : 'Veuillez entrer le nom du client');
+      return;
+    }
+
+    setSavingCustomer(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/customers`, newCustomerData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تمت إضافة الزبون بنجاح' : 'Client ajouté avec succès');
+      setShowNewCustomerDialog(false);
+      setNewCustomerData({ name: '', phone: '', email: '', address: '' });
+      fetchCustomers();
+      // Auto-select the new customer
+      if (response.data?.id) {
+        setSelectedCustomer(response.data.id);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
+
   const completeSale = async () => {
     if (!hasOpenSession) {
       toast.error(language === 'ar' 
@@ -360,22 +388,30 @@ export default function POSPage() {
     }
     
     if (cart.length === 0) {
-      toast.error(t.emptyCart);
+      toast.error(language === 'ar' ? 'السلة فارغة' : 'Le panier est vide');
       return;
     }
 
     if (paymentType !== 'cash' && !selectedCustomer) {
-      toast.error(t.customerRequired);
+      toast.error(language === 'ar' ? 'يجب اختيار زبون للبيع بالدين' : 'Sélectionnez un client pour le crédit');
       return;
     }
 
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const wilaya = wilayas.find(w => w.code === selectedWilaya);
       
       const saleData = {
         customer_id: selectedCustomer,
-        items: cart,
+        items: cart.map(item => ({
+          product_id: item.is_custom ? null : item.product_id,
+          product_name: item.product_name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          discount: item.discount || 0,
+          total: item.total
+        })),
         subtotal,
         discount,
         total: subtotal - discount,
