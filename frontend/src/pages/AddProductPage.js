@@ -33,6 +33,7 @@ export default function AddProductPage() {
   const fileInputRef = useRef(null);
   
   const [loading, setLoading] = useState(false);
+  const [saveAndNew, setSaveAndNew] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [generatingBarcode, setGeneratingBarcode] = useState(false);
   const [families, setFamilies] = useState([]);
