@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Layout } from '../components/Layout';
@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Switch } from '../components/ui/switch';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
   Select,
   SelectContent,
@@ -35,22 +36,17 @@ import {
   Search, 
   Plus, 
   Minus, 
-  Trash2, 
-  Printer,
   CreditCard,
   Banknote,
   Wallet,
   User,
   Truck,
   AlertCircle,
-  FolderTree,
   Clock,
   Package,
-  Receipt,
   X,
   Check,
-  RotateCcw,
-  FileText
+  RotateCcw
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -58,6 +54,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export default function POSPage() {
   const { t, language, isRTL } = useLanguage();
   const searchInputRef = useRef(null);
+  const searchDropdownRef = useRef(null);
   
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -65,6 +62,7 @@ export default function POSPage() {
   const [wilayas, setWilayas] = useState([]);
   const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedFamily, setSelectedFamily] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerDebt, setCustomerDebt] = useState(0);
@@ -87,15 +85,10 @@ export default function POSPage() {
   const [deliveryCity, setDeliveryCity] = useState('');
   const [deliveryFee, setDeliveryFee] = useState(0);
   
-  // Debt dialog
+  // Dialogs
   const [showDebtDialog, setShowDebtDialog] = useState(false);
   const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
-  
-  // Delivery dialog
   const [showDeliveryDialog, setShowDeliveryDialog] = useState(false);
-
-  // Active tab in left panel
-  const [activeTab, setActiveTab] = useState('products');
 
   useEffect(() => {
     checkOpenSession();
@@ -103,6 +96,17 @@ export default function POSPage() {
     fetchCustomers();
     fetchFamilies();
     fetchWilayas();
+  }, []);
+
+  // Close search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const checkOpenSession = async () => {
@@ -185,16 +189,16 @@ export default function POSPage() {
       });
       setCustomerDebt(response.data.total_debt || 0);
     } catch (error) {
-      console.error('Error fetching customer debt:', error);
       setCustomerDebt(0);
     }
   };
 
+  // Filter products based on search query
   const filteredProducts = products.filter(p => {
     if (selectedFamily !== 'all' && p.family_id !== selectedFamily) {
       return false;
     }
-    if (!searchQuery) return true;
+    if (!searchQuery) return false; // Only show when there's a search query
     const query = searchQuery.toLowerCase();
     return (
       p.name_en.toLowerCase().includes(query) ||
@@ -235,6 +239,7 @@ export default function POSPage() {
     }
     
     setSearchQuery('');
+    setShowSearchResults(false);
     searchInputRef.current?.focus();
   };
 
@@ -244,7 +249,7 @@ export default function POSPage() {
       removeFromCart(productId);
       return;
     }
-    if (newQty > product.quantity) {
+    if (product && newQty > product.quantity) {
       toast.error(t.outOfStock);
       return;
     }
@@ -283,8 +288,7 @@ export default function POSPage() {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const taxAmount = subtotal * 0; // No TVA for now, can be configured
-  const total = subtotal - discount + taxAmount + (deliveryEnabled ? deliveryFee : 0);
+  const total = subtotal - discount + (deliveryEnabled ? deliveryFee : 0);
   const remaining = total - paidAmount;
 
   const handlePayDebt = async () => {
@@ -360,9 +364,7 @@ export default function POSPage() {
         printWindow.document.write(invoiceResponse.data);
         printWindow.document.close();
         printWindow.focus();
-        setTimeout(() => {
-          printWindow.print();
-        }, 500);
+        setTimeout(() => printWindow.print(), 500);
       } catch (printError) {
         console.error('Print error:', printError);
       }
@@ -370,7 +372,6 @@ export default function POSPage() {
       clearCart();
       fetchProducts();
     } catch (error) {
-      console.error('Error completing sale:', error);
       toast.error(error.response?.data?.detail || t.somethingWentWrong);
     } finally {
       setLoading(false);
@@ -385,6 +386,7 @@ export default function POSPage() {
       }
       if (e.key === 'Escape') {
         setSearchQuery('');
+        setShowSearchResults(false);
         searchInputRef.current?.focus();
       }
     };
@@ -397,13 +399,19 @@ export default function POSPage() {
     return new Intl.NumberFormat('ar-DZ', { minimumFractionDigits: 2 }).format(amount || 0);
   };
 
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setShowSearchResults(value.length > 0);
+  };
+
   return (
     <Layout>
-      <div className="h-[calc(100vh-6rem)] flex flex-col bg-slate-900 text-white rounded-lg overflow-hidden" data-testid="pos-page">
+      <div className="space-y-4" data-testid="pos-page">
         
         {/* No Session Warning */}
         {!checkingSession && !hasOpenSession && (
-          <div className="bg-amber-600 text-white px-4 py-2 flex items-center justify-between">
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5" />
               <span className="font-medium">
@@ -411,7 +419,7 @@ export default function POSPage() {
               </span>
             </div>
             <Link to="/daily-sessions">
-              <Button size="sm" variant="secondary" className="gap-2">
+              <Button size="sm" className="gap-2 bg-amber-600 hover:bg-amber-700">
                 <Clock className="h-4 w-4" />
                 {language === 'ar' ? 'فتح حصة' : 'Ouvrir session'}
               </Button>
@@ -419,34 +427,82 @@ export default function POSPage() {
           </div>
         )}
 
-        {/* Top Header Bar */}
-        <div className="bg-slate-800 border-b border-slate-700 px-4 py-2">
-          <div className="flex items-center justify-between gap-4">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 ${isRTL ? 'right-3' : 'left-3'}`} />
-              <Input
-                ref={searchInputRef}
-                type="text"
-                placeholder={language === 'ar' ? 'البحث عن منتج بالاسم أو الباركود...' : 'Rechercher un article...'}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`h-10 bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 ${isRTL ? 'pr-10' : 'pl-10'}`}
-                data-testid="pos-search-input"
-              />
-            </div>
+        {/* Top Section - Search & Filters */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* Search with Dropdown */}
+              <div className="relative flex-1 min-w-[300px]" ref={searchDropdownRef}>
+                <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
+                <Input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder={language === 'ar' ? 'البحث عن منتج بالاسم أو الباركود...' : 'Rechercher un article...'}
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  onFocus={() => searchQuery && setShowSearchResults(true)}
+                  className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
+                  data-testid="pos-search-input"
+                />
+                
+                {/* Search Results Dropdown */}
+                {showSearchResults && filteredProducts.length > 0 && (
+                  <div className="absolute z-50 top-full mt-1 w-full bg-white border rounded-lg shadow-lg max-h-80 overflow-auto">
+                    {filteredProducts.slice(0, 10).map((product) => (
+                      <div
+                        key={product.id}
+                        onClick={() => addToCart(product)}
+                        className={`px-4 py-3 cursor-pointer hover:bg-blue-50 border-b last:border-b-0 flex items-center justify-between ${
+                          product.quantity <= 0 ? 'opacity-50 bg-red-50' : ''
+                        }`}
+                        data-testid={`search-result-${product.id}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                            <Package className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{language === 'ar' ? product.name_ar : product.name_en}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {product.barcode || '---'} • {language === 'ar' ? 'المخزون:' : 'Stock:'} {product.quantity}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-end">
+                          <p className="font-bold text-blue-600">
+                            {formatCurrency(priceType === 'wholesale' ? product.wholesale_price : product.retail_price)} {t.currency}
+                          </p>
+                          {product.quantity <= 0 && (
+                            <Badge variant="destructive" className="text-xs">{t.outOfStock}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {filteredProducts.length > 10 && (
+                      <div className="px-4 py-2 text-center text-sm text-muted-foreground bg-gray-50">
+                        {language === 'ar' ? `+${filteredProducts.length - 10} منتج آخر...` : `+${filteredProducts.length - 10} autres articles...`}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            {/* Quick Filters */}
-            <div className="flex items-center gap-2">
+                {showSearchResults && searchQuery && filteredProducts.length === 0 && (
+                  <div className="absolute z-50 top-full mt-1 w-full bg-white border rounded-lg shadow-lg p-4 text-center text-muted-foreground">
+                    <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                    {language === 'ar' ? 'لا توجد منتجات مطابقة' : 'Aucun article trouvé'}
+                  </div>
+                )}
+              </div>
+
+              {/* Filters */}
               <Select value={selectedFamily} onValueChange={setSelectedFamily}>
-                <SelectTrigger className="w-44 h-10 bg-slate-700 border-slate-600 text-white">
-                  <FolderTree className="h-4 w-4 me-2 text-slate-400" />
+                <SelectTrigger className="w-44 h-11">
                   <SelectValue placeholder={t.allFamilies} />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="all" className="text-white hover:bg-slate-700">{t.allFamilies}</SelectItem>
+                <SelectContent>
+                  <SelectItem value="all">{t.allFamilies}</SelectItem>
                   {families.map(f => (
-                    <SelectItem key={f.id} value={f.id} className="text-white hover:bg-slate-700">
+                    <SelectItem key={f.id} value={f.id}>
                       {language === 'ar' ? f.name_ar : f.name_en}
                     </SelectItem>
                   ))}
@@ -454,30 +510,29 @@ export default function POSPage() {
               </Select>
 
               <Select value={priceType} onValueChange={setPriceType}>
-                <SelectTrigger className="w-36 h-10 bg-slate-700 border-slate-600 text-white">
+                <SelectTrigger className="w-36 h-11">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="retail" className="text-white hover:bg-slate-700">{t.retailPrice}</SelectItem>
-                  <SelectItem value="wholesale" className="text-white hover:bg-slate-700">{t.wholesalePrice}</SelectItem>
+                <SelectContent>
+                  <SelectItem value="retail">{t.retailPrice}</SelectItem>
+                  <SelectItem value="wholesale">{t.wholesalePrice}</SelectItem>
                 </SelectContent>
               </Select>
 
               {/* Customer Selection */}
               <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
-                <SelectTrigger className="w-48 h-10 bg-slate-700 border-slate-600 text-white" data-testid="customer-select">
-                  <User className="h-4 w-4 me-2 text-slate-400" />
+                <SelectTrigger className="w-48 h-11" data-testid="customer-select">
+                  <User className="h-4 w-4 me-2 text-muted-foreground" />
                   <SelectValue placeholder={t.selectCustomer} />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
-                  <SelectItem value="walk-in" className="text-white hover:bg-slate-700">{t.walkInCustomer}</SelectItem>
+                <SelectContent>
+                  <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
                   {customers.map(c => (
-                    <SelectItem key={c.id} value={c.id} className="text-white hover:bg-slate-700">{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              {/* Customer Debt Badge */}
               {selectedCustomer && customerDebt > 0 && (
                 <Button
                   variant="destructive"
@@ -493,91 +548,86 @@ export default function POSPage() {
                 </Button>
               )}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex overflow-hidden">
-          
-          {/* Cart/Order Table - Left Side */}
-          <div className="w-[55%] flex flex-col border-e border-slate-700 bg-slate-850">
-            {/* Cart Header */}
-            <div className="bg-slate-800 px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ShoppingCart className="h-5 w-5 text-blue-400" />
-                <span className="font-semibold text-lg">
-                  {language === 'ar' ? 'سلة المشتريات' : 'Panier'}
-                </span>
-                <Badge className="bg-blue-600 text-white">{cart.length}</Badge>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearCart}
-                  className="text-slate-400 hover:text-white hover:bg-slate-700"
-                >
-                  <RotateCcw className="h-4 w-4 me-1" />
-                  {language === 'ar' ? 'مسح' : 'Effacer'}
-                </Button>
-              </div>
+        {/* Main Content - Cart */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <ShoppingCart className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'سلة المشتريات' : 'Panier'}
+                <Badge className="ms-2">{cart.length}</Badge>
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearCart}
+                className="text-muted-foreground hover:text-destructive"
+              >
+                <RotateCcw className="h-4 w-4 me-1" />
+                {language === 'ar' ? 'مسح الكل' : 'Effacer'}
+              </Button>
             </div>
-
-            {/* Cart Table */}
-            <div className="flex-1 overflow-auto">
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg overflow-hidden">
               <Table>
-                <TableHeader className="bg-slate-800 sticky top-0">
-                  <TableRow className="border-slate-700 hover:bg-slate-800">
-                    <TableHead className="text-slate-300 w-[80px]">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
-                    <TableHead className="text-slate-300">{language === 'ar' ? 'المنتج' : 'Article'}</TableHead>
-                    <TableHead className="text-slate-300 w-[100px] text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
-                    <TableHead className="text-slate-300 w-[100px] text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
-                    <TableHead className="text-slate-300 w-[80px] text-center">{language === 'ar' ? 'خصم %' : 'R. %'}</TableHead>
-                    <TableHead className="text-slate-300 w-[120px] text-center">{language === 'ar' ? 'المجموع' : 'Montant'}</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-[100px]">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'المنتج' : 'Article'}</TableHead>
+                    <TableHead className="w-[140px] text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
+                    <TableHead className="w-[100px] text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                    <TableHead className="w-[100px] text-center">{language === 'ar' ? 'خصم %' : 'R. %'}</TableHead>
+                    <TableHead className="w-[120px] text-center">{language === 'ar' ? 'المجموع' : 'Total'}</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {cart.length === 0 ? (
-                    <TableRow className="border-slate-700">
-                      <TableCell colSpan={7} className="text-center py-12 text-slate-500">
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                         <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <p>{language === 'ar' ? 'السلة فارغة - قم باختيار منتجات' : 'Panier vide - Sélectionnez des articles'}</p>
+                        <p>{language === 'ar' ? 'السلة فارغة - ابحث عن منتج لإضافته' : 'Panier vide - Recherchez un article'}</p>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    cart.map((item, index) => (
-                      <TableRow key={item.product_id} className="border-slate-700 hover:bg-slate-800/50">
-                        <TableCell className="font-mono text-xs text-slate-400">
+                    cart.map((item) => (
+                      <TableRow key={item.product_id}>
+                        <TableCell className="font-mono text-sm text-muted-foreground">
                           {item.barcode?.slice(-6) || '---'}
                         </TableCell>
                         <TableCell className="font-medium">{item.product_name}</TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
-                            <button
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() => updateCartItemQuantity(item.product_id, item.quantity - 1)}
-                              className="p-1 rounded bg-slate-700 hover:bg-slate-600 text-white"
                             >
                               <Minus className="h-3 w-3" />
-                            </button>
+                            </Button>
                             <Input
                               type="number"
                               min="1"
                               value={item.quantity}
                               onChange={(e) => updateCartItemQuantity(item.product_id, parseInt(e.target.value) || 1)}
-                              className="w-14 h-8 text-center bg-slate-700 border-slate-600 text-white p-1"
+                              className="w-14 h-8 text-center"
                             />
-                            <button
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() => updateCartItemQuantity(item.product_id, item.quantity + 1)}
-                              className="p-1 rounded bg-slate-700 hover:bg-slate-600 text-white"
                             >
                               <Plus className="h-3 w-3" />
-                            </button>
+                            </Button>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center text-slate-300">
-                          {formatCurrency(item.unit_price)}
-                        </TableCell>
+                        <TableCell className="text-center">{formatCurrency(item.unit_price)}</TableCell>
                         <TableCell>
                           <Input
                             type="number"
@@ -586,19 +636,21 @@ export default function POSPage() {
                             placeholder="0"
                             value={item.discount_percent || ''}
                             onChange={(e) => updateCartItemDiscount(item.product_id, e.target.value)}
-                            className="w-16 h-8 text-center bg-slate-700 border-slate-600 text-white p-1"
+                            className="w-16 h-8 text-center"
                           />
                         </TableCell>
-                        <TableCell className="text-center font-bold text-green-400">
+                        <TableCell className="text-center font-bold text-green-600">
                           {formatCurrency(item.total)}
                         </TableCell>
                         <TableCell>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
                             onClick={() => removeFromCart(item.product_id)}
-                            className="p-1 rounded text-red-400 hover:bg-red-500/20"
                           >
                             <X className="h-4 w-4" />
-                          </button>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -606,288 +658,199 @@ export default function POSPage() {
                 </TableBody>
               </Table>
             </div>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Products List - Right Side */}
-          <div className="flex-1 flex flex-col bg-slate-900">
-            {/* Products Header */}
-            <div className="bg-slate-800 px-4 py-3 border-b border-slate-700 flex items-center gap-3">
-              <Package className="h-5 w-5 text-green-400" />
-              <span className="font-semibold text-lg">
-                {language === 'ar' ? 'قائمة المنتجات' : 'Liste des articles'}
-              </span>
-              <Badge variant="outline" className="text-slate-300 border-slate-600">{filteredProducts.length}</Badge>
-            </div>
-
-            {/* Products Table */}
-            <div className="flex-1 overflow-auto">
-              <Table>
-                <TableHeader className="bg-slate-800 sticky top-0">
-                  <TableRow className="border-slate-700 hover:bg-slate-800">
-                    <TableHead className="text-slate-300 w-[80px]">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
-                    <TableHead className="text-slate-300">{language === 'ar' ? 'اسم المنتج' : 'Nom d\'article'}</TableHead>
-                    <TableHead className="text-slate-300 w-[80px] text-center">{language === 'ar' ? 'المخزون' : 'Stock'}</TableHead>
-                    <TableHead className="text-slate-300 w-[100px] text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
-                    <TableHead className="w-[60px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProducts.map(product => (
-                    <TableRow 
-                      key={product.id} 
-                      className={`border-slate-700 cursor-pointer transition-colors ${
-                        product.quantity <= 0 
-                          ? 'opacity-50 bg-red-900/10' 
-                          : 'hover:bg-blue-900/20'
-                      }`}
-                      onClick={() => product.quantity > 0 && addToCart(product)}
-                      data-testid={`pos-product-${product.id}`}
-                    >
-                      <TableCell className="font-mono text-xs text-slate-400">
-                        {product.barcode?.slice(-6) || product.id.slice(-6)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{language === 'ar' ? product.name_ar : product.name_en}</span>
-                          {product.quantity <= 5 && product.quantity > 0 && (
-                            <Badge variant="outline" className="text-amber-400 border-amber-600 text-xs">
-                              {language === 'ar' ? 'منخفض' : 'Bas'}
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge className={`${
-                          product.quantity <= 0 
-                            ? 'bg-red-600' 
-                            : product.quantity <= 5 
-                              ? 'bg-amber-600' 
-                              : 'bg-green-600'
-                        } text-white`}>
-                          {product.quantity}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center font-bold text-blue-400">
-                        {formatCurrency(priceType === 'wholesale' ? product.wholesale_price : product.retail_price)}
-                      </TableCell>
-                      <TableCell>
-                        {product.quantity > 0 && (
-                          <button className="p-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white">
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Footer Bar - Totals & Actions */}
-        <div className="bg-slate-800 border-t border-slate-700">
-          {/* Payment Type & Delivery Row */}
-          <div className="px-4 py-2 border-b border-slate-700 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {/* Payment Type */}
-              <div className="flex items-center gap-2">
-                <Label className="text-slate-400 text-sm">{language === 'ar' ? 'نوع الدفع:' : 'Type:'}</Label>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant={paymentType === 'cash' ? 'default' : 'outline'}
-                    onClick={() => setPaymentType('cash')}
-                    className={paymentType === 'cash' ? 'bg-green-600 hover:bg-green-700' : 'border-slate-600 text-slate-300'}
-                  >
-                    {language === 'ar' ? 'نقدي' : 'Comptant'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={paymentType === 'credit' ? 'default' : 'outline'}
-                    onClick={() => setPaymentType('credit')}
-                    className={paymentType === 'credit' ? 'bg-amber-600 hover:bg-amber-700' : 'border-slate-600 text-slate-300'}
-                  >
-                    {language === 'ar' ? 'دين' : 'Crédit'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={paymentType === 'partial' ? 'default' : 'outline'}
-                    onClick={() => setPaymentType('partial')}
-                    className={paymentType === 'partial' ? 'bg-blue-600 hover:bg-blue-700' : 'border-slate-600 text-slate-300'}
-                  >
-                    {language === 'ar' ? 'جزئي' : 'Partiel'}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Payment Method */}
-              {paymentType !== 'credit' && (
+        {/* Footer - Payment & Totals */}
+        <Card>
+          <CardContent className="p-4">
+            {/* Payment Options Row */}
+            <div className="flex items-center justify-between gap-4 pb-4 border-b mb-4 flex-wrap">
+              <div className="flex items-center gap-4 flex-wrap">
+                {/* Payment Type */}
                 <div className="flex items-center gap-2">
-                  <Label className="text-slate-400 text-sm">{language === 'ar' ? 'الوسيلة:' : 'Mode:'}</Label>
+                  <Label className="text-muted-foreground">{language === 'ar' ? 'نوع الدفع:' : 'Type:'}</Label>
                   <div className="flex gap-1">
                     <Button
                       size="sm"
-                      variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                      onClick={() => setPaymentMethod('cash')}
-                      className={paymentMethod === 'cash' ? 'bg-slate-600' : 'border-slate-600 text-slate-300'}
+                      variant={paymentType === 'cash' ? 'default' : 'outline'}
+                      onClick={() => setPaymentType('cash')}
+                      className={paymentType === 'cash' ? 'bg-green-600 hover:bg-green-700' : ''}
                     >
-                      <Banknote className="h-4 w-4" />
+                      {language === 'ar' ? 'نقدي' : 'Comptant'}
                     </Button>
                     <Button
                       size="sm"
-                      variant={paymentMethod === 'bank' ? 'default' : 'outline'}
-                      onClick={() => setPaymentMethod('bank')}
-                      className={paymentMethod === 'bank' ? 'bg-slate-600' : 'border-slate-600 text-slate-300'}
+                      variant={paymentType === 'credit' ? 'default' : 'outline'}
+                      onClick={() => setPaymentType('credit')}
+                      className={paymentType === 'credit' ? 'bg-amber-600 hover:bg-amber-700' : ''}
                     >
-                      <CreditCard className="h-4 w-4" />
+                      {language === 'ar' ? 'دين' : 'Crédit'}
                     </Button>
                     <Button
                       size="sm"
-                      variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
-                      onClick={() => setPaymentMethod('wallet')}
-                      className={paymentMethod === 'wallet' ? 'bg-slate-600' : 'border-slate-600 text-slate-300'}
+                      variant={paymentType === 'partial' ? 'default' : 'outline'}
+                      onClick={() => setPaymentType('partial')}
+                      className={paymentType === 'partial' ? 'bg-blue-600 hover:bg-blue-700' : ''}
                     >
-                      <Wallet className="h-4 w-4" />
+                      {language === 'ar' ? 'جزئي' : 'Partiel'}
                     </Button>
                   </div>
                 </div>
-              )}
 
-              {/* Delivery Toggle */}
-              <div className="flex items-center gap-2">
-                <Truck className="h-4 w-4 text-slate-400" />
-                <Label className="text-slate-400 text-sm">{language === 'ar' ? 'توصيل' : 'Livraison'}</Label>
-                <Switch
-                  checked={deliveryEnabled}
-                  onCheckedChange={setDeliveryEnabled}
-                  className="data-[state=checked]:bg-blue-600"
-                />
-                {deliveryEnabled && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowDeliveryDialog(true)}
-                    className="border-slate-600 text-slate-300"
-                  >
-                    {selectedWilaya || (language === 'ar' ? 'إعداد' : 'Config')}
-                  </Button>
+                {/* Payment Method */}
+                {paymentType !== 'credit' && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-muted-foreground">{language === 'ar' ? 'الوسيلة:' : 'Mode:'}</Label>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+                        onClick={() => setPaymentMethod('cash')}
+                      >
+                        <Banknote className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={paymentMethod === 'bank' ? 'default' : 'outline'}
+                        onClick={() => setPaymentMethod('bank')}
+                      >
+                        <CreditCard className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
+                        onClick={() => setPaymentMethod('wallet')}
+                      >
+                        <Wallet className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 )}
+
+                {/* Delivery */}
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-muted-foreground">{language === 'ar' ? 'توصيل' : 'Livraison'}</Label>
+                  <Switch
+                    checked={deliveryEnabled}
+                    onCheckedChange={setDeliveryEnabled}
+                  />
+                  {deliveryEnabled && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowDeliveryDialog(true)}
+                    >
+                      {selectedWilaya || (language === 'ar' ? 'إعداد' : 'Config')}
+                    </Button>
+                  )}
+                </div>
               </div>
+
+              {/* Paid Amount */}
+              {paymentType !== 'credit' && (
+                <div className="flex items-center gap-2">
+                  <Label className="text-muted-foreground">{language === 'ar' ? 'المدفوع:' : 'Payé:'}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={paidAmount || ''}
+                    onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
+                    className="w-32 h-9"
+                    data-testid="paid-amount-input"
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Paid Amount Input */}
-            {paymentType !== 'credit' && (
-              <div className="flex items-center gap-2">
-                <Label className="text-slate-400 text-sm">{language === 'ar' ? 'المدفوع:' : 'Payé:'}</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={paidAmount || ''}
-                  onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
-                  className="w-32 h-9 bg-slate-700 border-slate-600 text-white"
-                  data-testid="paid-amount-input"
-                />
-              </div>
-            )}
-          </div>
+            {/* Totals & Actions Row */}
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-6">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">{language === 'ar' ? 'المجموع الفرعي' : 'Sous total'}</p>
+                  <p className="text-xl font-bold">{formatCurrency(subtotal)}</p>
+                </div>
 
-          {/* Totals Row */}
-          <div className="px-4 py-3 flex items-center justify-between">
-            {/* Left - Totals Display */}
-            <div className="flex items-center gap-6">
-              {/* Subtotal */}
-              <div className="text-center">
-                <p className="text-xs text-slate-400 mb-1">{language === 'ar' ? 'المجموع الفرعي' : 'Sous total'}</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(subtotal)}</p>
-              </div>
-
-              {/* Discount */}
-              <div className="text-center">
-                <p className="text-xs text-slate-400 mb-1">{language === 'ar' ? 'الخصم' : 'Remise'}</p>
-                <div className="flex items-center gap-1">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mb-1">{language === 'ar' ? 'الخصم' : 'Remise'}</p>
                   <Input
                     type="number"
                     min="0"
                     value={discount || ''}
                     onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                    className="w-24 h-8 bg-slate-700 border-slate-600 text-white text-center"
+                    className="w-24 h-8 text-center"
                     data-testid="total-discount-input"
                   />
                 </div>
+
+                {deliveryEnabled && deliveryFee > 0 && (
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">{language === 'ar' ? 'التوصيل' : 'Livraison'}</p>
+                    <p className="text-xl font-bold text-blue-600">+{formatCurrency(deliveryFee)}</p>
+                  </div>
+                )}
+
+                {(paymentType === 'credit' || (paymentType === 'partial' && remaining > 0)) && (
+                  <div className="text-center">
+                    <p className="text-xs text-muted-foreground mb-1">{language === 'ar' ? 'الدين' : 'Crédit'}</p>
+                    <p className="text-xl font-bold text-amber-600">
+                      {formatCurrency(paymentType === 'credit' ? total : remaining)}
+                    </p>
+                  </div>
+                )}
+
+                <div className="text-center px-6 py-3 bg-primary text-primary-foreground rounded-lg">
+                  <p className="text-xs opacity-80 mb-1">{language === 'ar' ? 'الإجمالي' : 'Total'}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(total)} <span className="text-sm">{t.currency}</span></p>
+                </div>
               </div>
 
-              {/* Delivery Fee */}
-              {deliveryEnabled && deliveryFee > 0 && (
-                <div className="text-center">
-                  <p className="text-xs text-slate-400 mb-1">{language === 'ar' ? 'التوصيل' : 'Livraison'}</p>
-                  <p className="text-xl font-bold text-blue-400">+{formatCurrency(deliveryFee)}</p>
-                </div>
-              )}
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={clearCart}
+                  className="h-12 px-6"
+                >
+                  <RotateCcw className="h-5 w-5 me-2" />
+                  {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                </Button>
 
-              {/* Debt Amount */}
-              {(paymentType === 'credit' || (paymentType === 'partial' && remaining > 0)) && (
-                <div className="text-center">
-                  <p className="text-xs text-slate-400 mb-1">{language === 'ar' ? 'الدين' : 'Crédit'}</p>
-                  <p className="text-xl font-bold text-amber-400">
-                    {formatCurrency(paymentType === 'credit' ? total : remaining)}
-                  </p>
-                </div>
-              )}
-
-              {/* Total */}
-              <div className="text-center px-4 py-2 bg-blue-600 rounded-lg">
-                <p className="text-xs text-blue-200 mb-1">{language === 'ar' ? 'الإجمالي' : 'Total'}</p>
-                <p className="text-2xl font-bold text-white">{formatCurrency(total)} <span className="text-sm">{t.currency}</span></p>
+                <Button
+                  onClick={completeSale}
+                  disabled={loading || cart.length === 0 || !hasOpenSession}
+                  className="h-12 px-8 bg-green-600 hover:bg-green-700 text-lg gap-2"
+                  data-testid="complete-sale-btn"
+                >
+                  <Check className="h-5 w-5" />
+                  {loading ? (language === 'ar' ? 'جاري...' : 'Chargement...') : (language === 'ar' ? 'تأكيد البيع' : 'Valider')}
+                  <span className="text-xs opacity-70">(Ctrl+Enter)</span>
+                </Button>
               </div>
             </div>
-
-            {/* Right - Action Buttons */}
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={clearCart}
-                className="h-12 px-6 border-slate-600 text-slate-300 hover:bg-slate-700"
-              >
-                <RotateCcw className="h-5 w-5 me-2" />
-                {language === 'ar' ? 'إلغاء' : 'Annuler'}
-              </Button>
-
-              <Button
-                onClick={completeSale}
-                disabled={loading || cart.length === 0 || !hasOpenSession}
-                className="h-12 px-8 bg-green-600 hover:bg-green-700 text-white text-lg gap-2"
-                data-testid="complete-sale-btn"
-              >
-                <Check className="h-5 w-5" />
-                {loading ? (language === 'ar' ? 'جاري...' : 'Chargement...') : (language === 'ar' ? 'تأكيد البيع' : 'Valider')}
-                <span className="text-xs opacity-70">(Ctrl+Enter)</span>
-              </Button>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Debt Payment Dialog */}
       <Dialog open={showDebtDialog} onOpenChange={setShowDebtDialog}>
-        <DialogContent className="max-w-sm bg-slate-800 border-slate-700 text-white">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white">{t.payDebt}</DialogTitle>
+            <DialogTitle>{t.payDebt}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="text-slate-300">{t.totalDebt}</Label>
-              <p className="text-xl font-bold text-amber-400">{formatCurrency(customerDebt)} {t.currency}</p>
+              <Label>{t.totalDebt}</Label>
+              <p className="text-xl font-bold text-amber-600">{formatCurrency(customerDebt)} {t.currency}</p>
             </div>
             <div>
-              <Label className="text-slate-300">{t.amount}</Label>
+              <Label>{t.amount}</Label>
               <Input
                 type="number"
                 min="0"
                 max={customerDebt}
                 value={debtPaymentAmount}
                 onChange={(e) => setDebtPaymentAmount(parseFloat(e.target.value) || 0)}
-                className="bg-slate-700 border-slate-600 text-white"
                 data-testid="debt-payment-input"
               />
             </div>
@@ -912,7 +875,7 @@ export default function POSPage() {
               </Button>
             </div>
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowDebtDialog(false)} className="flex-1 border-slate-600">
+              <Button variant="outline" onClick={() => setShowDebtDialog(false)} className="flex-1">
                 {t.cancel}
               </Button>
               <Button onClick={handlePayDebt} className="flex-1 bg-green-600 hover:bg-green-700" disabled={debtPaymentAmount <= 0}>
@@ -925,23 +888,23 @@ export default function POSPage() {
 
       {/* Delivery Settings Dialog */}
       <Dialog open={showDeliveryDialog} onOpenChange={setShowDeliveryDialog}>
-        <DialogContent className="max-w-md bg-slate-800 border-slate-700 text-white">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-white flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5" />
               {language === 'ar' ? 'إعدادات التوصيل' : 'Paramètres de livraison'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label className="text-slate-300">{t.selectWilaya}</Label>
+              <Label>{t.selectWilaya}</Label>
               <Select value={selectedWilaya} onValueChange={setSelectedWilaya}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white" data-testid="wilaya-select">
+                <SelectTrigger data-testid="wilaya-select">
                   <SelectValue placeholder={t.selectWilaya} />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 max-h-60">
+                <SelectContent className="max-h-60">
                   {wilayas.map(w => (
-                    <SelectItem key={w.code} value={w.code} className="text-white hover:bg-slate-700">
+                    <SelectItem key={w.code} value={w.code}>
                       {w.code} - {language === 'ar' ? w.name_ar : w.name_en}
                     </SelectItem>
                   ))}
@@ -953,48 +916,46 @@ export default function POSPage() {
               <Button
                 variant={deliveryType === 'desk' ? 'default' : 'outline'}
                 onClick={() => setDeliveryType('desk')}
-                className={`flex-1 ${deliveryType === 'desk' ? 'bg-blue-600' : 'border-slate-600 text-slate-300'}`}
+                className="flex-1"
               >
                 {t.officeDelivery}
               </Button>
               <Button
                 variant={deliveryType === 'home' ? 'default' : 'outline'}
                 onClick={() => setDeliveryType('home')}
-                className={`flex-1 ${deliveryType === 'home' ? 'bg-blue-600' : 'border-slate-600 text-slate-300'}`}
+                className="flex-1"
               >
                 {t.homeDelivery}
               </Button>
             </div>
 
             <div>
-              <Label className="text-slate-300">{t.deliveryCity}</Label>
+              <Label>{t.deliveryCity}</Label>
               <Input
                 value={deliveryCity}
                 onChange={(e) => setDeliveryCity(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
               />
             </div>
 
             <div>
-              <Label className="text-slate-300">{t.deliveryAddress}</Label>
+              <Label>{t.deliveryAddress}</Label>
               <Input
                 value={deliveryAddress}
                 onChange={(e) => setDeliveryAddress(e.target.value)}
-                className="bg-slate-700 border-slate-600 text-white"
               />
             </div>
 
             {deliveryFee > 0 && (
-              <div className="p-3 bg-blue-900/30 rounded-lg border border-blue-700">
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex justify-between text-lg font-bold">
-                  <span className="text-slate-300">{t.deliveryFee}</span>
-                  <span className="text-blue-400">{formatCurrency(deliveryFee)} {t.currency}</span>
+                  <span>{t.deliveryFee}</span>
+                  <span className="text-blue-600">{formatCurrency(deliveryFee)} {t.currency}</span>
                 </div>
               </div>
             )}
 
             <div className="flex gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowDeliveryDialog(false)} className="flex-1 border-slate-600">
+              <Button variant="outline" onClick={() => setShowDeliveryDialog(false)} className="flex-1">
                 {t.cancel}
               </Button>
               <Button onClick={() => setShowDeliveryDialog(false)} className="flex-1 bg-blue-600 hover:bg-blue-700">
