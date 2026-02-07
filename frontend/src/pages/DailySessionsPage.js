@@ -56,7 +56,10 @@ import {
   Lock,
   Users,
   BarChart3,
-  User
+  User,
+  Mail,
+  Send,
+  RefreshCw
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
