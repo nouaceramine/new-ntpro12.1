@@ -59,6 +59,7 @@ export default function POSPage() {
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [families, setFamilies] = useState([]);
+  const [customerFamilies, setCustomerFamilies] = useState([]);
   const [wilayas, setWilayas] = useState([]);
   const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,14 +91,28 @@ export default function POSPage() {
   const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
   const [showDeliveryDialog, setShowDeliveryDialog] = useState(false);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
-  const [newCustomerData, setNewCustomerData] = useState({ name: '', phone: '', email: '', address: '' });
+  const [newCustomerData, setNewCustomerData] = useState({ name: '', phone: '', email: '', address: '', family_id: '' });
   const [savingCustomer, setSavingCustomer] = useState(false);
+  const [showNewFamilyInput, setShowNewFamilyInput] = useState(false);
+  const [newFamilyName, setNewFamilyName] = useState('');
+  
+  // Blacklist state
+  const [blacklist, setBlacklist] = useState([]);
+  const [selectedCustomerBlacklisted, setSelectedCustomerBlacklisted] = useState(false);
+  const [blacklistReason, setBlacklistReason] = useState('');
+  
+  // Debt reminders
+  const [debtReminders, setDebtReminders] = useState([]);
+  const [showDebtRemindersPanel, setShowDebtRemindersPanel] = useState(false);
 
   useEffect(() => {
     checkOpenSession();
     fetchProducts();
     fetchCustomers();
     fetchFamilies();
+    fetchCustomerFamilies();
+    fetchBlacklist();
+    fetchDebtReminders();
     fetchWilayas();
   }, []);
 
