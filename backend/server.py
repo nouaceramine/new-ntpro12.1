@@ -6206,6 +6206,72 @@ async def delete_expense(expense_id: str, user: dict = Depends(get_current_user)
         raise HTTPException(status_code=404, detail="التكلفة غير موجودة")
     return {"message": "تم حذف التكلفة بنجاح"}
 
+@api_router.get("/expenses/reminders")
+async def get_expense_reminders(user: dict = Depends(get_current_user)):
+    """Get upcoming expense reminders for recurring expenses"""
+    now = datetime.now(timezone.utc)
+    
+    # Get all recurring expenses
+    recurring_expenses = await db.expenses.find(
+        {"recurring": True},
+        {"_id": 0}
+    ).to_list(100)
+    
+    reminders = []
+    for expense in recurring_expenses:
+        # Calculate next due date based on recurring period
+        last_date = datetime.fromisoformat(expense.get("date", now.isoformat()).replace('Z', '+00:00'))
+        period = expense.get("recurring_period", "monthly")
+        reminder_days = expense.get("reminder_days_before", 3)
+        
+        if period == "monthly":
+            # Next month same day
+            next_due = last_date.replace(month=last_date.month % 12 + 1)
+            if last_date.month == 12:
+                next_due = next_due.replace(year=last_date.year + 1)
+        elif period == "weekly":
+            next_due = last_date + timedelta(days=7)
+        elif period == "yearly":
+            next_due = last_date.replace(year=last_date.year + 1)
+        else:
+            next_due = last_date + timedelta(days=30)
+        
+        # Check if reminder should show (within reminder_days_before)
+        days_until_due = (next_due - now).days
+        if 0 <= days_until_due <= reminder_days:
+            reminders.append({
+                "expense_id": expense["id"],
+                "title": expense["title"],
+                "category": expense["category"],
+                "amount": expense["amount"],
+                "due_date": next_due.isoformat(),
+                "days_until_due": days_until_due,
+                "is_urgent": days_until_due <= 1
+            })
+    
+    # Sort by days until due
+    reminders.sort(key=lambda x: x["days_until_due"])
+    return reminders
+
+@api_router.post("/expenses/{expense_id}/mark-paid")
+async def mark_expense_paid(expense_id: str, user: dict = Depends(get_current_user)):
+    """Mark a recurring expense as paid and update the date"""
+    expense = await db.expenses.find_one({"id": expense_id}, {"_id": 0})
+    if not expense:
+        raise HTTPException(status_code=404, detail="التكلفة غير موجودة")
+    
+    # Update the date to today (for next cycle calculation)
+    await db.expenses.update_one(
+        {"id": expense_id},
+        {"$set": {
+            "date": datetime.now(timezone.utc).isoformat(),
+            "last_paid_at": datetime.now(timezone.utc).isoformat(),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {"message": "تم تسجيل الدفع بنجاح", "next_due_calculated": True}
+
 # ============ EMAIL REPORTS ============
 
 class SessionReportEmail(BaseModel):
