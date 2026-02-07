@@ -6220,15 +6220,32 @@ async def get_expense_reminders(user: dict = Depends(get_current_user)):
     reminders = []
     for expense in recurring_expenses:
         # Calculate next due date based on recurring period
-        last_date = datetime.fromisoformat(expense.get("date", now.isoformat()).replace('Z', '+00:00'))
+        date_str = expense.get("date", now.isoformat())
+        try:
+            # Handle dates with or without timezone
+            if 'T' in date_str:
+                if '+' in date_str or 'Z' in date_str:
+                    last_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                else:
+                    last_date = datetime.fromisoformat(date_str).replace(tzinfo=timezone.utc)
+            else:
+                # Date only (no time) - treat as midnight UTC
+                last_date = datetime.strptime(date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+        except:
+            last_date = now
+        
         period = expense.get("recurring_period", "monthly")
         reminder_days = expense.get("reminder_days_before", 3)
         
         if period == "monthly":
             # Next month same day
-            next_due = last_date.replace(month=last_date.month % 12 + 1)
-            if last_date.month == 12:
-                next_due = next_due.replace(year=last_date.year + 1)
+            next_month = last_date.month % 12 + 1
+            next_year = last_date.year if next_month > 1 else last_date.year + 1
+            try:
+                next_due = last_date.replace(month=next_month, year=next_year)
+            except ValueError:
+                # Handle cases like Jan 31 -> Feb (no 31st)
+                next_due = last_date.replace(month=next_month, year=next_year, day=28)
         elif period == "weekly":
             next_due = last_date + timedelta(days=7)
         elif period == "yearly":
