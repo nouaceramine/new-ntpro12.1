@@ -219,6 +219,7 @@ class SupplierCreate(BaseModel):
     email: Optional[str] = ""
     address: Optional[str] = ""
     notes: Optional[str] = ""
+    family_id: Optional[str] = None
 
 class SupplierUpdate(BaseModel):
     name: Optional[str] = None
@@ -226,6 +227,7 @@ class SupplierUpdate(BaseModel):
     email: Optional[str] = None
     address: Optional[str] = None
     notes: Optional[str] = None
+    family_id: Optional[str] = None
 
 class SupplierResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -235,6 +237,8 @@ class SupplierResponse(BaseModel):
     email: str
     address: str
     notes: str
+    family_id: str = ""
+    family_name: str = ""
     total_purchases: float = 0
     balance: float = 0  # رصيد المورد (دين لهم)
     created_at: str
