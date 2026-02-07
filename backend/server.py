@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 import io
+import requests as http_requests
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
