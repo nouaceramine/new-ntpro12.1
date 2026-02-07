@@ -53,7 +53,9 @@ import {
   ChevronDown,
   ChevronUp,
   PlusCircle,
-  Save
+  Save,
+  AlertTriangle,
+  DollarSign
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -655,25 +657,37 @@ export default function POSPage() {
                       <div
                         key={product.id}
                         onClick={() => addToCart(product)}
-                        className={`px-4 py-3 cursor-pointer hover:bg-blue-50 border-b last:border-b-0 flex items-center justify-between ${
-                          product.quantity <= 0 ? 'bg-amber-50 border-amber-200' : ''
+                        className={`px-4 py-3 cursor-pointer border-b last:border-b-0 flex items-center justify-between transition-colors ${
+                          product.quantity <= 0 
+                            ? 'bg-gradient-to-r from-amber-100 to-orange-100 border-amber-300 hover:from-amber-200 hover:to-orange-200' 
+                            : 'hover:bg-blue-50'
                         }`}
                         data-testid={`search-result-${product.id}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded flex items-center justify-center ${
-                            product.quantity <= 0 ? 'bg-amber-100' : 'bg-gray-100'
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            product.quantity <= 0 ? 'bg-amber-200 ring-2 ring-amber-400' : 'bg-gray-100'
                           }`}>
-                            <Package className={`h-5 w-5 ${product.quantity <= 0 ? 'text-amber-600' : 'text-gray-400'}`} />
+                            {product.quantity <= 0 ? (
+                              <AlertTriangle className="h-5 w-5 text-amber-700" />
+                            ) : (
+                              <Package className="h-5 w-5 text-gray-400" />
+                            )}
                           </div>
                           <div>
-                            <p className="font-medium">{language === 'ar' ? product.name_ar : product.name_en}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {product.barcode || '---'} • {language === 'ar' ? 'المخزون:' : 'Stock:'} 
-                              <span className={product.quantity <= 0 ? 'text-red-600 font-bold' : ''}>
-                                {' '}{product.quantity}
-                              </span>
+                            <p className={`font-medium ${product.quantity <= 0 ? 'text-amber-900' : ''}`}>
+                              {language === 'ar' ? product.name_ar : product.name_en}
                             </p>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-muted-foreground">{product.barcode || '---'}</span>
+                              <span className="text-muted-foreground">•</span>
+                              <span className={product.quantity <= 0 
+                                ? 'text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded' 
+                                : 'text-muted-foreground'
+                              }>
+                                {language === 'ar' ? 'المخزون:' : 'Stock:'} {product.quantity}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div className="text-end">
@@ -681,8 +695,9 @@ export default function POSPage() {
                             {formatCurrency(priceType === 'wholesale' ? product.wholesale_price : product.retail_price)} {t.currency}
                           </p>
                           {product.quantity <= 0 && (
-                            <Badge className="text-xs bg-amber-500">
-                              {language === 'ar' ? 'سيصبح سالب' : 'Sera négatif'}
+                            <Badge className="text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm">
+                              <AlertTriangle className="h-3 w-3 me-1" />
+                              {language === 'ar' ? 'غير متوفر' : 'Rupture'}
                             </Badge>
                           )}
                         </div>
