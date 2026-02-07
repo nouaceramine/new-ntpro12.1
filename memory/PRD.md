@@ -102,11 +102,13 @@
 
 ### حصص البيع اليومية
 ```
-GET  /api/daily-sessions          - قائمة الحصص
-POST /api/daily-sessions          - فتح حصة جديدة
-GET  /api/daily-sessions/current  - الحصة الحالية
-PUT  /api/daily-sessions/:id/close - غلق حصة
-DELETE /api/daily-sessions/:id    - حذف حصة (Admin)
+GET  /api/daily-sessions              - قائمة حصص المستخدم
+GET  /api/daily-sessions?all_users=true - جميع الحصص (للمسؤول)
+POST /api/daily-sessions              - فتح حصة جديدة
+GET  /api/daily-sessions/current      - الحصة الحالية للمستخدم
+GET  /api/daily-sessions/summary      - تقرير إجمالي + لكل موظف (للمسؤول)
+PUT  /api/daily-sessions/:id/close    - غلق حصة
+DELETE /api/daily-sessions/:id        - حذف حصة (Admin)
 ```
 
 ### عائلات الزبائن
