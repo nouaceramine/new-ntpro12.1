@@ -2032,6 +2032,261 @@ async def get_sales_stats(user: dict = Depends(get_current_user)):
         }
     }
 
+@api_router.get("/analytics/sales-chart")
+async def get_sales_chart_data(period: str = "week", admin: dict = Depends(get_admin_user)):
+    """Get sales data for charts (daily for week/month, monthly for year)"""
+    now = datetime.now(timezone.utc)
+    
+    if period == "week":
+        # Last 7 days
+        days = 7
+        start_date = (now - timedelta(days=days)).strftime("%Y-%m-%d")
+        pipeline = [
+            {"$match": {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}}},
+            {"$group": {
+                "_id": {"$substr": ["$created_at", 0, 10]},
+                "total": {"$sum": "$total"},
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+    elif period == "month":
+        # Last 30 days
+        days = 30
+        start_date = (now - timedelta(days=days)).strftime("%Y-%m-%d")
+        pipeline = [
+            {"$match": {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}}},
+            {"$group": {
+                "_id": {"$substr": ["$created_at", 0, 10]},
+                "total": {"$sum": "$total"},
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+    else:  # year
+        # Last 12 months
+        start_date = (now - timedelta(days=365)).strftime("%Y-%m-%d")
+        pipeline = [
+            {"$match": {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}}},
+            {"$group": {
+                "_id": {"$substr": ["$created_at", 0, 7]},
+                "total": {"$sum": "$total"},
+                "count": {"$sum": 1}
+            }},
+            {"$sort": {"_id": 1}}
+        ]
+    
+    result = await db.sales.aggregate(pipeline).to_list(100)
+    
+    return {
+        "period": period,
+        "data": [{"date": r["_id"], "total": r["total"], "count": r["count"]} for r in result]
+    }
+
+@api_router.get("/analytics/top-products")
+async def get_top_products(limit: int = 10, period: str = "month", admin: dict = Depends(get_admin_user)):
+    """Get top selling products"""
+    now = datetime.now(timezone.utc)
+    
+    if period == "week":
+        start_date = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    elif period == "month":
+        start_date = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    else:
+        start_date = (now - timedelta(days=365)).strftime("%Y-%m-%d")
+    
+    pipeline = [
+        {"$match": {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}}},
+        {"$unwind": "$items"},
+        {"$group": {
+            "_id": "$items.product_id",
+            "product_name": {"$first": "$items.name"},
+            "total_quantity": {"$sum": "$items.quantity"},
+            "total_revenue": {"$sum": {"$multiply": ["$items.price", "$items.quantity"]}}
+        }},
+        {"$sort": {"total_revenue": -1}},
+        {"$limit": limit}
+    ]
+    
+    result = await db.sales.aggregate(pipeline).to_list(limit)
+    
+    return {
+        "period": period,
+        "products": result
+    }
+
+@api_router.get("/analytics/top-customers")
+async def get_top_customers(limit: int = 10, period: str = "month", admin: dict = Depends(get_admin_user)):
+    """Get top customers by purchase amount"""
+    now = datetime.now(timezone.utc)
+    
+    if period == "week":
+        start_date = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    elif period == "month":
+        start_date = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    else:
+        start_date = (now - timedelta(days=365)).strftime("%Y-%m-%d")
+    
+    pipeline = [
+        {"$match": {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}, "customer_id": {"$exists": True, "$ne": ""}}},
+        {"$group": {
+            "_id": "$customer_id",
+            "customer_name": {"$first": "$customer_name"},
+            "total_purchases": {"$sum": "$total"},
+            "orders_count": {"$sum": 1}
+        }},
+        {"$sort": {"total_purchases": -1}},
+        {"$limit": limit}
+    ]
+    
+    result = await db.sales.aggregate(pipeline).to_list(limit)
+    
+    return {
+        "period": period,
+        "customers": result
+    }
+
+@api_router.get("/analytics/employee-performance")
+async def get_employee_performance(period: str = "month", admin: dict = Depends(get_admin_user)):
+    """Get sales performance by employee"""
+    now = datetime.now(timezone.utc)
+    
+    if period == "week":
+        start_date = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    elif period == "month":
+        start_date = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    else:
+        start_date = (now - timedelta(days=365)).strftime("%Y-%m-%d")
+    
+    # Get from daily sessions
+    pipeline = [
+        {"$match": {"closed_at": {"$gte": start_date}, "status": "closed"}},
+        {"$group": {
+            "_id": "$user_id",
+            "user_name": {"$first": "$user_name"},
+            "total_sales": {"$sum": "$total_sales"},
+            "sessions_count": {"$sum": 1},
+            "total_difference": {"$sum": {
+                "$subtract": [
+                    "$closing_cash",
+                    {"$add": ["$opening_cash", "$cash_sales"]}
+                ]
+            }}
+        }},
+        {"$sort": {"total_sales": -1}}
+    ]
+    
+    result = await db.daily_sessions.aggregate(pipeline).to_list(50)
+    
+    return {
+        "period": period,
+        "employees": result
+    }
+
+@api_router.get("/analytics/sales-prediction")
+async def get_sales_prediction(admin: dict = Depends(get_admin_user)):
+    """AI-powered sales prediction (MOCKED - simple moving average)"""
+    now = datetime.now(timezone.utc)
+    
+    # Get last 30 days sales
+    start_date = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    pipeline = [
+        {"$match": {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}}},
+        {"$group": {
+            "_id": {"$substr": ["$created_at", 0, 10]},
+            "total": {"$sum": "$total"}
+        }},
+        {"$sort": {"_id": 1}}
+    ]
+    
+    result = await db.sales.aggregate(pipeline).to_list(30)
+    
+    if not result:
+        return {"prediction": 0, "confidence": 0, "trend": "neutral"}
+    
+    # Simple moving average prediction
+    totals = [r["total"] for r in result]
+    avg = sum(totals) / len(totals) if totals else 0
+    
+    # Calculate trend
+    if len(totals) >= 7:
+        recent_avg = sum(totals[-7:]) / 7
+        older_avg = sum(totals[:7]) / 7 if len(totals) >= 14 else avg
+        trend = "up" if recent_avg > older_avg * 1.1 else ("down" if recent_avg < older_avg * 0.9 else "neutral")
+    else:
+        trend = "neutral"
+    
+    # Predicted next day
+    prediction = avg * (1.05 if trend == "up" else (0.95 if trend == "down" else 1))
+    
+    return {
+        "predicted_daily_sales": round(prediction, 2),
+        "predicted_monthly_sales": round(prediction * 30, 2),
+        "average_daily_sales": round(avg, 2),
+        "trend": trend,
+        "confidence": 0.7 if len(totals) >= 14 else 0.5,
+        "recommendation": {
+            "ar": "بناءً على البيانات، يُنصح بزيادة المخزون للمنتجات الأكثر مبيعاً" if trend == "up" else "حافظ على مستوى المخزون الحالي",
+            "fr": "Basé sur les données, il est recommandé d'augmenter le stock des produits les plus vendus" if trend == "up" else "Maintenez le niveau de stock actuel"
+        }
+    }
+
+@api_router.get("/analytics/restock-suggestions")
+async def get_restock_suggestions(admin: dict = Depends(get_admin_user)):
+    """AI-powered restock suggestions based on sales velocity"""
+    
+    # Get products with low stock
+    low_stock_products = await db.products.find(
+        {"$expr": {"$lte": ["$quantity", "$low_stock_threshold"]}},
+        {"_id": 0}
+    ).to_list(100)
+    
+    now = datetime.now(timezone.utc)
+    start_date = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    
+    suggestions = []
+    
+    for product in low_stock_products:
+        # Get sales velocity
+        pipeline = [
+            {"$match": {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}}},
+            {"$unwind": "$items"},
+            {"$match": {"items.product_id": product["id"]}},
+            {"$group": {"_id": None, "total_sold": {"$sum": "$items.quantity"}}}
+        ]
+        
+        sales_result = await db.sales.aggregate(pipeline).to_list(1)
+        monthly_sales = sales_result[0]["total_sold"] if sales_result else 0
+        daily_velocity = monthly_sales / 30
+        
+        # Calculate days until stockout
+        days_until_stockout = product["quantity"] / daily_velocity if daily_velocity > 0 else 999
+        
+        # Suggested restock quantity (2 months supply)
+        suggested_quantity = max(int(daily_velocity * 60), product.get("low_stock_threshold", 10) * 2)
+        
+        urgency = "critical" if days_until_stockout <= 3 else ("high" if days_until_stockout <= 7 else ("medium" if days_until_stockout <= 14 else "low"))
+        
+        suggestions.append({
+            "product_id": product["id"],
+            "product_name": product.get("name_en", ""),
+            "current_stock": product["quantity"],
+            "monthly_sales": monthly_sales,
+            "daily_velocity": round(daily_velocity, 2),
+            "days_until_stockout": round(days_until_stockout, 1),
+            "suggested_restock": suggested_quantity,
+            "urgency": urgency
+        })
+    
+    # Sort by urgency
+    urgency_order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    suggestions.sort(key=lambda x: urgency_order.get(x["urgency"], 4))
+    
+    return {
+        "suggestions": suggestions,
+        "total_products_needing_restock": len(suggestions)
+    }
+
 # ============ CHARTS & ANALYTICS ============
 
 @api_router.get("/reports/sales-chart")
