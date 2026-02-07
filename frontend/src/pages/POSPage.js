@@ -278,6 +278,14 @@ export default function POSPage() {
   };
 
   const completeSale = async () => {
+    // Check for open session first
+    if (!hasOpenSession) {
+      toast.error(language === 'ar' 
+        ? 'يجب فتح حصة جديدة قبل البيع. اذهب إلى صفحة حصص البيع اليومية'
+        : 'Vous devez ouvrir une session avant de vendre. Allez à la page des sessions de vente');
+      return;
+    }
+    
     if (cart.length === 0) {
       toast.error(t.emptyCart);
       return;
