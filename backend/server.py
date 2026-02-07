@@ -5739,6 +5739,288 @@ async def update_spare_part_stock(
     
     return {"quantity": new_qty}
 
+# ============ WHATSAPP NOTIFICATIONS ============
+
+class WhatsAppSettings(BaseModel):
+    enabled: bool = False
+    phone_number_id: Optional[str] = None
+    access_token: Optional[str] = None
+    business_account_id: Optional[str] = None
+
+class WhatsAppMessage(BaseModel):
+    phone: str
+    message: str
+
+# Status messages in Arabic
+REPAIR_STATUS_MESSAGES = {
+    "received": "مرحباً {customer_name}! تم استلام جهازك ({device}) للصيانة. رقم التذكرة: {ticket_number}. سنقوم بإشعارك عند أي تحديث.",
+    "diagnosing": "تحديث الصيانة #{ticket_number}: جاري فحص جهازك ({device}) لتحديد العطل.",
+    "waiting_parts": "تحديث الصيانة #{ticket_number}: جهازك ({device}) بحاجة لقطع غيار. سنقوم بإعلامك فور توفرها.",
+    "in_progress": "تحديث الصيانة #{ticket_number}: جاري إصلاح جهازك ({device}). الوقت المتوقع: {estimated_days} أيام.",
+    "completed": "🎉 أخبار سارة! تم إصلاح جهازك ({device}) بنجاح. رقم التذكرة: {ticket_number}. يمكنك استلامه الآن. التكلفة: {cost} دج",
+    "delivered": "شكراً لثقتك بنا! تم تسليم جهازك ({device}). نتمنى لك يوماً سعيداً! 🙏",
+    "cancelled": "تم إلغاء طلب الصيانة #{ticket_number}. للاستفسار يرجى التواصل معنا."
+}
+
+@api_router.get("/whatsapp/settings")
+async def get_whatsapp_settings(user: dict = Depends(get_current_user)):
+    """Get WhatsApp settings"""
+    settings = await db.whatsapp_settings.find_one({}, {"_id": 0})
+    if not settings:
+        settings = {"enabled": False}
+    # Don't expose access_token
+    if "access_token" in settings:
+        settings["access_token"] = "***" if settings["access_token"] else None
+    return settings
+
+@api_router.put("/whatsapp/settings")
+async def update_whatsapp_settings(settings: WhatsAppSettings, user: dict = Depends(get_current_user)):
+    """Update WhatsApp settings"""
+    settings_data = settings.model_dump()
+    settings_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    settings_data["updated_by"] = user["id"]
+    
+    await db.whatsapp_settings.update_one(
+        {},
+        {"$set": settings_data},
+        upsert=True
+    )
+    return {"message": "تم تحديث إعدادات WhatsApp"}
+
+@api_router.post("/whatsapp/send")
+async def send_whatsapp_message(message: WhatsAppMessage, user: dict = Depends(get_current_user)):
+    """Send a WhatsApp message"""
+    import requests
+    
+    settings = await db.whatsapp_settings.find_one({}, {"_id": 0})
+    if not settings or not settings.get("enabled"):
+        raise HTTPException(status_code=400, detail="WhatsApp غير مفعل")
+    
+    if not settings.get("access_token") or not settings.get("phone_number_id"):
+        raise HTTPException(status_code=400, detail="إعدادات WhatsApp غير مكتملة")
+    
+    # Format phone number (remove leading 0 and add country code)
+    phone = message.phone.strip()
+    if phone.startswith("0"):
+        phone = "213" + phone[1:]  # Algeria country code
+    elif not phone.startswith("213"):
+        phone = "213" + phone
+    
+    url = f"https://graph.facebook.com/v18.0/{settings['phone_number_id']}/messages"
+    
+    headers = {
+        "Authorization": f"Bearer {settings['access_token']}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": phone,
+        "type": "text",
+        "text": {"body": message.message}
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        
+        # Log the message
+        await db.whatsapp_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "phone": phone,
+            "message": message.message,
+            "status": "sent" if response.status_code == 200 else "failed",
+            "response_code": response.status_code,
+            "response": response.text[:500] if response.text else None,
+            "sent_at": datetime.now(timezone.utc).isoformat(),
+            "sent_by": user["id"]
+        })
+        
+        if response.status_code == 200:
+            return {"success": True, "message": "تم إرسال الرسالة"}
+        else:
+            return {"success": False, "error": response.text}
+    except Exception as e:
+        logger.error(f"WhatsApp send error: {str(e)}")
+        return {"success": False, "error": str(e)}
+
+@api_router.post("/whatsapp/notify-repair/{repair_id}")
+async def notify_repair_status_change(repair_id: str, user: dict = Depends(get_current_user)):
+    """Send WhatsApp notification for repair status change"""
+    repair = await db.repairs.find_one({"id": repair_id}, {"_id": 0})
+    if not repair:
+        repair = await db.repairs.find_one({"ticket_number": repair_id}, {"_id": 0})
+    if not repair:
+        raise HTTPException(status_code=404, detail="طلب الصيانة غير موجود")
+    
+    settings = await db.whatsapp_settings.find_one({}, {"_id": 0})
+    if not settings or not settings.get("enabled"):
+        return {"success": False, "message": "WhatsApp غير مفعل"}
+    
+    status = repair.get("status", "received")
+    message_template = REPAIR_STATUS_MESSAGES.get(status)
+    
+    if not message_template:
+        return {"success": False, "message": "قالب الرسالة غير موجود"}
+    
+    # Format the message
+    message = message_template.format(
+        customer_name=repair.get("customer_name", "عميل"),
+        device=f"{repair.get('device_brand', '')} {repair.get('device_model', '')}",
+        ticket_number=repair.get("ticket_number", repair_id),
+        estimated_days=repair.get("estimated_days", 1),
+        cost=repair.get("final_cost") or repair.get("estimated_cost", 0)
+    )
+    
+    # Send the message
+    whatsapp_msg = WhatsAppMessage(phone=repair.get("customer_phone", ""), message=message)
+    return await send_whatsapp_message(whatsapp_msg, user)
+
+@api_router.get("/whatsapp/logs")
+async def get_whatsapp_logs(
+    limit: int = 50,
+    user: dict = Depends(get_current_user)
+):
+    """Get WhatsApp message logs"""
+    logs = await db.whatsapp_logs.find({}, {"_id": 0}).sort("sent_at", -1).limit(limit).to_list(limit)
+    return logs
+
+# ============ SPARE PARTS - PRODUCTS INTEGRATION ============
+
+@api_router.post("/spare-parts/use-in-repair")
+async def use_spare_part_in_repair(
+    repair_id: str,
+    part_id: str,
+    quantity: int = 1,
+    user: dict = Depends(get_current_user)
+):
+    """Use a spare part in a repair - deducts from inventory"""
+    # Verify repair exists
+    repair = await db.repairs.find_one({"id": repair_id}, {"_id": 0})
+    if not repair:
+        raise HTTPException(status_code=404, detail="طلب الصيانة غير موجود")
+    
+    # Verify spare part exists and has enough stock
+    part = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
+    if not part:
+        raise HTTPException(status_code=404, detail="قطعة الغيار غير موجودة")
+    
+    if part.get("quantity", 0) < quantity:
+        raise HTTPException(status_code=400, detail="الكمية غير كافية في المخزون")
+    
+    # Deduct from spare parts inventory
+    new_qty = part["quantity"] - quantity
+    await db.spare_parts.update_one(
+        {"id": part_id},
+        {"$set": {"quantity": new_qty, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Record the usage in repair
+    usage_record = {
+        "part_id": part_id,
+        "part_name": part.get("name"),
+        "quantity": quantity,
+        "unit_price": part.get("sell_price", 0),
+        "total_price": part.get("sell_price", 0) * quantity,
+        "used_at": datetime.now(timezone.utc).isoformat(),
+        "used_by": user["name"]
+    }
+    
+    await db.repairs.update_one(
+        {"id": repair_id},
+        {
+            "$push": {"parts_used": usage_record},
+            "$inc": {"parts_cost": usage_record["total_price"]}
+        }
+    )
+    
+    # Also check if there's a linked product in main inventory
+    if part.get("linked_product_id"):
+        await db.products.update_one(
+            {"id": part["linked_product_id"]},
+            {"$inc": {"quantity": -quantity}}
+        )
+    
+    return {
+        "success": True,
+        "message": f"تم استخدام {quantity} من {part['name']}",
+        "remaining_stock": new_qty,
+        "total_cost": usage_record["total_price"]
+    }
+
+@api_router.post("/spare-parts/link-to-product")
+async def link_spare_part_to_product(
+    part_id: str,
+    product_id: str,
+    user: dict = Depends(get_current_user)
+):
+    """Link a spare part to a main product for synchronized inventory"""
+    # Verify both exist
+    part = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
+    if not part:
+        raise HTTPException(status_code=404, detail="قطعة الغيار غير موجودة")
+    
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="المنتج غير موجود")
+    
+    # Link them
+    await db.spare_parts.update_one(
+        {"id": part_id},
+        {"$set": {
+            "linked_product_id": product_id,
+            "linked_product_name": product.get("name"),
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    
+    return {
+        "success": True,
+        "message": f"تم ربط {part['name']} بالمنتج {product['name']}"
+    }
+
+@api_router.delete("/spare-parts/unlink-product/{part_id}")
+async def unlink_spare_part_from_product(
+    part_id: str,
+    user: dict = Depends(get_current_user)
+):
+    """Remove link between spare part and product"""
+    part = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
+    if not part:
+        raise HTTPException(status_code=404, detail="قطعة الغيار غير موجودة")
+    
+    await db.spare_parts.update_one(
+        {"id": part_id},
+        {"$unset": {"linked_product_id": "", "linked_product_name": ""}}
+    )
+    
+    return {"success": True, "message": "تم إلغاء الربط"}
+
+@api_router.post("/spare-parts/sync-inventory")
+async def sync_spare_parts_with_products(user: dict = Depends(get_current_user)):
+    """Sync spare parts inventory with linked products"""
+    # Get all linked spare parts
+    linked_parts = await db.spare_parts.find(
+        {"linked_product_id": {"$exists": True}},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    synced = 0
+    for part in linked_parts:
+        product = await db.products.find_one(
+            {"id": part["linked_product_id"]},
+            {"_id": 0, "quantity": 1}
+        )
+        if product:
+            # Update spare part quantity to match product
+            await db.spare_parts.update_one(
+                {"id": part["id"]},
+                {"$set": {"quantity": product.get("quantity", 0)}}
+            )
+            synced += 1
+    
+    return {"success": True, "synced_count": synced}
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
