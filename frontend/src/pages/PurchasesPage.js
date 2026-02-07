@@ -1182,6 +1182,183 @@ export default function PurchasesPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Prices Dialog */}
+        <Dialog open={showEditPricesDialog} onOpenChange={setShowEditPricesDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5 text-blue-600" />
+                {language === 'ar' ? 'تعديل أسعار المنتج' : 'Modifier les prix du produit'}
+              </DialogTitle>
+            </DialogHeader>
+
+            {editingProduct && (
+              <div className="space-y-6 mt-4">
+                {/* Product Info */}
+                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div className="relative">
+                    {editPricesData.imagePreview ? (
+                      <img 
+                        src={editPricesData.imagePreview} 
+                        alt="" 
+                        className="w-20 h-20 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center">
+                        <Package className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="absolute -bottom-2 -end-2 h-8 w-8 rounded-full shadow-lg"
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <Image className="h-4 w-4" />
+                    </Button>
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{editingProduct.product_name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'ar' ? 'سعر الشراء القديم:' : 'Ancien prix d\'achat:'} {editingProduct.originalPurchasePrice?.toFixed(2)} {t.currency}
+                    </p>
+                  </div>
+                </div>
+
+                {/* New Purchase Price */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                    {language === 'ar' ? 'سعر الشراء الجديد' : 'Nouveau prix d\'achat'}
+                  </Label>
+                  <Input
+                    type="number"
+                    value={editPricesData.newPurchasePrice}
+                    onChange={(e) => handlePurchasePriceChange(parseFloat(e.target.value) || 0)}
+                    className="text-lg h-12"
+                  />
+                  {editingProduct.originalPurchasePrice !== editPricesData.newPurchasePrice && (
+                    <div className="flex items-center gap-2 text-sm">
+                      {editPricesData.newPurchasePrice > editingProduct.originalPurchasePrice ? (
+                        <Badge className="bg-red-100 text-red-700">
+                          <TrendingUp className="h-3 w-3 me-1" />
+                          +{((editPricesData.newPurchasePrice - editingProduct.originalPurchasePrice) / editingProduct.originalPurchasePrice * 100).toFixed(1)}%
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-green-100 text-green-700">
+                          <TrendingDown className="h-3 w-3 me-1" />
+                          {((editPricesData.newPurchasePrice - editingProduct.originalPurchasePrice) / editingProduct.originalPurchasePrice * 100).toFixed(1)}%
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Margin Slider */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <Percent className="h-4 w-4 text-amber-600" />
+                      {language === 'ar' ? 'هامش الربح' : 'Marge bénéficiaire'}
+                    </Label>
+                    <Badge variant="outline" className="text-lg px-3">{editPricesData.margin}%</Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    {[10, 20, 30, 40, 50].map(m => (
+                      <Button
+                        key={m}
+                        type="button"
+                        variant={editPricesData.margin === m ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleMarginChange(m)}
+                        className="flex-1"
+                      >
+                        {m}%
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Wholesale & Retail Prices */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'سعر الجملة' : 'Prix de gros'}</Label>
+                    <Input
+                      type="number"
+                      value={editPricesData.wholesalePrice}
+                      onChange={(e) => setEditPricesData(prev => ({ ...prev, wholesalePrice: parseFloat(e.target.value) || 0 }))}
+                      className="bg-blue-50 border-blue-200"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ar' ? 'القديم:' : 'Ancien:'} {editingProduct.wholesalePrice?.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'ar' ? 'سعر التجزئة' : 'Prix de détail'}</Label>
+                    <Input
+                      type="number"
+                      value={editPricesData.retailPrice}
+                      onChange={(e) => setEditPricesData(prev => ({ ...prev, retailPrice: parseFloat(e.target.value) || 0 }))}
+                      className="bg-green-50 border-green-200"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'ar' ? 'القديم:' : 'Ancien:'} {editingProduct.retailPrice?.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Update Product Checkbox */}
+                <div className="flex items-center space-x-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <Checkbox
+                    id="updateProductPrices"
+                    checked={editPricesData.updateProductPrices}
+                    onCheckedChange={(checked) => setEditPricesData(prev => ({ ...prev, updateProductPrices: checked }))}
+                  />
+                  <Label htmlFor="updateProductPrices" className="cursor-pointer flex-1">
+                    <span className="font-medium text-amber-800">
+                      {language === 'ar' ? 'تحديث أسعار المنتج في النظام' : 'Mettre à jour les prix du produit dans le système'}
+                    </span>
+                    <p className="text-xs text-amber-600 mt-1">
+                      {language === 'ar' ? 'سيتم حفظ الأسعار الجديدة للمنتج وتطبيقها على المبيعات القادمة' : 'Les nouveaux prix seront enregistrés et appliqués aux ventes futures'}
+                    </p>
+                  </Label>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowEditPricesDialog(false)}
+                    className="flex-1"
+                  >
+                    {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                  </Button>
+                  <Button
+                    onClick={saveEditedPrices}
+                    disabled={uploadingImage}
+                    className="flex-1 gap-2"
+                  >
+                    {uploadingImage ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                    {language === 'ar' ? 'حفظ التغييرات' : 'Enregistrer'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
