@@ -509,7 +509,66 @@ export default function POSPage() {
     }
   };
 
-  const completeSale = async () => {
+  // Open payment dialog with calculated amounts
+  const openPaymentDialog = () => {
+    if (!hasOpenSession) {
+      toast.error(language === 'ar' 
+        ? 'يجب فتح حصة جديدة قبل البيع'
+        : 'Vous devez ouvrir une session avant de vendre');
+      return;
+    }
+    
+    if (cart.length === 0) {
+      toast.error(language === 'ar' ? 'السلة فارغة' : 'Le panier est vide');
+      return;
+    }
+    
+    // Reset payment amounts
+    setCashAmount(0);
+    setBankAmount(0);
+    setCreditAmount(0);
+    setShowPaymentDialog(true);
+  };
+
+  // Calculate totals for payment dialog
+  const totalPaid = cashAmount + bankAmount;
+  const remainingToPay = total - totalPaid;
+  const changeAmount = totalPaid > total ? totalPaid - total : 0;
+
+  // Complete sale with payment dialog values
+  const completeSaleWithPayment = async () => {
+    if (creditAmount > 0 && !selectedCustomer) {
+      toast.error(language === 'ar' ? 'يجب اختيار زبون للبيع بالدين' : 'Sélectionnez un client pour le crédit');
+      return;
+    }
+
+    // Determine payment type based on amounts
+    let finalPaymentType = 'cash';
+    let finalPaidAmount = totalPaid;
+    
+    if (creditAmount > 0 && totalPaid === 0) {
+      finalPaymentType = 'credit';
+      finalPaidAmount = 0;
+    } else if (creditAmount > 0 && totalPaid > 0) {
+      finalPaymentType = 'partial';
+    }
+
+    // Determine payment method (priority: cash > bank)
+    let finalPaymentMethod = 'cash';
+    if (bankAmount > 0 && cashAmount === 0) {
+      finalPaymentMethod = 'bank';
+    }
+
+    setPaymentType(finalPaymentType);
+    setPaidAmount(finalPaidAmount);
+    setPaymentMethod(finalPaymentMethod);
+    setShowPaymentDialog(false);
+    
+    // Now complete the sale
+    await completeSaleInternal(finalPaymentType, finalPaidAmount, finalPaymentMethod);
+  };
+
+  const completeSaleInternal = async (salePaymentType, salePaidAmount, salePaymentMethod) => {
     if (!hasOpenSession) {
       toast.error(language === 'ar' 
         ? 'يجب فتح حصة جديدة قبل البيع'
