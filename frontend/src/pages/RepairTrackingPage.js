@@ -442,6 +442,15 @@ export default function RepairTrackingPage() {
                             <Button variant="ghost" size="icon" title={language === 'ar' ? 'اتصال' : 'Appeler'}>
                               <Phone className="h-4 w-4" />
                             </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => sendWhatsAppNotification(repair.id)}
+                              title={language === 'ar' ? 'إرسال WhatsApp' : 'Envoyer WhatsApp'}
+                              className="text-green-600 hover:text-green-700 hover:bg-green-100"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
