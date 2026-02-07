@@ -654,6 +654,11 @@ export default function POSPage() {
     }
   };
 
+  // Quick sale (direct, no dialog)
+  const completeSale = async () => {
+    await completeSaleInternal(paymentType, paidAmount || total, paymentMethod);
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
