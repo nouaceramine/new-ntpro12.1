@@ -1,0 +1,27 @@
+{
+  "short_name": "NT POS",
+  "name": "NT - نظام نقاط البيع",
+  "description": "نظام متكامل لإدارة المبيعات والمخزون والصيانة",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#3b82f6",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity"],
+  "lang": "ar",
+  "dir": "rtl"
+}
