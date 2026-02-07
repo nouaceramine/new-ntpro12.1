@@ -169,7 +169,7 @@ export default function AddProductPage() {
         purchase_price: parseFloat(formData.purchase_price) || 0,
         wholesale_price: parseFloat(formData.wholesale_price) || 0,
         retail_price: parseFloat(formData.retail_price) || 0,
-        quantity: parseInt(formData.quantity) || 0,
+        quantity: 0, // الكمية تبدأ من 0 وتزيد فقط من خلال عمليات الشراء
         image_url: formData.image_url,
         barcode: formData.barcode,
         family_id: formData.family_id || null,
