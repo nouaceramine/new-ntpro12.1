@@ -31,6 +31,7 @@ import PurchasesPage from "./pages/PurchasesPage";
 import WarehousesPage from "./pages/WarehousesPage";
 import InventoryCountPage from "./pages/InventoryCountPage";
 import BarcodePrintPage from "./pages/BarcodePrintPage";
+import DailySessionsPage from "./pages/DailySessionsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -285,6 +286,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute adminOnly>
             <BulkPriceUpdatePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/daily-sessions"
+        element={
+          <ProtectedRoute adminOnly>
+            <DailySessionsPage />
           </ProtectedRoute>
         }
       />
