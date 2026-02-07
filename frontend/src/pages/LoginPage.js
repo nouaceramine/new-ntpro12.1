@@ -59,7 +59,7 @@ export default function LoginPage() {
   };
 
   const displayName = branding.business_name || t.appName;
-  const backgroundImage = branding.background_url || 'https://images.unsplash.com/photo-1758631279366-8e8aeaf94082?crop=entropy&cs=srgb&fm=jpg&q=85';
+  const backgroundImage = branding.background_image_url || branding.background_url || 'https://images.unsplash.com/photo-1758631279366-8e8aeaf94082?crop=entropy&cs=srgb&fm=jpg&q=85';
 
   return (
     <div className="min-h-screen flex" dir={isRTL ? 'rtl' : 'ltr'}>
