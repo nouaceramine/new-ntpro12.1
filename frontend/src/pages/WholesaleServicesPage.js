@@ -230,7 +230,7 @@ export default function WholesaleServicesPage() {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Link to="/services/flexy-wholesale">
+              <Link to="/services/flexy">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-4 text-center">
                     <Smartphone className="h-8 w-8 mx-auto text-orange-500 mb-2" />
@@ -238,7 +238,7 @@ export default function WholesaleServicesPage() {
                   </CardContent>
                 </Card>
               </Link>
-              <Link to="/services/card-orders">
+              <Link to="/services/cards">
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-4 text-center">
                     <CreditCard className="h-8 w-8 mx-auto text-blue-500 mb-2" />
