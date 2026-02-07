@@ -333,11 +333,15 @@ export default function POSPage() {
       removeFromCart(productId);
       return;
     }
-    // Only check stock for existing products, not custom items
+    
+    // Show warning if stock will be negative, but allow it
     if (product && newQty > product.quantity) {
-      toast.error(t.outOfStock);
-      return;
+      const negativeStock = product.quantity - newQty;
+      toast.warning(language === 'ar' 
+        ? `تنبيه: المخزون سيصبح سالب (${negativeStock})` 
+        : `Attention: Stock sera négatif (${negativeStock})`);
     }
+    
     setCart(cart.map(item => {
       if (item.product_id === productId) {
         return { ...item, quantity: newQty, total: newQty * item.unit_price - item.discount };
