@@ -1422,10 +1422,20 @@ export default function POSPage() {
                 {t.cancel}
               </Button>
               <Button 
-                onClick={handleAddCustomer} 
+                variant="outline"
+                onClick={() => handleAddCustomer(true)} 
                 disabled={savingCustomer || !newCustomerData.name || (newCustomerData.phone && blacklist.some(b => b.phone === newCustomerData.phone))}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="gap-2"
               >
+                <PlusCircle className="h-4 w-4" />
+                {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer nouveau'}
+              </Button>
+              <Button 
+                onClick={() => handleAddCustomer(false)} 
+                disabled={savingCustomer || !newCustomerData.name || (newCustomerData.phone && blacklist.some(b => b.phone === newCustomerData.phone))}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
                 {savingCustomer ? (language === 'ar' ? 'جاري الحفظ...' : 'Enregistrement...') : (language === 'ar' ? 'حفظ' : 'Enregistrer')}
               </Button>
             </div>
