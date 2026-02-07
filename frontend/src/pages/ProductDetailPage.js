@@ -290,7 +290,7 @@ export default function ProductDetailPage() {
                       <span className="text-sm font-medium">{t.price}</span>
                     </div>
                     <p className="text-2xl font-bold text-primary">
-                      ${(product.price ?? 0).toFixed(2)}
+                      {(product.retail_price ?? product.price ?? 0).toFixed(2)} {t.currency}
                     </p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50 border">
