@@ -138,6 +138,72 @@ export default function DashboardPage() {
           ))}
         </div>
 
+        {/* Sales Summary - Today/Month/Year */}
+        {isAdmin && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-emerald-600" />
+                {language === 'ar' ? 'ملخص المبيعات' : 'Résumé des ventes'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Today */}
+                <div className="p-6 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Calendar className="h-5 w-5 text-emerald-600" />
+                    <span className="font-medium text-emerald-700">
+                      {language === 'ar' ? 'اليوم' : 'Aujourd\'hui'}
+                    </span>
+                  </div>
+                  <p className="text-3xl font-bold text-emerald-700">
+                    {salesStats.today.total.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-emerald-600">{t.currency}</p>
+                  <Badge className="mt-2 bg-emerald-500">
+                    {salesStats.today.count} {language === 'ar' ? 'عملية' : 'ventes'}
+                  </Badge>
+                </div>
+
+                {/* This Month */}
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <CalendarDays className="h-5 w-5 text-blue-600" />
+                    <span className="font-medium text-blue-700">
+                      {language === 'ar' ? 'هذا الشهر' : 'Ce mois'}
+                    </span>
+                  </div>
+                  <p className="text-3xl font-bold text-blue-700">
+                    {salesStats.month.total.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-blue-600">{t.currency}</p>
+                  <Badge className="mt-2 bg-blue-500">
+                    {salesStats.month.count} {language === 'ar' ? 'عملية' : 'ventes'}
+                  </Badge>
+                </div>
+
+                {/* This Year */}
+                <div className="p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <TrendingUp className="h-5 w-5 text-purple-600" />
+                    <span className="font-medium text-purple-700">
+                      {language === 'ar' ? 'هذه السنة' : 'Cette année'}
+                    </span>
+                  </div>
+                  <p className="text-3xl font-bold text-purple-700">
+                    {salesStats.year.total.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-purple-600">{t.currency}</p>
+                  <Badge className="mt-2 bg-purple-500">
+                    {salesStats.year.count} {language === 'ar' ? 'عملية' : 'ventes'}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Cash Boxes (Admin) */}
         {isAdmin && stats.cash_boxes?.length > 0 && (
           <Card>
