@@ -1083,6 +1083,80 @@ export default function POSPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* New Customer Dialog */}
+      <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              {language === 'ar' ? 'إضافة زبون جديد' : 'Ajouter un client'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>{language === 'ar' ? 'الاسم' : 'Nom'} *</Label>
+              <Input
+                value={newCustomerData.name}
+                onChange={(e) => setNewCustomerData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder={language === 'ar' ? 'اسم الزبون' : 'Nom du client'}
+                data-testid="new-customer-name"
+              />
+            </div>
+
+            <div>
+              <Label>{language === 'ar' ? 'رقم الهاتف' : 'Téléphone'}</Label>
+              <Input
+                type="tel"
+                value={newCustomerData.phone}
+                onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="05XX XXX XXX"
+                dir="ltr"
+              />
+            </div>
+
+            <div>
+              <Label>{language === 'ar' ? 'البريد الإلكتروني' : 'Email'}</Label>
+              <Input
+                type="email"
+                value={newCustomerData.email}
+                onChange={(e) => setNewCustomerData(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="email@example.com"
+                dir="ltr"
+              />
+            </div>
+
+            <div>
+              <Label>{language === 'ar' ? 'العنوان' : 'Adresse'}</Label>
+              <Input
+                value={newCustomerData.address}
+                onChange={(e) => setNewCustomerData(prev => ({ ...prev, address: e.target.value }))}
+                placeholder={language === 'ar' ? 'عنوان الزبون' : 'Adresse du client'}
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowNewCustomerDialog(false);
+                  setNewCustomerData({ name: '', phone: '', email: '', address: '' });
+                }} 
+                className="flex-1"
+              >
+                {t.cancel}
+              </Button>
+              <Button 
+                onClick={handleAddCustomer} 
+                disabled={savingCustomer || !newCustomerData.name}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {savingCustomer ? (language === 'ar' ? 'جاري الحفظ...' : 'Enregistrement...') : (language === 'ar' ? 'حفظ' : 'Enregistrer')}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
