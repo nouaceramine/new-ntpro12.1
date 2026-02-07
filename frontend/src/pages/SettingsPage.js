@@ -78,6 +78,12 @@ export default function SettingsPage() {
   // Permissions
   const [selectedUser, setSelectedUser] = useState(null);
   const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
+  
+  // Password Change
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordUser, setPasswordUser] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
   const [userPermissions, setUserPermissions] = useState({});
   const [savingPermissions, setSavingPermissions] = useState(false);
   
