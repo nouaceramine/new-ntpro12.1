@@ -435,12 +435,18 @@ export default function SettingsPage() {
                         <TableCell>{u.email}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${
-                            u.role === 'admin' ? 'bg-red-100 text-red-700' :
-                            u.role === 'manager' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-700'
+                            u.role === 'admin' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            u.role === 'manager' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                            u.role === 'seller' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                            u.role === 'ecommerce_manager' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                            u.role === 'accountant' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                            'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
                           }`}>
                             {u.role === 'admin' ? (language === 'ar' ? 'مدير' : 'Admin') :
                              u.role === 'manager' ? (language === 'ar' ? 'مشرف' : 'Manager') :
+                             u.role === 'seller' ? (language === 'ar' ? 'بائع' : 'Vendeur') :
+                             u.role === 'ecommerce_manager' ? (language === 'ar' ? 'مسؤول متجر إلكتروني' : 'E-commerce') :
+                             u.role === 'accountant' ? (language === 'ar' ? 'محاسب' : 'Comptable') :
                              (language === 'ar' ? 'مستخدم' : 'User')}
                           </span>
                         </TableCell>
