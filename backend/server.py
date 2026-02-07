@@ -803,6 +803,21 @@ async def delete_user(user_id: str, admin: dict = Depends(get_admin_user)):
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User deleted successfully"}
 
+@api_router.put("/users/{user_id}/password")
+async def update_user_password(user_id: str, password_data: PasswordUpdate, admin: dict = Depends(get_admin_user)):
+    """Update user password (admin only)"""
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if len(password_data.new_password) < 4:
+        raise HTTPException(status_code=400, detail="كلمة المرور يجب أن تكون 4 أحرف على الأقل")
+    
+    hashed = hash_password(password_data.new_password)
+    await db.users.update_one({"id": user_id}, {"$set": {"password": hashed}})
+    
+    return {"message": "تم تحديث كلمة المرور بنجاح"}
+
 # ============ PRODUCT ROUTES ============
 
 @api_router.post("/products", response_model=ProductResponse)
