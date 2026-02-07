@@ -185,9 +185,142 @@ export default function PurchasesPage() {
         product_name: language === 'ar' ? product.name_ar : product.name_en,
         quantity: 1,
         unit_price: product.purchase_price || product.price || 0,
-        total: product.purchase_price || product.price || 0
+        total: product.purchase_price || product.price || 0,
+        // Store original prices for comparison
+        originalPurchasePrice: product.purchase_price || 0,
+        wholesalePrice: product.wholesale_price || 0,
+        retailPrice: product.retail_price || 0,
+        newWholesalePrice: product.wholesale_price || 0,
+        newRetailPrice: product.retail_price || 0,
+        updatePrices: false,
+        productImage: product.image || null
       }]);
     }
+  };
+
+  // Open edit prices dialog
+  const openEditPricesDialog = (item) => {
+    const product = products.find(p => p.id === item.product_id);
+    setEditingProduct({ ...item, fullProduct: product });
+    setEditPricesData({
+      newPurchasePrice: item.unit_price,
+      wholesalePrice: item.newWholesalePrice || item.wholesalePrice || 0,
+      retailPrice: item.newRetailPrice || item.retailPrice || 0,
+      margin: 30,
+      updateProductPrices: item.updatePrices || false,
+      image: null,
+      imagePreview: product?.image || item.productImage || null
+    });
+    setShowEditPricesDialog(true);
+  };
+
+  // Calculate prices based on margin
+  const calculatePricesFromMargin = (purchasePrice, margin) => {
+    const retailPrice = purchasePrice * (1 + margin / 100);
+    const wholesalePrice = purchasePrice * (1 + (margin * 0.7) / 100); // Wholesale margin is 70% of retail margin
+    return { wholesalePrice, retailPrice };
+  };
+
+  // Handle purchase price change with auto-calculation
+  const handlePurchasePriceChange = (newPrice) => {
+    const prices = calculatePricesFromMargin(newPrice, editPricesData.margin);
+    setEditPricesData(prev => ({
+      ...prev,
+      newPurchasePrice: newPrice,
+      wholesalePrice: Math.round(prices.wholesalePrice * 100) / 100,
+      retailPrice: Math.round(prices.retailPrice * 100) / 100
+    }));
+  };
+
+  // Handle margin change with auto-calculation
+  const handleMarginChange = (newMargin) => {
+    const prices = calculatePricesFromMargin(editPricesData.newPurchasePrice, newMargin);
+    setEditPricesData(prev => ({
+      ...prev,
+      margin: newMargin,
+      wholesalePrice: Math.round(prices.wholesalePrice * 100) / 100,
+      retailPrice: Math.round(prices.retailPrice * 100) / 100
+    }));
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Preview
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setEditPricesData(prev => ({
+        ...prev,
+        imagePreview: event.target.result,
+        image: file
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Save edited prices
+  const saveEditedPrices = async () => {
+    if (!editingProduct) return;
+
+    // Update cart item
+    setCart(cart.map(item => {
+      if (item.product_id === editingProduct.product_id) {
+        return {
+          ...item,
+          unit_price: editPricesData.newPurchasePrice,
+          total: item.quantity * editPricesData.newPurchasePrice,
+          newWholesalePrice: editPricesData.wholesalePrice,
+          newRetailPrice: editPricesData.retailPrice,
+          updatePrices: editPricesData.updateProductPrices,
+          productImage: editPricesData.imagePreview
+        };
+      }
+      return item;
+    }));
+
+    // If updateProductPrices is true, update the product in database
+    if (editPricesData.updateProductPrices) {
+      try {
+        const token = localStorage.getItem('token');
+        const updateData = {
+          purchase_price: editPricesData.newPurchasePrice,
+          wholesale_price: editPricesData.wholesalePrice,
+          retail_price: editPricesData.retailPrice
+        };
+
+        // Upload image if changed
+        if (editPricesData.image) {
+          setUploadingImage(true);
+          const formData = new FormData();
+          formData.append('file', editPricesData.image);
+          
+          const uploadRes = await axios.post(`${API}/upload/image`, formData, {
+            headers: { 
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          updateData.image = uploadRes.data.url;
+        }
+
+        await axios.put(`${API}/products/${editingProduct.product_id}`, updateData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        toast.success(language === 'ar' ? 'تم تحديث أسعار المنتج' : 'Prix du produit mis à jour');
+        fetchData(); // Refresh products
+      } catch (error) {
+        console.error('Error updating product:', error);
+        toast.error(language === 'ar' ? 'خطأ في تحديث المنتج' : 'Erreur de mise à jour');
+      } finally {
+        setUploadingImage(false);
+      }
+    }
+
+    setShowEditPricesDialog(false);
+    setEditingProduct(null);
   };
 
   const updateQuantity = (productId, delta) => {
