@@ -280,8 +280,15 @@ export default function CustomerFamiliesPage() {
                 <Button variant="outline" onClick={() => setShowDialog(false)}>
                   {t.cancel}
                 </Button>
-                <Button onClick={handleSave} data-testid="save-family-btn">
-                  {editingFamily ? t.save : (language === 'ar' ? 'إضافة' : 'Ajouter')}
+                {!editingFamily && (
+                  <Button variant="outline" onClick={() => handleSave(true)} className="gap-2" data-testid="save-and-new-family-btn">
+                    <PlusCircle className="h-4 w-4" />
+                    {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer nouveau'}
+                  </Button>
+                )}
+                <Button onClick={() => handleSave(false)} className="gap-2" data-testid="save-family-btn">
+                  <Save className="h-4 w-4" />
+                  {editingFamily ? t.save : (language === 'ar' ? 'حفظ' : 'Enregistrer')}
                 </Button>
               </div>
             </div>
