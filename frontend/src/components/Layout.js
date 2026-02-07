@@ -455,6 +455,20 @@ export const Layout = ({ children }) => {
                 عربي
               </button>
             </div>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              data-testid="theme-toggle-btn"
+              title={isDark ? (language === 'ar' ? 'الوضع الفاتح' : 'Mode clair') : (language === 'ar' ? 'الوضع المظلم' : 'Mode sombre')}
+            >
+              {isDark ? (
+                <Sun className="h-5 w-5 text-amber-500" />
+              ) : (
+                <Moon className="h-5 w-5 text-slate-600" />
+              )}
+            </button>
           </div>
         </header>
 
