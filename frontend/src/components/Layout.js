@@ -170,8 +170,25 @@ export const Layout = ({ children }) => {
       icon: Smartphone,
       items: [
         { path: '/recharge', icon: Smartphone, label: t.recharge },
+        ...(isAdmin ? [
+          { path: '/sim-management', icon: Zap, label: language === 'ar' ? 'إدارة الشرائح' : 'Gestion SIM' },
+        ] : [])
       ]
     },
+    ...(isAdmin ? [{
+      title: 'WooCommerce',
+      icon: Store,
+      items: [
+        { path: '/woocommerce', icon: Store, label: 'WooCommerce' },
+      ]
+    }] : []),
+    ...(isAdmin ? [{
+      title: language === 'ar' ? 'التوصيل' : 'Livraison',
+      icon: Truck,
+      items: [
+        { path: '/shipping', icon: Truck, label: language === 'ar' ? 'شركات الشحن' : 'Transporteurs' },
+      ]
+    }] : []),
     ...(isAdmin ? [{
       title: language === 'ar' ? 'الإدارة' : 'Administration',
       icon: Settings,
