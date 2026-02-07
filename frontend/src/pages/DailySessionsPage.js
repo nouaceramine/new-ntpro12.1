@@ -80,6 +80,8 @@ export default function DailySessionsPage() {
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showClosingReport, setShowClosingReport] = useState(false);
+  const [closingReport, setClosingReport] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
   
   // Form
