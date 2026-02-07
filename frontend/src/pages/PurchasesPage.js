@@ -82,6 +82,16 @@ export default function PurchasesPage() {
   const [selectedDebt, setSelectedDebt] = useState(null);
   const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
   const [activeTab, setActiveTab] = useState('purchases');
+  
+  // New supplier dialog
+  const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
+  const [newSupplierData, setNewSupplierData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: ''
+  });
+  const [addingSupplier, setAddingSupplier] = useState(false);
 
   useEffect(() => {
     fetchData();
