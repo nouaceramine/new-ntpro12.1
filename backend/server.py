@@ -5791,8 +5791,6 @@ async def update_whatsapp_settings(settings: WhatsAppSettings, user: dict = Depe
 @api_router.post("/whatsapp/send")
 async def send_whatsapp_message(message: WhatsAppMessage, user: dict = Depends(get_current_user)):
     """Send a WhatsApp message"""
-    import requests
-    
     settings = await db.whatsapp_settings.find_one({}, {"_id": 0})
     if not settings or not settings.get("enabled"):
         raise HTTPException(status_code=400, detail="WhatsApp غير مفعل")
@@ -5823,7 +5821,7 @@ async def send_whatsapp_message(message: WhatsAppMessage, user: dict = Depends(g
     }
     
     try:
-        response = requests.post(url, json=payload, headers=headers)
+        response = http_requests.post(url, json=payload, headers=headers)
         
         # Log the message
         await db.whatsapp_logs.insert_one({
