@@ -266,15 +266,16 @@ export default function SparePartsPage() {
     setEditingPart(part);
     setFormData({
       name: part.name,
-      name_fr: part.name_fr || '',
+      name_ar: part.name_ar || part.name_fr || '',
       category: part.category,
-      brand: part.brand,
-      compatible_models: part.compatible_models.join(', '),
-      purchase_price: part.purchase_price.toString(),
-      sell_price: part.sell_price.toString(),
-      quantity: part.quantity.toString(),
-      low_stock_threshold: part.low_stock_threshold.toString(),
+      compatible_brands: part.compatible_brands || [part.brand],
+      compatible_models: Array.isArray(part.compatible_models) ? part.compatible_models.join(', ') : part.compatible_models || '',
+      buy_price: (part.buy_price || part.purchase_price || '').toString(),
+      sell_price: (part.sell_price || '').toString(),
+      quantity: (part.quantity || '').toString(),
+      min_stock: (part.min_stock || part.low_stock_threshold || '5').toString(),
       supplier: part.supplier || '',
+      notes: part.notes || '',
     });
     setShowAddDialog(true);
   };
