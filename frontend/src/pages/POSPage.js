@@ -581,7 +581,7 @@ export default function POSPage() {
       return;
     }
 
-    if (paymentType !== 'cash' && !selectedCustomer) {
+    if (salePaymentType !== 'cash' && !selectedCustomer) {
       toast.error(language === 'ar' ? 'يجب اختيار زبون للبيع بالدين' : 'Sélectionnez un client pour le crédit');
       return;
     }
@@ -604,9 +604,9 @@ export default function POSPage() {
         subtotal,
         discount,
         total: subtotal - discount,
-        paid_amount: paymentType === 'credit' ? 0 : (paidAmount || total),
-        payment_method: paymentMethod,
-        payment_type: paymentType,
+        paid_amount: salePaymentType === 'credit' ? 0 : salePaidAmount,
+        payment_method: salePaymentMethod,
+        payment_type: salePaymentType,
         notes: '',
         delivery: deliveryEnabled ? {
           enabled: true,
@@ -625,7 +625,7 @@ export default function POSPage() {
       toast.success(language === 'ar' ? 'تمت عملية البيع بنجاح' : 'Vente effectuée avec succès');
       
       // Update debt reminders if sale was on credit
-      if (paymentType === 'credit' || paymentType === 'partial') {
+      if (salePaymentType === 'credit' || salePaymentType === 'partial') {
         fetchDebtReminders();
       }
       
