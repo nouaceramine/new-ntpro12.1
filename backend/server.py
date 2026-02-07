@@ -3707,6 +3707,172 @@ async def delete_daily_session(session_id: str, admin: dict = Depends(get_admin_
     result = await db.daily_sessions.delete_one({"id": session_id})
     return {"message": "تم حذف الحصة بنجاح / Session supprimée"}
 
+# ============ CUSTOMER & SUPPLIER FAMILIES ============
+
+class CustomerFamilyCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+
+class CustomerFamilyUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+class CustomerFamilyResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    description: str
+    customer_count: int = 0
+    created_at: str
+
+class SupplierFamilyCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+
+class SupplierFamilyUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+class SupplierFamilyResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    description: str
+    supplier_count: int = 0
+    created_at: str
+
+# Customer Families CRUD
+@api_router.post("/customer-families", response_model=CustomerFamilyResponse)
+async def create_customer_family(family: CustomerFamilyCreate, admin: dict = Depends(get_admin_user)):
+    family_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    family_doc = {
+        "id": family_id,
+        "name": family.name,
+        "description": family.description or "",
+        "customer_count": 0,
+        "created_at": now
+    }
+    
+    await db.customer_families.insert_one(family_doc)
+    return CustomerFamilyResponse(**family_doc)
+
+@api_router.get("/customer-families", response_model=List[CustomerFamilyResponse])
+async def get_customer_families(user: dict = Depends(get_current_user)):
+    families = await db.customer_families.find({}, {"_id": 0}).to_list(100)
+    
+    # Update customer counts
+    for family in families:
+        count = await db.customers.count_documents({"family_id": family["id"]})
+        family["customer_count"] = count
+    
+    return [CustomerFamilyResponse(**f) for f in families]
+
+@api_router.get("/customer-families/{family_id}", response_model=CustomerFamilyResponse)
+async def get_customer_family(family_id: str, user: dict = Depends(get_current_user)):
+    family = await db.customer_families.find_one({"id": family_id}, {"_id": 0})
+    if not family:
+        raise HTTPException(status_code=404, detail="عائلة الزبائن غير موجودة")
+    
+    count = await db.customers.count_documents({"family_id": family_id})
+    family["customer_count"] = count
+    
+    return CustomerFamilyResponse(**family)
+
+@api_router.put("/customer-families/{family_id}", response_model=CustomerFamilyResponse)
+async def update_customer_family(family_id: str, updates: CustomerFamilyUpdate, admin: dict = Depends(get_admin_user)):
+    family = await db.customer_families.find_one({"id": family_id})
+    if not family:
+        raise HTTPException(status_code=404, detail="عائلة الزبائن غير موجودة")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    if update_data:
+        await db.customer_families.update_one({"id": family_id}, {"$set": update_data})
+    
+    updated = await db.customer_families.find_one({"id": family_id}, {"_id": 0})
+    count = await db.customers.count_documents({"family_id": family_id})
+    updated["customer_count"] = count
+    
+    return CustomerFamilyResponse(**updated)
+
+@api_router.delete("/customer-families/{family_id}")
+async def delete_customer_family(family_id: str, admin: dict = Depends(get_admin_user)):
+    count = await db.customers.count_documents({"family_id": family_id})
+    if count > 0:
+        raise HTTPException(status_code=400, detail=f"لا يمكن حذف عائلة بها {count} زبون")
+    
+    result = await db.customer_families.delete_one({"id": family_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="عائلة الزبائن غير موجودة")
+    return {"message": "تم حذف عائلة الزبائن بنجاح"}
+
+# Supplier Families CRUD
+@api_router.post("/supplier-families", response_model=SupplierFamilyResponse)
+async def create_supplier_family(family: SupplierFamilyCreate, admin: dict = Depends(get_admin_user)):
+    family_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    family_doc = {
+        "id": family_id,
+        "name": family.name,
+        "description": family.description or "",
+        "supplier_count": 0,
+        "created_at": now
+    }
+    
+    await db.supplier_families.insert_one(family_doc)
+    return SupplierFamilyResponse(**family_doc)
+
+@api_router.get("/supplier-families", response_model=List[SupplierFamilyResponse])
+async def get_supplier_families(user: dict = Depends(get_current_user)):
+    families = await db.supplier_families.find({}, {"_id": 0}).to_list(100)
+    
+    # Update supplier counts
+    for family in families:
+        count = await db.suppliers.count_documents({"family_id": family["id"]})
+        family["supplier_count"] = count
+    
+    return [SupplierFamilyResponse(**f) for f in families]
+
+@api_router.get("/supplier-families/{family_id}", response_model=SupplierFamilyResponse)
+async def get_supplier_family(family_id: str, user: dict = Depends(get_current_user)):
+    family = await db.supplier_families.find_one({"id": family_id}, {"_id": 0})
+    if not family:
+        raise HTTPException(status_code=404, detail="عائلة الموردين غير موجودة")
+    
+    count = await db.suppliers.count_documents({"family_id": family_id})
+    family["supplier_count"] = count
+    
+    return SupplierFamilyResponse(**family)
+
+@api_router.put("/supplier-families/{family_id}", response_model=SupplierFamilyResponse)
+async def update_supplier_family(family_id: str, updates: SupplierFamilyUpdate, admin: dict = Depends(get_admin_user)):
+    family = await db.supplier_families.find_one({"id": family_id})
+    if not family:
+        raise HTTPException(status_code=404, detail="عائلة الموردين غير موجودة")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    if update_data:
+        await db.supplier_families.update_one({"id": family_id}, {"$set": update_data})
+    
+    updated = await db.supplier_families.find_one({"id": family_id}, {"_id": 0})
+    count = await db.suppliers.count_documents({"family_id": family_id})
+    updated["supplier_count"] = count
+    
+    return SupplierFamilyResponse(**updated)
+
+@api_router.delete("/supplier-families/{family_id}")
+async def delete_supplier_family(family_id: str, admin: dict = Depends(get_admin_user)):
+    count = await db.suppliers.count_documents({"family_id": family_id})
+    if count > 0:
+        raise HTTPException(status_code=400, detail=f"لا يمكن حذف عائلة بها {count} مورد")
+    
+    result = await db.supplier_families.delete_one({"id": family_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="عائلة الموردين غير موجودة")
+    return {"message": "تم حذف عائلة الموردين بنجاح"}
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
