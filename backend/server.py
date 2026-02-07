@@ -1012,24 +1012,46 @@ async def create_customer(customer: CustomerCreate, user: dict = Depends(get_cur
     customer_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
+    # Get family name if exists
+    family_name = ""
+    if customer.family_id:
+        family = await db.customer_families.find_one({"id": customer.family_id}, {"_id": 0, "name": 1})
+        if family:
+            family_name = family["name"]
+    
     customer_doc = {
         "id": customer_id, "name": customer.name,
         "phone": customer.phone or "", "email": customer.email or "",
         "address": customer.address or "", "notes": customer.notes or "",
+        "family_id": customer.family_id or "", "family_name": family_name,
         "total_purchases": 0, "balance": 0, "created_at": now
     }
     await db.customers.insert_one(customer_doc)
     return CustomerResponse(**customer_doc)
 
 @api_router.get("/customers", response_model=List[CustomerResponse])
-async def get_customers(search: Optional[str] = None, user: dict = Depends(get_current_user)):
+async def get_customers(search: Optional[str] = None, family_id: Optional[str] = None, user: dict = Depends(get_current_user)):
     query = {}
     if search:
         query["$or"] = [
             {"name": {"$regex": search, "$options": "i"}},
             {"phone": {"$regex": search, "$options": "i"}}
         ]
+    if family_id:
+        query["family_id"] = family_id
+    
     customers = await db.customers.find(query, {"_id": 0}).to_list(1000)
+    
+    # Add family names for customers without them
+    for customer in customers:
+        if customer.get("family_id") and not customer.get("family_name"):
+            family = await db.customer_families.find_one({"id": customer["family_id"]}, {"_id": 0, "name": 1})
+            customer["family_name"] = family["name"] if family else ""
+        elif not customer.get("family_name"):
+            customer["family_name"] = ""
+        if not customer.get("family_id"):
+            customer["family_id"] = ""
+    
     return [CustomerResponse(**c) for c in customers]
 
 @api_router.get("/customers/{customer_id}", response_model=CustomerResponse)
@@ -1037,6 +1059,16 @@ async def get_customer(customer_id: str, user: dict = Depends(get_current_user))
     customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
+    
+    # Add family name
+    if customer.get("family_id") and not customer.get("family_name"):
+        family = await db.customer_families.find_one({"id": customer["family_id"]}, {"_id": 0, "name": 1})
+        customer["family_name"] = family["name"] if family else ""
+    elif not customer.get("family_name"):
+        customer["family_name"] = ""
+    if not customer.get("family_id"):
+        customer["family_id"] = ""
+    
     return CustomerResponse(**customer)
 
 @api_router.put("/customers/{customer_id}", response_model=CustomerResponse)
@@ -1044,10 +1076,26 @@ async def update_customer(customer_id: str, updates: CustomerUpdate, user: dict 
     customer = await db.customers.find_one({"id": customer_id})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
+    
     update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    
+    # Update family name if family_id changed
+    if "family_id" in update_data:
+        if update_data["family_id"]:
+            family = await db.customer_families.find_one({"id": update_data["family_id"]}, {"_id": 0, "name": 1})
+            update_data["family_name"] = family["name"] if family else ""
+        else:
+            update_data["family_name"] = ""
+    
     if update_data:
         await db.customers.update_one({"id": customer_id}, {"$set": update_data})
+    
     updated = await db.customers.find_one({"id": customer_id}, {"_id": 0})
+    if not updated.get("family_id"):
+        updated["family_id"] = ""
+    if not updated.get("family_name"):
+        updated["family_name"] = ""
+    
     return CustomerResponse(**updated)
 
 @api_router.delete("/customers/{customer_id}")
