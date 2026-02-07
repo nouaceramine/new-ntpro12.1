@@ -287,6 +287,122 @@ export default function RepairTrackingPage() {
     }
   };
 
+  // Print repair receipt
+  const printRepairReceipt = (repair) => {
+    const statusInfo = getStatusInfo(repair.status);
+    const printWindow = window.open('', '_blank');
+    
+    const receiptHTML = `
+      <!DOCTYPE html>
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8">
+        <title>إيصال الصيانة - ${repair.ticket_number}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; max-width: 80mm; margin: 0 auto; }
+          .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 15px; margin-bottom: 15px; }
+          .logo { font-size: 24px; font-weight: bold; color: #3b82f6; }
+          .title { font-size: 14px; margin-top: 5px; }
+          .ticket-number { font-size: 20px; font-weight: bold; background: #f3f4f6; padding: 10px; text-align: center; margin: 15px 0; border-radius: 8px; }
+          .section { margin-bottom: 15px; }
+          .section-title { font-size: 12px; font-weight: bold; color: #6b7280; margin-bottom: 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+          .row { display: flex; justify-content: space-between; font-size: 12px; margin: 5px 0; }
+          .row .label { color: #6b7280; }
+          .row .value { font-weight: 600; }
+          .device-info { background: #f9fafb; padding: 10px; border-radius: 8px; margin: 10px 0; }
+          .status { display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; margin: 10px 0; }
+          .status-received { background: #dbeafe; color: #1d4ed8; }
+          .status-in_progress { background: #fef3c7; color: #d97706; }
+          .status-completed { background: #dcfce7; color: #16a34a; }
+          .costs { background: #fef2f2; padding: 10px; border-radius: 8px; margin: 15px 0; }
+          .total-row { font-size: 16px; font-weight: bold; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #000; }
+          .footer { text-align: center; font-size: 10px; color: #6b7280; margin-top: 20px; padding-top: 15px; border-top: 2px dashed #000; }
+          .qr-placeholder { width: 80px; height: 80px; border: 1px solid #ccc; margin: 10px auto; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">NT</div>
+          <div class="title">إيصال استلام جهاز للصيانة</div>
+        </div>
+        
+        <div class="ticket-number">
+          ${repair.ticket_number}
+        </div>
+        
+        <div class="section">
+          <div class="section-title">معلومات العميل</div>
+          <div class="row"><span class="label">الاسم:</span><span class="value">${repair.customer_name}</span></div>
+          <div class="row"><span class="label">الهاتف:</span><span class="value">${repair.customer_phone}</span></div>
+          ${repair.customer_phone2 ? `<div class="row"><span class="label">هاتف 2:</span><span class="value">${repair.customer_phone2}</span></div>` : ''}
+        </div>
+        
+        <div class="section">
+          <div class="section-title">معلومات الجهاز</div>
+          <div class="device-info">
+            <div class="row"><span class="label">الماركة:</span><span class="value">${repair.device_brand}</span></div>
+            <div class="row"><span class="label">الموديل:</span><span class="value">${repair.device_model}</span></div>
+            ${repair.device_color ? `<div class="row"><span class="label">اللون:</span><span class="value">${repair.device_color}</span></div>` : ''}
+            ${repair.device_imei ? `<div class="row"><span class="label">IMEI:</span><span class="value">${repair.device_imei}</span></div>` : ''}
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="section-title">المشكلة</div>
+          <p style="font-size: 12px; line-height: 1.5;">${repair.problem_description || (repair.problems || []).join('، ') || 'غير محدد'}</p>
+        </div>
+        
+        ${repair.device_condition ? `
+        <div class="section">
+          <div class="section-title">حالة الجهاز عند الاستلام</div>
+          <p style="font-size: 11px; color: #666;">${repair.device_condition}</p>
+        </div>
+        ` : ''}
+        
+        ${repair.accessories ? `
+        <div class="section">
+          <div class="section-title">الملحقات المستلمة</div>
+          <p style="font-size: 11px;">${repair.accessories}</p>
+        </div>
+        ` : ''}
+        
+        <div style="text-align: center;">
+          <div class="status status-${repair.status}">${statusInfo?.label || repair.status}</div>
+        </div>
+        
+        <div class="costs">
+          <div class="section-title" style="color: #991b1b;">التكلفة والدفع</div>
+          <div class="row"><span class="label">التكلفة المقدرة:</span><span class="value">${repair.estimated_cost || 0} دج</span></div>
+          <div class="row"><span class="label">الدفعة المقدمة:</span><span class="value">${repair.advance_payment || 0} دج</span></div>
+          ${repair.final_cost ? `<div class="row"><span class="label">التكلفة النهائية:</span><span class="value">${repair.final_cost} دج</span></div>` : ''}
+          <div class="total-row">
+            <div class="row"><span class="label">المتبقي:</span><span class="value">${(repair.final_cost || repair.estimated_cost || 0) - (repair.advance_payment || 0)} دج</span></div>
+          </div>
+        </div>
+        
+        <div class="section">
+          <div class="row"><span class="label">المدة المتوقعة:</span><span class="value">${repair.estimated_days || 1} أيام</span></div>
+          <div class="row"><span class="label">تاريخ الاستلام:</span><span class="value">${new Date(repair.created_at).toLocaleDateString('ar-DZ')}</span></div>
+        </div>
+        
+        <div class="footer">
+          <div class="qr-placeholder">${repair.ticket_number}</div>
+          <p>شكراً لثقتكم بنا</p>
+          <p style="margin-top: 5px;">يرجى الاحتفاظ بهذا الإيصال لاستلام الجهاز</p>
+          <p style="margin-top: 10px; font-size: 9px;">NT POS System</p>
+        </div>
+        
+        <script>window.onload = function() { window.print(); }</script>
+      </body>
+      </html>
+    `;
+    
+    printWindow.document.write(receiptHTML);
+    printWindow.document.close();
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in" data-testid="repair-tracking-page">
