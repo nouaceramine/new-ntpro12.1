@@ -33,7 +33,10 @@ import {
   DollarSign,
   ShoppingBag,
   BarChart3,
-  ChevronDown
+  ChevronDown,
+  Warehouse,
+  ClipboardList,
+  Barcode
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
