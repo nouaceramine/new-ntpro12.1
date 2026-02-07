@@ -162,6 +162,18 @@ export default function ExpensesPage() {
       toast.success(language === 'ar' ? 'تم حذف التكلفة' : 'Dépense supprimée');
       fetchExpenses();
       fetchStats();
+      fetchReminders();
+    } catch (error) {
+      toast.error(t.somethingWentWrong);
+    }
+  };
+
+  const handleMarkPaid = async (expenseId) => {
+    try {
+      await axios.post(`${API}/expenses/${expenseId}/mark-paid`);
+      toast.success(language === 'ar' ? 'تم تسجيل الدفع' : 'Paiement enregistré');
+      fetchReminders();
+      fetchExpenses();
     } catch (error) {
       toast.error(t.somethingWentWrong);
     }
