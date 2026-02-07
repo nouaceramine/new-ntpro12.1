@@ -36,7 +36,7 @@ import {
   ChevronDown,
   Warehouse,
   ClipboardList,
-  Barcode
+  QrCode
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
