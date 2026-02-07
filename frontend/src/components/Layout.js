@@ -36,7 +36,8 @@ import {
   ChevronDown,
   Warehouse,
   ClipboardList,
-  QrCode
+  QrCode,
+  Clock
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -137,6 +138,8 @@ export const Layout = ({ children }) => {
       title: language === 'ar' ? 'المالية' : 'Finances',
       icon: Wallet,
       items: [
+        { path: '/pos', icon: ShoppingCart, label: t.pos },
+        { path: '/daily-sessions', icon: Clock, label: language === 'ar' ? 'حصص البيع اليومية' : 'Sessions journalières' },
         { path: '/sales', icon: Receipt, label: t.sales },
         { path: '/purchases', icon: ShoppingBag, label: t.purchases },
         ...(isAdmin ? [
