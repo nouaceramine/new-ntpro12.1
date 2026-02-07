@@ -197,9 +197,48 @@ POST   /api/woocommerce/sync-inventory
 - تفعيل إعدادات الطابعة الفعلية
 - طباعة ملصقات الباركود للطابعات الحرارية
 
-## التغييرات الأخيرة (2026-02-07)
+## التغييرات الأخيرة (2026-02-09)
 
-### الميزات الجديدة:
+### وحدة صيانة الهواتف النقالة ✅ جديد
+تم إنشاء نظام متكامل لإدارة صيانة الهواتف يشمل:
+
+#### الصفحات:
+| المسار | الوصف |
+|--------|-------|
+| `/repairs` | تتبع الصيانة - قائمة الطلبات مع الإحصائيات والبحث والفلترة |
+| `/repairs/new` | استقبال جهاز جديد - نموذج تسجيل كامل مع كل التفاصيل |
+| `/repairs/parts` | قطع الغيار - إدارة مخزون قطع الغيار مع تنبيهات المخزون المنخفض |
+
+#### APIs الصيانة:
+```
+GET    /api/repairs           - قائمة طلبات الصيانة
+POST   /api/repairs           - إنشاء طلب جديد
+GET    /api/repairs/stats     - إحصائيات الصيانة
+GET    /api/repairs/{id}      - تفاصيل طلب
+PUT    /api/repairs/{id}      - تحديث حالة الطلب
+DELETE /api/repairs/{id}      - حذف طلب
+```
+
+#### APIs قطع الغيار:
+```
+GET    /api/spare-parts       - قائمة قطع الغيار
+POST   /api/spare-parts       - إضافة قطعة جديدة
+GET    /api/spare-parts/stats - إحصائيات المخزون
+GET    /api/spare-parts/{id}  - تفاصيل قطعة
+PUT    /api/spare-parts/{id}  - تحديث قطعة
+DELETE /api/spare-parts/{id}  - حذف قطعة
+```
+
+#### حالات طلب الصيانة:
+- `received` - مستلم
+- `diagnosing` - قيد الفحص
+- `waiting_parts` - بانتظار القطع
+- `in_progress` - قيد الإصلاح
+- `completed` - تم الإصلاح
+- `delivered` - تم التسليم
+- `cancelled` - ملغي
+
+### الميزات السابقة (2026-02-07):
 - ✅ تخصيص صفحة تسجيل الدخول (تم تفعيلها)
 - ✅ صفحة الإحصائيات المتقدمة مع الرسوم البيانية
 - ✅ صفحة الولاء والتسويق مع 3 تبويبات
@@ -219,6 +258,11 @@ POST   /api/woocommerce/sync-inventory
 - ✅ إصلاح عرض السعر في صفحة المنتجات (retail_price بدلاً من price)
 - ✅ إصلاح تحميل بيانات الإحصائيات (معالجة هياكل البيانات المتداخلة)
 - ✅ إصلاح خطأ ObjectId في loyalty settings API
+- ✅ ربط صفحات الصيانة بالـ Backend APIs (تم إزالة البيانات الثابتة)
 
 ## الملفات الجديدة
 - `frontend/src/contexts/ThemeContext.js` - سياق إدارة الوضع المظلم
+- `frontend/src/pages/RepairTrackingPage.js` - صفحة تتبع الصيانة
+- `frontend/src/pages/RepairReceptionPage.js` - صفحة استقبال جهاز جديد
+- `frontend/src/pages/SparePartsPage.js` - صفحة قطع الغيار
+
