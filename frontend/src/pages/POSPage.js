@@ -702,15 +702,26 @@ export default function POSPage() {
               {/* Customer Selection */}
               <div className="flex items-center gap-2">
                 <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
-                  <SelectTrigger className="w-48 h-11" data-testid="customer-select">
-                    <User className="h-4 w-4 me-2 text-muted-foreground" />
+                  <SelectTrigger className={`w-48 h-11 ${selectedCustomerBlacklisted ? 'border-red-500 bg-red-50' : ''}`} data-testid="customer-select">
+                    {selectedCustomerBlacklisted ? (
+                      <Ban className="h-4 w-4 me-2 text-red-500" />
+                    ) : (
+                      <User className="h-4 w-4 me-2 text-muted-foreground" />
+                    )}
                     <SelectValue placeholder={t.selectCustomer} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
-                    {customers.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
+                    {customers.map(c => {
+                      const isBlacklisted = blacklist.some(b => b.phone === c.phone);
+                      return (
+                        <SelectItem key={c.id} value={c.id} className={isBlacklisted ? 'text-red-500 bg-red-50' : ''}>
+                          {isBlacklisted && <Ban className="h-3 w-3 inline me-1" />}
+                          {c.name}
+                          {c.total_debt > 0 && <span className="text-amber-600 ms-1">({formatCurrency(c.total_debt)})</span>}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
                 
@@ -725,7 +736,34 @@ export default function POSPage() {
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
+
+                {/* Debt Reminders Button */}
+                {debtReminders.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 relative"
+                    onClick={() => setShowDebtRemindersPanel(!showDebtRemindersPanel)}
+                    title={language === 'ar' ? 'تذكيرات الديون' : 'Rappels de dettes'}
+                  >
+                    <Bell className="h-4 w-4 text-amber-600" />
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {debtReminders.length}
+                    </span>
+                  </Button>
+                )}
               </div>
+
+              {/* Blacklist Warning */}
+              {selectedCustomerBlacklisted && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-red-100 border border-red-300 rounded-lg">
+                  <Ban className="h-5 w-5 text-red-600" />
+                  <span className="text-red-700 text-sm font-medium">
+                    {language === 'ar' ? 'تحذير: هذا الزبون في القائمة السوداء!' : 'Attention: Client sur liste noire!'}
+                    {blacklistReason && ` (${blacklistReason})`}
+                  </span>
+                </div>
+              )}
 
               {selectedCustomer && customerDebt > 0 && (
                 <Button
