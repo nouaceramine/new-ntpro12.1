@@ -450,6 +450,61 @@ export default function CustomersPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Blacklist Dialog */}
+        <Dialog open={blacklistDialogOpen} onOpenChange={setBlacklistDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-red-600">
+                <Ban className="h-5 w-5" />
+                {language === 'ar' ? 'إضافة للقائمة السوداء' : 'Ajouter à la liste noire'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="font-medium">{blacklistCustomer?.name}</p>
+                <p className="text-sm text-muted-foreground">{blacklistCustomer?.phone}</p>
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'سبب الحظر' : 'Raison du blocage'}</Label>
+                <Select value={blacklistReason} onValueChange={setBlacklistReason}>
+                  <SelectTrigger data-testid="blacklist-reason-select">
+                    <SelectValue placeholder={language === 'ar' ? 'اختر السبب' : 'Choisir la raison'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="عدم الدفع">{language === 'ar' ? 'عدم الدفع' : 'Non-paiement'}</SelectItem>
+                    <SelectItem value="سلوك سيء">{language === 'ar' ? 'سلوك سيء' : 'Mauvais comportement'}</SelectItem>
+                    <SelectItem value="احتيال">{language === 'ar' ? 'احتيال' : 'Fraude'}</SelectItem>
+                    <SelectItem value="إرجاع متكرر">{language === 'ar' ? 'إرجاع متكرر' : 'Retours fréquents'}</SelectItem>
+                    <SelectItem value="أخرى">{language === 'ar' ? 'أخرى' : 'Autre'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => { 
+                    setBlacklistDialogOpen(false); 
+                    setBlacklistReason(''); 
+                    setBlacklistCustomer(null); 
+                  }}
+                >
+                  {t.cancel}
+                </Button>
+                <Button 
+                  onClick={handleAddToBlacklist}
+                  className="bg-red-600 hover:bg-red-700 gap-2"
+                  disabled={!blacklistReason}
+                  data-testid="confirm-blacklist-btn"
+                >
+                  <Ban className="h-4 w-4" />
+                  {language === 'ar' ? 'تأكيد الحظر' : 'Confirmer le blocage'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
