@@ -161,6 +161,30 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/warehouses"
+        element={
+          <ProtectedRoute adminOnly>
+            <WarehousesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/inventory-count"
+        element={
+          <ProtectedRoute adminOnly>
+            <InventoryCountPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/barcode-print"
+        element={
+          <ProtectedRoute adminOnly>
+            <BarcodePrintPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/customers"
         element={
           <ProtectedRoute>
