@@ -6032,6 +6032,116 @@ async def sync_spare_parts_with_products(user: dict = Depends(get_current_user))
     
     return {"success": True, "synced_count": synced}
 
+# ============ EXPENSES MANAGEMENT ============
+
+class ExpenseCreate(BaseModel):
+    title: str
+    category: str
+    amount: float
+    date: Optional[str] = None
+    notes: Optional[str] = ""
+    recurring: bool = False
+    recurring_period: Optional[str] = "monthly"
+
+class ExpenseUpdate(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    amount: Optional[float] = None
+    date: Optional[str] = None
+    notes: Optional[str] = None
+    recurring: Optional[bool] = None
+    recurring_period: Optional[str] = None
+
+@api_router.get("/expenses")
+async def get_expenses(
+    category: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get all expenses"""
+    query = {}
+    if category:
+        query["category"] = category
+    
+    expenses = await db.expenses.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    return expenses
+
+@api_router.get("/expenses/stats")
+async def get_expenses_stats(user: dict = Depends(get_current_user)):
+    """Get expenses statistics"""
+    # Total expenses
+    total_pipeline = [{"$group": {"_id": None, "total": {"$sum": "$amount"}}}]
+    total_result = await db.expenses.aggregate(total_pipeline).to_list(1)
+    total = total_result[0]["total"] if total_result else 0
+    
+    # This month
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    this_month_pipeline = [
+        {"$match": {"date": {"$gte": month_start.isoformat()}}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    this_month_result = await db.expenses.aggregate(this_month_pipeline).to_list(1)
+    this_month = this_month_result[0]["total"] if this_month_result else 0
+    
+    # Last month
+    last_month_end = month_start - timedelta(seconds=1)
+    last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_pipeline = [
+        {"$match": {"date": {"$gte": last_month_start.isoformat(), "$lte": last_month_end.isoformat()}}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    last_month_result = await db.expenses.aggregate(last_month_pipeline).to_list(1)
+    last_month = last_month_result[0]["total"] if last_month_result else 0
+    
+    # By category
+    category_pipeline = [
+        {"$group": {"_id": "$category", "total": {"$sum": "$amount"}}},
+        {"$sort": {"total": -1}}
+    ]
+    categories = await db.expenses.aggregate(category_pipeline).to_list(20)
+    
+    return {
+        "total": total,
+        "thisMonth": this_month,
+        "lastMonth": last_month,
+        "byCategory": [{"category": c["_id"], "total": c["total"]} for c in categories if c["_id"]]
+    }
+
+@api_router.post("/expenses")
+async def create_expense(expense: ExpenseCreate, user: dict = Depends(get_current_user)):
+    """Create a new expense"""
+    expense_data = expense.model_dump()
+    expense_data["id"] = str(uuid.uuid4())
+    expense_data["date"] = expense_data["date"] or datetime.now(timezone.utc).isoformat()
+    expense_data["created_at"] = datetime.now(timezone.utc).isoformat()
+    expense_data["created_by"] = user["id"]
+    
+    await db.expenses.insert_one(expense_data)
+    expense_data.pop("_id", None)
+    return expense_data
+
+@api_router.put("/expenses/{expense_id}")
+async def update_expense(expense_id: str, expense: ExpenseUpdate, user: dict = Depends(get_current_user)):
+    """Update an expense"""
+    existing = await db.expenses.find_one({"id": expense_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="التكلفة غير موجودة")
+    
+    update_data = {k: v for k, v in expense.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.expenses.update_one({"id": expense_id}, {"$set": update_data})
+    updated = await db.expenses.find_one({"id": expense_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/expenses/{expense_id}")
+async def delete_expense(expense_id: str, user: dict = Depends(get_current_user)):
+    """Delete an expense"""
+    result = await db.expenses.delete_one({"id": expense_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="التكلفة غير موجودة")
+    return {"message": "تم حذف التكلفة بنجاح"}
+
 # ============ EMAIL REPORTS ============
 
 class SessionReportEmail(BaseModel):
