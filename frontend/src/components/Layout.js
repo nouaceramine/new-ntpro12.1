@@ -253,22 +253,45 @@ export const Layout = ({ children }) => {
 
           {/* Navigation */}
           <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive(item.path) 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'hover:bg-muted'
-                } ${sidebarCollapsed ? 'justify-center' : ''}`}
-                data-testid={`nav-${item.path.replace(/\//g, '-') || 'home'}`}
-                title={sidebarCollapsed ? item.label : ''}
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
-              </Link>
+            {navSections.map((section) => (
+              <div key={section.title} className="mb-2">
+                {/* Section Header */}
+                {!sidebarCollapsed && (
+                  <button
+                    onClick={() => toggleSection(section.title)}
+                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:bg-muted/50 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <section.icon className="h-4 w-4" />
+                      <span>{section.title}</span>
+                    </div>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedSections.includes(section.title) ? 'rotate-180' : ''}`} />
+                  </button>
+                )}
+                
+                {/* Section Items */}
+                {(sidebarCollapsed || expandedSections.includes(section.title)) && (
+                  <div className={`space-y-1 ${!sidebarCollapsed ? 'mt-1 ms-2' : ''}`}>
+                    {section.items.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isActive(item.path) 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'hover:bg-muted'
+                        } ${sidebarCollapsed ? 'justify-center' : ''}`}
+                        data-testid={`nav-${item.path.replace(/\//g, '-') || 'home'}`}
+                        title={sidebarCollapsed ? item.label : ''}
+                      >
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        {!sidebarCollapsed && <span className="truncate text-sm">{item.label}</span>}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
