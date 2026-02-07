@@ -274,12 +274,8 @@ export default function AddProductPage() {
                 </div>
               </div>
 
-              {/* Quantity, Threshold, Barcode */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="quantity">{t.quantity} *</Label>
-                  <Input id="quantity" name="quantity" type="number" min="0" value={formData.quantity} onChange={handleChange} required className="h-11" data-testid="product-quantity-input" />
-                </div>
+              {/* Threshold, Barcode */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="low_stock_threshold">{t.lowStockThreshold}</Label>
                   <Input id="low_stock_threshold" name="low_stock_threshold" type="number" min="1" value={formData.low_stock_threshold} onChange={handleChange} className="h-11" />
@@ -312,6 +308,18 @@ export default function AddProductPage() {
                     data-testid="barcode-input" 
                   />
                 </div>
+              </div>
+
+              {/* Stock Info */}
+              <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  {language === 'ar' 
+                    ? 'المخزون يبدأ من 0. لإضافة كمية، قم بإنشاء عملية شراء جديدة من صفحة المشتريات.'
+                    : 'Le stock commence à 0. Pour ajouter une quantité, créez un nouvel achat depuis la page des achats.'}
+                </p>
               </div>
 
               {/* Image URL */}
