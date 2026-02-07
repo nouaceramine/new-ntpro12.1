@@ -642,15 +642,26 @@ export default function POSPage() {
                 {language === 'ar' ? 'سلة المشتريات' : 'Panier'}
                 <Badge className="ms-2">{cart.length}</Badge>
               </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearCart}
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <RotateCcw className="h-4 w-4 me-1" />
-                {language === 'ar' ? 'مسح الكل' : 'Effacer'}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={addCustomProduct}
+                  className="gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  {language === 'ar' ? 'منتج مخصص' : 'Article libre'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearCart}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <RotateCcw className="h-4 w-4 me-1" />
+                  {language === 'ar' ? 'مسح الكل' : 'Effacer'}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -658,19 +669,18 @@ export default function POSPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="w-[100px]">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
                     <TableHead>{language === 'ar' ? 'المنتج' : 'Article'}</TableHead>
-                    <TableHead className="w-[140px] text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
-                    <TableHead className="w-[100px] text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
-                    <TableHead className="w-[100px] text-center">{language === 'ar' ? 'خصم %' : 'R. %'}</TableHead>
+                    <TableHead className="w-[120px] text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
+                    <TableHead className="w-[120px] text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                    <TableHead className="w-[80px] text-center">{language === 'ar' ? 'خصم %' : 'R. %'}</TableHead>
                     <TableHead className="w-[120px] text-center">{language === 'ar' ? 'المجموع' : 'Total'}</TableHead>
-                    <TableHead className="w-[60px]"></TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {cart.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                         <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-30" />
                         <p>{language === 'ar' ? 'السلة فارغة - ابحث عن منتج لإضافته' : 'Panier vide - Recherchez un article'}</p>
                       </TableCell>
@@ -678,10 +688,15 @@ export default function POSPage() {
                   ) : (
                     cart.map((item) => (
                       <TableRow key={item.product_id}>
-                        <TableCell className="font-mono text-sm text-muted-foreground">
-                          {item.barcode?.slice(-6) || '---'}
+                        <TableCell>
+                          <Input
+                            type="text"
+                            value={item.product_name}
+                            onChange={(e) => updateCartItemName(item.product_id, e.target.value)}
+                            className="h-8 font-medium"
+                            placeholder={language === 'ar' ? 'اسم المنتج' : 'Nom article'}
+                          />
                         </TableCell>
-                        <TableCell className="font-medium">{item.product_name}</TableCell>
                         <TableCell>
                           <div className="flex items-center justify-center gap-1">
                             <Button
@@ -709,7 +724,15 @@ export default function POSPage() {
                             </Button>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center">{formatCurrency(item.unit_price)}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={item.unit_price}
+                            onChange={(e) => updateCartItemPrice(item.product_id, e.target.value)}
+                            className="w-24 h-8 text-center"
+                          />
+                        </TableCell>
                         <TableCell>
                           <Input
                             type="number"
@@ -718,6 +741,18 @@ export default function POSPage() {
                             placeholder="0"
                             value={item.discount_percent || ''}
                             onChange={(e) => updateCartItemDiscount(item.product_id, e.target.value)}
+                            className="w-16 h-8 text-center"
+                          />
+                        </TableCell>
+                        <TableCell className="text-center font-bold text-green-600">
+                          {formatCurrency(item.total)}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => removeFromCart(item.product_id)}}
                             className="w-16 h-8 text-center"
                           />
                         </TableCell>
