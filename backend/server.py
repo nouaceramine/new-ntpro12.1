@@ -6743,7 +6743,7 @@ async def update_email_settings(settings: EmailSettings, user: dict = Depends(ge
     )
     
     # Update environment variable for resend
-    if settings_dict.get("resend_api_key") and not ("..." in settings_dict["resend_api_key"]):
+    if settings_dict.get("resend_api_key") and "..." not in settings_dict["resend_api_key"]:
         os.environ['RESEND_API_KEY'] = settings_dict["resend_api_key"]
         if RESEND_AVAILABLE:
             resend.api_key = settings_dict["resend_api_key"]
