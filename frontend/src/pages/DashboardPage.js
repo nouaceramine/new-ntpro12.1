@@ -17,7 +17,9 @@ import {
   ShoppingCart,
   Truck,
   Banknote,
-  TrendingUp
+  TrendingUp,
+  Calendar,
+  CalendarDays
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -30,15 +32,21 @@ export default function DashboardPage() {
     low_stock_count: 0, today_sales_total: 0, today_sales_count: 0,
     total_cash: 0, cash_boxes: [], currency: 'دج'
   });
+  const [salesStats, setSalesStats] = useState({
+    today: { total: 0, count: 0 },
+    month: { total: 0, count: 0 },
+    year: { total: 0, count: 0 }
+  });
   const [recentProducts, setRecentProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsRes, statsRes] = await Promise.all([
+        const [productsRes, statsRes, salesStatsRes] = await Promise.all([
           axios.get(`${API}/products`),
-          isAdmin ? axios.get(`${API}/stats`) : Promise.resolve({ data: {} })
+          isAdmin ? axios.get(`${API}/stats`) : Promise.resolve({ data: {} }),
+          isAdmin ? axios.get(`${API}/dashboard/sales-stats`).catch(() => ({ data: null })) : Promise.resolve({ data: null })
         ]);
         
         setRecentProducts(productsRes.data.slice(0, 6));
@@ -51,6 +59,10 @@ export default function DashboardPage() {
             total_products: productsRes.data.length,
             low_stock_count: productsRes.data.filter(p => p.quantity < (p.low_stock_threshold || 10)).length
           }));
+        }
+        
+        if (salesStatsRes.data) {
+          setSalesStats(salesStatsRes.data);
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
