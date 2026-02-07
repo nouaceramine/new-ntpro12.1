@@ -39,7 +39,9 @@ import {
   QrCode,
   Clock,
   Store,
-  Zap
+  Zap,
+  BarChart3,
+  Award
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -194,6 +196,8 @@ export const Layout = ({ children }) => {
       icon: Settings,
       items: [
         { path: '/reports', icon: BarChart3, label: t.reports },
+        { path: '/analytics', icon: BarChart3, label: language === 'ar' ? 'إحصائيات متقدمة' : 'Analyses avancées' },
+        { path: '/loyalty', icon: Award, label: language === 'ar' ? 'الولاء والتسويق' : 'Fidélité' },
         { path: '/users', icon: Shield, label: t.users },
         { path: '/api-keys', icon: Key, label: t.apiKeys },
         { path: '/settings', icon: Settings, label: t.settings },

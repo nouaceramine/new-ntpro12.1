@@ -37,6 +37,8 @@ import SupplierFamiliesPage from "./pages/SupplierFamiliesPage";
 import WooCommercePage from "./pages/WooCommercePage";
 import ShippingPage from "./pages/ShippingPage";
 import SimManagementPage from "./pages/SimManagementPage";
+import AdvancedAnalyticsPage from "./pages/AdvancedAnalyticsPage";
+import LoyaltyPage from "./pages/LoyaltyPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
@@ -339,6 +341,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute adminOnly>
             <SimManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute adminOnly>
+            <AdvancedAnalyticsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/loyalty"
+        element={
+          <ProtectedRoute adminOnly>
+            <LoyaltyPage />
           </ProtectedRoute>
         }
       />
