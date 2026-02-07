@@ -64,12 +64,28 @@ export default function AdvancedAnalyticsPage() {
         axios.get(`${API}/analytics/restock-suggestions`)
       ]);
       
-      setSalesChart(salesRes.data);
-      setTopProducts(productsRes.data);
-      setTopCustomers(customersRes.data);
-      setEmployeePerformance(employeesRes.data);
-      setPredictions(predictionsRes.data);
-      setRestockSuggestions(restockRes.data);
+      // Handle nested response structures - API returns {data: [...]} or {products: [...]} etc
+      const salesData = salesRes.data?.data || salesRes.data || [];
+      const productsData = productsRes.data?.products || productsRes.data || [];
+      const customersData = customersRes.data?.customers || customersRes.data || [];
+      const employeesData = employeesRes.data?.employees || employeesRes.data || [];
+      const restockData = restockRes.data?.suggestions || restockRes.data || [];
+      
+      // Handle predictions - API returns {prediction, trend, confidence}
+      const predictionsData = {
+        next_week_sales: predictionsRes.data?.prediction || predictionsRes.data?.next_week_sales || 0,
+        expected_sales_count: predictionsRes.data?.expected_sales_count || 0,
+        expected_avg_order: predictionsRes.data?.expected_avg_order || 0,
+        trend: predictionsRes.data?.trend || 'neutral',
+        trend_percentage: predictionsRes.data?.trend_percentage || predictionsRes.data?.confidence || 0
+      };
+      
+      setSalesChart(Array.isArray(salesData) ? salesData : []);
+      setTopProducts(Array.isArray(productsData) ? productsData : []);
+      setTopCustomers(Array.isArray(customersData) ? customersData : []);
+      setEmployeePerformance(Array.isArray(employeesData) ? employeesData : []);
+      setPredictions(predictionsData);
+      setRestockSuggestions(Array.isArray(restockData) ? restockData : []);
     } catch (error) {
       console.error('Error fetching analytics:', error);
       toast.error(language === 'ar' ? 'خطأ في جلب البيانات' : 'Erreur de chargement');
