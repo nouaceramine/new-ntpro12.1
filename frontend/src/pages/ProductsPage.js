@@ -182,7 +182,7 @@ export default function ProductsPage() {
                     </p>
                     <div className="mt-4">
                       <p className="text-primary font-bold text-xl">
-                        ${(product.price ?? 0).toFixed(2)}
+                        {(product.retail_price ?? product.price ?? 0).toFixed(2)} {t.currency}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
                         {t.quantity}: {product.quantity ?? 0}
