@@ -364,6 +364,71 @@ class EmployeeCreate(BaseModel):
     hire_date: Optional[str] = None
     commission_rate: float = 0  # نسبة العمولة على المبيعات
 
+# ============ WAREHOUSE MODELS ============
+
+class WarehouseCreate(BaseModel):
+    name: str
+    address: Optional[str] = ""
+    is_main: bool = False
+
+class WarehouseUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    is_main: Optional[bool] = None
+
+class WarehouseResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    address: str
+    is_main: bool
+    created_at: str
+
+class StockTransferCreate(BaseModel):
+    from_warehouse: str
+    to_warehouse: str
+    product_id: str
+    quantity: int
+
+class StockTransferResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    from_warehouse: str
+    from_warehouse_name: str
+    to_warehouse: str
+    to_warehouse_name: str
+    product_id: str
+    product_name: str
+    quantity: int
+    created_at: str
+
+# ============ INVENTORY SESSION MODELS ============
+
+class InventorySessionCreate(BaseModel):
+    name: str
+    family_filter: Optional[str] = "all"
+    status: str = "active"
+    started_at: str
+    counted_items: dict = {}
+
+class InventorySessionUpdate(BaseModel):
+    name: Optional[str] = None
+    status: Optional[str] = None
+    completed_at: Optional[str] = None
+    applied_changes: Optional[bool] = None
+    counted_items: Optional[dict] = None
+
+class InventorySessionResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    family_filter: str
+    status: str
+    started_at: str
+    completed_at: Optional[str] = None
+    applied_changes: bool = False
+    counted_items: dict = {}
+
 class EmployeeUpdate(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
