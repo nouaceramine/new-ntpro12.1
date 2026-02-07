@@ -115,10 +115,10 @@ export default function POSPage() {
   const checkOpenSession = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${API}/sessions/my-open`, {
+      const response = await axios.get(`${API}/daily-sessions/current`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setHasOpenSession(!!response.data);
+      setHasOpenSession(!!response.data && response.data.status === 'open');
     } catch (error) {
       setHasOpenSession(false);
     } finally {
