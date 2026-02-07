@@ -133,13 +133,13 @@ class TokenResponse(BaseModel):
 # ============ PRODUCT MODELS ============
 
 class ProductCreate(BaseModel):
-    name_en: str
-    name_ar: str
+    name_en: str  # اسم المنتج (إلزامي)
+    name_ar: Optional[str] = ""  # اسم عربي (اختياري)
     description_en: Optional[str] = ""
     description_ar: Optional[str] = ""
-    purchase_price: float = 0  # سعر الشراء
-    wholesale_price: float = 0  # سعر الجملة
-    retail_price: float = 0  # سعر التجزئة
+    purchase_price: Optional[float] = 0  # سعر الشراء (اختياري)
+    wholesale_price: Optional[float] = 0  # سعر الجملة (اختياري)
+    retail_price: Optional[float] = 0  # سعر التجزئة (اختياري)
     quantity: int = 0
     image_url: Optional[str] = ""
     compatible_models: List[str] = []
@@ -166,15 +166,15 @@ class ProductResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     name_en: str
-    name_ar: str
-    description_en: str
-    description_ar: str
+    name_ar: str = ""
+    description_en: str = ""
+    description_ar: str = ""
     purchase_price: float = 0
     wholesale_price: float = 0
     retail_price: float = 0
     quantity: int
-    image_url: str
-    compatible_models: List[str]
+    image_url: str = ""
+    compatible_models: List[str] = []
     low_stock_threshold: int = 10
     barcode: str = ""
     family_id: str = ""
