@@ -51,6 +51,7 @@ import PhoneDirectoryPage from "./pages/PhoneDirectoryPage";
 import RepairReceptionPage from "./pages/RepairReceptionPage";
 import RepairTrackingPage from "./pages/RepairTrackingPage";
 import SparePartsPage from "./pages/SparePartsPage";
+import ExpensesPage from "./pages/ExpensesPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
