@@ -1033,6 +1033,48 @@ export default function SettingsPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Password Change Dialog */}
+        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Key className="h-5 w-5" />
+                {language === 'ar' ? 'تغيير كلمة المرور' : 'Changer le mot de passe'}
+              </DialogTitle>
+              <DialogDescription>
+                {passwordUser?.name} ({passwordUser?.email})
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div>
+                <Label>{language === 'ar' ? 'كلمة المرور الجديدة' : 'Nouveau mot de passe'}</Label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder={language === 'ar' ? '4 أحرف على الأقل' : '4 caractères minimum'}
+                  className="mt-1"
+                />
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowPasswordDialog(false)} className="flex-1">
+                  {t.cancel}
+                </Button>
+                <Button 
+                  onClick={savePassword}
+                  disabled={savingPassword || newPassword.length < 4}
+                  className="flex-1 gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  {savingPassword ? t.loading : t.save}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
