@@ -1545,7 +1545,7 @@ async def create_inventory_session(session: InventorySessionCreate, admin: dict 
     }
     
     await db.inventory_sessions.insert_one(session_doc)
-    del session_doc["_id"] if "_id" in session_doc else None
+    session_doc.pop("_id", None)
     return session_doc
 
 @api_router.get("/inventory-sessions")
