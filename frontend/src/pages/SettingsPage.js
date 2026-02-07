@@ -215,6 +215,33 @@ export default function SettingsPage() {
     }
   };
 
+  const openPasswordDialog = (u) => {
+    setPasswordUser(u);
+    setNewPassword('');
+    setShowPasswordDialog(true);
+  };
+
+  const savePassword = async () => {
+    if (!passwordUser || newPassword.length < 4) {
+      toast.error(language === 'ar' ? 'كلمة المرور يجب أن تكون 4 أحرف على الأقل' : 'Le mot de passe doit contenir au moins 4 caractères');
+      return;
+    }
+    
+    setSavingPassword(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/users/${passwordUser.id}/password`, { new_password: newPassword }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم تحديث كلمة المرور بنجاح' : 'Mot de passe mis à jour');
+      setShowPasswordDialog(false);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   const handleFactoryReset = async () => {
     if (resetCode !== 'RESET-ALL-DATA') {
       toast.error(language === 'ar' ? 'كود التأكيد غير صحيح' : 'Invalid confirmation code');
