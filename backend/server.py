@@ -1794,19 +1794,32 @@ async def get_transactions(
 
 @api_router.get("/notifications")
 async def get_notifications(user: dict = Depends(get_current_user)):
+    # Get notifications for this user or global notifications (without user_id)
     notifications = await db.notifications.find(
-        {"read": False}, {"_id": 0}
+        {
+            "read": False,
+            "$or": [
+                {"user_id": user["id"]},
+                {"user_id": {"$exists": False}}
+            ]
+        }, {"_id": 0}
     ).sort("created_at", -1).to_list(50)
     return notifications
 
 @api_router.put("/notifications/{notification_id}/read")
 async def mark_notification_read(notification_id: str, user: dict = Depends(get_current_user)):
-    await db.notifications.update_one({"id": notification_id}, {"$set": {"read": True}})
+    await db.notifications.update_one(
+        {"id": notification_id, "$or": [{"user_id": user["id"]}, {"user_id": {"$exists": False}}]},
+        {"$set": {"read": True}}
+    )
     return {"message": "Notification marked as read"}
 
 @api_router.put("/notifications/read-all")
 async def mark_all_notifications_read(user: dict = Depends(get_current_user)):
-    await db.notifications.update_many({"read": False}, {"$set": {"read": True}})
+    await db.notifications.update_many(
+        {"read": False, "$or": [{"user_id": user["id"]}, {"user_id": {"$exists": False}}]},
+        {"$set": {"read": True}}
+    )
     return {"message": "All notifications marked as read"}
 
 @api_router.post("/notifications/generate")
