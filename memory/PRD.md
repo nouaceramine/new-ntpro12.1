@@ -133,6 +133,8 @@ DELETE /api/supplier-families/:id      - حذف عائلة
 ```json
 {
   "id": "uuid",
+  "user_id": "uuid",
+  "user_name": "اسم الموظف",
   "opening_cash": 5000.00,
   "closing_cash": 5500.00,
   "opened_at": "2026-02-07T09:00:00Z",
