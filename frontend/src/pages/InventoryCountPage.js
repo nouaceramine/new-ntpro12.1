@@ -329,6 +329,176 @@ export default function InventoryCountPage() {
     }
   };
 
+  // Excel Import Functions
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setImportFileName(file.name);
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        if (jsonData.length < 2) {
+          toast.error(language === 'ar' ? 'الملف فارغ أو لا يحتوي على بيانات' : 'Le fichier est vide');
+          return;
+        }
+
+        // Get columns from first row
+        const columns = jsonData[0].map((col, idx) => ({
+          index: idx,
+          name: String(col || `Column ${idx + 1}`)
+        }));
+        setExcelColumns(columns);
+        
+        // Store data (skip header)
+        setImportData(jsonData.slice(1));
+        
+        // Auto-detect columns
+        const autoMapping = { barcode: '', quantity: '', name: '' };
+        columns.forEach(col => {
+          const colLower = col.name.toLowerCase();
+          if (colLower.includes('barcode') || colLower.includes('باركود') || colLower.includes('code')) {
+            autoMapping.barcode = col.index.toString();
+          }
+          if (colLower.includes('quantity') || colLower.includes('كمية') || colLower.includes('qty') || colLower.includes('quantité')) {
+            autoMapping.quantity = col.index.toString();
+          }
+          if (colLower.includes('name') || colLower.includes('اسم') || colLower.includes('nom') || colLower.includes('product') || colLower.includes('منتج')) {
+            autoMapping.name = col.index.toString();
+          }
+        });
+        setImportMapping(autoMapping);
+        
+        setImportStep(2);
+        toast.success(`${language === 'ar' ? 'تم تحميل' : 'Chargé'}: ${jsonData.length - 1} ${language === 'ar' ? 'صف' : 'lignes'}`);
+      } catch (error) {
+        console.error('Excel parse error:', error);
+        toast.error(language === 'ar' ? 'خطأ في قراءة الملف' : 'Erreur de lecture du fichier');
+      }
+    };
+    
+    reader.readAsArrayBuffer(file);
+  };
+
+  const generateImportPreview = () => {
+    if (!importMapping.barcode || !importMapping.quantity) {
+      toast.error(language === 'ar' ? 'يرجى تحديد أعمدة الباركود والكمية' : 'Sélectionnez les colonnes code-barres et quantité');
+      return;
+    }
+
+    const barcodeIdx = parseInt(importMapping.barcode);
+    const quantityIdx = parseInt(importMapping.quantity);
+    const nameIdx = importMapping.name ? parseInt(importMapping.name) : null;
+
+    const preview = [];
+    let matched = 0;
+    let notFound = 0;
+
+    importData.forEach((row, rowIndex) => {
+      const barcode = String(row[barcodeIdx] || '').trim();
+      const quantity = parseInt(row[quantityIdx]) || 0;
+      const excelName = nameIdx !== null ? String(row[nameIdx] || '') : '';
+
+      if (!barcode) return;
+
+      const product = products.find(p => 
+        p.barcode === barcode || 
+        p.barcode?.toLowerCase() === barcode.toLowerCase()
+      );
+
+      if (product) {
+        matched++;
+        preview.push({
+          id: product.id,
+          barcode,
+          excelName,
+          productName: language === 'ar' ? product.name_ar : product.name_en,
+          currentQty: product.quantity,
+          newQty: quantity,
+          diff: quantity - product.quantity,
+          status: 'matched'
+        });
+      } else {
+        notFound++;
+        preview.push({
+          id: null,
+          barcode,
+          excelName,
+          productName: null,
+          currentQty: null,
+          newQty: quantity,
+          diff: null,
+          status: 'not_found'
+        });
+      }
+    });
+
+    setImportPreview(preview);
+    setImportStep(3);
+    
+    toast.info(`${matched} ${language === 'ar' ? 'متطابق' : 'trouvés'}, ${notFound} ${language === 'ar' ? 'غير موجود' : 'non trouvés'}`);
+  };
+
+  const applyImportData = () => {
+    const newCounts = { ...countedItems };
+    let appliedCount = 0;
+
+    importPreview.forEach(item => {
+      if (item.status === 'matched' && item.id) {
+        newCounts[item.id] = item.newQty;
+        appliedCount++;
+      }
+    });
+
+    setCountedItems(newCounts);
+    saveCountToSession(newCounts);
+    
+    toast.success(`${language === 'ar' ? 'تم استيراد' : 'Importé'}: ${appliedCount} ${language === 'ar' ? 'منتج' : 'produits'}`);
+    
+    // Reset import state
+    setShowImportDialog(false);
+    setImportData([]);
+    setImportPreview([]);
+    setImportFileName('');
+    setImportStep(1);
+    setExcelColumns([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const downloadTemplate = () => {
+    const templateData = [
+      [language === 'ar' ? 'الباركود' : 'Barcode', language === 'ar' ? 'الكمية' : 'Quantité', language === 'ar' ? 'اسم المنتج (اختياري)' : 'Nom du produit (optionnel)'],
+      ...products.slice(0, 10).map(p => [p.barcode || '', p.quantity, language === 'ar' ? p.name_ar : p.name_en])
+    ];
+    
+    const ws = XLSX.utils.aoa_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventory');
+    
+    // Set column widths
+    ws['!cols'] = [{ wch: 20 }, { wch: 10 }, { wch: 40 }];
+    
+    XLSX.writeFile(wb, `inventory_template_${new Date().toISOString().split('T')[0]}.xlsx`);
+    toast.success(language === 'ar' ? 'تم تحميل القالب' : 'Modèle téléchargé');
+  };
+
+  const resetImport = () => {
+    setImportStep(1);
+    setImportData([]);
+    setImportPreview([]);
+    setImportFileName('');
+    setExcelColumns([]);
+    setImportMapping({ barcode: '', quantity: '', name: '' });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   // Export inventory report
   const exportReport = () => {
     const reportData = filteredProducts.map(p => ({
