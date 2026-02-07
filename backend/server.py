@@ -4002,6 +4002,354 @@ async def update_branding_settings(settings: LoginPageSettings, admin: dict = De
     )
     return {"message": "تم تحديث إعدادات العلامة التجارية"}
 
+# ============ LOYALTY PROGRAM ============
+
+class LoyaltySettings(BaseModel):
+    enabled: bool = False
+    points_per_dinar: float = 0.01  # نقطة لكل دينار
+    points_value: float = 0.1  # قيمة النقطة بالدينار
+    min_redeem_points: int = 100
+
+class LoyaltyTransaction(BaseModel):
+    customer_id: str
+    points: int
+    type: str  # earn, redeem
+    sale_id: Optional[str] = None
+    notes: Optional[str] = ""
+
+@api_router.get("/loyalty/settings")
+async def get_loyalty_settings(admin: dict = Depends(get_admin_user)):
+    """Get loyalty program settings"""
+    settings = await db.loyalty_settings.find_one({"id": "global"}, {"_id": 0})
+    if not settings:
+        settings = {
+            "id": "global",
+            "enabled": False,
+            "points_per_dinar": 0.01,
+            "points_value": 0.1,
+            "min_redeem_points": 100
+        }
+        await db.loyalty_settings.insert_one(settings)
+    return settings
+
+@api_router.put("/loyalty/settings")
+async def update_loyalty_settings(settings: LoyaltySettings, admin: dict = Depends(get_admin_user)):
+    """Update loyalty program settings"""
+    await db.loyalty_settings.update_one(
+        {"id": "global"},
+        {"$set": settings.model_dump()},
+        upsert=True
+    )
+    return {"message": "تم تحديث إعدادات برنامج الولاء"}
+
+@api_router.get("/loyalty/customer/{customer_id}")
+async def get_customer_loyalty(customer_id: str, user: dict = Depends(get_current_user)):
+    """Get customer loyalty points and history"""
+    customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
+    if not customer:
+        raise HTTPException(status_code=404, detail="العميل غير موجود")
+    
+    points = customer.get("loyalty_points", 0)
+    
+    # Get transaction history
+    transactions = await db.loyalty_transactions.find(
+        {"customer_id": customer_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    # Get loyalty settings for point value
+    settings = await db.loyalty_settings.find_one({"id": "global"}, {"_id": 0})
+    points_value = settings.get("points_value", 0.1) if settings else 0.1
+    
+    return {
+        "customer_id": customer_id,
+        "customer_name": customer.get("name"),
+        "points": points,
+        "points_value_dinar": round(points * points_value, 2),
+        "transactions": transactions
+    }
+
+@api_router.post("/loyalty/earn")
+async def earn_loyalty_points(transaction: LoyaltyTransaction, user: dict = Depends(get_current_user)):
+    """Add loyalty points from a sale"""
+    customer = await db.customers.find_one({"id": transaction.customer_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="العميل غير موجود")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    current_points = customer.get("loyalty_points", 0)
+    new_points = current_points + transaction.points
+    
+    # Update customer points
+    await db.customers.update_one(
+        {"id": transaction.customer_id},
+        {"$set": {"loyalty_points": new_points}}
+    )
+    
+    # Log transaction
+    await db.loyalty_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "customer_id": transaction.customer_id,
+        "points": transaction.points,
+        "type": "earn",
+        "sale_id": transaction.sale_id,
+        "notes": transaction.notes or "",
+        "balance_after": new_points,
+        "created_at": now,
+        "created_by": user.get("name", "")
+    })
+    
+    return {"message": f"تم إضافة {transaction.points} نقطة", "new_balance": new_points}
+
+@api_router.post("/loyalty/redeem")
+async def redeem_loyalty_points(transaction: LoyaltyTransaction, user: dict = Depends(get_current_user)):
+    """Redeem loyalty points"""
+    customer = await db.customers.find_one({"id": transaction.customer_id})
+    if not customer:
+        raise HTTPException(status_code=404, detail="العميل غير موجود")
+    
+    current_points = customer.get("loyalty_points", 0)
+    
+    # Check minimum redeem
+    settings = await db.loyalty_settings.find_one({"id": "global"}, {"_id": 0})
+    min_redeem = settings.get("min_redeem_points", 100) if settings else 100
+    
+    if transaction.points > current_points:
+        raise HTTPException(status_code=400, detail="رصيد النقاط غير كافي")
+    
+    if transaction.points < min_redeem:
+        raise HTTPException(status_code=400, detail=f"الحد الأدنى للاسترداد {min_redeem} نقطة")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    new_points = current_points - transaction.points
+    
+    # Update customer points
+    await db.customers.update_one(
+        {"id": transaction.customer_id},
+        {"$set": {"loyalty_points": new_points}}
+    )
+    
+    # Log transaction
+    points_value = settings.get("points_value", 0.1) if settings else 0.1
+    discount_amount = transaction.points * points_value
+    
+    await db.loyalty_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "customer_id": transaction.customer_id,
+        "points": -transaction.points,
+        "type": "redeem",
+        "sale_id": transaction.sale_id,
+        "notes": transaction.notes or f"خصم {discount_amount} دج",
+        "balance_after": new_points,
+        "created_at": now,
+        "created_by": user.get("name", "")
+    })
+    
+    return {
+        "message": f"تم استرداد {transaction.points} نقطة",
+        "discount_amount": discount_amount,
+        "new_balance": new_points
+    }
+
+# ============ SMS MARKETING ============
+
+class SMSCampaign(BaseModel):
+    name: str
+    message: str
+    target: str  # all, customers_with_debt, inactive, custom
+    customer_ids: Optional[List[str]] = []
+    scheduled_at: Optional[str] = None
+
+@api_router.get("/marketing/sms/campaigns")
+async def get_sms_campaigns(admin: dict = Depends(get_admin_user)):
+    """Get all SMS campaigns"""
+    campaigns = await db.sms_campaigns.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return campaigns
+
+@api_router.post("/marketing/sms/campaigns")
+async def create_sms_campaign(campaign: SMSCampaign, admin: dict = Depends(get_admin_user)):
+    """Create a new SMS campaign (MOCKED)"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Determine target customers
+    if campaign.target == "all":
+        customers = await db.customers.find({"phone": {"$ne": ""}}, {"_id": 0, "id": 1, "phone": 1, "name": 1}).to_list(1000)
+    elif campaign.target == "customers_with_debt":
+        customers = await db.customers.find({"balance": {"$gt": 0}, "phone": {"$ne": ""}}, {"_id": 0, "id": 1, "phone": 1, "name": 1}).to_list(1000)
+    elif campaign.target == "inactive":
+        # Customers who haven't purchased in 30 days
+        thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+        active_customer_ids = await db.sales.distinct("customer_id", {"created_at": {"$gte": thirty_days_ago}})
+        customers = await db.customers.find(
+            {"id": {"$nin": active_customer_ids}, "phone": {"$ne": ""}},
+            {"_id": 0, "id": 1, "phone": 1, "name": 1}
+        ).to_list(1000)
+    else:  # custom
+        customers = await db.customers.find(
+            {"id": {"$in": campaign.customer_ids}, "phone": {"$ne": ""}},
+            {"_id": 0, "id": 1, "phone": 1, "name": 1}
+        ).to_list(1000)
+    
+    campaign_doc = {
+        "id": str(uuid.uuid4()),
+        "name": campaign.name,
+        "message": campaign.message,
+        "target": campaign.target,
+        "recipients_count": len(customers),
+        "status": "pending" if campaign.scheduled_at else "sent",
+        "scheduled_at": campaign.scheduled_at,
+        "sent_at": now if not campaign.scheduled_at else None,
+        "created_at": now,
+        "created_by": admin.get("name", "")
+    }
+    
+    await db.sms_campaigns.insert_one(campaign_doc)
+    
+    # MOCKED - In production, actually send SMS
+    return {
+        "success": True,
+        "message": f"تم إنشاء الحملة وإرسالها لـ {len(customers)} عميل (وضع المحاكاة)",
+        "campaign_id": campaign_doc["id"],
+        "recipients_count": len(customers)
+    }
+
+# ============ INVOICES ============
+
+class InvoiceTemplate(BaseModel):
+    name: str
+    type: str  # simple, detailed, thermal
+    header_text: str = ""
+    footer_text: str = ""
+    show_logo: bool = True
+    show_qr: bool = False
+
+@api_router.get("/invoices/templates")
+async def get_invoice_templates(user: dict = Depends(get_current_user)):
+    """Get all invoice templates"""
+    templates = await db.invoice_templates.find({}, {"_id": 0}).to_list(20)
+    
+    if not templates:
+        # Create default templates
+        default_templates = [
+            {
+                "id": "simple",
+                "name": "فاتورة بسيطة",
+                "name_fr": "Facture simple",
+                "type": "simple",
+                "header_text": "",
+                "footer_text": "شكراً لتعاملكم معنا",
+                "show_logo": True,
+                "show_qr": False,
+                "is_default": True
+            },
+            {
+                "id": "detailed",
+                "name": "فاتورة تفصيلية",
+                "name_fr": "Facture détaillée",
+                "type": "detailed",
+                "header_text": "",
+                "footer_text": "",
+                "show_logo": True,
+                "show_qr": True,
+                "is_default": False
+            },
+            {
+                "id": "thermal",
+                "name": "فاتورة حرارية",
+                "name_fr": "Ticket thermique",
+                "type": "thermal",
+                "header_text": "",
+                "footer_text": "",
+                "show_logo": False,
+                "show_qr": False,
+                "is_default": False
+            }
+        ]
+        await db.invoice_templates.insert_many(default_templates)
+        templates = default_templates
+    
+    return templates
+
+@api_router.post("/invoices/generate/{sale_id}")
+async def generate_invoice(sale_id: str, template_id: str = "simple", user: dict = Depends(get_current_user)):
+    """Generate invoice for a sale"""
+    sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
+    if not sale:
+        raise HTTPException(status_code=404, detail="البيع غير موجود")
+    
+    template = await db.invoice_templates.find_one({"id": template_id}, {"_id": 0})
+    branding = await db.branding_settings.find_one({"id": "global"}, {"_id": 0})
+    
+    # Get customer info if exists
+    customer = None
+    if sale.get("customer_id"):
+        customer = await db.customers.find_one({"id": sale["customer_id"]}, {"_id": 0})
+    
+    invoice_data = {
+        "invoice_number": f"INV-{sale_id[:8].upper()}",
+        "date": sale.get("created_at", ""),
+        "business_name": branding.get("business_name", "NT") if branding else "NT",
+        "logo_url": branding.get("logo_url", "") if branding else "",
+        "customer": {
+            "name": customer.get("name", "") if customer else sale.get("customer_name", ""),
+            "phone": customer.get("phone", "") if customer else "",
+            "address": customer.get("address", "") if customer else ""
+        },
+        "items": sale.get("items", []),
+        "subtotal": sale.get("total", 0),
+        "discount": sale.get("discount", 0),
+        "total": sale.get("total", 0),
+        "paid": sale.get("paid_amount", 0),
+        "remaining": sale.get("remaining", 0),
+        "payment_method": sale.get("payment_method", ""),
+        "template": template,
+        "header_text": template.get("header_text", "") if template else "",
+        "footer_text": template.get("footer_text", "شكراً لتعاملكم معنا") if template else ""
+    }
+    
+    return invoice_data
+
+# ============ PAYMENT GATEWAYS (MOCKED) ============
+
+class PaymentGatewaySettings(BaseModel):
+    gateway: str  # cib, dahabia, baridimob
+    enabled: bool = False
+    merchant_id: str = ""
+    api_key: str = ""
+    terminal_id: str = ""
+
+ALGERIAN_PAYMENT_GATEWAYS = [
+    {"id": "cib", "name": "CIB", "name_ar": "البطاقة البنكية CIB", "type": "card"},
+    {"id": "dahabia", "name": "Dahabia", "name_ar": "بطاقة الذهبية", "type": "card"},
+    {"id": "baridimob", "name": "BaridiMob", "name_ar": "بريدي موب", "type": "mobile"}
+]
+
+@api_router.get("/payments/gateways")
+async def get_payment_gateways(admin: dict = Depends(get_admin_user)):
+    """Get available payment gateways"""
+    settings = await db.payment_gateways.find({}, {"_id": 0}).to_list(10)
+    
+    result = []
+    for gateway in ALGERIAN_PAYMENT_GATEWAYS:
+        setting = next((s for s in settings if s.get("gateway") == gateway["id"]), None)
+        result.append({
+            **gateway,
+            "enabled": setting.get("enabled", False) if setting else False,
+            "configured": bool(setting.get("merchant_id")) if setting else False
+        })
+    
+    return result
+
+@api_router.put("/payments/gateways/{gateway_id}")
+async def update_payment_gateway(gateway_id: str, settings: PaymentGatewaySettings, admin: dict = Depends(get_admin_user)):
+    """Update payment gateway settings"""
+    await db.payment_gateways.update_one(
+        {"gateway": gateway_id},
+        {"$set": settings.model_dump()},
+        upsert=True
+    )
+    return {"message": "تم تحديث إعدادات بوابة الدفع"}
+
 # ============ SMS REMINDER SYSTEM ============
 
 class SMSReminderRequest(BaseModel):
