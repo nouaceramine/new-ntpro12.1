@@ -104,6 +104,21 @@ export default function PurchasesPage() {
     address: ''
   });
   const [addingSupplier, setAddingSupplier] = useState(false);
+  
+  // Edit product prices dialog
+  const [showEditPricesDialog, setShowEditPricesDialog] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editPricesData, setEditPricesData] = useState({
+    newPurchasePrice: 0,
+    wholesalePrice: 0,
+    retailPrice: 0,
+    margin: 30,
+    updateProductPrices: true,
+    image: null,
+    imagePreview: null
+  });
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageInputRef = useRef(null);
 
   useEffect(() => {
     fetchData();
