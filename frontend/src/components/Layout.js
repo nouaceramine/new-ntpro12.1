@@ -48,9 +48,23 @@ export const Layout = ({ children }) => {
     const saved = localStorage.getItem('sidebarCollapsed');
     return saved === 'true';
   });
+  const [expandedSections, setExpandedSections] = useState(() => {
+    const saved = localStorage.getItem('expandedSections');
+    return saved ? JSON.parse(saved) : ['الرئيسية', 'Principal', 'المالية', 'Finances'];
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const toggleSection = (sectionTitle) => {
+    setExpandedSections(prev => {
+      const newExpanded = prev.includes(sectionTitle)
+        ? prev.filter(s => s !== sectionTitle)
+        : [...prev, sectionTitle];
+      localStorage.setItem('expandedSections', JSON.stringify(newExpanded));
+      return newExpanded;
+    });
+  };
 
   const fetchNotifications = async () => {
     try {
