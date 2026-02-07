@@ -4027,9 +4027,10 @@ async def get_loyalty_settings(admin: dict = Depends(get_admin_user)):
             "enabled": False,
             "points_per_dinar": 0.01,
             "points_value": 0.1,
-            "min_redeem_points": 100
+            "min_redeem_points": 100,
+            "welcome_bonus": 0
         }
-        await db.loyalty_settings.insert_one(settings)
+        await db.loyalty_settings.insert_one(settings.copy())
     return settings
 
 @api_router.put("/loyalty/settings")
