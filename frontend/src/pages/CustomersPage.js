@@ -219,7 +219,7 @@ export default function CustomersPage() {
 
   const resetForm = () => {
     setSelectedCustomer(null);
-    setFormData({ name: '', phone: '', email: '', address: '', notes: '' });
+    setFormData({ name: '', phone: '', email: '', address: '', notes: '', family_id: '' });
   };
 
   return (
