@@ -65,7 +65,9 @@ import {
   Download,
   Upload,
   Database,
-  HardDrive
+  HardDrive,
+  GripVertical,
+  ChevronRight
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
