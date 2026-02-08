@@ -47,6 +47,7 @@ import {
   Trash2,
   Save,
   Eye,
+  EyeOff,
   Edit2,
   Plus,
   Check,
