@@ -1280,6 +1280,80 @@ async def get_product_price_history(product_id: str, user: dict = Depends(get_cu
     ).sort("created_at", -1).to_list(100)
     return [PriceHistoryResponse(**h) for h in history]
 
+@api_router.get("/products/{product_id}/purchase-history")
+async def get_product_purchase_history(product_id: str, user: dict = Depends(get_current_user)):
+    """Get purchase history for a specific product (from suppliers)"""
+    # Get purchases containing this product
+    purchases = await db.purchases.find(
+        {"items.product_id": product_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    result = []
+    for purchase in purchases:
+        supplier = await db.suppliers.find_one({"id": purchase.get("supplier_id")}, {"_id": 0, "name": 1, "phone": 1})
+        
+        # Find the item for this product
+        item_data = None
+        for item in purchase.get("items", []):
+            if item.get("product_id") == product_id:
+                item_data = item
+                break
+        
+        if item_data:
+            result.append({
+                "id": purchase.get("id"),
+                "date": purchase.get("created_at"),
+                "supplier_id": purchase.get("supplier_id"),
+                "supplier_name": supplier.get("name") if supplier else "",
+                "supplier_phone": supplier.get("phone") if supplier else "",
+                "quantity": item_data.get("quantity", 0),
+                "unit_price": item_data.get("unit_price", 0),
+                "total": item_data.get("total", 0),
+                "purchase_total": purchase.get("total", 0),
+                "payment_status": purchase.get("payment_status", ""),
+                "notes": purchase.get("notes", "")
+            })
+    
+    return result
+
+@api_router.get("/products/{product_id}/sales-history")
+async def get_product_sales_history(product_id: str, user: dict = Depends(get_current_user)):
+    """Get sales history for a specific product"""
+    # Get sales containing this product
+    sales = await db.sales.find(
+        {"items.product_id": product_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    result = []
+    for sale in sales:
+        customer = None
+        if sale.get("customer_id"):
+            customer = await db.customers.find_one({"id": sale.get("customer_id")}, {"_id": 0, "name": 1})
+        
+        # Find the item for this product
+        item_data = None
+        for item in sale.get("items", []):
+            if item.get("product_id") == product_id:
+                item_data = item
+                break
+        
+        if item_data:
+            result.append({
+                "id": sale.get("id"),
+                "date": sale.get("created_at"),
+                "customer_name": customer.get("name") if customer else (language_ar := "زبون عابر"),
+                "quantity": item_data.get("quantity", 0),
+                "unit_price": item_data.get("unit_price", 0),
+                "discount": item_data.get("discount", 0),
+                "total": item_data.get("total", 0),
+                "sale_total": sale.get("total", 0),
+                "payment_type": sale.get("payment_type", "cash")
+            })
+    
+    return result
+
 @api_router.get("/price-history", response_model=List[PriceHistoryResponse])
 async def get_all_price_history(
     limit: int = 50,
