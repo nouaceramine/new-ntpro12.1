@@ -71,6 +71,8 @@ export default function POSPage() {
   const [families, setFamilies] = useState([]);
   const [customerFamilies, setCustomerFamilies] = useState([]);
   const [wilayas, setWilayas] = useState([]);
+  const [warehouses, setWarehouses] = useState([]);
+  const [selectedWarehouse, setSelectedWarehouse] = useState('');
   const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
