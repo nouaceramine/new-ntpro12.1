@@ -173,6 +173,40 @@ export default function EmployeesPage() {
                     <DollarSign className="h-4 w-4 me-1" />{t.advances}
                   </Button>
                 </div>
+                {/* Account Management */}
+                <div className="mt-3 pt-3 border-t">
+                  {emp.user_id ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <KeyRound className="h-4 w-4" />
+                        <span>{language === 'ar' ? 'لديه حساب' : 'A un compte'}: {emp.user_email}</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-destructive"
+                        onClick={() => handleDeleteAccount(emp.id)}
+                      >
+                        <UserX className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full gap-2"
+                      onClick={() => { 
+                        setSelectedEmployee(emp); 
+                        setAccountData({ email: emp.email || '', password: '', role: 'seller' });
+                        setAccountDialogOpen(true); 
+                      }}
+                      data-testid={`create-account-${emp.id}`}
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      {language === 'ar' ? 'إنشاء حساب دخول' : 'Créer un compte'}
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))}
