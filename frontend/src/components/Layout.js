@@ -367,6 +367,7 @@ export const Layout = ({ children }) => {
         { path: '/users', icon: Shield, label: t.users },
         { path: '/api-keys', icon: Key, label: t.apiKeys },
         { path: '/settings', icon: Settings, label: t.settings },
+        { path: '/settings/sidebar', icon: LayoutDashboard, label: language === 'ar' ? 'ترتيب القائمة' : 'Ordre menu' },
       ]
     }] : [])
   ];
