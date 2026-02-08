@@ -84,15 +84,15 @@ class TestDashboard:
         self.token = login_response.json()["access_token"]
         self.headers = {"Authorization": f"Bearer {self.token}"}
     
-    def test_dashboard_stats_endpoint(self):
-        """Test dashboard statistics endpoint"""
-        response = requests.get(f"{BASE_URL}/api/dashboard/stats", headers=self.headers)
-        assert response.status_code == 200, f"Dashboard stats failed: {response.text}"
+    def test_dashboard_stats_via_reports(self):
+        """Test dashboard statistics via reports endpoints"""
+        # Dashboard doesn't have a single stats endpoint, it uses multiple
+        response = requests.get(f"{BASE_URL}/api/reports/profit", headers=self.headers)
+        assert response.status_code == 200, f"Dashboard profit stats failed: {response.text}"
         
         data = response.json()
-        # Check expected fields
-        assert "total_products" in data or "products_count" in data or isinstance(data, dict), "Missing stats in response"
-        print(f"✓ Dashboard stats retrieved: {list(data.keys())[:5]}...")
+        assert "total_revenue" in data, "Missing total_revenue in response"
+        print(f"✓ Dashboard profit stats retrieved: Revenue={data['total_revenue']}")
     
     def test_get_products(self):
         """Test products listing endpoint"""
