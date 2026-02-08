@@ -57,8 +57,15 @@ import {
   AlertTriangle,
   DollarSign,
   Phone,
-  Warehouse
+  Warehouse,
+  Printer,
+  History,
+  Calendar,
+  Eye,
+  FileText,
+  Filter
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
