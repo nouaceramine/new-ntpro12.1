@@ -787,19 +787,29 @@ export default function POSPage() {
         fetchDebtReminders();
       }
       
-      try {
-        const invoiceResponse = await axios.get(`${API}/sales/${response.data.id}/invoice-pdf`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.write(invoiceResponse.data);
-          printWindow.document.close();
-          printWindow.focus();
-          setTimeout(() => printWindow.print(), 500);
+      // Store sale info for print dialog
+      setLastSaleId(response.data.id);
+      setLastSaleInvoice(response.data.invoice_number);
+      
+      // Check receipt settings - if auto_print is enabled, print automatically
+      if (receiptSettings?.auto_print) {
+        try {
+          const invoiceResponse = await axios.get(`${API}/sales/${response.data.id}/invoice-pdf`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const printWindow = window.open('', '_blank');
+          if (printWindow) {
+            printWindow.document.write(invoiceResponse.data);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => printWindow.print(), 500);
+          }
+        } catch (printError) {
+          console.error('Print error:', printError);
         }
-      } catch (printError) {
-        console.error('Print error:', printError);
+      } else if (receiptSettings?.show_print_dialog !== false) {
+        // Show print dialog by default
+        setShowPrintDialog(true);
       }
       
       clearCart();
