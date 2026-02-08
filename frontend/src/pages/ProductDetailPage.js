@@ -4,9 +4,18 @@ import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Layout } from '../components/Layout';
-import { Card, CardContent } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +38,14 @@ import {
   ShoppingBag,
   ExternalLink,
   RefreshCw,
-  XCircle
+  XCircle,
+  History,
+  Truck,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Calendar,
+  User
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -46,6 +62,12 @@ export default function ProductDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
+  
+  // History states
+  const [purchaseHistory, setPurchaseHistory] = useState([]);
+  const [salesHistory, setSalesHistory] = useState([]);
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
