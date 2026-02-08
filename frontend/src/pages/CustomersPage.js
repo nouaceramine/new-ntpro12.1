@@ -395,7 +395,7 @@ export default function CustomersPage() {
                           </Button>
                         </div>
                       </div>
-                      <div className="flex gap-4 mt-4 pt-4 border-t">
+                      <div className="flex gap-4 mt-4 pt-4 border-t flex-wrap">
                         <div>
                           <p className="text-xs text-muted-foreground">{t.totalPurchases}</p>
                           <p className="font-semibold">{customer.total_purchases.toFixed(2)} {t.currency}</p>
@@ -406,6 +406,20 @@ export default function CustomersPage() {
                             {customer.balance.toFixed(2)} {t.currency}
                           </p>
                         </div>
+                        {customer.max_debt_limit > 0 && (
+                          <div>
+                            <p className="text-xs text-muted-foreground">{language === 'ar' ? 'حد الدين' : 'Limite'}</p>
+                            <p className={`font-semibold ${customer.balance >= customer.max_debt_limit ? 'text-red-600' : 'text-muted-foreground'}`}>
+                              {customer.max_debt_limit.toFixed(2)} {t.currency}
+                            </p>
+                          </div>
+                        )}
+                        {customer.last_purchase_date && (
+                          <div>
+                            <p className="text-xs text-muted-foreground">{language === 'ar' ? 'آخر زيارة' : 'Dernière visite'}</p>
+                            <p className="text-sm">{new Date(customer.last_purchase_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR')}</p>
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
