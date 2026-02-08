@@ -203,14 +203,15 @@ export default function SettingsPage() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [usersRes, statsRes, rolesRes, sysSettingsRes, brandingRes, whatsappRes, emailRes] = await Promise.all([
+      const [usersRes, statsRes, rolesRes, sysSettingsRes, brandingRes, whatsappRes, emailRes, receiptRes] = await Promise.all([
         axios.get(`${API}/users`, { headers }),
         axios.get(`${API}/system/stats`, { headers }).catch(() => ({ data: null })),
         axios.get(`${API}/permissions/roles`, { headers }),
         axios.get(`${API}/system/settings`, { headers }).catch(() => ({ data: null })),
         axios.get(`${API}/branding/settings`).catch(() => ({ data: null })),
         axios.get(`${API}/whatsapp/settings`, { headers }).catch(() => ({ data: null })),
-        axios.get(`${API}/email/settings`, { headers }).catch(() => ({ data: null }))
+        axios.get(`${API}/email/settings`, { headers }).catch(() => ({ data: null })),
+        axios.get(`${API}/settings/receipt`, { headers }).catch(() => ({ data: null }))
       ]);
       
       setUsers(usersRes.data);
@@ -243,6 +244,10 @@ export default function SettingsPage() {
           sender_email: emailRes.data.sender_email || 'onboarding@resend.dev',
           sender_name: emailRes.data.sender_name || 'NT POS System'
         }));
+      }
+
+      if (receiptRes.data) {
+        setReceiptSettings(receiptRes.data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
