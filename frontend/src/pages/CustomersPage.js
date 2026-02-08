@@ -49,7 +49,19 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', phone: '', email: '', address: '', notes: '', family_id: ''
+    name: '', 
+    phone: '', 
+    email: '', 
+    address: '', 
+    notes: '', 
+    family_id: '',
+    // New fields
+    national_id: '',
+    commercial_register: '',
+    birthdate: '',
+    customer_type: 'regular', // VIP, regular, new
+    max_debt_limit: '',
+    special_discount: ''
   });
   
   // Family dialog
