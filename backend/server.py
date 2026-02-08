@@ -495,6 +495,23 @@ class StockTransferResponse(BaseModel):
     quantity: int
     created_at: str
 
+# ============ PRICE HISTORY MODELS ============
+
+class PriceHistoryResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    product_id: str
+    product_name: str
+    old_price: float
+    new_price: float
+    price_type: str  # purchase_price, wholesale_price, retail_price
+    change_percent: float
+    changed_by: str
+    changed_by_name: str
+    source: str  # manual, purchase, import
+    notes: Optional[str] = ""
+    created_at: str
+
 # ============ INVENTORY SESSION MODELS ============
 
 class InventorySessionCreate(BaseModel):
