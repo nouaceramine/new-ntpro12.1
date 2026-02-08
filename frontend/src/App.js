@@ -48,6 +48,7 @@ import OperationsPage from "./pages/OperationsPage";
 import ProfitRatesPage from "./pages/ProfitRatesPage";
 import TransfersPage from "./pages/TransfersPage";
 import PhoneDirectoryPage from "./pages/PhoneDirectoryPage";
+import SidebarSettingsPage from "./pages/SidebarSettingsPage";
 import RepairReceptionPage from "./pages/RepairReceptionPage";
 import RepairTrackingPage from "./pages/RepairTrackingPage";
 import SparePartsPage from "./pages/SparePartsPage";
