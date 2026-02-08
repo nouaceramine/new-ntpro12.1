@@ -583,6 +583,31 @@ export default function SidebarSettingsPage() {
     fetchSidebarOrder();
   }, []);
 
+  // Merge saved sections with default sections to include new sections
+  const mergeSectionsWithDefault = (savedSections) => {
+    const savedIds = new Set(savedSections.map(s => s.id));
+    const newSections = defaultMenuSections.filter(s => !savedIds.has(s.id));
+    
+    // Also check for missing items within existing sections
+    const mergedSections = savedSections.map(savedSection => {
+      const defaultSection = defaultMenuSections.find(d => d.id === savedSection.id);
+      if (defaultSection) {
+        const savedItemIds = new Set(savedSection.items.map(i => i.id));
+        const newItems = defaultSection.items.filter(i => !savedItemIds.has(i.id));
+        if (newItems.length > 0) {
+          return {
+            ...savedSection,
+            items: [...savedSection.items, ...newItems]
+          };
+        }
+      }
+      return savedSection;
+    });
+    
+    // Add completely new sections at the end
+    return [...mergedSections, ...newSections];
+  };
+
   const fetchSidebarOrder = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -592,7 +617,9 @@ export default function SidebarSettingsPage() {
       
       if (response.data.sidebar_order && Array.isArray(response.data.sidebar_order) && response.data.sidebar_order.length > 0) {
         if (response.data.sidebar_order[0].items) {
-          setMenuSections(response.data.sidebar_order);
+          // Merge saved sections with default to include any new sections
+          const mergedSections = mergeSectionsWithDefault(response.data.sidebar_order);
+          setMenuSections(mergedSections);
         }
       }
     } catch (error) {
