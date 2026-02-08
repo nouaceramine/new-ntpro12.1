@@ -321,6 +321,16 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'employee-management',
+      title: language === 'ar' ? 'إدارة الموظفين' : 'Gestion employés',
+      icon: Users,
+      items: [
+        { path: '/employees', icon: Users, label: language === 'ar' ? 'الموظفين' : 'Employés' },
+        { path: '/employee-alerts', icon: Bell, label: language === 'ar' ? 'تنبيهات الحدود' : 'Alertes limites' },
+        { path: '/sales-permissions', icon: Shield, label: language === 'ar' ? 'صلاحيات المبيعات' : 'Permissions ventes' },
+      ]
+    },
+    {
       id: 'repairs',
       title: language === 'ar' ? 'الصيانة' : 'Réparations',
       icon: Wrench,
