@@ -61,7 +61,11 @@ import {
   ImageIcon,
   MessageCircle,
   Mail,
-  Send
+  Send,
+  Download,
+  Upload,
+  Database,
+  HardDrive
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -79,6 +83,16 @@ export default function SettingsPage() {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetCode, setResetCode] = useState('');
   const [resetting, setResetting] = useState(false);
+  
+  // Selective Delete
+  const [showSelectiveDeleteDialog, setShowSelectiveDeleteDialog] = useState(false);
+  const [selectedDataTypes, setSelectedDataTypes] = useState([]);
+  const [selectiveDeleteCode, setSelectiveDeleteCode] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  
+  // Backup
+  const [backupLoading, setBackupLoading] = useState(false);
+  const [backupList, setBackupList] = useState([]);
   
   // Permissions
   const [selectedUser, setSelectedUser] = useState(null);
