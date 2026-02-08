@@ -984,13 +984,18 @@ async def register(user: UserCreate):
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
     user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
-    if not user or not verify_password(credentials.password, user["password"]):
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Support both password and hashed_password fields
+    stored_password = user.get("hashed_password") or user.get("password")
+    if not stored_password or not verify_password(credentials.password, stored_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
     access_token = create_access_token({"sub": user["id"], "role": user["role"]})
     return TokenResponse(
         access_token=access_token,
-        user=UserResponse(id=user["id"], email=user["email"], name=user["name"], role=user["role"], created_at=user["created_at"])
+        user=UserResponse(id=user["id"], email=user["email"], name=user["name"], role=user["role"], permissions=user.get("permissions", {}), created_at=user["created_at"])
     )
 
 @api_router.get("/auth/me", response_model=UserResponse)
