@@ -613,6 +613,7 @@ export default function POSPage() {
       
       const saleData = {
         customer_id: selectedCustomer,
+        warehouse_id: selectedWarehouse || null,
         items: cart.map(item => ({
           product_id: item.is_custom ? null : item.product_id,
           product_name: item.product_name,
