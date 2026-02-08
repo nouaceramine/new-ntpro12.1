@@ -268,6 +268,58 @@ export default function EmployeesPage() {
             <AlertDialogFooter><AlertDialogCancel>{t.cancel}</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">{t.delete}</AlertDialogAction></AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Create Account Dialog */}
+        <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                {language === 'ar' ? 'إنشاء حساب دخول' : 'Créer un compte'} - {selectedEmployee?.name}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateAccount} className="space-y-4">
+              <div>
+                <Label>{language === 'ar' ? 'البريد الإلكتروني' : 'Email'} *</Label>
+                <Input 
+                  type="email" 
+                  value={accountData.email} 
+                  onChange={e => setAccountData({...accountData, email: e.target.value})} 
+                  placeholder="example@email.com"
+                  required 
+                />
+              </div>
+              <div>
+                <Label>{language === 'ar' ? 'كلمة المرور' : 'Mot de passe'} *</Label>
+                <Input 
+                  type="password" 
+                  value={accountData.password} 
+                  onChange={e => setAccountData({...accountData, password: e.target.value})} 
+                  placeholder="********"
+                  required 
+                />
+              </div>
+              <div>
+                <Label>{language === 'ar' ? 'الدور' : 'Rôle'}</Label>
+                <Select value={accountData.role} onValueChange={v => setAccountData({...accountData, role: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="seller">{language === 'ar' ? 'بائع' : 'Vendeur'}</SelectItem>
+                    <SelectItem value="manager">{language === 'ar' ? 'مشرف' : 'Manager'}</SelectItem>
+                    <SelectItem value="accountant">{language === 'ar' ? 'محاسب' : 'Comptable'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setAccountDialogOpen(false)}>{t.cancel}</Button>
+                <Button type="submit" disabled={creatingAccount}>
+                  {creatingAccount ? <Clock className="h-4 w-4 animate-spin me-2" /> : <UserPlus className="h-4 w-4 me-2" />}
+                  {language === 'ar' ? 'إنشاء الحساب' : 'Créer le compte'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
