@@ -53,6 +53,16 @@ import { AIAssistant } from './AIAssistant';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
+// Helper function to determine AI context based on current page
+const getAIContext = (pathname) => {
+  if (pathname.includes('/pos') || pathname.includes('/sales')) return 'sales';
+  if (pathname.includes('/products') || pathname.includes('/inventory') || pathname.includes('/warehouses')) return 'inventory';
+  if (pathname.includes('/customers')) return 'customers';
+  if (pathname.includes('/reports') || pathname.includes('/analytics')) return 'reports';
+  if (pathname.includes('/suppliers') || pathname.includes('/purchases')) return 'suppliers';
+  return 'general';
+};
+
 export const Layout = ({ children }) => {
   const { t, language, toggleLanguage, isRTL } = useLanguage();
   const { user, logout, isAdmin } = useAuth();
