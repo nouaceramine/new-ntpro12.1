@@ -41,11 +41,37 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [modelFilter, setModelFilter] = useState(searchParams.get('model') || '');
   const [viewMode, setViewMode] = useState(localStorage.getItem('productsViewMode') || 'grid'); // grid, list, compact
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   const changeViewMode = (mode) => {
     setViewMode(mode);
     localStorage.setItem('productsViewMode', mode);
   };
+
+  // Sort products
+  const sortedProducts = [...products].sort((a, b) => {
+    let comparison = 0;
+    switch (sortBy) {
+      case 'name':
+        const nameA = language === 'ar' ? (a.name_ar || a.name_en) : (a.name_en || a.name_ar);
+        const nameB = language === 'ar' ? (b.name_ar || b.name_en) : (b.name_en || b.name_ar);
+        comparison = nameA.localeCompare(nameB);
+        break;
+      case 'price':
+        comparison = (a.retail_price || 0) - (b.retail_price || 0);
+        break;
+      case 'stock':
+        comparison = (a.quantity || 0) - (b.quantity || 0);
+        break;
+      case 'purchase_price':
+        comparison = (a.purchase_price || 0) - (b.purchase_price || 0);
+        break;
+      default:
+        comparison = 0;
+    }
+    return sortOrder === 'asc' ? comparison : -comparison;
+  });
 
   const fetchProducts = async () => {
     setLoading(true);
