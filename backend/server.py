@@ -3461,10 +3461,6 @@ async def get_salary_report(month: str = None, user: dict = Depends(get_current_
         })
     
     return report
-        {"$unset": {"user_id": "", "user_email": ""}}
-    )
-    
-    return {"success": True}
 
 # Attendance
 @api_router.post("/employees/attendance", response_model=AttendanceResponse)
