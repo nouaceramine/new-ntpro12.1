@@ -100,6 +100,37 @@ export default function SuppliersPage() {
     }
   };
 
+  // Handle Advance Payment
+  const handleAdvancePayment = async () => {
+    if (!advancePaymentData.amount || parseFloat(advancePaymentData.amount) <= 0) {
+      toast.error(language === 'ar' ? 'يرجى إدخال مبلغ صحيح' : 'Veuillez entrer un montant valide');
+      return;
+    }
+    try {
+      await axios.post(`${API}/suppliers/${advancePaymentData.supplier_id}/advance-payment`, {
+        amount: parseFloat(advancePaymentData.amount),
+        payment_method: advancePaymentData.payment_method,
+        notes: advancePaymentData.notes
+      });
+      toast.success(language === 'ar' ? 'تم تسجيل الدفع المتقدم بنجاح' : 'Paiement avancé enregistré');
+      setAdvancePaymentDialogOpen(false);
+      setAdvancePaymentData({ supplier_id: '', amount: '', payment_method: 'cash', notes: '' });
+      fetchSuppliers();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || (language === 'ar' ? 'حدث خطأ' : 'Une erreur est survenue'));
+    }
+  };
+
+  const openAdvancePaymentDialog = (supplier) => {
+    setAdvancePaymentData({
+      supplier_id: supplier.id,
+      amount: '',
+      payment_method: 'cash',
+      notes: ''
+    });
+    setAdvancePaymentDialogOpen(true);
+  };
+
   useEffect(() => {
     fetchSuppliers();
     fetchSupplierFamilies();
