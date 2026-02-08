@@ -397,19 +397,133 @@ export default function CustomersPage() {
           </CardContent>
         </Card>
 
-        {/* Customers Grid */}
+        {/* Customers Display */}
         {loading ? (
           <div className="flex items-center justify-center min-h-[40vh]">
             <div className="spinner" />
           </div>
-        ) : customers.length === 0 ? (
+        ) : sortedCustomers.length === 0 ? (
           <div className="empty-state py-16">
             <Users className="h-20 w-20 text-muted-foreground mb-4" />
             <h3 className="text-xl font-medium">{t.noCustomers}</h3>
           </div>
+        ) : viewMode === 'list' ? (
+          /* List View - Table Format */
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{language === 'ar' ? 'الاسم' : 'Nom'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'الهاتف' : 'Téléphone'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'النوع' : 'Type'}</TableHead>
+                    <TableHead className="text-center">{t.totalPurchases}</TableHead>
+                    <TableHead className="text-center">{t.balance}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'آخر زيارة' : 'Dernière visite'}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'الإجراءات' : 'Actions'}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedCustomers
+                    .filter(customer => !showBlacklistOnly || isBlacklisted(customer.phone))
+                    .map(customer => {
+                      const customerIsBlacklisted = isBlacklisted(customer.phone);
+                      return (
+                        <TableRow 
+                          key={customer.id} 
+                          className={customerIsBlacklisted ? 'bg-red-50/50' : customer.customer_type === 'vip' ? 'bg-amber-50/30' : ''}
+                          data-testid={`customer-row-${customer.id}`}
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{customer.name}</span>
+                              {customer.customer_type === 'vip' && (
+                                <Badge className="bg-amber-100 text-amber-700 text-xs">VIP</Badge>
+                              )}
+                              {customer.customer_type === 'new' && (
+                                <Badge className="bg-blue-100 text-blue-700 text-xs">{language === 'ar' ? 'جديد' : 'Nouveau'}</Badge>
+                              )}
+                              {customerIsBlacklisted && (
+                                <Badge variant="destructive" className="text-xs gap-1">
+                                  <Ban className="h-3 w-3" />
+                                </Badge>
+                              )}
+                              {customer.special_discount > 0 && (
+                                <Badge variant="outline" className="text-green-600 border-green-300 text-xs">
+                                  {customer.special_discount}%
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell dir="ltr" className="text-muted-foreground">
+                            {customer.phone || '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {customer.customer_type === 'vip' ? 'VIP' : customer.customer_type === 'new' ? (language === 'ar' ? 'جديد' : 'Nouveau') : (language === 'ar' ? 'عادي' : 'Régulier')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center font-medium">
+                            {(customer.total_purchases || 0).toFixed(2)} {t.currency}
+                          </TableCell>
+                          <TableCell className={`text-center font-medium ${customer.balance > 0 ? 'text-amber-600' : ''}`}>
+                            {(customer.balance || 0).toFixed(2)} {t.currency}
+                          </TableCell>
+                          <TableCell className="text-center text-sm text-muted-foreground">
+                            {customer.last_purchase_date 
+                              ? new Date(customer.last_purchase_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR')
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-center gap-1">
+                              {customer.phone && (
+                                customerIsBlacklisted ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 text-green-600"
+                                    onClick={() => handleRemoveFromBlacklist(customer.phone)}
+                                    title={language === 'ar' ? 'إزالة من القائمة السوداء' : 'Retirer de la liste noire'}
+                                  >
+                                    <ShieldOff className="h-4 w-4" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 text-red-600"
+                                    onClick={() => { setBlacklistCustomer(customer); setBlacklistDialogOpen(true); }}
+                                    title={language === 'ar' ? 'إضافة للقائمة السوداء' : 'Ajouter à la liste noire'}
+                                  >
+                                    <Shield className="h-4 w-4" />
+                                  </Button>
+                                )
+                              )}
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditDialog(customer)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive"
+                                onClick={() => { setSelectedCustomer(customer); setDeleteDialogOpen(true); }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         ) : (
+          /* Grid View - Cards */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {customers
+            {sortedCustomers
               .filter(customer => !showBlacklistOnly || isBlacklisted(customer.phone))
               .map(customer => {
                 const customerIsBlacklisted = isBlacklisted(customer.phone);
@@ -506,12 +620,12 @@ export default function CustomersPage() {
                       <div className="flex gap-4 mt-4 pt-4 border-t flex-wrap">
                         <div>
                           <p className="text-xs text-muted-foreground">{t.totalPurchases}</p>
-                          <p className="font-semibold">{customer.total_purchases.toFixed(2)} {t.currency}</p>
+                          <p className="font-semibold">{(customer.total_purchases || 0).toFixed(2)} {t.currency}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">{t.balance}</p>
                           <p className={`font-semibold ${customer.balance > 0 ? 'text-amber-600' : ''}`}>
-                            {customer.balance.toFixed(2)} {t.currency}
+                            {(customer.balance || 0).toFixed(2)} {t.currency}
                           </p>
                         </div>
                         {customer.max_debt_limit > 0 && (
