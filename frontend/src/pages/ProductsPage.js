@@ -244,7 +244,7 @@ export default function ProductsPage() {
           <div className="flex items-center justify-center min-h-[40vh]">
             <div className="spinner" />
           </div>
-        ) : products.length === 0 ? (
+        ) : sortedProducts.length === 0 ? (
           <div className="empty-state py-16">
             <Package className="h-20 w-20 text-muted-foreground mb-4" />
             <h3 className="text-xl font-medium">{t.noProducts}</h3>
@@ -261,7 +261,7 @@ export default function ProductsPage() {
         ) : viewMode === 'list' ? (
           /* List View */
           <div className="space-y-2">
-            {products.map((product) => (
+            {sortedProducts.map((product) => (
               <Link
                 key={product.id}
                 to={`/products/${product.id}`}
@@ -290,7 +290,7 @@ export default function ProductsPage() {
         ) : viewMode === 'compact' ? (
           /* Compact View */
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-            {products.map((product) => (
+            {sortedProducts.map((product) => (
               <Link
                 key={product.id}
                 to={`/products/${product.id}`}
@@ -312,7 +312,7 @@ export default function ProductsPage() {
         ) : (
           /* Grid View (default) */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
+            {sortedProducts.map((product) => (
               <Link
                 key={product.id}
                 to={`/products/${product.id}`}
