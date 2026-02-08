@@ -5472,6 +5472,19 @@ async def close_daily_session(session_id: str, closing_data: DailySessionClose, 
     credit_sales = sum(s.get("remaining", 0) for s in sales)
     sales_count = len(sales)
     
+    # Calculate actual profit from sale items
+    total_profit = 0
+    for sale in sales:
+        for item in sale.get("items", []):
+            product_id = item.get("product_id")
+            if product_id:
+                product = await db.products.find_one({"id": product_id}, {"_id": 0, "purchase_price": 1})
+                if product:
+                    purchase_price = product.get("purchase_price", 0)
+                    sale_price = item.get("price", 0)
+                    quantity = item.get("quantity", 1)
+                    total_profit += (sale_price - purchase_price) * quantity
+    
     update_data = {
         "closing_cash": closing_data.closing_cash,
         "closed_at": closing_data.closed_at,
@@ -5480,7 +5493,8 @@ async def close_daily_session(session_id: str, closing_data: DailySessionClose, 
         "total_sales": total_sales,
         "cash_sales": cash_sales,
         "credit_sales": credit_sales,
-        "sales_count": sales_count
+        "sales_count": sales_count,
+        "total_profit": total_profit
     }
     
     await db.daily_sessions.update_one({"id": session_id}, {"$set": update_data})
