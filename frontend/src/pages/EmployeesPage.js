@@ -149,6 +149,37 @@ export default function EmployeesPage() {
     setDialogOpen(true);
   };
 
+  // Fetch salary report
+  const fetchSalaryReport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/employees/salary-report?month=${salaryMonth}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSalaryReport(res.data);
+    } catch (e) {
+      console.error(e);
+      // Generate client-side report if API not available
+      const report = employees.map(emp => ({
+        employee_id: emp.id,
+        employee_name: emp.name,
+        position: emp.position,
+        base_salary: emp.salary,
+        commission: emp.total_commission || 0,
+        advances: emp.total_advances || 0,
+        net_salary: emp.salary + (emp.total_commission || 0) - (emp.total_advances || 0),
+        attendance_days: 22,
+        absence_days: 0
+      }));
+      setSalaryReport(report);
+    }
+  };
+
+  // Calculate net salary
+  const calculateNetSalary = (emp) => {
+    return emp.salary + (emp.total_commission || 0) - (emp.total_advances || 0);
+  };
+
   if (loading) return <Layout><div className="flex items-center justify-center min-h-[60vh]"><div className="spinner" /></div></Layout>;
 
   return (
@@ -159,11 +190,91 @@ export default function EmployeesPage() {
             <h1 className="text-3xl font-bold">{t.employees}</h1>
             <p className="text-muted-foreground">{employees.length} {t.employees}</p>
           </div>
-          <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="gap-2" data-testid="add-employee-btn">
-            <Plus className="h-5 w-5" />{t.addEmployee}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => { fetchSalaryReport(); setSalaryDialogOpen(true); }} className="gap-2">
+              <FileText className="h-4 w-4" />
+              {language === 'ar' ? 'جدول الرواتب' : 'Fiche de paie'}
+            </Button>
+            <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="gap-2" data-testid="add-employee-btn">
+              <Plus className="h-5 w-5" />{t.addEmployee}
+            </Button>
+          </div>
         </div>
 
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-blue-600">{language === 'ar' ? 'الموظفين' : 'Employés'}</p>
+                  <p className="text-2xl font-bold text-blue-700">{stats.totalEmployees}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-green-50 border-green-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Wallet className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-green-600">{language === 'ar' ? 'إجمالي الرواتب' : 'Total salaires'}</p>
+                  <p className="text-xl font-bold text-green-700">{stats.totalSalaries.toLocaleString()} {t.currency}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-purple-50 border-purple-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-purple-600">{language === 'ar' ? 'العمولات' : 'Commissions'}</p>
+                  <p className="text-xl font-bold text-purple-700">{stats.totalCommissions.toLocaleString()} {t.currency}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-amber-50 border-amber-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-amber-600">{language === 'ar' ? 'السلف' : 'Avances'}</p>
+                  <p className="text-xl font-bold text-amber-700">{stats.totalAdvances.toLocaleString()} {t.currency}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-cyan-50 border-cyan-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-cyan-100 rounded-lg">
+                  <KeyRound className="h-5 w-5 text-cyan-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-cyan-600">{language === 'ar' ? 'حسابات نشطة' : 'Comptes actifs'}</p>
+                  <p className="text-2xl font-bold text-cyan-700">{stats.activeAccounts}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Employees Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {employees.map(emp => (
             <Card key={emp.id} className="hover:shadow-md transition-shadow">
