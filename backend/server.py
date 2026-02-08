@@ -3403,6 +3403,69 @@ async def delete_employee_account(employee_id: str, admin: dict = Depends(get_ad
     
     return {"success": True}
 
+@api_router.get("/employees/salary-report")
+async def get_salary_report(month: str = None, user: dict = Depends(get_current_user)):
+    """Get monthly salary report for all employees"""
+    if not month:
+        month = datetime.now(timezone.utc).strftime("%Y-%m")
+    
+    year, month_num = map(int, month.split("-"))
+    start_date = datetime(year, month_num, 1, tzinfo=timezone.utc)
+    if month_num == 12:
+        end_date = datetime(year + 1, 1, 1, tzinfo=timezone.utc)
+    else:
+        end_date = datetime(year, month_num + 1, 1, tzinfo=timezone.utc)
+    
+    employees = await db.employees.find({}, {"_id": 0}).to_list(100)
+    
+    report = []
+    for emp in employees:
+        # Get advances for this month
+        advances = await db.employee_advances.find({
+            "employee_id": emp["id"],
+            "created_at": {"$gte": start_date.isoformat(), "$lt": end_date.isoformat()}
+        }, {"_id": 0}).to_list(100)
+        total_advances = sum(a.get("amount", 0) for a in advances)
+        
+        # Get attendance for this month
+        attendance = await db.employee_attendance.find({
+            "employee_id": emp["id"],
+            "date": {"$gte": start_date.isoformat()[:10], "$lt": end_date.isoformat()[:10]}
+        }, {"_id": 0}).to_list(31)
+        present_days = len([a for a in attendance if a.get("status") == "present"])
+        absent_days = len([a for a in attendance if a.get("status") == "absent"])
+        
+        # Get commissions (from sales)
+        sales = await db.sales.find({
+            "created_by": emp.get("user_email") or emp.get("name"),
+            "created_at": {"$gte": start_date.isoformat(), "$lt": end_date.isoformat()}
+        }, {"_id": 0}).to_list(1000)
+        total_sales = sum(s.get("total", 0) for s in sales)
+        commission = total_sales * (emp.get("commission_rate", 0) / 100)
+        
+        net_salary = emp.get("salary", 0) + commission - total_advances
+        
+        report.append({
+            "employee_id": emp["id"],
+            "employee_name": emp["name"],
+            "position": emp.get("position", ""),
+            "base_salary": emp.get("salary", 0),
+            "commission_rate": emp.get("commission_rate", 0),
+            "total_sales": total_sales,
+            "commission": round(commission, 2),
+            "advances": total_advances,
+            "net_salary": round(net_salary, 2),
+            "attendance_days": present_days,
+            "absence_days": absent_days,
+            "total_working_days": present_days + absent_days
+        })
+    
+    return report
+        {"$unset": {"user_id": "", "user_email": ""}}
+    )
+    
+    return {"success": True}
+
 # Attendance
 @api_router.post("/employees/attendance", response_model=AttendanceResponse)
 async def record_attendance(attendance: AttendanceCreate, admin: dict = Depends(get_admin_user)):
