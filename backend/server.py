@@ -3365,12 +3365,22 @@ async def get_sidebar_order(user: dict = Depends(get_current_user)):
         return {"sidebar_order": settings["sidebar_order"]}
     return {"sidebar_order": None}  # Return null to use default order
 
+class SidebarItem(BaseModel):
+    id: str
+    path: Optional[str] = None
+    icon: Optional[str] = None
+    labelAr: Optional[str] = None
+    labelFr: Optional[str] = None
+    visible: bool = True
+
 @api_router.put("/settings/sidebar-order")
-async def update_sidebar_order(order: List[str], user: dict = Depends(get_current_user)):
+async def update_sidebar_order(order: List[SidebarItem], user: dict = Depends(get_current_user)):
     """Update sidebar menu order for user"""
+    # Convert to dict for storage
+    order_data = [item.model_dump() for item in order]
     await db.user_settings.update_one(
         {"user_id": user["id"]},
-        {"$set": {"sidebar_order": order, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        {"$set": {"sidebar_order": order_data, "updated_at": datetime.now(timezone.utc).isoformat()}},
         upsert=True
     )
     return {"success": True}
