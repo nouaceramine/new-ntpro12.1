@@ -38,7 +38,7 @@ import {
   Users, Building, CreditCard, TrendingUp, Package, 
   Settings, Plus, Edit, Trash2, Check, X, Clock,
   AlertTriangle, DollarSign, Search, MoreHorizontal,
-  Star, Eye, Ban, RefreshCw, Calendar
+  Star, Eye, EyeOff, Ban, RefreshCw, Calendar, Store, Truck, ShoppingBag
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
