@@ -286,12 +286,19 @@ export const Layout = ({ children }) => {
       items: [
         { path: '/reports', icon: BarChart3, label: t.reports },
         { path: '/analytics', icon: BarChart3, label: language === 'ar' ? 'إحصائيات متقدمة' : 'Analyses avancées' },
+        { path: '/notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات' : 'Notifications' },
         { path: '/loyalty', icon: Award, label: language === 'ar' ? 'الولاء والتسويق' : 'Fidélité' },
         { path: '/users', icon: Shield, label: t.users },
         { path: '/api-keys', icon: Key, label: t.apiKeys },
         { path: '/settings', icon: Settings, label: t.settings },
       ]
-    }] : [])
+    }] : [{
+      title: language === 'ar' ? 'الإعدادات' : 'Paramètres',
+      icon: Settings,
+      items: [
+        { path: '/notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات' : 'Notifications' },
+      ]
+    }])
   ];
 
   const isActive = (path) => {
