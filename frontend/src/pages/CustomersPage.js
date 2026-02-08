@@ -48,6 +48,12 @@ export default function CustomersPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [saving, setSaving] = useState(false);
+  
+  // View mode and sorting
+  const [viewMode, setViewMode] = useState(localStorage.getItem('customersViewMode') || 'grid');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+  
   const [formData, setFormData] = useState({
     name: '', 
     phone: '', 
@@ -75,6 +81,33 @@ export default function CustomersPage() {
   const [blacklistDialogOpen, setBlacklistDialogOpen] = useState(false);
   const [blacklistCustomer, setBlacklistCustomer] = useState(null);
   const [blacklistReason, setBlacklistReason] = useState('');
+
+  const changeViewMode = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('customersViewMode', mode);
+  };
+
+  // Sort customers
+  const sortedCustomers = [...customers].sort((a, b) => {
+    let comparison = 0;
+    switch (sortBy) {
+      case 'name':
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case 'balance':
+        comparison = (a.balance || 0) - (b.balance || 0);
+        break;
+      case 'total_purchases':
+        comparison = (a.total_purchases || 0) - (b.total_purchases || 0);
+        break;
+      case 'created_at':
+        comparison = new Date(a.created_at || 0) - new Date(b.created_at || 0);
+        break;
+      default:
+        comparison = 0;
+    }
+    return sortOrder === 'asc' ? comparison : -comparison;
+  });
 
   const fetchBlacklist = async () => {
     try {
