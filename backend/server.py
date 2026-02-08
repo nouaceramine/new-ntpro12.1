@@ -3103,10 +3103,14 @@ async def create_backup(admin: dict = Depends(get_admin_user)):
     
     collections = ["users", "products", "customers", "suppliers", "sales", "purchases", 
                    "cash_boxes", "transactions", "employees", "attendance", "advances", 
-                   "debts", "debt_payments", "notifications"]
+                   "debts", "debt_payments", "notifications", "product_families", 
+                   "customer_families", "supplier_families", "daily_sessions", "expenses",
+                   "repairs", "spare_parts", "inventory_adjustments", "system_settings",
+                   "branding_settings", "ai_chat_history"]
     
     backup_data = {
         "created_at": datetime.now(timezone.utc).isoformat(),
+        "version": "2.0",
         "collections": {}
     }
     
@@ -3126,6 +3130,263 @@ async def create_backup(admin: dict = Depends(get_admin_user)):
         media_type="application/json",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@api_router.post("/backup/restore")
+async def restore_backup(admin: dict = Depends(get_admin_user), file: UploadFile = File(...)):
+    """Restore data from backup file"""
+    import json
+    
+    try:
+        content = await file.read()
+        backup_data = json.loads(content.decode('utf-8'))
+        
+        if "collections" not in backup_data:
+            raise HTTPException(status_code=400, detail="Invalid backup file format")
+        
+        restored_counts = {}
+        for collection_name, docs in backup_data["collections"].items():
+            if docs:
+                # Clear existing data
+                await db[collection_name].delete_many({})
+                # Insert backup data
+                await db[collection_name].insert_many(docs)
+                restored_counts[collection_name] = len(docs)
+        
+        # Log restore
+        await db.system_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "action": "backup_restore",
+            "performed_by": admin.get("name", ""),
+            "backup_date": backup_data.get("created_at", ""),
+            "restored_counts": restored_counts,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"success": True, "restored_counts": restored_counts}
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON file")
+
+@api_router.post("/backup/save-to-server")
+async def save_backup_to_server(admin: dict = Depends(get_admin_user)):
+    """Save backup to server storage"""
+    import json
+    
+    collections = ["users", "products", "customers", "suppliers", "sales", "purchases", 
+                   "cash_boxes", "transactions", "employees", "attendance", "advances", 
+                   "debts", "debt_payments", "notifications", "product_families",
+                   "customer_families", "supplier_families", "daily_sessions", "expenses"]
+    
+    backup_data = {
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "version": "2.0",
+        "collections": {}
+    }
+    
+    for collection_name in collections:
+        collection = db[collection_name]
+        docs = await collection.find({}, {"_id": 0}).to_list(100000)
+        backup_data["collections"][collection_name] = docs
+    
+    # Save to server
+    backup_dir = ROOT_DIR / "backups"
+    backup_dir.mkdir(exist_ok=True)
+    
+    filename = f"backup_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+    filepath = backup_dir / filename
+    
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(backup_data, f, ensure_ascii=False, indent=2)
+    
+    # Keep only last 10 backups
+    backups = sorted(backup_dir.glob("backup_*.json"), reverse=True)
+    for old_backup in backups[10:]:
+        old_backup.unlink()
+    
+    # Save backup record to database
+    await db.backups.insert_one({
+        "id": str(uuid.uuid4()),
+        "filename": filename,
+        "size": filepath.stat().st_size,
+        "created_by": admin.get("name", ""),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"success": True, "filename": filename}
+
+@api_router.get("/backup/list")
+async def list_backups(admin: dict = Depends(get_admin_user)):
+    """List available backups on server"""
+    backups = await db.backups.find({}, {"_id": 0}).sort("created_at", -1).to_list(20)
+    return backups
+
+# ============ SELECTIVE DATA DELETE ============
+
+class SelectiveDeleteRequest(BaseModel):
+    data_types: List[str]  # ["sales", "purchases", "customers", etc.]
+    confirm_code: str
+
+@api_router.post("/system/selective-delete")
+async def selective_delete(request: SelectiveDeleteRequest, admin: dict = Depends(get_admin_user)):
+    """Selectively delete specific data types"""
+    if request.confirm_code != "DELETE-SELECTED":
+        raise HTTPException(status_code=400, detail="Invalid confirmation code")
+    
+    # Check permissions
+    user_permissions = admin.get("permissions") or DEFAULT_PERMISSIONS.get(admin.get("role", "user"), {})
+    if not user_permissions.get("factory_reset", False):
+        raise HTTPException(status_code=403, detail="No permission for data deletion")
+    
+    # Valid data types
+    valid_types = {
+        "sales": "sales",
+        "purchases": "purchases",
+        "customers": "customers",
+        "suppliers": "suppliers",
+        "products": "products",
+        "employees": "employees",
+        "debts": "debts",
+        "expenses": "expenses",
+        "repairs": "repairs",
+        "inventory_adjustments": "inventory_adjustments",
+        "daily_sessions": "daily_sessions",
+        "notifications": "notifications"
+    }
+    
+    deleted_counts = {}
+    for data_type in request.data_types:
+        if data_type in valid_types:
+            collection_name = valid_types[data_type]
+            result = await db[collection_name].delete_many({})
+            deleted_counts[data_type] = result.deleted_count
+            
+            # Also delete related data
+            if data_type == "sales":
+                await db.debt_payments.delete_many({"type": "sale"})
+            elif data_type == "customers":
+                await db.customer_families.delete_many({})
+            elif data_type == "suppliers":
+                await db.supplier_families.delete_many({})
+            elif data_type == "products":
+                await db.product_families.delete_many({})
+    
+    # Log deletion
+    await db.system_logs.insert_one({
+        "id": str(uuid.uuid4()),
+        "action": "selective_delete",
+        "performed_by": admin.get("name", ""),
+        "deleted_types": request.data_types,
+        "deleted_counts": deleted_counts,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"success": True, "deleted_counts": deleted_counts}
+
+# ============ SIDEBAR ORDER SETTINGS ============
+
+@api_router.get("/settings/sidebar-order")
+async def get_sidebar_order(user: dict = Depends(get_current_user)):
+    """Get sidebar menu order for user"""
+    settings = await db.user_settings.find_one({"user_id": user["id"]}, {"_id": 0})
+    if settings and "sidebar_order" in settings:
+        return {"sidebar_order": settings["sidebar_order"]}
+    return {"sidebar_order": None}  # Return null to use default order
+
+@api_router.put("/settings/sidebar-order")
+async def update_sidebar_order(order: List[str], user: dict = Depends(get_current_user)):
+    """Update sidebar menu order for user"""
+    await db.user_settings.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"sidebar_order": order, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"success": True}
+
+# ============ NOTIFICATION MANAGEMENT ============
+
+@api_router.get("/notifications/settings")
+async def get_notification_settings(user: dict = Depends(get_current_user)):
+    """Get notification settings"""
+    settings = await db.notification_settings.find_one({"user_id": user["id"]}, {"_id": 0})
+    if not settings:
+        # Default settings
+        settings = {
+            "low_stock_enabled": True,
+            "low_stock_threshold": 10,
+            "debt_reminder_enabled": True,
+            "debt_reminder_days": 7,
+            "cash_difference_enabled": True,
+            "cash_difference_threshold": 1000,
+            "expense_reminder_enabled": True,
+            "repair_status_enabled": True,
+            "email_notifications": False,
+            "sound_enabled": True
+        }
+    return settings
+
+@api_router.put("/notifications/settings")
+async def update_notification_settings(settings: dict, user: dict = Depends(get_current_user)):
+    """Update notification settings"""
+    settings["user_id"] = user["id"]
+    settings["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.notification_settings.update_one(
+        {"user_id": user["id"]},
+        {"$set": settings},
+        upsert=True
+    )
+    return {"success": True}
+
+@api_router.get("/notifications/all")
+async def get_all_notifications(
+    skip: int = 0, 
+    limit: int = 50,
+    unread_only: bool = False,
+    user: dict = Depends(get_current_user)
+):
+    """Get all notifications with pagination"""
+    query = {}
+    if unread_only:
+        query["read"] = False
+    
+    notifications = await db.notifications.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await db.notifications.count_documents(query)
+    unread_count = await db.notifications.count_documents({"read": False})
+    
+    return {
+        "notifications": notifications,
+        "total": total,
+        "unread_count": unread_count
+    }
+
+@api_router.put("/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, user: dict = Depends(get_current_user)):
+    """Mark a notification as read"""
+    await db.notifications.update_one(
+        {"id": notification_id},
+        {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"success": True}
+
+@api_router.put("/notifications/mark-all-read")
+async def mark_all_notifications_read(user: dict = Depends(get_current_user)):
+    """Mark all notifications as read"""
+    await db.notifications.update_many(
+        {"read": False},
+        {"$set": {"read": True, "read_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"success": True}
+
+@api_router.delete("/notifications/{notification_id}")
+async def delete_notification(notification_id: str, user: dict = Depends(get_current_user)):
+    """Delete a notification"""
+    await db.notifications.delete_one({"id": notification_id})
+    return {"success": True}
+
+@api_router.delete("/notifications/clear-all")
+async def clear_all_notifications(admin: dict = Depends(get_admin_user)):
+    """Clear all notifications"""
+    result = await db.notifications.delete_many({})
+    return {"success": True, "deleted_count": result.deleted_count}
 
 # ============ OCR ROUTE ============
 
