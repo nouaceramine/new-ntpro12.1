@@ -675,11 +675,14 @@ export default function SettingsPage() {
 
   // Available roles
   const availableRoles = [
-    { value: 'seller', label_ar: 'بائع', label_fr: 'Vendeur', color: 'bg-green-500' },
-    { value: 'ecommerce_manager', label_ar: 'مسؤول متجر إلكتروني', label_fr: 'E-commerce Manager', color: 'bg-purple-500' },
-    { value: 'accountant', label_ar: 'محاسب', label_fr: 'Comptable', color: 'bg-amber-500' },
-    { value: 'manager', label_ar: 'مشرف', label_fr: 'Manager', color: 'bg-blue-500' },
-    { value: 'user', label_ar: 'مستخدم عادي', label_fr: 'Utilisateur', color: 'bg-gray-500' },
+    { value: 'seller', label_ar: 'بائع', label_fr: 'Vendeur', color: 'bg-green-500', desc_ar: 'عمليات البيع الأساسية فقط', desc_fr: 'Basic sales operations only' },
+    { value: 'sales_supervisor', label_ar: 'مشرف مبيعات', label_fr: 'Sales Supervisor', color: 'bg-teal-500', desc_ar: 'إشراف على المبيعات والعملاء', desc_fr: 'Sales and customer oversight' },
+    { value: 'inventory_manager', label_ar: 'مدير مخزون', label_fr: 'Inventory Manager', color: 'bg-orange-500', desc_ar: 'إدارة المخزون والمشتريات', desc_fr: 'Stock and purchase management' },
+    { value: 'ecommerce_manager', label_ar: 'مسؤول متجر إلكتروني', label_fr: 'E-commerce Manager', color: 'bg-purple-500', desc_ar: 'إدارة المتجر الإلكتروني', desc_fr: 'Online store management' },
+    { value: 'accountant', label_ar: 'محاسب', label_fr: 'Comptable', color: 'bg-amber-500', desc_ar: 'التقارير المالية والديون والمصاريف', desc_fr: 'Financial reports, debts, and expenses' },
+    { value: 'manager', label_ar: 'مشرف', label_fr: 'Manager', color: 'bg-blue-500', desc_ar: 'إدارة العمليات اليومية', desc_fr: 'Daily operations management' },
+    { value: 'admin', label_ar: 'مدير', label_fr: 'Admin', color: 'bg-red-500', desc_ar: 'صلاحيات كاملة على المتجر', desc_fr: 'Full store access' },
+    { value: 'user', label_ar: 'مستخدم عادي', label_fr: 'Utilisateur', color: 'bg-gray-500', desc_ar: 'عرض فقط', desc_fr: 'View only' },
   ];
 
   const updatePermission = (category, action, value) => {
@@ -695,21 +698,67 @@ export default function SettingsPage() {
   };
 
   const permissionCategories = [
-    { key: 'dashboard', label: language === 'ar' ? 'لوحة التحكم' : 'Dashboard', simple: true },
-    { key: 'pos', label: language === 'ar' ? 'نقطة البيع' : 'POS', simple: true },
-    { key: 'products', label: language === 'ar' ? 'المنتجات' : 'Products', simple: false },
-    { key: 'sales', label: language === 'ar' ? 'المبيعات' : 'Sales', simple: false },
-    { key: 'customers', label: language === 'ar' ? 'الزبائن' : 'Customers', simple: false },
-    { key: 'suppliers', label: language === 'ar' ? 'الموردين' : 'Suppliers', simple: false },
-    { key: 'employees', label: language === 'ar' ? 'الموظفين' : 'Employees', simple: false },
-    { key: 'debts', label: language === 'ar' ? 'الديون' : 'Debts', simple: false },
-    { key: 'reports', label: language === 'ar' ? 'التقارير' : 'Reports', simple: true },
-    { key: 'users', label: language === 'ar' ? 'المستخدمين' : 'Users', simple: false },
-    { key: 'recharge', label: language === 'ar' ? 'شحن الرصيد' : 'Recharge', simple: true },
-    { key: 'settings', label: language === 'ar' ? 'الإعدادات' : 'Settings', simple: true },
-    { key: 'api_keys', label: language === 'ar' ? 'مفاتيح API' : 'API Keys', simple: true },
-    { key: 'factory_reset', label: language === 'ar' ? 'ضبط المصنع' : 'Factory Reset', simple: true },
+    { key: 'dashboard', label: language === 'ar' ? 'لوحة التحكم' : 'Dashboard', simple: true, group: 'general' },
+    { key: 'pos', label: language === 'ar' ? 'نقطة البيع' : 'POS', simple: true, group: 'sales' },
+    { key: 'products', label: language === 'ar' ? 'المنتجات' : 'Products', simple: false, actions: ['view', 'add', 'edit', 'delete', 'price_change', 'stock_adjust'], group: 'inventory' },
+    { key: 'inventory', label: language === 'ar' ? 'المخزون' : 'Inventory', simple: false, actions: ['view', 'add', 'edit', 'delete', 'transfer', 'count'], group: 'inventory' },
+    { key: 'purchases', label: language === 'ar' ? 'المشتريات' : 'Purchases', simple: false, actions: ['view', 'add', 'edit', 'delete', 'approve'], group: 'inventory' },
+    { key: 'sales', label: language === 'ar' ? 'المبيعات' : 'Sales', simple: false, actions: ['view', 'add', 'edit', 'delete', 'refund', 'discount'], group: 'sales' },
+    { key: 'customers', label: language === 'ar' ? 'الزبائن' : 'Customers', simple: false, actions: ['view', 'add', 'edit', 'delete', 'credit', 'blacklist'], group: 'sales' },
+    { key: 'suppliers', label: language === 'ar' ? 'الموردين' : 'Suppliers', simple: false, actions: ['view', 'add', 'edit', 'delete', 'payments'], group: 'inventory' },
+    { key: 'employees', label: language === 'ar' ? 'الموظفين' : 'Employees', simple: false, actions: ['view', 'add', 'edit', 'delete', 'salary', 'attendance'], group: 'hr' },
+    { key: 'debts', label: language === 'ar' ? 'الديون' : 'Debts', simple: false, actions: ['view', 'add', 'edit', 'delete', 'collect'], group: 'financial' },
+    { key: 'expenses', label: language === 'ar' ? 'المصاريف' : 'Expenses', simple: false, actions: ['view', 'add', 'edit', 'delete', 'approve'], group: 'financial' },
+    { key: 'reports', label: language === 'ar' ? 'التقارير' : 'Reports', simple: false, actions: ['sales', 'inventory', 'financial', 'customers', 'employees', 'advanced'], group: 'general' },
+    { key: 'users', label: language === 'ar' ? 'المستخدمين' : 'Users', simple: false, actions: ['view', 'add', 'edit', 'delete', 'permissions'], group: 'system' },
+    { key: 'recharge', label: language === 'ar' ? 'شحن الرصيد' : 'Recharge', simple: true, group: 'services' },
+    { key: 'settings', label: language === 'ar' ? 'الإعدادات' : 'Settings', simple: true, group: 'system' },
+    { key: 'api_keys', label: language === 'ar' ? 'مفاتيح API' : 'API Keys', simple: true, group: 'system' },
+    { key: 'factory_reset', label: language === 'ar' ? 'ضبط المصنع' : 'Factory Reset', simple: true, group: 'system' },
+    { key: 'woocommerce', label: 'WooCommerce', simple: true, group: 'services' },
+    { key: 'delivery', label: language === 'ar' ? 'التوصيل' : 'Delivery', simple: true, group: 'services' },
+    { key: 'loyalty', label: language === 'ar' ? 'برنامج الولاء' : 'Loyalty', simple: true, group: 'services' },
+    { key: 'notifications', label: language === 'ar' ? 'الإشعارات' : 'Notifications', simple: true, group: 'services' },
+    { key: 'maintenance', label: language === 'ar' ? 'الصيانة' : 'Maintenance', simple: true, group: 'services' },
   ];
+
+  // Group permissions by category
+  const permissionGroups = {
+    general: { label_ar: 'عام', label_fr: 'Général', icon: '📊' },
+    sales: { label_ar: 'عمليات البيع', label_fr: 'Ventes', icon: '🛒' },
+    inventory: { label_ar: 'المخزون والمشتريات', label_fr: 'Inventaire', icon: '📦' },
+    financial: { label_ar: 'المالية', label_fr: 'Finances', icon: '💰' },
+    hr: { label_ar: 'الموارد البشرية', label_fr: 'RH', icon: '👥' },
+    services: { label_ar: 'الخدمات', label_fr: 'Services', icon: '⚙️' },
+    system: { label_ar: 'إدارة النظام', label_fr: 'Système', icon: '🔧' }
+  };
+
+  const actionLabels = {
+    view: { ar: 'عرض', fr: 'Voir' },
+    add: { ar: 'إضافة', fr: 'Ajouter' },
+    edit: { ar: 'تعديل', fr: 'Modifier' },
+    delete: { ar: 'حذف', fr: 'Supprimer' },
+    price_change: { ar: 'تغيير السعر', fr: 'Changer prix' },
+    stock_adjust: { ar: 'تعديل المخزون', fr: 'Ajuster stock' },
+    transfer: { ar: 'نقل', fr: 'Transférer' },
+    count: { ar: 'جرد', fr: 'Inventaire' },
+    approve: { ar: 'موافقة', fr: 'Approuver' },
+    refund: { ar: 'استرجاع', fr: 'Remboursement' },
+    discount: { ar: 'خصم', fr: 'Remise' },
+    credit: { ar: 'آجل', fr: 'Crédit' },
+    blacklist: { ar: 'قائمة سوداء', fr: 'Blacklist' },
+    payments: { ar: 'مدفوعات', fr: 'Paiements' },
+    salary: { ar: 'راتب', fr: 'Salaire' },
+    attendance: { ar: 'حضور', fr: 'Présence' },
+    collect: { ar: 'تحصيل', fr: 'Collecter' },
+    permissions: { ar: 'صلاحيات', fr: 'Permissions' },
+    sales: { ar: 'مبيعات', fr: 'Ventes' },
+    inventory: { ar: 'مخزون', fr: 'Stock' },
+    financial: { ar: 'مالية', fr: 'Finances' },
+    customers: { ar: 'زبائن', fr: 'Clients' },
+    employees: { ar: 'موظفين', fr: 'Employés' },
+    advanced: { ar: 'متقدمة', fr: 'Avancé' }
+  };
 
   if (loading) {
     return (
