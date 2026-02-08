@@ -2266,37 +2266,14 @@ export default function SettingsPage() {
               </div>
 
               {/* Role description */}
-              <div className="p-3 bg-muted rounded-lg text-sm">
-                <p className="font-medium mb-1">{language === 'ar' ? 'صلاحيات الدور:' : 'Permissions du rôle:'}</p>
-                <ul className="text-muted-foreground text-xs space-y-1">
-                  {newUserData.role === 'seller' && (
-                    <>
-                      <li>• {language === 'ar' ? 'البيع ونقطة البيع' : 'Vente et POS'}</li>
-                      <li>• {language === 'ar' ? 'عرض المنتجات والزبائن' : 'Voir produits et clients'}</li>
-                      <li>• {language === 'ar' ? 'استقبال أجهزة الصيانة' : 'Réception réparations'}</li>
-                    </>
-                  )}
-                  {newUserData.role === 'ecommerce_manager' && (
-                    <>
-                      <li>• {language === 'ar' ? 'إدارة المنتجات والزبائن' : 'Gérer produits et clients'}</li>
-                      <li>• {language === 'ar' ? 'عرض المبيعات والتقارير' : 'Voir ventes et rapports'}</li>
-                      <li>• {language === 'ar' ? 'إدارة WooCommerce' : 'Gérer WooCommerce'}</li>
-                    </>
-                  )}
-                  {newUserData.role === 'accountant' && (
-                    <>
-                      <li>• {language === 'ar' ? 'إدارة التكاليف والديون' : 'Gérer dépenses et créances'}</li>
-                      <li>• {language === 'ar' ? 'عرض كل البيانات المالية' : 'Voir toutes les données financières'}</li>
-                      <li>• {language === 'ar' ? 'التقارير المحاسبية' : 'Rapports comptables'}</li>
-                    </>
-                  )}
-                  {newUserData.role === 'manager' && (
-                    <>
-                      <li>• {language === 'ar' ? 'كل صلاحيات البائع' : 'Toutes les permissions vendeur'}</li>
-                      <li>• {language === 'ar' ? 'إدارة المنتجات والمشتريات' : 'Gérer produits et achats'}</li>
-                      <li>• {language === 'ar' ? 'التقارير والإحصائيات' : 'Rapports et statistiques'}</li>
-                    </>
-                  )}
+              {newUserData.role && (
+                <div className="p-3 bg-muted rounded-lg text-sm">
+                  <p className="font-medium mb-1">{language === 'ar' ? 'وصف الدور:' : 'Description du rôle:'}</p>
+                  <p className="text-muted-foreground">
+                    {availableRoles.find(r => r.value === newUserData.role)?.[language === 'ar' ? 'desc_ar' : 'desc_fr']}
+                  </p>
+                </div>
+              )}
                   {newUserData.role === 'user' && (
                     <>
                       <li>• {language === 'ar' ? 'صلاحيات محدودة' : 'Permissions limitées'}</li>
