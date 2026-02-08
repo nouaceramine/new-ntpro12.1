@@ -858,6 +858,19 @@ export default function POSPage() {
                   <Plus className="h-4 w-4" />
                 </Button>
 
+                {/* Add New Product Button */}
+                <Link to="/products/add">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 border-green-300 text-green-600 hover:bg-green-50"
+                    title={language === 'ar' ? 'إضافة منتج جديد' : 'Ajouter produit'}
+                    data-testid="add-product-btn"
+                  >
+                    <Package className="h-4 w-4" />
+                  </Button>
+                </Link>
+
                 {/* Debt Reminders Button */}
                 {debtReminders.length > 0 && (
                   <Button
