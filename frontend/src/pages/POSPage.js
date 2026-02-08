@@ -132,6 +132,7 @@ export default function POSPage() {
     fetchBlacklist();
     fetchDebtReminders();
     fetchWilayas();
+    fetchWarehouses();
   }, []);
 
   // Close search dropdown when clicking outside
