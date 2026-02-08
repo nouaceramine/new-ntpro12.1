@@ -8961,6 +8961,91 @@ async def update_sales_permissions(
     )
     return {"message": "Settings updated"}
 
+# ============ RECEIPT SETTINGS ============
+
+class ReceiptTemplate(BaseModel):
+    id: str = ""
+    name: str
+    name_ar: str
+    width: str = "80mm"  # 58mm, 80mm, A4
+    show_logo: bool = True
+    show_header: bool = True
+    show_footer: bool = True
+    header_text: str = ""
+    footer_text: str = ""
+    font_size: str = "normal"  # small, normal, large
+    is_default: bool = False
+
+class ReceiptSettings(BaseModel):
+    auto_print: bool = False
+    show_print_dialog: bool = True
+    default_template_id: str = ""
+    templates: List[dict] = []
+
+@api_router.get("/settings/receipt")
+async def get_receipt_settings(user: dict = Depends(get_current_user)):
+    """Get receipt/invoice settings"""
+    settings = await db.settings.find_one({"key": "receipt_settings"}, {"_id": 0})
+    if settings:
+        return settings.get("value", {})
+    # Default settings
+    return {
+        "auto_print": False,
+        "show_print_dialog": True,
+        "default_template_id": "default_80mm",
+        "templates": [
+            {
+                "id": "default_58mm",
+                "name": "Thermal 58mm",
+                "name_ar": "حراري 58 مم",
+                "width": "58mm",
+                "show_logo": False,
+                "show_header": True,
+                "show_footer": True,
+                "header_text": "",
+                "footer_text": "شكراً لزيارتكم",
+                "font_size": "small",
+                "is_default": False
+            },
+            {
+                "id": "default_80mm",
+                "name": "Thermal 80mm",
+                "name_ar": "حراري 80 مم",
+                "width": "80mm",
+                "show_logo": True,
+                "show_header": True,
+                "show_footer": True,
+                "header_text": "",
+                "footer_text": "شكراً لزيارتكم",
+                "font_size": "normal",
+                "is_default": True
+            },
+            {
+                "id": "default_a4",
+                "name": "A4 Full Page",
+                "name_ar": "صفحة A4 كاملة",
+                "width": "A4",
+                "show_logo": True,
+                "show_header": True,
+                "show_footer": True,
+                "header_text": "",
+                "footer_text": "شكراً لزيارتكم",
+                "font_size": "normal",
+                "is_default": False
+            }
+        ]
+    }
+
+@api_router.post("/settings/receipt")
+async def update_receipt_settings(settings: dict, admin: dict = Depends(get_admin_user)):
+    """Update receipt settings"""
+    await db.settings.update_one(
+        {"key": "receipt_settings"},
+        {"$set": {"key": "receipt_settings", "value": settings}},
+        upsert=True
+    )
+    return {"message": "Settings updated"}
+
 @api_router.get("/sales/product-tracking/{product_id}")
 async def get_product_sales_tracking(
     product_id: str,
