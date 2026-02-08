@@ -159,12 +159,12 @@ export default function AddProductPage() {
 
   const resetForm = () => {
     setFormData({
-      name_en: '',
-      name_ar: '',
+      name: '',
       description_en: '',
       description_ar: '',
       purchase_price: '',
       wholesale_price: '',
+      super_wholesale_price: '',
       retail_price: '',
       image_url: '',
       barcode: '',
@@ -178,7 +178,7 @@ export default function AddProductPage() {
     e?.preventDefault();
     
     // Manual validation for prices
-    if (!formData.name_en.trim() || !formData.name_ar.trim()) {
+    if (!formData.name.trim()) {
       toast.error(language === 'ar' ? 'يرجى إدخال اسم المنتج' : 'Veuillez entrer le nom du produit');
       return;
     }
@@ -203,12 +203,13 @@ export default function AddProductPage() {
 
     try {
       const payload = {
-        name_en: formData.name_en,
-        name_ar: formData.name_ar,
+        name_en: formData.name,
+        name_ar: formData.name,
         description_en: formData.description_en,
         description_ar: formData.description_ar,
         purchase_price: parseFloat(formData.purchase_price) || 0,
         wholesale_price: parseFloat(formData.wholesale_price) || 0,
+        super_wholesale_price: parseFloat(formData.super_wholesale_price) || 0,
         retail_price: parseFloat(formData.retail_price) || 0,
         quantity: 0,
         image_url: formData.image_url,
