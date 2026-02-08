@@ -1397,6 +1397,26 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Sidebar Order Link */}
+                <div className="p-4 border rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
+                  <a href="/settings/sidebar" className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <GripVertical className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {language === 'ar' ? 'ترتيب القائمة الجانبية' : 'Organiser le menu latéral'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {language === 'ar' ? 'اسحب وأفلت لتغيير ترتيب العناصر' : 'Glisser-déposer pour réorganiser'}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </a>
+                </div>
+
                 {/* Cash Difference Threshold */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
