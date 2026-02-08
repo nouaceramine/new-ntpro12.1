@@ -783,6 +783,10 @@ POST /api/upload/image - رفع صورة للمنتج
 | سجل تغييرات الأسعار | ✅ | PriceHistoryPage.js, server.py |
 | التقارير الذكية | ✅ | SmartReportsPage.js, server.py |
 | تنبيهات الموظفين | ✅ | EmployeeAlertsPage.js, server.py |
+| **سجل شراء المنتج** | ✅ | ProductDetailPage.js, server.py |
+| **تحذير السعر** | ✅ | ProductDetailPage.js (Lines 111-129) |
+| **خيارات إيصال POS** | ✅ | POSPage.js, SettingsPage.js |
+| **سجل مبيعات POS** | ✅ | POSPage.js (Previous Sales Dialog) |
 
 ---
 
