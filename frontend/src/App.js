@@ -54,6 +54,8 @@ import RepairTrackingPage from "./pages/RepairTrackingPage";
 import SparePartsPage from "./pages/SparePartsPage";
 import ExpensesPage from "./pages/ExpensesPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import AdvancedSalesReportPage from "./pages/AdvancedSalesReportPage";
+import SalesPermissionsPage from "./pages/SalesPermissionsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
