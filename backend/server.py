@@ -71,6 +71,7 @@ class UserCreate(BaseModel):
     name: str
     role: str = "user"
     permissions: Optional[dict] = None
+    tenant_id: Optional[str] = None  # For multi-tenant
 
 class UserLogin(BaseModel):
     email: str
@@ -91,6 +92,118 @@ class UserResponse(BaseModel):
     name: str
     role: str
     permissions: dict = {}
+    tenant_id: Optional[str] = None
+    created_at: str
+
+# ============ SAAS MODELS ============
+
+class PlanCreate(BaseModel):
+    name: str
+    name_ar: str
+    description: str = ""
+    description_ar: str = ""
+    price_monthly: float
+    price_6months: float
+    price_yearly: float
+    features: dict = {}  # {"pos": True, "reports": True, "ai_tips": False, ...}
+    limits: dict = {}  # {"max_products": 100, "max_users": 5, "max_sales_per_month": 500}
+    is_active: bool = True
+    is_popular: bool = False
+    sort_order: int = 0
+
+class PlanUpdate(BaseModel):
+    name: Optional[str] = None
+    name_ar: Optional[str] = None
+    description: Optional[str] = None
+    description_ar: Optional[str] = None
+    price_monthly: Optional[float] = None
+    price_6months: Optional[float] = None
+    price_yearly: Optional[float] = None
+    features: Optional[dict] = None
+    limits: Optional[dict] = None
+    is_active: Optional[bool] = None
+    is_popular: Optional[bool] = None
+    sort_order: Optional[int] = None
+
+class PlanResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    name_ar: str
+    description: str
+    description_ar: str
+    price_monthly: float
+    price_6months: float
+    price_yearly: float
+    features: dict
+    limits: dict
+    is_active: bool
+    is_popular: bool
+    sort_order: int
+    created_at: str
+
+class TenantCreate(BaseModel):
+    name: str
+    email: str
+    phone: Optional[str] = ""
+    password: str
+    company_name: Optional[str] = ""
+    plan_id: str
+    subscription_type: str = "monthly"  # monthly, 6months, yearly
+
+class TenantUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    company_name: Optional[str] = None
+    is_active: Optional[bool] = None
+    plan_id: Optional[str] = None
+    features_override: Optional[dict] = None  # Override plan features
+    limits_override: Optional[dict] = None  # Override plan limits
+    notes: Optional[str] = None
+
+class TenantResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    email: str
+    phone: str
+    company_name: str
+    plan_id: str
+    plan_name: Optional[str] = ""
+    is_active: bool
+    is_trial: bool
+    trial_ends_at: Optional[str] = None
+    subscription_type: str
+    subscription_starts_at: str
+    subscription_ends_at: str
+    features_override: dict
+    limits_override: dict
+    notes: str
+    stats: Optional[dict] = None
+    created_at: str
+
+class SubscriptionPayment(BaseModel):
+    tenant_id: str
+    amount: float
+    payment_method: str  # manual, stripe, paypal
+    subscription_type: str  # monthly, 6months, yearly
+    notes: Optional[str] = ""
+    transaction_id: Optional[str] = ""
+
+class SubscriptionPaymentResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    tenant_id: str
+    tenant_name: Optional[str] = ""
+    amount: float
+    payment_method: str
+    subscription_type: str
+    period_start: str
+    period_end: str
+    notes: str
+    transaction_id: str
+    created_by: str
     created_at: str
 
 # Default Permissions for each role
