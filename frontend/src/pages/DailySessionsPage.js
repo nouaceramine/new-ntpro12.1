@@ -201,8 +201,18 @@ export default function DailySessionsPage() {
       const expectedCash = (currentSession.opening_cash || 0) + totalCollected;
       const cashDifference = actualCash - expectedCash;
       
-      // Calculate profit (needs purchase data - simplified)
-      const estimatedProfit = totalSales * 0.15; // Placeholder - should be actual profit
+      // Calculate actual profit from sale items
+      let actualProfit = 0;
+      for (const sale of todaySales) {
+        for (const item of (sale.items || [])) {
+          const purchasePrice = item.purchase_price || 0;
+          const salePrice = item.price || 0;
+          const quantity = item.quantity || 1;
+          actualProfit += (salePrice - purchasePrice) * quantity;
+        }
+      }
+      // If no purchase prices available, use 15% estimate as fallback
+      const estimatedProfit = actualProfit > 0 ? actualProfit : totalSales * 0.15;
       
       const report = {
         sessionId: currentSession.id,
