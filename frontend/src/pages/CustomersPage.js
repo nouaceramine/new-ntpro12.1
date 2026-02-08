@@ -220,18 +220,38 @@ export default function CustomersPage() {
   const openEditDialog = (customer) => {
     setSelectedCustomer(customer);
     setFormData({
-      name: customer.name,
-      phone: customer.phone,
-      email: customer.email,
-      address: customer.address,
-      notes: customer.notes
+      name: customer.name || '',
+      phone: customer.phone || '',
+      email: customer.email || '',
+      address: customer.address || '',
+      notes: customer.notes || '',
+      family_id: customer.family_id || '',
+      national_id: customer.national_id || '',
+      commercial_register: customer.commercial_register || '',
+      birthdate: customer.birthdate || '',
+      customer_type: customer.customer_type || 'regular',
+      max_debt_limit: customer.max_debt_limit || '',
+      special_discount: customer.special_discount || ''
     });
     setDialogOpen(true);
   };
 
   const resetForm = () => {
     setSelectedCustomer(null);
-    setFormData({ name: '', phone: '', email: '', address: '', notes: '', family_id: '' });
+    setFormData({ 
+      name: '', 
+      phone: '', 
+      email: '', 
+      address: '', 
+      notes: '', 
+      family_id: '',
+      national_id: '',
+      commercial_register: '',
+      birthdate: '',
+      customer_type: 'regular',
+      max_debt_limit: '',
+      special_discount: ''
+    });
   };
 
   return (
