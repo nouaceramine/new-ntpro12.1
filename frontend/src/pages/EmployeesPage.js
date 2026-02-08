@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Users, Plus, Edit, Trash2, Calendar, DollarSign, Clock, UserPlus, KeyRound, UserX } from 'lucide-react';
+import { Users, Plus, Edit, Trash2, Calendar, DollarSign, Clock, UserPlus, KeyRound, UserX, Eye, EyeOff } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -30,6 +30,7 @@ export default function EmployeesPage() {
   const [advanceAmount, setAdvanceAmount] = useState('');
   const [accountData, setAccountData] = useState({ email: '', password: '', role: 'seller' });
   const [creatingAccount, setCreatingAccount] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const fetchEmployees = async () => {
     try {
