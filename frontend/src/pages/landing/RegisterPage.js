@@ -16,7 +16,7 @@ import {
 import { toast } from 'sonner';
 import { 
   ChevronRight, Check, Sparkles, Building, Mail, Phone, 
-  Lock, User, ArrowRight
+  Lock, User, ArrowRight, Eye, EyeOff
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -30,6 +30,8 @@ export default function RegisterPage() {
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(searchParams.get('plan') || '');
   const [billingCycle, setBillingCycle] = useState(searchParams.get('cycle') || 'monthly');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
