@@ -456,6 +456,15 @@ class EmployeeCreate(BaseModel):
     salary: float = 0
     hire_date: Optional[str] = None
     commission_rate: float = 0  # نسبة العمولة على المبيعات
+    max_discount_percent: float = 0  # حد الخصم المسموح
+    max_debt_amount: float = 0  # حد الدين المسموح
+
+class EmployeeAlertSettings(BaseModel):
+    employee_id: str
+    enable_discount_alert: bool = True
+    discount_threshold_percent: float = 80  # تنبيه عند الوصول لـ 80% من الحد
+    enable_debt_alert: bool = True
+    debt_threshold_percent: float = 80  # تنبيه عند الوصول لـ 80% من الحد
 
 # ============ WAREHOUSE MODELS ============
 
