@@ -329,6 +329,50 @@ export default function CustomersPage() {
                 />
               </div>
               
+              {/* Sort By */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[150px]">
+                  <ArrowUpDown className="h-4 w-4 me-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">{language === 'ar' ? 'الاسم' : 'Nom'}</SelectItem>
+                  <SelectItem value="balance">{language === 'ar' ? 'الرصيد' : 'Solde'}</SelectItem>
+                  <SelectItem value="total_purchases">{language === 'ar' ? 'المشتريات' : 'Achats'}</SelectItem>
+                  <SelectItem value="created_at">{language === 'ar' ? 'التاريخ' : 'Date'}</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Sort Order */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                title={sortOrder === 'asc' ? 'تصاعدي' : 'تنازلي'}
+              >
+                {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+              </Button>
+              
+              {/* View Mode */}
+              <div className="flex border rounded-lg">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => changeViewMode('grid')}
+                  className="rounded-e-none"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => changeViewMode('list')}
+                  className="rounded-s-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+              
               {/* Blacklist Filter */}
               <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
                 <Ban className={`h-4 w-4 ${showBlacklistOnly ? 'text-red-600' : 'text-gray-500'}`} />
