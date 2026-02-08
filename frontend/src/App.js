@@ -314,6 +314,22 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/settings/sales-permissions"
+        element={
+          <ProtectedRoute adminOnly>
+            <SalesPermissionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sales/advanced-report"
+        element={
+          <ProtectedRoute adminOnly>
+            <AdvancedSalesReportPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/notifications"
         element={
           <ProtectedRoute>
