@@ -1957,6 +1957,86 @@ export default function SettingsPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Selective Delete Dialog */}
+        <Dialog open={showSelectiveDeleteDialog} onOpenChange={setShowSelectiveDeleteDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-600">
+                <Trash2 className="h-5 w-5" />
+                {language === 'ar' ? 'حذف انتقائي للبيانات' : 'Selective Data Deletion'}
+              </DialogTitle>
+              <DialogDescription>
+                {language === 'ar' 
+                  ? 'اختر أنواع البيانات التي تريد حذفها' 
+                  : 'Select the data types you want to delete'}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 max-h-64 overflow-auto p-1">
+                {dataTypeOptions.map((option) => (
+                  <label 
+                    key={option.value} 
+                    className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                      selectedDataTypes.includes(option.value) 
+                        ? 'bg-amber-50 border-amber-500 dark:bg-amber-900/20' 
+                        : 'hover:bg-muted'
+                    }`}
+                  >
+                    <Checkbox
+                      checked={selectedDataTypes.includes(option.value)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedDataTypes(prev => [...prev, option.value]);
+                        } else {
+                          setSelectedDataTypes(prev => prev.filter(v => v !== option.value));
+                        }
+                      }}
+                    />
+                    <span className="text-sm">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+              
+              <div>
+                <Label>{language === 'ar' ? 'رمز التأكيد' : 'Confirmation Code'}</Label>
+                <Input
+                  value={selectiveDeleteCode}
+                  onChange={(e) => setSelectiveDeleteCode(e.target.value)}
+                  placeholder="DELETE-SELECTED"
+                  className="font-mono"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {language === 'ar' ? 'اكتب' : 'Type'}: <code className="bg-muted px-1 rounded">DELETE-SELECTED</code>
+                </p>
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowSelectiveDeleteDialog(false);
+                    setSelectedDataTypes([]);
+                    setSelectiveDeleteCode('');
+                  }} 
+                  className="flex-1"
+                >
+                  {t.cancel}
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleSelectiveDelete}
+                  disabled={deleting || selectedDataTypes.length === 0 || selectiveDeleteCode !== 'DELETE-SELECTED'}
+                  className="flex-1 gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deleting ? t.loading : (language === 'ar' ? 'حذف المحدد' : 'Delete Selected')}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
