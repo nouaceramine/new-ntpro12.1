@@ -1063,6 +1063,172 @@ export default function SettingsPage() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Receipt Settings Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Printer className="h-5 w-5 text-purple-600" />
+                  {language === 'ar' ? 'إعدادات الإيصال' : 'Paramètres du reçu'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'تخصيص شكل الإيصال وخيارات الطباعة بعد البيع' 
+                    : 'Personnaliser le format du reçu et les options d\'impression après vente'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Auto Print After Sale */}
+                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-green-100">
+                      <Printer className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-green-800">{language === 'ar' ? 'طباعة تلقائية بعد البيع' : 'Impression auto après vente'}</p>
+                      <p className="text-sm text-green-600">
+                        {language === 'ar' ? 'طباعة الإيصال مباشرة بدون سؤال' : 'Imprimer le reçu directement sans confirmation'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={receiptSettings.auto_print}
+                    onCheckedChange={(checked) => setReceiptSettings(prev => ({ ...prev, auto_print: checked }))}
+                  />
+                </div>
+
+                {/* Show Print Dialog */}
+                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-blue-100">
+                      <Eye className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-blue-800">{language === 'ar' ? 'عرض حوار الطباعة' : 'Afficher dialogue d\'impression'}</p>
+                      <p className="text-sm text-blue-600">
+                        {language === 'ar' ? 'إظهار خيار طباعة/تخطي بعد كل بيع' : 'Afficher l\'option imprimer/passer après chaque vente'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={receiptSettings.show_print_dialog}
+                    onCheckedChange={(checked) => setReceiptSettings(prev => ({ ...prev, show_print_dialog: checked }))}
+                    disabled={receiptSettings.auto_print}
+                  />
+                </div>
+
+                {/* Default Template */}
+                <div>
+                  <Label>{language === 'ar' ? 'قالب الإيصال الافتراضي' : 'Modèle de reçu par défaut'}</Label>
+                  <Select 
+                    value={receiptSettings.default_template_id} 
+                    onValueChange={(v) => setReceiptSettings(prev => ({ ...prev, default_template_id: v }))}
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {receiptSettings.templates?.map(template => (
+                        <SelectItem key={template.id} value={template.id}>
+                          <div className="flex items-center gap-2">
+                            <span>{language === 'ar' ? template.name_ar : template.name}</span>
+                            <span className="text-xs text-muted-foreground">({template.width})</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Templates List */}
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'ar' ? 'القالب' : 'Modèle'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'الحجم' : 'Taille'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'الشعار' : 'Logo'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'الترويسة' : 'En-tête'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'التذييل' : 'Pied'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {receiptSettings.templates?.map((template, idx) => (
+                        <TableRow key={template.id} className={template.id === receiptSettings.default_template_id ? 'bg-primary/5' : ''}>
+                          <TableCell className="font-medium">
+                            {language === 'ar' ? template.name_ar : template.name}
+                            {template.id === receiptSettings.default_template_id && (
+                              <span className="ms-2 text-xs text-primary">{language === 'ar' ? '(افتراضي)' : '(défaut)'}</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="px-2 py-1 bg-muted rounded text-xs font-mono">{template.width}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={template.show_logo}
+                              onCheckedChange={(checked) => {
+                                const newTemplates = [...receiptSettings.templates];
+                                newTemplates[idx].show_logo = checked;
+                                setReceiptSettings(prev => ({ ...prev, templates: newTemplates }));
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={template.show_header}
+                              onCheckedChange={(checked) => {
+                                const newTemplates = [...receiptSettings.templates];
+                                newTemplates[idx].show_header = checked;
+                                setReceiptSettings(prev => ({ ...prev, templates: newTemplates }));
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={template.show_footer}
+                              onCheckedChange={(checked) => {
+                                const newTemplates = [...receiptSettings.templates];
+                                newTemplates[idx].show_footer = checked;
+                                setReceiptSettings(prev => ({ ...prev, templates: newTemplates }));
+                              }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Footer Text */}
+                <div>
+                  <Label>{language === 'ar' ? 'نص التذييل (يظهر في أسفل الإيصال)' : 'Texte de pied (affiché en bas du reçu)'}</Label>
+                  <Input
+                    value={receiptSettings.templates?.find(t => t.id === receiptSettings.default_template_id)?.footer_text || ''}
+                    onChange={(e) => {
+                      const newTemplates = receiptSettings.templates.map(t => 
+                        t.id === receiptSettings.default_template_id 
+                          ? { ...t, footer_text: e.target.value }
+                          : t
+                      );
+                      setReceiptSettings(prev => ({ ...prev, templates: newTemplates }));
+                    }}
+                    placeholder={language === 'ar' ? 'شكراً لزيارتكم' : 'Merci pour votre visite'}
+                    className="mt-2"
+                  />
+                </div>
+
+                {/* Save Button */}
+                <Button onClick={saveReceiptSettings} disabled={savingReceipt} className="gap-2">
+                  {savingReceipt ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {language === 'ar' ? 'حفظ إعدادات الإيصال' : 'Enregistrer paramètres reçu'}
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* USB SIM Settings Tab */}
