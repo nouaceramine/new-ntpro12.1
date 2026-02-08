@@ -6842,6 +6842,272 @@ async def root():
 async def health():
     return {"status": "healthy"}
 
+# ============ AI ASSISTANT ============
+
+# AI Chat Models
+class AIMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+    timestamp: str
+
+class AIChatRequest(BaseModel):
+    message: str
+    session_id: str
+    context: Optional[str] = None  # e.g., "sales", "inventory", "products"
+
+class AIChatResponse(BaseModel):
+    response: str
+    session_id: str
+
+class AIAnalysisRequest(BaseModel):
+    analysis_type: str  # "sales_forecast", "restock", "product_description"
+    data: Optional[dict] = None
+
+# Import AI library
+try:
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    AI_AVAILABLE = True
+except ImportError:
+    AI_AVAILABLE = False
+    logger.warning("AI library not available")
+
+def get_ai_system_message(context: str = None, language: str = "ar") -> str:
+    """Get system message for AI based on context"""
+    base_msg = """أنت مساعد ذكي لنظام نقاط البيع (POS). يمكنك المساعدة في:
+- تحليل المبيعات وتوقعها
+- اقتراح المنتجات التي تحتاج إعادة تخزين
+- إنشاء أوصاف للمنتجات
+- الإجابة على أسئلة حول المخزون والعملاء والموردين
+- تقديم نصائح لتحسين الأعمال
+
+كن مختصراً ومفيداً. أجب باللغة العربية أو الفرنسية حسب لغة السؤال."""
+    
+    if context == "sales":
+        base_msg += "\n\nأنت الآن في قسم المبيعات. ركز على تحليل المبيعات وتوقعاتها."
+    elif context == "inventory":
+        base_msg += "\n\nأنت الآن في قسم المخزون. ركز على إدارة المخزون واقتراحات إعادة التخزين."
+    elif context == "products":
+        base_msg += "\n\nأنت الآن في قسم المنتجات. ساعد في إنشاء أوصاف وتحسين معلومات المنتجات."
+    elif context == "customers":
+        base_msg += "\n\nأنت الآن في قسم العملاء. ساعد في فهم سلوك العملاء وتحسين العلاقات."
+    elif context == "reports":
+        base_msg += "\n\nأنت الآن في قسم التقارير. ساعد في تحليل البيانات وإنشاء تقارير مفيدة."
+    
+    return base_msg
+
+@api_router.post("/ai/chat", response_model=AIChatResponse)
+async def ai_chat(request: AIChatRequest, user: dict = Depends(get_current_user)):
+    """Chat with AI assistant"""
+    if not AI_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI service not available")
+    
+    emergent_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not emergent_key:
+        raise HTTPException(status_code=500, detail="AI API key not configured")
+    
+    try:
+        # Get or create chat session
+        session_id = f"{user['id']}_{request.session_id}"
+        
+        # Load chat history from database
+        chat_history = await db.ai_chat_history.find_one({"session_id": session_id}, {"_id": 0})
+        
+        # Initialize chat
+        chat = LlmChat(
+            api_key=emergent_key,
+            session_id=session_id,
+            system_message=get_ai_system_message(request.context)
+        ).with_model("openai", "gpt-4o")
+        
+        # Build context with business data
+        context_data = ""
+        if request.context:
+            if request.context == "sales":
+                # Get recent sales summary
+                recent_sales = await db.sales.find().sort("created_at", -1).limit(10).to_list(10)
+                total_today = sum(s.get("total", 0) for s in recent_sales if s.get("created_at", "").startswith(datetime.now(timezone.utc).strftime("%Y-%m-%d")))
+                context_data = f"\n\nبيانات المبيعات: إجمالي اليوم: {total_today} دج، آخر 10 مبيعات محفوظة."
+            elif request.context == "inventory":
+                # Get low stock products
+                low_stock = await db.products.find({"quantity": {"$lt": 10}}).to_list(20)
+                context_data = f"\n\nالمنتجات منخفضة المخزون: {len(low_stock)} منتج"
+            elif request.context == "customers":
+                # Get customer stats
+                total_customers = await db.customers.count_documents({})
+                context_data = f"\n\nإجمالي العملاء: {total_customers}"
+        
+        # Create message with context
+        user_message = UserMessage(text=request.message + context_data)
+        
+        # Get response
+        response = await chat.send_message(user_message)
+        
+        # Save to chat history
+        if not chat_history:
+            chat_history = {
+                "session_id": session_id,
+                "user_id": user['id'],
+                "messages": [],
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+        
+        chat_history["messages"].append({
+            "role": "user",
+            "content": request.message,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        chat_history["messages"].append({
+            "role": "assistant",
+            "content": response,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
+        chat_history["updated_at"] = datetime.now(timezone.utc).isoformat()
+        
+        # Keep only last 50 messages
+        if len(chat_history["messages"]) > 50:
+            chat_history["messages"] = chat_history["messages"][-50:]
+        
+        await db.ai_chat_history.update_one(
+            {"session_id": session_id},
+            {"$set": chat_history},
+            upsert=True
+        )
+        
+        return AIChatResponse(response=response, session_id=request.session_id)
+    
+    except Exception as e:
+        logger.error(f"AI chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI error: {str(e)}")
+
+@api_router.get("/ai/chat-history/{session_id}")
+async def get_ai_chat_history(session_id: str, user: dict = Depends(get_current_user)):
+    """Get chat history for a session"""
+    full_session_id = f"{user['id']}_{session_id}"
+    history = await db.ai_chat_history.find_one({"session_id": full_session_id}, {"_id": 0})
+    if not history:
+        return {"messages": []}
+    return {"messages": history.get("messages", [])}
+
+@api_router.delete("/ai/chat-history/{session_id}")
+async def clear_ai_chat_history(session_id: str, user: dict = Depends(get_current_user)):
+    """Clear chat history for a session"""
+    full_session_id = f"{user['id']}_{session_id}"
+    await db.ai_chat_history.delete_one({"session_id": full_session_id})
+    return {"success": True}
+
+@api_router.post("/ai/analyze")
+async def ai_analyze(request: AIAnalysisRequest, user: dict = Depends(get_current_user)):
+    """Perform AI analysis on business data"""
+    if not AI_AVAILABLE:
+        raise HTTPException(status_code=503, detail="AI service not available")
+    
+    emergent_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not emergent_key:
+        raise HTTPException(status_code=500, detail="AI API key not configured")
+    
+    try:
+        chat = LlmChat(
+            api_key=emergent_key,
+            session_id=f"analysis_{user['id']}_{datetime.now(timezone.utc).timestamp()}",
+            system_message="أنت محلل بيانات ذكي لنظام نقاط البيع. قدم تحليلات مختصرة ومفيدة باللغة العربية."
+        ).with_model("openai", "gpt-4o")
+        
+        if request.analysis_type == "sales_forecast":
+            # Get sales data for forecasting
+            sales = await db.sales.find().sort("created_at", -1).limit(100).to_list(100)
+            
+            # Aggregate by day
+            daily_sales = {}
+            for sale in sales:
+                date = sale.get("created_at", "")[:10]
+                if date:
+                    daily_sales[date] = daily_sales.get(date, 0) + sale.get("total", 0)
+            
+            prompt = f"""بناءً على بيانات المبيعات التالية، قدم توقعاً للمبيعات في الأسبوع القادم:
+
+المبيعات اليومية (آخر أيام):
+{dict(list(daily_sales.items())[:14])}
+
+قدم:
+1. توقع المبيعات للأيام السبعة القادمة
+2. اتجاه المبيعات (صاعد/هابط/مستقر)
+3. نصائح لتحسين المبيعات
+
+أجب بشكل مختصر ومنظم."""
+            
+            response = await chat.send_message(UserMessage(text=prompt))
+            return {"analysis": response, "type": "sales_forecast"}
+        
+        elif request.analysis_type == "restock":
+            # Get low stock and sales velocity
+            products = await db.products.find({"quantity": {"$lte": 20}}).to_list(50)
+            
+            product_list = [
+                f"- {p.get('name_ar') or p.get('name_en')}: كمية {p.get('quantity', 0)}, حد أدنى {p.get('low_stock_threshold', 10)}"
+                for p in products
+            ]
+            
+            prompt = f"""هذه قائمة المنتجات التي تحتاج مراجعة للمخزون:
+
+{chr(10).join(product_list[:20])}
+
+قدم:
+1. ترتيب المنتجات حسب الأولوية لإعادة التخزين
+2. كميات مقترحة للطلب
+3. نصائح لإدارة المخزون
+
+أجب بشكل مختصر."""
+            
+            response = await chat.send_message(UserMessage(text=prompt))
+            return {"analysis": response, "type": "restock"}
+        
+        elif request.analysis_type == "product_description":
+            product_data = request.data or {}
+            product_name = product_data.get("name", "منتج")
+            
+            prompt = f"""اكتب وصفاً تسويقياً جذاباً للمنتج التالي:
+
+اسم المنتج: {product_name}
+التفاصيل: {product_data}
+
+اكتب:
+1. وصف قصير (سطر واحد)
+2. وصف مفصل (3-4 أسطر)
+3. كلمات مفتاحية للبحث
+
+أجب باللغة العربية والفرنسية."""
+            
+            response = await chat.send_message(UserMessage(text=prompt))
+            return {"analysis": response, "type": "product_description"}
+        
+        elif request.analysis_type == "customer_insights":
+            customers = await db.customers.find().to_list(100)
+            total_debt = sum(c.get("debt", 0) for c in customers)
+            blacklisted = sum(1 for c in customers if c.get("is_blacklisted"))
+            
+            prompt = f"""حلل بيانات العملاء التالية:
+
+- إجمالي العملاء: {len(customers)}
+- إجمالي الديون: {total_debt} دج
+- العملاء في القائمة السوداء: {blacklisted}
+
+قدم:
+1. تحليل لحالة العملاء
+2. نصائح لتحسين العلاقات
+3. استراتيجيات لتحصيل الديون
+
+أجب بشكل مختصر."""
+            
+            response = await chat.send_message(UserMessage(text=prompt))
+            return {"analysis": response, "type": "customer_insights"}
+        
+        else:
+            raise HTTPException(status_code=400, detail="Unknown analysis type")
+    
+    except Exception as e:
+        logger.error(f"AI analysis error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI error: {str(e)}")
+
 # Include router and middleware
 app.include_router(api_router)
 
