@@ -104,6 +104,42 @@ export default function ProductsPage() {
         {/* Search & Filters */}
         <Card>
           <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {language === 'ar' ? 'طريقة العرض:' : 'Affichage:'}
+                </span>
+                <div className="flex border rounded-lg">
+                  <Button
+                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => changeViewMode('grid')}
+                    className="rounded-r-none"
+                    data-testid="view-grid-btn"
+                  >
+                    <Grid3X3 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'list' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => changeViewMode('list')}
+                    className="rounded-none border-x"
+                    data-testid="view-list-btn"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={viewMode === 'compact' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => changeViewMode('compact')}
+                    className="rounded-l-none"
+                    data-testid="view-compact-btn"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
