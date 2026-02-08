@@ -224,8 +224,10 @@ export const Layout = ({ children }) => {
     navigate('/login');
   };
 
-  const navSections = [
+  // Default nav sections
+  const defaultNavSections = [
     {
+      id: 'main',
       title: language === 'ar' ? 'الرئيسية' : 'Principal',
       icon: LayoutDashboard,
       items: [
@@ -233,6 +235,7 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'inventory',
       title: language === 'ar' ? 'المخزون' : 'Stock',
       icon: Package,
       items: [
@@ -247,6 +250,7 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'purchases',
       title: language === 'ar' ? 'المشتريات' : 'Achats',
       icon: ShoppingBag,
       items: [
@@ -256,6 +260,7 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'customers',
       title: language === 'ar' ? 'الزبائن' : 'Clients',
       icon: Users,
       items: [
@@ -267,6 +272,7 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'sales',
       title: language === 'ar' ? 'المبيعات' : 'Ventes',
       icon: Receipt,
       items: [
@@ -284,6 +290,7 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'reports',
       title: language === 'ar' ? 'التقارير' : 'Rapports',
       icon: BarChart3,
       items: [
@@ -292,6 +299,7 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'notifications',
       title: language === 'ar' ? 'الإشعارات' : 'Notifications',
       icon: Bell,
       items: [
@@ -299,6 +307,7 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'loyalty',
       title: language === 'ar' ? 'الولاء والتسويق' : 'Fidélité & Marketing',
       icon: Award,
       items: [
@@ -306,6 +315,7 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'repairs',
       title: language === 'ar' ? 'الصيانة' : 'Réparations',
       icon: Wrench,
       items: [
@@ -315,6 +325,7 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'services',
       title: language === 'ar' ? 'الخدمات' : 'Services',
       icon: Smartphone,
       items: [
@@ -333,6 +344,7 @@ export const Layout = ({ children }) => {
       ]
     },
     ...(isAdmin ? [{
+      id: 'woocommerce',
       title: 'WooCommerce',
       icon: Store,
       items: [
@@ -340,6 +352,7 @@ export const Layout = ({ children }) => {
       ]
     }] : []),
     ...(isAdmin ? [{
+      id: 'shipping',
       title: language === 'ar' ? 'التوصيل' : 'Livraison',
       icon: Truck,
       items: [
@@ -347,6 +360,7 @@ export const Layout = ({ children }) => {
       ]
     }] : []),
     ...(isAdmin ? [{
+      id: 'admin',
       title: language === 'ar' ? 'الإدارة' : 'Administration',
       icon: Settings,
       items: [
@@ -356,6 +370,56 @@ export const Layout = ({ children }) => {
       ]
     }] : [])
   ];
+
+  // Build navSections from customSidebarOrder if available
+  const navSections = (() => {
+    if (!customSidebarOrder) return defaultNavSections;
+    
+    // Create a map of default sections for quick lookup
+    const defaultMap = {};
+    defaultNavSections.forEach(section => {
+      defaultMap[section.id] = section;
+    });
+    
+    // Build sections based on custom order
+    return customSidebarOrder
+      .filter(customSection => customSection.visible !== false)
+      .map(customSection => {
+        const defaultSection = defaultMap[customSection.id];
+        if (defaultSection) {
+          // Use default section but apply custom item order and visibility
+          const customItemPaths = customSection.items
+            .filter(item => item.visible !== false)
+            .map(item => item.path);
+          
+          const orderedItems = customItemPaths
+            .map(path => defaultSection.items.find(item => item.path === path))
+            .filter(Boolean);
+          
+          return {
+            ...defaultSection,
+            title: language === 'ar' ? customSection.titleAr : customSection.titleFr,
+            icon: iconMap[customSection.icon] || defaultSection.icon,
+            items: orderedItems.length > 0 ? orderedItems : defaultSection.items
+          };
+        }
+        
+        // Custom section - convert from saved format
+        return {
+          id: customSection.id,
+          title: language === 'ar' ? customSection.titleAr : customSection.titleFr,
+          icon: iconMap[customSection.icon] || Package,
+          items: customSection.items
+            .filter(item => item.visible !== false)
+            .map(item => ({
+              path: item.path,
+              icon: iconMap[item.icon] || Package,
+              label: language === 'ar' ? item.labelAr : item.labelFr
+            }))
+        };
+      })
+      .filter(section => section.items.length > 0);
+  })();
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
