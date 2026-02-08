@@ -292,6 +292,40 @@ export default function SuppliersPage() {
                   rows={2}
                 />
               </div>
+              
+              {/* Supplier Family */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>{language === 'ar' ? 'عائلة المورد' : 'Famille fournisseur'}</Label>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setFamilyDialogOpen(true)}
+                    className="gap-1 h-7 text-xs"
+                  >
+                    <Plus className="h-3 w-3" />
+                    {language === 'ar' ? 'إضافة عائلة' : 'Ajouter'}
+                  </Button>
+                </div>
+                <Select
+                  value={formData.family_id || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, family_id: value === "none" ? "" : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={language === 'ar' ? 'اختر عائلة' : 'Choisir famille'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{language === 'ar' ? 'بدون عائلة' : 'Sans famille'}</SelectItem>
+                    {supplierFamilies.map(family => (
+                      <SelectItem key={family.id} value={family.id}>
+                        {family.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   {t.cancel}
@@ -299,6 +333,37 @@ export default function SuppliersPage() {
                 <Button type="submit" data-testid="save-supplier-btn">{t.save}</Button>
               </div>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Family Dialog */}
+        <Dialog open={familyDialogOpen} onOpenChange={setFamilyDialogOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                {language === 'ar' ? 'إضافة عائلة موردين جديدة' : 'Ajouter une nouvelle famille'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'اسم العائلة' : 'Nom de la famille'} *</Label>
+                <Input
+                  value={newFamilyName}
+                  onChange={(e) => setNewFamilyName(e.target.value)}
+                  placeholder={language === 'ar' ? 'مثال: موردي الهواتف' : 'Ex: Fournisseurs téléphones'}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => { setFamilyDialogOpen(false); setNewFamilyName(''); }}>
+                  {t.cancel}
+                </Button>
+                <Button onClick={handleAddFamily} disabled={savingFamily || !newFamilyName.trim()}>
+                  <Plus className="h-4 w-4 me-1" />
+                  {language === 'ar' ? 'إضافة' : 'Ajouter'}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
 
