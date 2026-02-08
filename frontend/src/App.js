@@ -524,6 +524,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/employee-alerts"
+        element={
+          <ProtectedRoute>
+            <EmployeeAlertsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Catch all */}
       <Route path="*" element={<Navigate to="/" replace />} />
