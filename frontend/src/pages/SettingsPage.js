@@ -2107,13 +2107,22 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div>
                 <Label>{language === 'ar' ? 'كلمة المرور الجديدة' : 'Nouveau mot de passe'}</Label>
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={language === 'ar' ? '4 أحرف على الأقل' : '4 caractères minimum'}
-                  className="mt-1"
-                />
+                <div className="relative mt-1">
+                  <Input
+                    type={showChangePassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder={language === 'ar' ? '4 أحرف على الأقل' : '4 caractères minimum'}
+                    className="pe-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowChangePassword(!showChangePassword)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                  >
+                    {showChangePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               
               <div className="flex gap-2 pt-4">
