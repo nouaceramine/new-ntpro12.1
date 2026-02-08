@@ -442,6 +442,63 @@ export default function SuppliersPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Advance Payment Dialog */}
+        <Dialog open={advancePaymentDialogOpen} onOpenChange={setAdvancePaymentDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                {language === 'ar' ? 'دفع متقدم للمورد' : 'Paiement Avancé au Fournisseur'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'المبلغ' : 'Montant'} *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={advancePaymentData.amount}
+                  onChange={(e) => setAdvancePaymentData({ ...advancePaymentData, amount: e.target.value })}
+                  placeholder={language === 'ar' ? 'أدخل المبلغ' : 'Entrez le montant'}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'طريقة الدفع' : 'Mode de paiement'}</Label>
+                <Select 
+                  value={advancePaymentData.payment_method} 
+                  onValueChange={(v) => setAdvancePaymentData({ ...advancePaymentData, payment_method: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">{language === 'ar' ? 'نقدي' : 'Cash'}</SelectItem>
+                    <SelectItem value="bank">{language === 'ar' ? 'تحويل بنكي' : 'Virement'}</SelectItem>
+                    <SelectItem value="check">{language === 'ar' ? 'شيك' : 'Chèque'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
+                <Textarea
+                  value={advancePaymentData.notes}
+                  onChange={(e) => setAdvancePaymentData({ ...advancePaymentData, notes: e.target.value })}
+                  rows={2}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setAdvancePaymentDialogOpen(false)}>
+                  {t.cancel}
+                </Button>
+                <Button onClick={handleAdvancePayment} className="bg-green-600 hover:bg-green-700">
+                  {language === 'ar' ? 'تأكيد الدفع' : 'Confirmer'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
