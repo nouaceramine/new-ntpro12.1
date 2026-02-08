@@ -133,14 +133,15 @@ export default function SuppliersPage() {
       phone: supplier.phone,
       email: supplier.email,
       address: supplier.address,
-      notes: supplier.notes
+      notes: supplier.notes,
+      family_id: supplier.family_id || ''
     });
     setDialogOpen(true);
   };
 
   const resetForm = () => {
     setSelectedSupplier(null);
-    setFormData({ name: '', phone: '', email: '', address: '', notes: '' });
+    setFormData({ name: '', phone: '', email: '', address: '', notes: '', family_id: '' });
   };
 
   return (
