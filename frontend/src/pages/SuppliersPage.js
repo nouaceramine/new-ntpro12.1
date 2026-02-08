@@ -31,7 +31,19 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
-import { Truck, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Users, DollarSign } from 'lucide-react';
+import { 
+  Truck, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Users, DollarSign,
+  Grid3X3, List, ArrowUpDown, SortAsc, SortDesc
+} from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
+import { Badge } from '../components/ui/badge';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
