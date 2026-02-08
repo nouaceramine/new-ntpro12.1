@@ -121,20 +121,22 @@ export default function DashboardPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {statsCards.map((stat, index) => (
-            <Card key={index} className="stats-card" data-testid={`stat-card-${index}`}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl font-bold mt-2">{stat.value}</p>
-                    {stat.subValue && <p className="text-sm text-muted-foreground">{stat.subValue}</p>}
+            <Link key={index} to={stat.link}>
+              <Card className="stats-card cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200" data-testid={`stat-card-${index}`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                      <p className="text-2xl font-bold mt-2">{stat.value}</p>
+                      {stat.subValue && <p className="text-sm text-muted-foreground">{stat.subValue}</p>}
+                    </div>
+                    <div className={`p-4 rounded-xl ${stat.bgColor}`}>
+                      <stat.icon className={`h-6 w-6 ${stat.color}`} />
+                    </div>
                   </div>
-                  <div className={`p-4 rounded-xl ${stat.bgColor}`}>
-                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
 
