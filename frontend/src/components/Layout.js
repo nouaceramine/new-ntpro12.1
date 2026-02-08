@@ -301,6 +301,7 @@ export const Layout = ({ children }) => {
       items: [
         { path: '/reports', icon: BarChart3, label: t.reports },
         { path: '/analytics', icon: BarChart3, label: language === 'ar' ? 'إحصائيات متقدمة' : 'Analyses avancées' },
+        { path: '/smart-reports', icon: Sparkles, label: language === 'ar' ? 'تقارير ذكية' : 'Rapports intelligents' },
       ]
     },
     {
