@@ -846,7 +846,7 @@ export default function POSPage() {
               {warehouses.length > 0 && (
                 <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
                   <SelectTrigger className="w-40 h-11" data-testid="warehouse-select">
-                    <Package className="h-4 w-4 me-2 text-muted-foreground" />
+                    <Warehouse className="h-4 w-4 me-2 text-muted-foreground" />
                     <SelectValue placeholder={language === 'ar' ? 'اختر المخزن' : 'Choisir entrepôt'} />
                   </SelectTrigger>
                   <SelectContent>
