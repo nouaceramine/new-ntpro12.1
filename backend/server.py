@@ -6853,6 +6853,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static files for uploads
+app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="static")
+
 @app.on_event("startup")
 async def startup():
     await init_cash_boxes()
