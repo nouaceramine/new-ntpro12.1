@@ -87,6 +87,37 @@ export default function EmployeesPage() {
     } catch (e) { toast.error(t.somethingWentWrong); }
   };
 
+  const handleCreateAccount = async (e) => {
+    e.preventDefault();
+    if (!accountData.email || !accountData.password) {
+      toast.error(language === 'ar' ? 'يرجى ملء جميع الحقول' : 'Veuillez remplir tous les champs');
+      return;
+    }
+    setCreatingAccount(true);
+    try {
+      await axios.post(`${API}/employees/${selectedEmployee.id}/create-account`, accountData);
+      toast.success(language === 'ar' ? 'تم إنشاء الحساب بنجاح' : 'Compte créé avec succès');
+      setAccountDialogOpen(false);
+      setAccountData({ email: '', password: '', role: 'seller' });
+      fetchEmployees();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || t.somethingWentWrong);
+    } finally {
+      setCreatingAccount(false);
+    }
+  };
+
+  const handleDeleteAccount = async (employeeId) => {
+    if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من حذف حساب هذا الموظف؟' : 'Êtes-vous sûr de vouloir supprimer le compte?')) return;
+    try {
+      await axios.delete(`${API}/employees/${employeeId}/delete-account`);
+      toast.success(language === 'ar' ? 'تم حذف الحساب' : 'Compte supprimé');
+      fetchEmployees();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || t.somethingWentWrong);
+    }
+  };
+
   const resetForm = () => {
     setSelectedEmployee(null);
     setFormData({ name: '', phone: '', email: '', position: '', salary: '', commission_rate: '', hire_date: '' });
