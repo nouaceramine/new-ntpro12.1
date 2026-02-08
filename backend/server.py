@@ -3105,6 +3105,105 @@ async def get_employee_advances(employee_id: str, admin: dict = Depends(get_admi
     advances = await db.advances.find({"employee_id": employee_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return advances
 
+# ============ EMPLOYEE ALERTS ============
+
+@api_router.get("/employees/{employee_id}/alert-settings")
+async def get_employee_alert_settings(employee_id: str, user: dict = Depends(get_current_user)):
+    """Get alert settings for an employee"""
+    settings = await db.employee_alerts.find_one({"employee_id": employee_id}, {"_id": 0})
+    if not settings:
+        return EmployeeAlertSettings(employee_id=employee_id).model_dump()
+    return settings
+
+@api_router.put("/employees/{employee_id}/alert-settings")
+async def update_employee_alert_settings(employee_id: str, settings: EmployeeAlertSettings, admin: dict = Depends(get_admin_user)):
+    """Update alert settings for an employee"""
+    await db.employee_alerts.update_one(
+        {"employee_id": employee_id},
+        {"$set": {**settings.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"success": True}
+
+@api_router.get("/employees/alerts/active")
+async def get_active_employee_alerts(admin: dict = Depends(get_admin_user)):
+    """Get all active alerts for employees approaching their limits"""
+    alerts = []
+    
+    # Get all employees with limits set
+    employees = await db.employees.find(
+        {"$or": [{"max_discount_percent": {"$gt": 0}}, {"max_debt_amount": {"$gt": 0}}]},
+        {"_id": 0}
+    ).to_list(100)
+    
+    today = datetime.now(timezone.utc).date()
+    month_start = datetime(today.year, today.month, 1, tzinfo=timezone.utc)
+    
+    for emp in employees:
+        emp_id = emp.get("id")
+        emp_name = emp.get("name")
+        
+        # Get alert settings
+        alert_settings = await db.employee_alerts.find_one({"employee_id": emp_id})
+        if not alert_settings:
+            alert_settings = {"discount_threshold_percent": 80, "debt_threshold_percent": 80, "enable_discount_alert": True, "enable_debt_alert": True}
+        
+        # Check discount limit
+        if emp.get("max_discount_percent", 0) > 0 and alert_settings.get("enable_discount_alert", True):
+            # Get total discounts given this month
+            sales = await db.sales.find({
+                "employee_id": emp_id,
+                "created_at": {"$gte": month_start.isoformat()}
+            }).to_list(1000)
+            
+            total_discount_given = sum(s.get("discount", 0) for s in sales)
+            total_sales = sum(s.get("subtotal", 0) for s in sales)
+            
+            if total_sales > 0:
+                discount_percent_used = (total_discount_given / total_sales) * 100
+                max_discount = emp.get("max_discount_percent", 0)
+                threshold = alert_settings.get("discount_threshold_percent", 80)
+                
+                if discount_percent_used >= (max_discount * threshold / 100):
+                    alerts.append({
+                        "type": "discount_limit",
+                        "severity": "high" if discount_percent_used >= max_discount else "warning",
+                        "employee_id": emp_id,
+                        "employee_name": emp_name,
+                        "current_value": round(discount_percent_used, 2),
+                        "max_value": max_discount,
+                        "percent_used": round((discount_percent_used / max_discount) * 100, 1) if max_discount > 0 else 0,
+                        "message_ar": f"الموظف {emp_name} اقترب من حد الخصم المسموح ({discount_percent_used:.1f}% من {max_discount}%)",
+                        "message_en": f"Employee {emp_name} approaching discount limit ({discount_percent_used:.1f}% of {max_discount}%)"
+                    })
+        
+        # Check debt limit
+        if emp.get("max_debt_amount", 0) > 0 and alert_settings.get("enable_debt_alert", True):
+            # Get total debts created by this employee
+            debts = await db.debts.find({
+                "created_by": emp_id,
+                "paid": False
+            }).to_list(1000)
+            
+            total_debt = sum(d.get("remaining_amount", 0) for d in debts)
+            max_debt = emp.get("max_debt_amount", 0)
+            threshold = alert_settings.get("debt_threshold_percent", 80)
+            
+            if total_debt >= (max_debt * threshold / 100):
+                alerts.append({
+                    "type": "debt_limit",
+                    "severity": "high" if total_debt >= max_debt else "warning",
+                    "employee_id": emp_id,
+                    "employee_name": emp_name,
+                    "current_value": total_debt,
+                    "max_value": max_debt,
+                    "percent_used": round((total_debt / max_debt) * 100, 1) if max_debt > 0 else 0,
+                    "message_ar": f"الموظف {emp_name} اقترب من حد الدين المسموح ({total_debt:.2f} من {max_debt:.2f} دج)",
+                    "message_en": f"Employee {emp_name} approaching debt limit ({total_debt:.2f} of {max_debt:.2f} DZD)"
+                })
+    
+    return alerts
+
 # ============ DEBT ROUTES ============
 
 @api_router.post("/debts", response_model=DebtResponse)
