@@ -461,6 +461,113 @@ export default function EmployeesPage() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Salary Report Dialog */}
+        <Dialog open={salaryDialogOpen} onOpenChange={setSalaryDialogOpen}>
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'جدول الرواتب الشهري' : 'Fiche de paie mensuelle'}
+              </DialogTitle>
+              <CardDescription>
+                {language === 'ar' ? 'تفاصيل الرواتب والعمولات والسلف لجميع الموظفين' : 'Détails des salaires, commissions et avances'}
+              </CardDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Month Selector */}
+              <div className="flex items-center gap-4">
+                <Label>{language === 'ar' ? 'الشهر' : 'Mois'}</Label>
+                <Input
+                  type="month"
+                  value={salaryMonth}
+                  onChange={(e) => { setSalaryMonth(e.target.value); }}
+                  className="w-48"
+                />
+                <Button variant="outline" onClick={fetchSalaryReport} size="sm">
+                  {language === 'ar' ? 'تحديث' : 'Actualiser'}
+                </Button>
+              </div>
+
+              {/* Summary */}
+              <div className="grid grid-cols-4 gap-4">
+                <Card className="bg-blue-50">
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-blue-600">{language === 'ar' ? 'إجمالي الرواتب' : 'Total salaires'}</p>
+                    <p className="text-lg font-bold text-blue-700">{stats.totalSalaries.toLocaleString()}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-green-50">
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-green-600">{language === 'ar' ? 'العمولات' : 'Commissions'}</p>
+                    <p className="text-lg font-bold text-green-700">{stats.totalCommissions.toLocaleString()}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-amber-50">
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-amber-600">{language === 'ar' ? 'السلف' : 'Avances'}</p>
+                    <p className="text-lg font-bold text-amber-700">{stats.totalAdvances.toLocaleString()}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-purple-50">
+                  <CardContent className="p-3 text-center">
+                    <p className="text-xs text-purple-600">{language === 'ar' ? 'صافي المستحق' : 'Net à payer'}</p>
+                    <p className="text-lg font-bold text-purple-700">
+                      {(stats.totalSalaries + stats.totalCommissions - stats.totalAdvances).toLocaleString()}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Salary Table */}
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>{language === 'ar' ? 'الموظف' : 'Employé'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'المنصب' : 'Poste'}</TableHead>
+                      <TableHead className="text-center">{language === 'ar' ? 'الراتب الأساسي' : 'Salaire base'}</TableHead>
+                      <TableHead className="text-center">{language === 'ar' ? 'العمولة' : 'Commission'}</TableHead>
+                      <TableHead className="text-center">{language === 'ar' ? 'السلف' : 'Avances'}</TableHead>
+                      <TableHead className="text-center">{language === 'ar' ? 'صافي المستحق' : 'Net'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {employees.map(emp => {
+                      const netSalary = calculateNetSalary(emp);
+                      return (
+                        <TableRow key={emp.id}>
+                          <TableCell className="font-medium">{emp.name}</TableCell>
+                          <TableCell>{emp.position || '-'}</TableCell>
+                          <TableCell className="text-center">{emp.salary?.toLocaleString()} {t.currency}</TableCell>
+                          <TableCell className="text-center text-green-600">+{(emp.total_commission || 0).toLocaleString()}</TableCell>
+                          <TableCell className="text-center text-amber-600">-{(emp.total_advances || 0).toLocaleString()}</TableCell>
+                          <TableCell className="text-center font-bold">
+                            <Badge variant={netSalary >= 0 ? 'default' : 'destructive'}>
+                              {netSalary.toLocaleString()} {t.currency}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Print Button */}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setSalaryDialogOpen(false)}>
+                  {language === 'ar' ? 'إغلاق' : 'Fermer'}
+                </Button>
+                <Button onClick={() => window.print()} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  {language === 'ar' ? 'طباعة' : 'Imprimer'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
