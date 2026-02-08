@@ -278,6 +278,24 @@ export default function SuppliersPage() {
                         {supplier.balance.toFixed(2)} {t.currency}
                       </p>
                     </div>
+                    {supplier.advance_balance > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">{language === 'ar' ? 'رصيد متقدم' : 'Avance'}</p>
+                        <p className="font-semibold text-green-600">{supplier.advance_balance?.toFixed(2) || '0.00'} {t.currency}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-3 pt-3 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-2 text-green-600 border-green-300 hover:bg-green-50"
+                      onClick={() => openAdvancePaymentDialog(supplier)}
+                    >
+                      <DollarSign className="h-4 w-4" />
+                      {language === 'ar' ? 'دفع متقدم' : 'Paiement avancé'}
+                    </Button>
+                  </div>
                   </div>
                 </CardContent>
               </Card>
