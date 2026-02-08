@@ -49,6 +49,15 @@ export default function SuppliersPage() {
     name: '', phone: '', email: '', address: '', notes: '', family_id: ''
   });
 
+  // Advance Payment Dialog
+  const [advancePaymentDialogOpen, setAdvancePaymentDialogOpen] = useState(false);
+  const [advancePaymentData, setAdvancePaymentData] = useState({
+    supplier_id: '',
+    amount: '',
+    payment_method: 'cash',
+    notes: ''
+  });
+
   // Family dialog
   const [familyDialogOpen, setFamilyDialogOpen] = useState(false);
   const [newFamilyName, setNewFamilyName] = useState('');
