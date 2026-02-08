@@ -48,7 +48,8 @@ import {
   Sun,
   Wrench,
   Download,
-  Sparkles
+  Sparkles,
+  History
 } from 'lucide-react';
 import { AIAssistant } from './AIAssistant';
 
