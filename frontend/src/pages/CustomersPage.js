@@ -571,6 +571,37 @@ export default function CustomersPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Add Family Dialog */}
+        <Dialog open={familyDialogOpen} onOpenChange={setFamilyDialogOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                {language === 'ar' ? 'إضافة عائلة زبائن جديدة' : 'Ajouter une nouvelle famille'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'اسم العائلة' : 'Nom de la famille'} *</Label>
+                <Input
+                  value={newFamilyName}
+                  onChange={(e) => setNewFamilyName(e.target.value)}
+                  placeholder={language === 'ar' ? 'مثال: زبائن VIP' : 'Ex: Clients VIP'}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => { setFamilyDialogOpen(false); setNewFamilyName(''); }}>
+                  {t.cancel}
+                </Button>
+                <Button onClick={handleAddFamily} disabled={savingFamily || !newFamilyName.trim()}>
+                  <Plus className="h-4 w-4 me-1" />
+                  {language === 'ar' ? 'إضافة' : 'Ajouter'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
