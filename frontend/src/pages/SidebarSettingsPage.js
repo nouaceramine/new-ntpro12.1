@@ -106,7 +106,7 @@ const iconMap = {
   LayoutDashboard, Package, ShoppingCart, Truck, Users, CreditCard, Wallet,
   BarChart3, Settings, Bell, Wrench, Receipt, FolderTree, Warehouse,
   ClipboardList, QrCode, DollarSign, ShoppingBag, Clock, Smartphone, Store, Shield, Key,
-  Folder, Star, Briefcase, Home, FileText, Globe, Heart, Zap, Box
+  Folder, Star, Briefcase, Home, FileText, Globe, Heart, Zap, Box, Award
 };
 
 // Default menu structure
