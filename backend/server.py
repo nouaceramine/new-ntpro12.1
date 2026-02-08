@@ -2673,6 +2673,83 @@ async def get_profit_report(days: int = 30, admin: dict = Depends(get_admin_user
         "period_days": days
     }
 
+@api_router.get("/reports/profit-detailed")
+async def get_detailed_profit_report(days: int = 30, admin: dict = Depends(get_admin_user)):
+    """Get detailed profit report with daily breakdown"""
+    start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+    
+    # Get all sales in period
+    sales = await db.sales.find(
+        {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Group by day and calculate profits
+    daily_data = {}
+    product_profits = {}
+    
+    for sale in sales:
+        sale_date = sale.get("created_at", "")[:10]
+        if sale_date not in daily_data:
+            daily_data[sale_date] = {"revenue": 0, "cost": 0, "profit": 0, "sales_count": 0}
+        
+        daily_data[sale_date]["sales_count"] += 1
+        daily_data[sale_date]["revenue"] += sale.get("total", 0)
+        
+        for item in sale.get("items", []):
+            product_id = item.get("product_id")
+            if product_id:
+                product = await db.products.find_one({"id": product_id}, {"_id": 0, "purchase_price": 1, "name_ar": 1, "name_en": 1})
+                if product:
+                    purchase_price = product.get("purchase_price", 0)
+                    sale_price = item.get("price", 0)
+                    quantity = item.get("quantity", 1)
+                    item_cost = purchase_price * quantity
+                    item_profit = (sale_price - purchase_price) * quantity
+                    
+                    daily_data[sale_date]["cost"] += item_cost
+                    daily_data[sale_date]["profit"] += item_profit
+                    
+                    # Track product profits
+                    if product_id not in product_profits:
+                        product_profits[product_id] = {
+                            "name": product.get("name_ar") or product.get("name_en", ""),
+                            "total_sold": 0,
+                            "total_profit": 0,
+                            "profit_margin": 0
+                        }
+                    product_profits[product_id]["total_sold"] += quantity
+                    product_profits[product_id]["total_profit"] += item_profit
+    
+    # Calculate profit margins for products
+    for pid, pdata in product_profits.items():
+        if pdata["total_sold"] > 0:
+            pdata["profit_per_unit"] = round(pdata["total_profit"] / pdata["total_sold"], 2)
+    
+    # Sort daily data by date
+    sorted_daily = [{"date": k, **v} for k, v in sorted(daily_data.items(), reverse=True)]
+    
+    # Get top profitable products
+    top_products = sorted(product_profits.values(), key=lambda x: x["total_profit"], reverse=True)[:10]
+    
+    # Calculate totals
+    total_revenue = sum(d["revenue"] for d in daily_data.values())
+    total_cost = sum(d["cost"] for d in daily_data.values())
+    total_profit = sum(d["profit"] for d in daily_data.values())
+    
+    return {
+        "summary": {
+            "total_revenue": total_revenue,
+            "total_cost": total_cost,
+            "total_profit": total_profit,
+            "profit_margin": round((total_profit / total_revenue * 100) if total_revenue > 0 else 0, 2),
+            "avg_daily_profit": round(total_profit / days, 2) if days > 0 else 0,
+            "period_days": days
+        },
+        "daily_breakdown": sorted_daily[:30],
+        "top_profitable_products": top_products
+    }
+
 # ============ EMPLOYEE ROUTES ============
 
 @api_router.post("/employees", response_model=EmployeeResponse)
