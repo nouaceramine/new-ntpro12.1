@@ -2803,6 +2803,80 @@ async def delete_employee(employee_id: str, admin: dict = Depends(get_admin_user
         raise HTTPException(status_code=404, detail="Employee not found")
     return {"message": "Employee deleted successfully"}
 
+# Create user account for employee
+class EmployeeAccountCreate(BaseModel):
+    email: str
+    password: str
+    role: str = "seller"
+
+@api_router.post("/employees/{employee_id}/create-account")
+async def create_employee_account(employee_id: str, account: EmployeeAccountCreate, admin: dict = Depends(get_admin_user)):
+    """Create a user account for an employee"""
+    employee = await db.employees.find_one({"id": employee_id}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    # Check if email already exists
+    existing = await db.users.find_one({"email": account.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Check if employee already has an account
+    if employee.get("user_id"):
+        raise HTTPException(status_code=400, detail="Employee already has an account")
+    
+    # Create user account
+    user_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    hashed_password = bcrypt.hashpw(account.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    user_doc = {
+        "id": user_id,
+        "email": account.email,
+        "password": hashed_password,
+        "name": employee["name"],
+        "role": account.role,
+        "employee_id": employee_id,
+        "permissions": DEFAULT_PERMISSIONS.get(account.role, {}),
+        "created_at": now
+    }
+    
+    await db.users.insert_one(user_doc)
+    
+    # Link user to employee
+    await db.employees.update_one(
+        {"id": employee_id},
+        {"$set": {"user_id": user_id, "user_email": account.email}}
+    )
+    
+    return {
+        "success": True,
+        "user_id": user_id,
+        "email": account.email,
+        "role": account.role
+    }
+
+@api_router.delete("/employees/{employee_id}/delete-account")
+async def delete_employee_account(employee_id: str, admin: dict = Depends(get_admin_user)):
+    """Delete user account linked to employee"""
+    employee = await db.employees.find_one({"id": employee_id}, {"_id": 0})
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    if not employee.get("user_id"):
+        raise HTTPException(status_code=400, detail="Employee has no linked account")
+    
+    # Delete user account
+    await db.users.delete_one({"id": employee["user_id"]})
+    
+    # Unlink from employee
+    await db.employees.update_one(
+        {"id": employee_id},
+        {"$unset": {"user_id": "", "user_email": ""}}
+    )
+    
+    return {"success": True}
+
 # Attendance
 @api_router.post("/employees/attendance", response_model=AttendanceResponse)
 async def record_attendance(attendance: AttendanceCreate, admin: dict = Depends(get_admin_user)):
