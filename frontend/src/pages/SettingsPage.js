@@ -314,6 +314,142 @@ export default function SettingsPage() {
     }
   };
 
+  // Backup functions
+  const handleDownloadBackup = async () => {
+    setBackupLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/backup/create`, {
+        headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `backup_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success(language === 'ar' ? 'تم تحميل النسخة الاحتياطية' : 'Backup downloaded');
+    } catch (error) {
+      toast.error(language === 'ar' ? 'فشل في تحميل النسخة' : 'Failed to download backup');
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleSaveBackupToServer = async () => {
+    setBackupLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/backup/save-to-server`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم حفظ النسخة على السيرفر' : 'Backup saved to server');
+      fetchBackupList();
+    } catch (error) {
+      toast.error(language === 'ar' ? 'فشل في حفظ النسخة' : 'Failed to save backup');
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleRestoreBackup = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    if (!window.confirm(language === 'ar' 
+      ? 'هل أنت متأكد؟ سيتم استبدال كل البيانات الحالية!' 
+      : 'Are you sure? All current data will be replaced!')) {
+      e.target.value = '';
+      return;
+    }
+    
+    setBackupLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      await axios.post(`${API}/backup/restore`, formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      toast.success(language === 'ar' ? 'تم استعادة البيانات بنجاح' : 'Data restored successfully');
+      window.location.reload();
+    } catch (error) {
+      toast.error(language === 'ar' ? 'فشل في استعادة البيانات' : 'Failed to restore data');
+    } finally {
+      setBackupLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const fetchBackupList = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/backup/list`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBackupList(response.data);
+    } catch (error) {
+      console.error('Error fetching backup list:', error);
+    }
+  };
+
+  // Selective Delete
+  const dataTypeOptions = [
+    { value: 'sales', label: language === 'ar' ? 'المبيعات' : 'Sales' },
+    { value: 'purchases', label: language === 'ar' ? 'المشتريات' : 'Purchases' },
+    { value: 'customers', label: language === 'ar' ? 'الزبائن' : 'Customers' },
+    { value: 'suppliers', label: language === 'ar' ? 'الموردين' : 'Suppliers' },
+    { value: 'products', label: language === 'ar' ? 'المنتجات' : 'Products' },
+    { value: 'employees', label: language === 'ar' ? 'الموظفين' : 'Employees' },
+    { value: 'debts', label: language === 'ar' ? 'الديون' : 'Debts' },
+    { value: 'expenses', label: language === 'ar' ? 'المصاريف' : 'Expenses' },
+    { value: 'repairs', label: language === 'ar' ? 'الإصلاحات' : 'Repairs' },
+    { value: 'daily_sessions', label: language === 'ar' ? 'الحصص اليومية' : 'Daily Sessions' },
+    { value: 'notifications', label: language === 'ar' ? 'الإشعارات' : 'Notifications' },
+  ];
+
+  const handleSelectiveDelete = async () => {
+    if (selectedDataTypes.length === 0) {
+      toast.error(language === 'ar' ? 'اختر نوع بيانات واحد على الأقل' : 'Select at least one data type');
+      return;
+    }
+    if (selectiveDeleteCode !== 'DELETE-SELECTED') {
+      toast.error(language === 'ar' ? 'رمز التأكيد غير صحيح' : 'Invalid confirmation code');
+      return;
+    }
+    
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${API}/system/selective-delete`, {
+        data_types: selectedDataTypes,
+        confirm_code: selectiveDeleteCode
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success(language === 'ar' ? 'تم حذف البيانات المحددة' : 'Selected data deleted');
+      setShowSelectiveDeleteDialog(false);
+      setSelectedDataTypes([]);
+      setSelectiveDeleteCode('');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const openPasswordDialog = (u) => {
     setPasswordUser(u);
     setNewPassword('');
