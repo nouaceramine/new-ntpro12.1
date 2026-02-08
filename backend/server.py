@@ -485,30 +485,6 @@ PERMISSION_CATEGORIES = {
         "permissions": ["woocommerce", "delivery", "loyalty", "notifications", "maintenance", "repairs", "recharge"]
     }
 }
-        "recharge": False,
-        "api_keys": False,
-        "factory_reset": False,
-        "accounting": True
-    },
-    "user": {
-        "dashboard": True,
-        "pos": True,
-        "products": {"view": True, "add": False, "edit": False, "delete": False},
-        "sales": {"view": True, "add": True, "edit": False, "delete": False},
-        "customers": {"view": True, "add": True, "edit": False, "delete": False},
-        "suppliers": {"view": False, "add": False, "edit": False, "delete": False},
-        "employees": {"view": False, "add": False, "edit": False, "delete": False},
-        "debts": {"view": True, "add": False, "edit": False, "delete": False},
-        "expenses": {"view": False, "add": False, "edit": False, "delete": False},
-        "repairs": {"view": True, "add": True, "edit": False, "delete": False},
-        "reports": False,
-        "settings": False,
-        "users": {"view": False, "add": False, "edit": False, "delete": False},
-        "recharge": True,
-        "api_keys": False,
-        "factory_reset": False
-    }
-}
 
 class TokenResponse(BaseModel):
     access_token: str
