@@ -2274,14 +2274,6 @@ export default function SettingsPage() {
                   </p>
                 </div>
               )}
-                  {newUserData.role === 'user' && (
-                    <>
-                      <li>• {language === 'ar' ? 'صلاحيات محدودة' : 'Permissions limitées'}</li>
-                      <li>• {language === 'ar' ? 'البيع الأساسي فقط' : 'Vente de base uniquement'}</li>
-                    </>
-                  )}
-                </ul>
-              </div>
 
               <div className="flex gap-2 pt-4">
                 <Button 
