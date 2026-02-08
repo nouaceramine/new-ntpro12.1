@@ -510,6 +510,28 @@ export const Layout = ({ children }) => {
             )}
           </button>
 
+          {/* Expand/Collapse All Sections - Only when sidebar is not collapsed */}
+          {!sidebarCollapsed && (
+            <div className="flex items-center justify-center gap-2 py-2 border-b">
+              <button
+                onClick={() => setExpandedSections(navSections.map(s => s.title))}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted rounded-md transition-colors"
+                title={language === 'ar' ? 'فتح الكل' : 'Tout ouvrir'}
+              >
+                <ChevronDown className="h-3 w-3" />
+                <span>{language === 'ar' ? 'فتح الكل' : 'Ouvrir'}</span>
+              </button>
+              <button
+                onClick={() => setExpandedSections([])}
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted rounded-md transition-colors"
+                title={language === 'ar' ? 'غلق الكل' : 'Tout fermer'}
+              >
+                <ChevronUp className="h-3 w-3" />
+                <span>{language === 'ar' ? 'غلق الكل' : 'Fermer'}</span>
+              </button>
+            </div>
+          )}
+
           {/* Navigation */}
           <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
             {navSections.map((section) => (
