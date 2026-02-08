@@ -439,6 +439,40 @@ export default function CustomersPage() {
                   rows={2}
                 />
               </div>
+              
+              {/* Customer Family */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>{language === 'ar' ? 'عائلة الزبون' : 'Famille client'}</Label>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setFamilyDialogOpen(true)}
+                    className="gap-1 h-7 text-xs"
+                  >
+                    <Plus className="h-3 w-3" />
+                    {language === 'ar' ? 'إضافة عائلة' : 'Ajouter'}
+                  </Button>
+                </div>
+                <Select
+                  value={formData.family_id || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, family_id: value === "none" ? "" : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={language === 'ar' ? 'اختر عائلة' : 'Choisir famille'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{language === 'ar' ? 'بدون عائلة' : 'Sans famille'}</SelectItem>
+                    {customerFamilies.map(family => (
+                      <SelectItem key={family.id} value={family.id}>
+                        {family.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   {t.cancel}
