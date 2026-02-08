@@ -519,7 +519,6 @@ DELETE /api/notifications/clear-all     - مسح الكل
 
 ### P0 - أولوية عالية
 - ⏳ تكوين SMTP/Resend الفعلي لإرسال البريد (يتطلب مفتاح API)
-- ⏳ ترتيب القائمة الجانبية يدوياً (drag & drop)
 
 ### P1 - أولوية متوسطة
 - ربط WooCommerce بمتجر حقيقي
