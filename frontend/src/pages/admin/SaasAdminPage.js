@@ -416,6 +416,7 @@ export default function SaasAdminPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>المشترك</TableHead>
+                      <TableHead>التصنيف</TableHead>
                       <TableHead>الخطة</TableHead>
                       <TableHead className="text-center">الإحصائيات</TableHead>
                       <TableHead className="text-center">الحالة</TableHead>
@@ -434,6 +435,21 @@ export default function SaasAdminPage() {
                               <p className="text-xs text-muted-foreground">{tenant.company_name}</p>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={
+                            tenant.business_type === 'wholesaler' ? 'bg-green-50 text-green-700 border-green-200' :
+                            tenant.business_type === 'distributor' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                            'bg-blue-50 text-blue-700 border-blue-200'
+                          }>
+                            {tenant.business_type === 'wholesaler' ? (
+                              <><ShoppingBag className="h-3 w-3 me-1" />تاجر جملة</>
+                            ) : tenant.business_type === 'distributor' ? (
+                              <><Truck className="h-3 w-3 me-1" />موزع</>
+                            ) : (
+                              <><Store className="h-3 w-3 me-1" />تاجر تجزئة</>
+                            )}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">{tenant.plan_name}</Badge>
