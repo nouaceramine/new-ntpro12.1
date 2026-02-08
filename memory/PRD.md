@@ -433,10 +433,74 @@ GET    /api/expenses/stats   - إحصائيات المصروفات
 - ربط WooCommerce بمتجر حقيقي
 - ربط خدمة SMS حقيقية
 - ربط WhatsApp Business API
+- شحن رصيد EMERGENT_LLM_KEY للذكاء الاصطناعي
 
 ### P2 - أولوية منخفضة
 - تفعيل إعدادات الطابعة الفعلية
 - تحسين صفحة الخدمات بتصميم يشبه mch-dz.com
+
+---
+
+## التحديثات الأخيرة (2026-02-08) - الجلسة 2
+
+### 1. المساعد الذكي (AI Assistant) ✅ جديد
+
+#### الميزات:
+- **زر AI في كل الصفحات**: زر بنفسجي ثابت في الزاوية السفلية اليسرى
+- **لوحة المحادثة**: تفتح عند النقر على الزر
+- **تبويب المحادثة**: محادثة مع الذكاء الاصطناعي
+- **تبويب التحليل**: تحليلات سريعة (توقع المبيعات، اقتراحات التخزين، تحليل العملاء)
+- **إجراءات سريعة**: أزرار للأسئلة الشائعة
+- **سياق ذكي**: المساعد يتكيف حسب الصفحة الحالية
+
+#### APIs جديدة:
+```
+POST   /api/ai/chat                    - محادثة مع AI
+GET    /api/ai/chat-history/{session}  - تاريخ المحادثة
+DELETE /api/ai/chat-history/{session}  - مسح المحادثة
+POST   /api/ai/analyze                 - تحليل ذكي (sales_forecast, restock, customer_insights, product_description)
+```
+
+#### ملاحظات:
+- يستخدم EMERGENT_LLM_KEY من .env
+- قد يظهر خطأ "Budget exceeded" عند انتهاء الرصيد
+
+### 2. إصلاح حفظ صور المنتجات ✅
+
+#### المشكلة:
+- الصور كانت تُرفع لكن لا تُحفظ في قاعدة البيانات
+
+#### الحل:
+- تصحيح `PurchasesPage.js` لإرسال `image_url` بدلاً من `image` (السطر 305)
+
+### 3. تحسين حسابات الربح ✅
+
+#### الميزات الجديدة:
+- **تقرير الربح التفصيلي**: `/api/reports/profit-detailed`
+  - تقسيم يومي للأرباح
+  - أفضل المنتجات ربحاً
+  - هامش الربح الفعلي
+- **حساب الربح الفعلي في إغلاق الحصة**: بدلاً من التقدير 15%
+- **تحسين DailySessionsPage.js**: حساب الربح من الفرق بين سعر البيع وسعر الشراء
+
+#### API تقرير الربح التفصيلي:
+```
+GET /api/reports/profit-detailed?days=30
+
+Response:
+{
+  "summary": {
+    "total_revenue": float,
+    "total_cost": float,
+    "total_profit": float,
+    "profit_margin": float,
+    "avg_daily_profit": float,
+    "period_days": int
+  },
+  "daily_breakdown": [...],
+  "top_profitable_products": [...]
+}
+```
 
 ---
 
@@ -449,8 +513,8 @@ GET    /api/expenses/stats   - إحصائيات المصروفات
 - SMS APIs
 
 ### بيانات الاختبار:
-- البريد: test@test.com
-- كلمة المرور: test123
+- البريد: admin@test.com
+- كلمة المرور: admin123
 - الدور: admin
 
 ### العملة:
