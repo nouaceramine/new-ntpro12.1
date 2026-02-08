@@ -253,16 +253,19 @@ export default function AddProductPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Product Names */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name_en">{t.productNameEn} *</Label>
-                  <Input id="name_en" name="name_en" value={formData.name_en} onChange={handleChange} required className="h-11" data-testid="product-name-en-input" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="name_ar">{t.productNameAr} *</Label>
-                  <Input id="name_ar" name="name_ar" value={formData.name_ar} onChange={handleChange} required className="h-11" dir="rtl" data-testid="product-name-ar-input" />
-                </div>
+              {/* Product Name - Single Field */}
+              <div className="space-y-2">
+                <Label htmlFor="name">{language === 'ar' ? 'اسم المنتج' : 'Nom du produit'} *</Label>
+                <Input 
+                  id="name" 
+                  name="name" 
+                  value={formData.name} 
+                  onChange={handleChange} 
+                  required 
+                  className="h-11" 
+                  data-testid="product-name-input"
+                  placeholder={language === 'ar' ? 'يقبل العربية والفرنسية' : 'Accepte arabe et français'}
+                />
               </div>
 
               {/* Family Selection with Quick Add */}
@@ -308,11 +311,15 @@ export default function AddProductPage() {
                 </div>
               </div>
 
-              {/* Prices */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Prices - 4 columns with super wholesale */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="purchase_price">{t.purchasePrice} ({t.currency}) *</Label>
                   <Input id="purchase_price" name="purchase_price" type="number" step="0.01" min="0" value={formData.purchase_price} onChange={handleChange} className="h-11" data-testid="purchase-price-input" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="super_wholesale_price">{language === 'ar' ? 'سعر سوبر الجملة' : 'Prix super gros'} ({t.currency})</Label>
+                  <Input id="super_wholesale_price" name="super_wholesale_price" type="number" step="0.01" min="0" value={formData.super_wholesale_price} onChange={handleChange} className="h-11" data-testid="super-wholesale-price-input" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="wholesale_price">{t.wholesalePrice} ({t.currency}) *</Label>
