@@ -385,6 +385,14 @@ export const Layout = ({ children }) => {
         { path: '/settings', icon: Settings, label: t.settings },
         { path: '/settings/sidebar', icon: LayoutDashboard, label: language === 'ar' ? 'ترتيب القائمة' : 'Ordre menu' },
       ]
+    }] : []),
+    ...(user?.role === 'super_admin' ? [{
+      id: 'saas',
+      title: 'NT Commerce',
+      icon: Building,
+      items: [
+        { path: '/saas-admin', icon: Building, label: language === 'ar' ? 'لوحة تحكم SaaS' : 'SaaS Dashboard' },
+      ]
     }] : [])
   ];
 
