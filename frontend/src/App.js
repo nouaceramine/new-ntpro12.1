@@ -60,6 +60,12 @@ import PriceHistoryPage from "./pages/PriceHistoryPage";
 import SmartReportsPage from "./pages/SmartReportsPage";
 import EmployeeAlertsPage from "./pages/EmployeeAlertsPage";
 
+// Landing & SaaS Pages
+import LandingPage from "./pages/landing/LandingPage";
+import SaasRegisterPage from "./pages/landing/RegisterPage";
+import TenantLoginPage from "./pages/landing/TenantLoginPage";
+import SaasAdminPage from "./pages/admin/SaasAdminPage";
+
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { isAuthenticated, loading, isAdmin } = useAuth();
