@@ -241,8 +241,6 @@ export const Layout = ({ children }) => {
         { path: '/customers', icon: Users, label: t.customers },
         ...(isAdmin ? [
           { path: '/customer-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الزبائن' : 'Familles clients' },
-          { path: '/suppliers', icon: Truck, label: t.suppliers },
-          { path: '/supplier-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الموردين' : 'Familles fournisseurs' },
           { path: '/employees', icon: Users, label: t.employees },
         ] : [])
       ]
