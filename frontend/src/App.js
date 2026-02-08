@@ -111,7 +111,12 @@ const PublicRoute = ({ children }) => {
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Landing & SaaS Public Routes */}
+      <Route path="/landing" element={<LandingPage />} />
+      <Route path="/register" element={<SaasRegisterPage />} />
+      <Route path="/tenant-login" element={<TenantLoginPage />} />
+
+      {/* Admin Login */}
       <Route
         path="/login"
         element={
@@ -120,12 +125,14 @@ function AppRoutes() {
           </PublicRoute>
         }
       />
+
+      {/* SaaS Admin Dashboard */}
       <Route
-        path="/register"
+        path="/saas-admin"
         element={
-          <PublicRoute>
-            <RegisterPage />
-          </PublicRoute>
+          <ProtectedRoute adminOnly>
+            <SaasAdminPage />
+          </ProtectedRoute>
         }
       />
 
