@@ -184,6 +184,48 @@ const defaultMenuSections = [
     ]
   },
   {
+    id: 'services',
+    titleAr: 'الخدمات',
+    titleFr: 'Services',
+    icon: 'Smartphone',
+    visible: true,
+    isCustom: false,
+    items: [
+      { id: 'services-home', path: '/services', icon: 'Store', labelAr: 'الصفحة الرئيسية', labelFr: 'Accueil services', visible: true },
+      { id: 'services-flexy', path: '/services/flexy', icon: 'Smartphone', labelAr: 'فليكسي', labelFr: 'Flexy', visible: true },
+      { id: 'services-idoom', path: '/services/idoom', icon: 'Zap', labelAr: 'تعبئة أيدوم', labelFr: 'Recharge Idoom', visible: true },
+      { id: 'services-cards', path: '/services/cards', icon: 'CreditCard', labelAr: 'بطاقات', labelFr: 'Cartes', visible: true },
+      { id: 'services-operations', path: '/services/operations', icon: 'Clock', labelAr: 'كل العمليات', labelFr: 'Opérations', visible: true },
+      { id: 'services-profits', path: '/services/profits', icon: 'DollarSign', labelAr: 'نسب الأرباح', labelFr: 'Taux profits', visible: true },
+      { id: 'services-transfers', path: '/services/transfers', icon: 'Receipt', labelAr: 'التحويلات', labelFr: 'Transferts', visible: true },
+      { id: 'services-directory', path: '/services/directory', icon: 'Users', labelAr: 'دليل الهاتف', labelFr: 'Annuaire', visible: true },
+      { id: 'recharge', path: '/recharge', icon: 'Smartphone', labelAr: 'تعبئة', labelFr: 'Recharge', visible: true },
+      { id: 'sim-management', path: '/sim-management', icon: 'Zap', labelAr: 'إدارة الشرائح', labelFr: 'Gestion SIM', visible: true },
+    ]
+  },
+  {
+    id: 'woocommerce',
+    titleAr: 'WooCommerce',
+    titleFr: 'WooCommerce',
+    icon: 'Store',
+    visible: true,
+    isCustom: false,
+    items: [
+      { id: 'woocommerce-main', path: '/woocommerce', icon: 'Store', labelAr: 'WooCommerce', labelFr: 'WooCommerce', visible: true },
+    ]
+  },
+  {
+    id: 'shipping',
+    titleAr: 'التوصيل',
+    titleFr: 'Livraison',
+    icon: 'Truck',
+    visible: true,
+    isCustom: false,
+    items: [
+      { id: 'shipping-main', path: '/shipping', icon: 'Truck', labelAr: 'شركات الشحن', labelFr: 'Transporteurs', visible: true },
+    ]
+  },
+  {
     id: 'admin',
     titleAr: 'الإدارة',
     titleFr: 'Administration',
@@ -194,10 +236,14 @@ const defaultMenuSections = [
       { id: 'reports', path: '/reports', icon: 'BarChart3', labelAr: 'التقارير', labelFr: 'Rapports', visible: true },
       { id: 'analytics', path: '/analytics', icon: 'BarChart3', labelAr: 'إحصائيات متقدمة', labelFr: 'Analyses', visible: true },
       { id: 'notifications', path: '/notifications', icon: 'Bell', labelAr: 'الإشعارات', labelFr: 'Notifications', visible: true },
+      { id: 'loyalty', path: '/loyalty', icon: 'Star', labelAr: 'الولاء والتسويق', labelFr: 'Fidélité', visible: true },
       { id: 'users', path: '/users', icon: 'Shield', labelAr: 'المستخدمين', labelFr: 'Utilisateurs', visible: true },
       { id: 'api-keys', path: '/api-keys', icon: 'Key', labelAr: 'مفاتيح API', labelFr: 'Clés API', visible: true },
       { id: 'settings', path: '/settings', icon: 'Settings', labelAr: 'الإعدادات', labelFr: 'Paramètres', visible: true },
+      { id: 'sidebar-settings', path: '/settings/sidebar', icon: 'LayoutDashboard', labelAr: 'ترتيب القائمة', labelFr: 'Ordre menu', visible: true },
     ]
+  },
+];
   },
 ];
 
