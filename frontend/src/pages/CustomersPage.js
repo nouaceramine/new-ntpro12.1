@@ -41,6 +41,7 @@ export default function CustomersPage() {
   const { t, language, isRTL } = useLanguage();
   
   const [customers, setCustomers] = useState([]);
+  const [customerFamilies, setCustomerFamilies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -48,8 +49,13 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', phone: '', email: '', address: '', notes: ''
+    name: '', phone: '', email: '', address: '', notes: '', family_id: ''
   });
+  
+  // Family dialog
+  const [familyDialogOpen, setFamilyDialogOpen] = useState(false);
+  const [newFamilyName, setNewFamilyName] = useState('');
+  const [savingFamily, setSavingFamily] = useState(false);
   
   // Blacklist state
   const [blacklist, setBlacklist] = useState([]);
