@@ -230,6 +230,23 @@ export default function POSPage() {
     }
   };
 
+  const fetchWarehouses = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/warehouses`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setWarehouses(response.data);
+      // Set default warehouse (main warehouse)
+      const mainWarehouse = response.data.find(w => w.is_main);
+      if (mainWarehouse && !selectedWarehouse) {
+        setSelectedWarehouse(mainWarehouse.id);
+      }
+    } catch (error) {
+      console.error('Error fetching warehouses:', error);
+    }
+  };
+
   const fetchBlacklist = async () => {
     try {
       const token = localStorage.getItem('token');
