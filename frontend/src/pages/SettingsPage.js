@@ -180,6 +180,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchData();
+    fetchBackupList();
   }, []);
 
   const fetchData = async () => {
