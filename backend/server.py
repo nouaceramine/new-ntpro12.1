@@ -1122,6 +1122,67 @@ async def get_low_stock_products(admin: dict = Depends(get_admin_user)):
     products = await db.products.aggregate(pipeline).to_list(1000)
     return [ProductResponse(**p) for p in products]
 
+# ============ PRICE HISTORY ROUTES ============
+
+@api_router.get("/products/{product_id}/price-history", response_model=List[PriceHistoryResponse])
+async def get_product_price_history(product_id: str, user: dict = Depends(get_current_user)):
+    """Get price change history for a specific product"""
+    history = await db.price_history.find(
+        {"product_id": product_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return [PriceHistoryResponse(**h) for h in history]
+
+@api_router.get("/price-history", response_model=List[PriceHistoryResponse])
+async def get_all_price_history(
+    limit: int = 50,
+    price_type: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Get all price change history"""
+    query = {}
+    if price_type:
+        query["price_type"] = price_type
+    
+    history = await db.price_history.find(
+        query,
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(limit)
+    return [PriceHistoryResponse(**h) for h in history]
+
+async def log_price_change(
+    product_id: str,
+    product_name: str,
+    old_price: float,
+    new_price: float,
+    price_type: str,
+    changed_by: str,
+    changed_by_name: str,
+    source: str = "manual",
+    notes: str = ""
+):
+    """Helper function to log price changes"""
+    if old_price == new_price:
+        return  # No change
+    
+    change_percent = ((new_price - old_price) / old_price * 100) if old_price > 0 else 0
+    
+    history_doc = {
+        "id": str(uuid.uuid4()),
+        "product_id": product_id,
+        "product_name": product_name,
+        "old_price": old_price,
+        "new_price": new_price,
+        "price_type": price_type,
+        "change_percent": round(change_percent, 2),
+        "changed_by": changed_by,
+        "changed_by_name": changed_by_name,
+        "source": source,
+        "notes": notes,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.price_history.insert_one(history_doc)
+
 # ============ CUSTOMER ROUTES ============
 
 @api_router.post("/customers", response_model=CustomerResponse)
