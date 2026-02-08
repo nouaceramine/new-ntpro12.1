@@ -215,7 +215,6 @@ export const Layout = ({ children }) => {
         { path: '/pos', icon: ShoppingCart, label: t.pos },
         { path: '/daily-sessions', icon: Clock, label: language === 'ar' ? 'حصص البيع اليومية' : 'Sessions journalières' },
         { path: '/sales', icon: Receipt, label: t.sales },
-        { path: '/purchases', icon: ShoppingBag, label: t.purchases },
         { path: '/expenses', icon: Receipt, label: language === 'ar' ? 'التكاليف' : 'Dépenses' },
         ...(isAdmin ? [
           { path: '/cash', icon: Wallet, label: t.cashManagement },
@@ -224,6 +223,15 @@ export const Layout = ({ children }) => {
         ] : [
           { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
         ])
+      ]
+    },
+    {
+      title: language === 'ar' ? 'المشتريات' : 'Achats',
+      icon: ShoppingBag,
+      items: [
+        { path: '/purchases', icon: ShoppingBag, label: t.purchases },
+        { path: '/suppliers', icon: Truck, label: t.suppliers },
+        { path: '/supplier-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الموردين' : 'Familles fournisseurs' },
       ]
     },
     {
