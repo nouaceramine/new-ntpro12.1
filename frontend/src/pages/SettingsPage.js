@@ -553,6 +553,22 @@ export default function SettingsPage() {
     }
   };
 
+  // Save Receipt Settings
+  const saveReceiptSettings = async () => {
+    setSavingReceipt(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/settings/receipt`, receiptSettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم حفظ إعدادات الإيصال' : 'Paramètres reçu enregistrés');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    } finally {
+      setSavingReceipt(false);
+    }
+  };
+
   // Test Email Settings
   const testEmailSettings = async () => {
     setTestingEmail(true);
