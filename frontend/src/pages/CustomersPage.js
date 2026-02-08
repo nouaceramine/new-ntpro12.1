@@ -135,9 +135,35 @@ export default function CustomersPage() {
     }
   };
 
+  const fetchCustomerFamilies = async () => {
+    try {
+      const response = await axios.get(`${API}/customer-families`);
+      setCustomerFamilies(response.data);
+    } catch (error) {
+      console.error('Error fetching customer families:', error);
+    }
+  };
+
+  const handleAddFamily = async () => {
+    if (!newFamilyName.trim()) return;
+    setSavingFamily(true);
+    try {
+      await axios.post(`${API}/customer-families`, { name: newFamilyName });
+      toast.success(language === 'ar' ? 'تمت إضافة العائلة' : 'Famille ajoutée');
+      setFamilyDialogOpen(false);
+      setNewFamilyName('');
+      fetchCustomerFamilies();
+    } catch (error) {
+      toast.error(language === 'ar' ? 'حدث خطأ' : 'Une erreur est survenue');
+    } finally {
+      setSavingFamily(false);
+    }
+  };
+
   useEffect(() => {
     fetchCustomers();
     fetchBlacklist();
+    fetchCustomerFamilies();
   }, [searchQuery]);
 
   const handleSubmit = async (e, createNew = false) => {
