@@ -77,13 +77,13 @@ export default function DashboardPage() {
   const Arrow = isRTL ? ArrowLeft : ArrowRight;
 
   const statsCards = [
-    { title: t.todaySales, value: `${stats.today_sales_total?.toFixed(2) || 0} ${t.currency}`, subValue: `${stats.today_sales_count || 0} ${t.sales}`, icon: TrendingUp, color: 'text-emerald-600', bgColor: 'bg-emerald-100' },
-    { title: t.totalCash, value: `${stats.total_cash?.toFixed(2) || 0} ${t.currency}`, icon: Banknote, color: 'text-blue-600', bgColor: 'bg-blue-100' },
-    { title: t.totalProducts, value: stats.total_products, icon: Package, color: 'text-primary', bgColor: 'bg-primary/10' },
-    { title: t.lowStock, value: stats.low_stock_count, icon: AlertTriangle, color: 'text-amber-600', bgColor: 'bg-amber-100' },
+    { title: t.todaySales, value: `${stats.today_sales_total?.toFixed(2) || 0} ${t.currency}`, subValue: `${stats.today_sales_count || 0} ${t.sales}`, icon: TrendingUp, color: 'text-emerald-600', bgColor: 'bg-emerald-100', link: '/sales' },
+    { title: t.totalCash, value: `${stats.total_cash?.toFixed(2) || 0} ${t.currency}`, icon: Banknote, color: 'text-blue-600', bgColor: 'bg-blue-100', link: '/cash' },
+    { title: t.totalProducts, value: stats.total_products, icon: Package, color: 'text-primary', bgColor: 'bg-primary/10', link: '/products' },
+    { title: t.lowStock, value: stats.low_stock_count, icon: AlertTriangle, color: 'text-amber-600', bgColor: 'bg-amber-100', link: '/products?filter=low-stock' },
     ...(isAdmin ? [
-      { title: t.totalCustomers, value: stats.total_customers, icon: Users, color: 'text-purple-600', bgColor: 'bg-purple-100' },
-      { title: t.totalSuppliers, value: stats.total_suppliers, icon: Truck, color: 'text-orange-600', bgColor: 'bg-orange-100' }
+      { title: t.totalCustomers, value: stats.total_customers, icon: Users, color: 'text-purple-600', bgColor: 'bg-purple-100', link: '/customers' },
+      { title: t.totalSuppliers, value: stats.total_suppliers, icon: Truck, color: 'text-orange-600', bgColor: 'bg-orange-100', link: '/suppliers' }
     ] : [])
   ];
 
