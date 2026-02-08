@@ -840,6 +840,23 @@ export default function POSPage() {
                 </SelectContent>
               </Select>
 
+              {/* Warehouse Selection */}
+              {warehouses.length > 0 && (
+                <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
+                  <SelectTrigger className="w-40 h-11" data-testid="warehouse-select">
+                    <Package className="h-4 w-4 me-2 text-muted-foreground" />
+                    <SelectValue placeholder={language === 'ar' ? 'اختر المخزن' : 'Choisir entrepôt'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map(w => (
+                      <SelectItem key={w.id} value={w.id}>
+                        {w.name} {w.is_main && <Badge variant="outline" className="ms-1 text-xs">{language === 'ar' ? 'رئيسي' : 'Principal'}</Badge>}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
               {/* Customer Selection */}
               <div className="flex items-center gap-2">
                 <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
