@@ -714,9 +714,51 @@ export default function SaasAdminPage() {
               {!editingTenant && (
                 <div className="space-y-2">
                   <Label>كلمة المرور</Label>
-                  <Input type="password" value={tenantForm.password} onChange={e => setTenantForm({...tenantForm, password: e.target.value})} />
+                  <div className="relative">
+                    <Input 
+                      type={showPassword ? 'text' : 'password'} 
+                      value={tenantForm.password} 
+                      onChange={e => setTenantForm({...tenantForm, password: e.target.value})}
+                      className="pe-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               )}
+              <div className="space-y-2">
+                <Label>تصنيف المشترك</Label>
+                <Select value={tenantForm.business_type} onValueChange={v => setTenantForm({...tenantForm, business_type: v})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر التصنيف" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="retailer">
+                      <div className="flex items-center gap-2">
+                        <Store className="h-4 w-4 text-blue-500" />
+                        <span>تاجر تجزئة</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="wholesaler">
+                      <div className="flex items-center gap-2">
+                        <ShoppingBag className="h-4 w-4 text-green-500" />
+                        <span>تاجر جملة</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="distributor">
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-4 w-4 text-orange-500" />
+                        <span>موزع</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label>الخطة</Label>
                 <Select value={tenantForm.plan_id} onValueChange={v => setTenantForm({...tenantForm, plan_id: v})}>
