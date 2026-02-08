@@ -5950,6 +5950,35 @@ async def get_sms_templates():
         ]
     }
 
+# ============ ADVANCED ROLES AND PERMISSIONS ============
+
+@api_router.get("/permissions/roles")
+async def get_all_roles():
+    """Get all available roles with their default permissions and descriptions"""
+    return {
+        "roles": list(DEFAULT_PERMISSIONS.keys()),
+        "default_permissions": DEFAULT_PERMISSIONS,
+        "role_descriptions": ROLE_DESCRIPTIONS,
+        "permission_categories": PERMISSION_CATEGORIES
+    }
+
+@api_router.get("/permissions/categories")
+async def get_permission_categories():
+    """Get permission categories for UI grouping"""
+    return PERMISSION_CATEGORIES
+
+@api_router.get("/permissions/role/{role_name}")
+async def get_role_permissions(role_name: str):
+    """Get permissions for a specific role"""
+    if role_name not in DEFAULT_PERMISSIONS:
+        raise HTTPException(status_code=404, detail="Role not found")
+    
+    return {
+        "role": role_name,
+        "description": ROLE_DESCRIPTIONS.get(role_name, {"ar": role_name, "fr": role_name}),
+        "permissions": DEFAULT_PERMISSIONS[role_name]
+    }
+
 # ============ FILE UPLOAD ============
 
 @api_router.post("/upload/image")
