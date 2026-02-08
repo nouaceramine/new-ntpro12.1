@@ -302,7 +302,7 @@ export default function PurchasesPage() {
               'Content-Type': 'multipart/form-data'
             }
           });
-          updateData.image = uploadRes.data.url;
+          updateData.image_url = uploadRes.data.url; // Fixed: use image_url not image
         }
 
         await axios.put(`${API}/products/${editingProduct.product_id}`, updateData, {
