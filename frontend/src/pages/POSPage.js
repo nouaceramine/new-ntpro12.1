@@ -296,6 +296,118 @@ export default function POSPage() {
     }
   };
 
+  // Fetch receipt settings
+  const fetchReceiptSettings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/settings/receipt`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setReceiptSettings(response.data);
+    } catch (error) {
+      console.error('Error fetching receipt settings:', error);
+    }
+  };
+
+  // Fetch previous sales
+  const fetchPreviousSales = async (filter = salesDateFilter) => {
+    setSalesLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      let startDate, endDate;
+      const now = new Date();
+      
+      switch (filter) {
+        case 'today':
+          startDate = now.toISOString().split('T')[0];
+          endDate = startDate;
+          break;
+        case 'week':
+          const weekAgo = new Date(now.setDate(now.getDate() - 7));
+          startDate = weekAgo.toISOString().split('T')[0];
+          endDate = new Date().toISOString().split('T')[0];
+          break;
+        case 'month':
+          const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+          startDate = monthAgo.toISOString().split('T')[0];
+          endDate = new Date().toISOString().split('T')[0];
+          break;
+        case 'custom':
+          startDate = customStartDate;
+          endDate = customEndDate;
+          break;
+        default:
+          startDate = new Date().toISOString().split('T')[0];
+          endDate = startDate;
+      }
+
+      let url = `${API}/sales?`;
+      if (startDate) url += `start_date=${startDate}&`;
+      if (endDate) url += `end_date=${endDate}T23:59:59`;
+
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setPreviousSales(response.data);
+    } catch (error) {
+      console.error('Error fetching previous sales:', error);
+      toast.error(language === 'ar' ? 'خطأ في جلب المبيعات' : 'Erreur chargement ventes');
+    } finally {
+      setSalesLoading(false);
+    }
+  };
+
+  // View sale receipt
+  const viewSaleReceipt = async (saleId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const invoiceResponse = await axios.get(`${API}/sales/${saleId}/invoice-pdf`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(invoiceResponse.data);
+        printWindow.document.close();
+        printWindow.focus();
+      }
+    } catch (error) {
+      toast.error(language === 'ar' ? 'خطأ في عرض الفاتورة' : 'Erreur affichage facture');
+    }
+  };
+
+  // Print sale receipt
+  const printSaleReceipt = async (saleId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const invoiceResponse = await axios.get(`${API}/sales/${saleId}/invoice-pdf`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(invoiceResponse.data);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => printWindow.print(), 500);
+      }
+    } catch (error) {
+      toast.error(language === 'ar' ? 'خطأ في طباعة الفاتورة' : 'Erreur impression facture');
+    }
+  };
+
+  // View sale details
+  const viewSaleDetails = async (saleId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/sales/${saleId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSelectedSaleForView(response.data);
+      setShowSaleDetailsDialog(true);
+    } catch (error) {
+      toast.error(language === 'ar' ? 'خطأ في جلب تفاصيل البيع' : 'Erreur chargement détails');
+    }
+  };
+
   const fetchCustomerDebt = async (customerId) => {
     try {
       const token = localStorage.getItem('token');
