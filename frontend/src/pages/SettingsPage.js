@@ -797,13 +797,15 @@ export default function SettingsPage() {
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             u.role === 'admin' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            u.role === 'super_admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
                             u.role === 'manager' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
                             u.role === 'seller' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
                             u.role === 'ecommerce_manager' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
                             u.role === 'accountant' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
                             'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
                           }`}>
-                            {u.role === 'admin' ? (language === 'ar' ? 'مدير' : 'Admin') :
+                            {u.role === 'super_admin' ? (language === 'ar' ? 'سوبر أدمين' : 'Super Admin') :
+                             u.role === 'admin' ? (language === 'ar' ? 'مدير' : 'Admin') :
                              u.role === 'manager' ? (language === 'ar' ? 'مشرف' : 'Manager') :
                              u.role === 'seller' ? (language === 'ar' ? 'بائع' : 'Vendeur') :
                              u.role === 'ecommerce_manager' ? (language === 'ar' ? 'مسؤول متجر إلكتروني' : 'E-commerce') :
@@ -812,24 +814,44 @@ export default function SettingsPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openPermissionsDialog(u.id)}
-                              disabled={u.id === user?.id}
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openEditUserDialog(u)}
+                              title={language === 'ar' ? 'تعديل' : 'Edit'}
                             >
-                              <Shield className="h-4 w-4 me-1" />
-                              {t.permissions}
+                              <Edit2 className="h-4 w-4" />
                             </Button>
                             <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openPasswordDialog(u)}
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openPermissionsDialog(u.id)}
                               disabled={u.id === user?.id}
+                              title={t.permissions}
                             >
-                              <Key className="h-4 w-4 me-1" />
-                              {language === 'ar' ? 'كلمة المرور' : 'Mot de passe'}
+                              <Shield className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openPasswordDialog(u)}
+                              title={language === 'ar' ? 'كلمة المرور' : 'Password'}
+                            >
+                              <Key className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => deleteUser(u.id)}
+                              disabled={u.id === user?.id || u.role === 'super_admin'}
+                              title={language === 'ar' ? 'حذف' : 'Delete'}
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
