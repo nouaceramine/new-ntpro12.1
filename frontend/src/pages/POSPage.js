@@ -1931,6 +1931,367 @@ export default function POSPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Print Receipt Dialog - After Sale */}
+      <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Printer className="h-6 w-6 text-blue-600" />
+              {language === 'ar' ? 'طباعة الإيصال' : 'Imprimer le reçu'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="h-8 w-8 text-green-600" />
+              </div>
+              <p className="text-lg font-semibold mb-2">
+                {language === 'ar' ? 'تمت عملية البيع بنجاح!' : 'Vente effectuée avec succès!'}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {language === 'ar' ? `رقم الفاتورة: ${lastSaleInvoice}` : `N° Facture: ${lastSaleInvoice}`}
+              </p>
+            </div>
+
+            <div className="text-center text-muted-foreground">
+              <p>{language === 'ar' ? 'هل تريد طباعة الإيصال؟' : 'Voulez-vous imprimer le reçu?'}</p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowPrintDialog(false)}
+                className="flex-1 h-12"
+                data-testid="skip-print-btn"
+              >
+                <X className="h-4 w-4 me-2" />
+                {language === 'ar' ? 'تخطي' : 'Passer'}
+              </Button>
+              <Button
+                onClick={() => {
+                  printSaleReceipt(lastSaleId);
+                  setShowPrintDialog(false);
+                }}
+                className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 gap-2"
+                data-testid="print-receipt-btn"
+              >
+                <Printer className="h-5 w-5" />
+                {language === 'ar' ? 'طباعة' : 'Imprimer'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Previous Sales Dialog */}
+      <Dialog open={showPreviousSalesDialog} onOpenChange={setShowPreviousSalesDialog}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <History className="h-6 w-6 text-purple-600" />
+              {language === 'ar' ? 'سجل المبيعات السابقة' : 'Historique des ventes'}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            {/* Date Filters */}
+            <div className="flex flex-wrap gap-2 items-center">
+              <Tabs value={salesDateFilter} onValueChange={(v) => {
+                setSalesDateFilter(v);
+                if (v !== 'custom') {
+                  fetchPreviousSales(v);
+                }
+              }} className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="today" className="gap-1">
+                    <Calendar className="h-3 w-3" />
+                    {language === 'ar' ? 'اليوم' : 'Aujourd\'hui'}
+                  </TabsTrigger>
+                  <TabsTrigger value="week">
+                    {language === 'ar' ? 'الأسبوع' : 'Semaine'}
+                  </TabsTrigger>
+                  <TabsTrigger value="month">
+                    {language === 'ar' ? 'الشهر' : 'Mois'}
+                  </TabsTrigger>
+                  <TabsTrigger value="custom">
+                    <Filter className="h-3 w-3 me-1" />
+                    {language === 'ar' ? 'مخصص' : 'Personnalisé'}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              
+              {salesDateFilter === 'custom' && (
+                <div className="flex gap-2 items-center w-full">
+                  <Input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="flex-1"
+                  />
+                  <span className="text-muted-foreground">{language === 'ar' ? 'إلى' : 'à'}</span>
+                  <Input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => fetchPreviousSales('custom')}
+                    disabled={!customStartDate || !customEndDate}
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-3 gap-4">
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="p-3 text-center">
+                  <p className="text-xs text-green-600">{language === 'ar' ? 'عدد المبيعات' : 'Nb ventes'}</p>
+                  <p className="text-2xl font-bold text-green-700">{previousSales.length}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-3 text-center">
+                  <p className="text-xs text-blue-600">{language === 'ar' ? 'إجمالي المبيعات' : 'Total ventes'}</p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {formatCurrency(previousSales.reduce((sum, s) => sum + (s.total || 0), 0))}
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="bg-amber-50 border-amber-200">
+                <CardContent className="p-3 text-center">
+                  <p className="text-xs text-amber-600">{language === 'ar' ? 'المبيعات بالدين' : 'Ventes crédit'}</p>
+                  <p className="text-2xl font-bold text-amber-700">
+                    {previousSales.filter(s => s.payment_type === 'credit' || s.payment_type === 'partial').length}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Sales Table */}
+            <div className="flex-1 overflow-auto border rounded-lg">
+              <Table>
+                <TableHeader className="sticky top-0 bg-white z-10">
+                  <TableRow>
+                    <TableHead className="w-[100px]">{language === 'ar' ? 'الرقم' : 'N°'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'العميل' : 'Client'}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'المنتجات' : 'Articles'}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'الإجمالي' : 'Total'}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'الحالة' : 'État'}</TableHead>
+                    <TableHead className="text-center w-[120px]">{language === 'ar' ? 'إجراءات' : 'Actions'}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {salesLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                          <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full"></div>
+                          {language === 'ar' ? 'جاري التحميل...' : 'Chargement...'}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : previousSales.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <History className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                        {language === 'ar' ? 'لا توجد مبيعات في هذه الفترة' : 'Aucune vente pour cette période'}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    previousSales.map((sale) => (
+                      <TableRow key={sale.id} className="hover:bg-muted/50">
+                        <TableCell className="font-mono text-xs">{sale.invoice_number}</TableCell>
+                        <TableCell className="text-sm">
+                          {new Date(sale.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <User className="h-3 w-3 text-muted-foreground" />
+                            {sale.customer_name || (language === 'ar' ? 'زبون عابر' : 'Client de passage')}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline">{sale.items?.length || 0}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center font-semibold">
+                          {formatCurrency(sale.total)} {t.currency}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={
+                            sale.payment_type === 'cash' 
+                              ? 'bg-green-100 text-green-700 border-green-200' 
+                              : sale.payment_type === 'credit'
+                                ? 'bg-red-100 text-red-700 border-red-200'
+                                : 'bg-amber-100 text-amber-700 border-amber-200'
+                          }>
+                            {sale.payment_type === 'cash' 
+                              ? (language === 'ar' ? 'نقدي' : 'Comptant')
+                              : sale.payment_type === 'credit'
+                                ? (language === 'ar' ? 'دين' : 'Crédit')
+                                : (language === 'ar' ? 'جزئي' : 'Partiel')
+                            }
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => viewSaleDetails(sale.id)}
+                              title={language === 'ar' ? 'عرض التفاصيل' : 'Voir détails'}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => viewSaleReceipt(sale.id)}
+                              title={language === 'ar' ? 'عرض الإيصال' : 'Voir reçu'}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-blue-600"
+                              onClick={() => printSaleReceipt(sale.id)}
+                              title={language === 'ar' ? 'طباعة' : 'Imprimer'}
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button variant="outline" onClick={() => setShowPreviousSalesDialog(false)}>
+                {t.close || (language === 'ar' ? 'إغلاق' : 'Fermer')}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sale Details Dialog */}
+      <Dialog open={showSaleDetailsDialog} onOpenChange={setShowSaleDetailsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              {language === 'ar' ? 'تفاصيل البيع' : 'Détails de la vente'}
+              {selectedSaleForView && (
+                <Badge variant="outline" className="ms-2">{selectedSaleForView.invoice_number}</Badge>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedSaleForView && (
+            <div className="space-y-4">
+              {/* Sale Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">{language === 'ar' ? 'التاريخ' : 'Date'}</p>
+                  <p className="font-medium">
+                    {new Date(selectedSaleForView.created_at).toLocaleString(language === 'ar' ? 'ar-SA' : 'fr-FR')}
+                  </p>
+                </div>
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">{language === 'ar' ? 'العميل' : 'Client'}</p>
+                  <p className="font-medium">{selectedSaleForView.customer_name || (language === 'ar' ? 'زبون عابر' : 'Client passage')}</p>
+                </div>
+              </div>
+
+              {/* Items */}
+              <div>
+                <p className="font-medium mb-2">{language === 'ar' ? 'المنتجات' : 'Articles'}</p>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'ar' ? 'المنتج' : 'Article'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'المجموع' : 'Total'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedSaleForView.items?.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>{item.product_name}</TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-center">{formatCurrency(item.unit_price)}</TableCell>
+                          <TableCell className="text-center font-medium">{formatCurrency(item.total)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between">
+                  <span>{language === 'ar' ? 'المجموع الفرعي' : 'Sous-total'}</span>
+                  <span>{formatCurrency(selectedSaleForView.subtotal)} {t.currency}</span>
+                </div>
+                {selectedSaleForView.discount > 0 && (
+                  <div className="flex justify-between text-red-600">
+                    <span>{language === 'ar' ? 'الخصم' : 'Remise'}</span>
+                    <span>-{formatCurrency(selectedSaleForView.discount)} {t.currency}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                  <span>{language === 'ar' ? 'الإجمالي' : 'Total'}</span>
+                  <span>{formatCurrency(selectedSaleForView.total)} {t.currency}</span>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>{language === 'ar' ? 'المدفوع' : 'Payé'}</span>
+                  <span>{formatCurrency(selectedSaleForView.paid_amount)} {t.currency}</span>
+                </div>
+                {(selectedSaleForView.total - (selectedSaleForView.paid_amount || 0)) > 0 && (
+                  <div className="flex justify-between text-amber-600 font-medium">
+                    <span>{language === 'ar' ? 'الدين' : 'Crédit'}</span>
+                    <span>{formatCurrency(selectedSaleForView.total - (selectedSaleForView.paid_amount || 0))} {t.currency}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button variant="outline" onClick={() => setShowSaleDetailsDialog(false)} className="flex-1">
+                  {t.close || (language === 'ar' ? 'إغلاق' : 'Fermer')}
+                </Button>
+                <Button 
+                  onClick={() => printSaleReceipt(selectedSaleForView.id)}
+                  className="flex-1 gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  {language === 'ar' ? 'طباعة' : 'Imprimer'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }
