@@ -109,6 +109,36 @@ export const Layout = ({ children }) => {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
+  // Fetch custom sidebar order
+  useEffect(() => {
+    const fetchSidebarOrder = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await axios.get(`${API}/settings/sidebar-order`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data.sidebar_order && Array.isArray(response.data.sidebar_order) && response.data.sidebar_order.length > 0) {
+          if (response.data.sidebar_order[0].items) {
+            setCustomSidebarOrder(response.data.sidebar_order);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching sidebar order:', error);
+      }
+    };
+    
+    fetchSidebarOrder();
+    
+    // Listen for sidebar order changes from settings page
+    const handleSidebarOrderChange = () => fetchSidebarOrder();
+    window.addEventListener('sidebarOrderChanged', handleSidebarOrderChange);
+    
+    return () => window.removeEventListener('sidebarOrderChanged', handleSidebarOrderChange);
+  }, []);
+
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       // If we have native prompt, use it
