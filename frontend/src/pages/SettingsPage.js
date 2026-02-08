@@ -2285,6 +2285,80 @@ export default function SettingsPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Edit User Dialog */}
+        <Dialog open={showEditUserDialog} onOpenChange={setShowEditUserDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit2 className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'تعديل بيانات المستخدم' : 'Edit User'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الاسم الكامل' : 'Full Name'}</Label>
+                <Input
+                  value={editUserData.name}
+                  onChange={(e) => setEditUserData(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'البريد الإلكتروني' : 'Email'}</Label>
+                <Input
+                  type="email"
+                  value={editUserData.email}
+                  onChange={(e) => setEditUserData(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{language === 'ar' ? 'الدور الوظيفي' : 'Role'}</Label>
+                <Select 
+                  value={editUserData.role} 
+                  onValueChange={(v) => setEditUserData(prev => ({ ...prev, role: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles.map(role => (
+                      <SelectItem key={role.value} value={role.value}>
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${role.color}`}></span>
+                          {language === 'ar' ? role.label_ar : role.label_fr}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => setShowEditUserDialog(false)}
+                >
+                  {language === 'ar' ? 'إلغاء' : 'Cancel'}
+                </Button>
+                <Button 
+                  className="flex-1"
+                  onClick={saveEditUser}
+                  disabled={savingEditUser}
+                >
+                  {savingEditUser ? (
+                    <RefreshCw className="h-4 w-4 animate-spin me-2" />
+                  ) : (
+                    <Save className="h-4 w-4 me-2" />
+                  )}
+                  {language === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Selective Delete Dialog */}
         <Dialog open={showSelectiveDeleteDialog} onOpenChange={setShowSelectiveDeleteDialog}>
           <DialogContent className="max-w-md">
