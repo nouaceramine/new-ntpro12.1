@@ -1164,22 +1164,28 @@ export default function POSPage() {
                         size="sm"
                         variant={paymentMethod === 'cash' ? 'default' : 'outline'}
                         onClick={() => setPaymentMethod('cash')}
+                        className="gap-1"
                       >
                         <Banknote className="h-4 w-4" />
+                        <span className="text-xs">{language === 'ar' ? 'نقدي' : 'Cash'}</span>
                       </Button>
                       <Button
                         size="sm"
                         variant={paymentMethod === 'bank' ? 'default' : 'outline'}
                         onClick={() => setPaymentMethod('bank')}
+                        className="gap-1"
                       >
                         <CreditCard className="h-4 w-4" />
+                        <span className="text-xs">{language === 'ar' ? 'تحويل' : 'Virement'}</span>
                       </Button>
                       <Button
                         size="sm"
                         variant={paymentMethod === 'wallet' ? 'default' : 'outline'}
                         onClick={() => setPaymentMethod('wallet')}
+                        className="gap-1"
                       >
                         <Wallet className="h-4 w-4" />
+                        <span className="text-xs">{language === 'ar' ? 'محفظة' : 'Portefeuille'}</span>
                       </Button>
                     </div>
                   </div>
