@@ -1680,6 +1680,67 @@ async def delete_supplier(supplier_id: str, admin: dict = Depends(get_admin_user
         raise HTTPException(status_code=404, detail="Supplier not found")
     return {"message": "Supplier deleted successfully"}
 
+# ============ SUPPLIER ADVANCE PAYMENT ============
+
+class SupplierAdvancePayment(BaseModel):
+    amount: float
+    payment_method: str = "cash"
+    notes: str = ""
+
+@api_router.post("/suppliers/{supplier_id}/advance-payment")
+async def add_supplier_advance_payment(supplier_id: str, payment: SupplierAdvancePayment, user: dict = Depends(get_current_user)):
+    """Add advance payment to supplier"""
+    supplier = await db.suppliers.find_one({"id": supplier_id})
+    if not supplier:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    
+    # Update supplier advance balance
+    current_advance = supplier.get("advance_balance", 0)
+    new_advance = current_advance + payment.amount
+    
+    await db.suppliers.update_one(
+        {"id": supplier_id},
+        {"$set": {"advance_balance": new_advance, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Record the advance payment
+    advance_record = {
+        "id": str(uuid.uuid4()),
+        "supplier_id": supplier_id,
+        "supplier_name": supplier["name"],
+        "amount": payment.amount,
+        "payment_method": payment.payment_method,
+        "notes": payment.notes,
+        "user_id": user["id"],
+        "user_name": user.get("name", user.get("email", "")),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.supplier_advance_payments.insert_one(advance_record)
+    
+    # Record cash transaction
+    cash_tx = {
+        "id": str(uuid.uuid4()),
+        "type": "out",
+        "amount": payment.amount,
+        "category": "supplier_advance",
+        "description": f"دفع متقدم للمورد: {supplier['name']}",
+        "reference_id": advance_record["id"],
+        "created_by": user["id"],
+        "created_by_name": user.get("name", ""),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.cash_transactions.insert_one(cash_tx)
+    
+    return {"message": "Advance payment recorded", "new_advance_balance": new_advance}
+
+@api_router.get("/suppliers/{supplier_id}/advance-payments")
+async def get_supplier_advance_payments(supplier_id: str, user: dict = Depends(get_current_user)):
+    """Get advance payment history for a supplier"""
+    payments = await db.supplier_advance_payments.find(
+        {"supplier_id": supplier_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return payments
+
 # ============ SUPPLIER DEBTS ROUTES ============
 
 class SupplierDebtPayment(BaseModel):
