@@ -7833,6 +7833,475 @@ async def send_smart_report_now(user: dict = Depends(get_current_user)):
         })
         raise HTTPException(status_code=500, detail=f"فشل إرسال التقرير: {str(e)}")
 
+# ============ SAAS ADMIN - PLANS ============
+
+async def get_super_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Check if user is super admin"""
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        user = await db.users.find_one({"id": user_id})
+        if not user or user.get("role") != "super_admin":
+            raise HTTPException(status_code=403, detail="Super admin access required")
+        return user
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@api_router.get("/saas/plans", response_model=List[PlanResponse])
+async def get_plans(include_inactive: bool = False):
+    """Get all subscription plans (public)"""
+    query = {} if include_inactive else {"is_active": True}
+    plans = await db.saas_plans.find(query, {"_id": 0}).sort("sort_order", 1).to_list(100)
+    return [PlanResponse(**p) for p in plans]
+
+@api_router.get("/saas/plans/{plan_id}", response_model=PlanResponse)
+async def get_plan(plan_id: str):
+    """Get a specific plan"""
+    plan = await db.saas_plans.find_one({"id": plan_id}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return PlanResponse(**plan)
+
+@api_router.post("/saas/plans", response_model=PlanResponse)
+async def create_plan(plan: PlanCreate, admin: dict = Depends(get_super_admin)):
+    """Create a new subscription plan"""
+    plan_doc = {
+        "id": str(uuid.uuid4()),
+        **plan.model_dump(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.saas_plans.insert_one(plan_doc)
+    return PlanResponse(**plan_doc)
+
+@api_router.put("/saas/plans/{plan_id}", response_model=PlanResponse)
+async def update_plan(plan_id: str, updates: PlanUpdate, admin: dict = Depends(get_super_admin)):
+    """Update a subscription plan"""
+    plan = await db.saas_plans.find_one({"id": plan_id})
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.saas_plans.update_one({"id": plan_id}, {"$set": update_data})
+    updated = await db.saas_plans.find_one({"id": plan_id}, {"_id": 0})
+    return PlanResponse(**updated)
+
+@api_router.delete("/saas/plans/{plan_id}")
+async def delete_plan(plan_id: str, admin: dict = Depends(get_super_admin)):
+    """Delete a subscription plan"""
+    result = await db.saas_plans.delete_one({"id": plan_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    return {"message": "Plan deleted successfully"}
+
+# ============ SAAS ADMIN - TENANTS ============
+
+@api_router.get("/saas/tenants", response_model=List[TenantResponse])
+async def get_tenants(admin: dict = Depends(get_super_admin)):
+    """Get all tenants"""
+    tenants = await db.saas_tenants.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Add plan names and stats
+    for tenant in tenants:
+        plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0, "name": 1, "name_ar": 1})
+        tenant["plan_name"] = plan.get("name_ar", "") if plan else ""
+        
+        # Get tenant stats
+        tenant_db = client[f"tenant_{tenant['id']}"]
+        products_count = await tenant_db.products.count_documents({})
+        users_count = await tenant_db.users.count_documents({})
+        sales_count = await tenant_db.sales.count_documents({})
+        
+        tenant["stats"] = {
+            "products": products_count,
+            "users": users_count,
+            "sales": sales_count
+        }
+    
+    return [TenantResponse(**t) for t in tenants]
+
+@api_router.get("/saas/tenants/{tenant_id}", response_model=TenantResponse)
+async def get_tenant(tenant_id: str, admin: dict = Depends(get_super_admin)):
+    """Get a specific tenant"""
+    tenant = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0, "name_ar": 1})
+    tenant["plan_name"] = plan.get("name_ar", "") if plan else ""
+    
+    # Get tenant stats
+    tenant_db = client[f"tenant_{tenant['id']}"]
+    products_count = await tenant_db.products.count_documents({})
+    users_count = await tenant_db.users.count_documents({})
+    sales_count = await tenant_db.sales.count_documents({})
+    
+    tenant["stats"] = {
+        "products": products_count,
+        "users": users_count,
+        "sales": sales_count
+    }
+    
+    return TenantResponse(**tenant)
+
+@api_router.post("/saas/tenants", response_model=TenantResponse)
+async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_admin)):
+    """Create a new tenant (subscriber)"""
+    # Check if email already exists
+    existing = await db.saas_tenants.find_one({"email": tenant.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="البريد الإلكتروني مستخدم بالفعل")
+    
+    # Get plan
+    plan = await db.saas_plans.find_one({"id": tenant.plan_id}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="الخطة غير موجودة")
+    
+    # Calculate subscription period
+    now = datetime.now(timezone.utc)
+    if tenant.subscription_type == "monthly":
+        ends_at = now + timedelta(days=30)
+    elif tenant.subscription_type == "6months":
+        ends_at = now + timedelta(days=180)
+    else:  # yearly
+        ends_at = now + timedelta(days=365)
+    
+    tenant_id = str(uuid.uuid4())
+    
+    # Hash password
+    hashed_password = bcrypt.hashpw(tenant.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    tenant_doc = {
+        "id": tenant_id,
+        "name": tenant.name,
+        "email": tenant.email,
+        "phone": tenant.phone or "",
+        "company_name": tenant.company_name or "",
+        "hashed_password": hashed_password,
+        "plan_id": tenant.plan_id,
+        "is_active": True,
+        "is_trial": False,
+        "trial_ends_at": None,
+        "subscription_type": tenant.subscription_type,
+        "subscription_starts_at": now.isoformat(),
+        "subscription_ends_at": ends_at.isoformat(),
+        "features_override": {},
+        "limits_override": {},
+        "notes": "",
+        "created_at": now.isoformat()
+    }
+    
+    await db.saas_tenants.insert_one(tenant_doc)
+    
+    # Create tenant database and admin user
+    tenant_db = client[f"tenant_{tenant_id}"]
+    
+    admin_user = {
+        "id": str(uuid.uuid4()),
+        "email": tenant.email,
+        "hashed_password": hashed_password,
+        "name": tenant.name,
+        "role": "admin",
+        "permissions": DEFAULT_PERMISSIONS["admin"],
+        "tenant_id": tenant_id,
+        "created_at": now.isoformat()
+    }
+    await tenant_db.users.insert_one(admin_user)
+    
+    # Initialize settings
+    await tenant_db.system_settings.insert_one({
+        "type": "general",
+        "company_name": tenant.company_name or tenant.name,
+        "created_at": now.isoformat()
+    })
+    
+    tenant_doc["plan_name"] = plan.get("name_ar", "")
+    tenant_doc["stats"] = {"products": 0, "users": 1, "sales": 0}
+    
+    return TenantResponse(**tenant_doc)
+
+@api_router.put("/saas/tenants/{tenant_id}", response_model=TenantResponse)
+async def update_tenant(tenant_id: str, updates: TenantUpdate, admin: dict = Depends(get_super_admin)):
+    """Update a tenant"""
+    tenant = await db.saas_tenants.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.saas_tenants.update_one({"id": tenant_id}, {"$set": update_data})
+    updated = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0})
+    
+    plan = await db.saas_plans.find_one({"id": updated.get("plan_id")}, {"_id": 0, "name_ar": 1})
+    updated["plan_name"] = plan.get("name_ar", "") if plan else ""
+    
+    return TenantResponse(**updated)
+
+@api_router.delete("/saas/tenants/{tenant_id}")
+async def delete_tenant(tenant_id: str, admin: dict = Depends(get_super_admin)):
+    """Delete a tenant and their database"""
+    tenant = await db.saas_tenants.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Delete tenant database
+    await client.drop_database(f"tenant_{tenant_id}")
+    
+    # Delete tenant record
+    await db.saas_tenants.delete_one({"id": tenant_id})
+    
+    return {"message": "Tenant deleted successfully"}
+
+@api_router.post("/saas/tenants/{tenant_id}/toggle-status")
+async def toggle_tenant_status(tenant_id: str, admin: dict = Depends(get_super_admin)):
+    """Toggle tenant active status"""
+    tenant = await db.saas_tenants.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    new_status = not tenant.get("is_active", True)
+    await db.saas_tenants.update_one({"id": tenant_id}, {"$set": {"is_active": new_status}})
+    
+    return {"is_active": new_status}
+
+@api_router.post("/saas/tenants/{tenant_id}/extend-subscription")
+async def extend_subscription(tenant_id: str, payment: SubscriptionPayment, admin: dict = Depends(get_super_admin)):
+    """Extend tenant subscription"""
+    tenant = await db.saas_tenants.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    # Calculate new end date
+    current_end = datetime.fromisoformat(tenant.get("subscription_ends_at", datetime.now(timezone.utc).isoformat()).replace('Z', '+00:00'))
+    now = datetime.now(timezone.utc)
+    
+    # Start from current end date or now, whichever is later
+    start_date = max(current_end, now)
+    
+    if payment.subscription_type == "monthly":
+        new_end = start_date + timedelta(days=30)
+    elif payment.subscription_type == "6months":
+        new_end = start_date + timedelta(days=180)
+    else:  # yearly
+        new_end = start_date + timedelta(days=365)
+    
+    # Update tenant
+    await db.saas_tenants.update_one({"id": tenant_id}, {"$set": {
+        "subscription_type": payment.subscription_type,
+        "subscription_ends_at": new_end.isoformat(),
+        "is_active": True,
+        "is_trial": False
+    }})
+    
+    # Record payment
+    payment_doc = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": tenant_id,
+        "tenant_name": tenant.get("name", ""),
+        "amount": payment.amount,
+        "payment_method": payment.payment_method,
+        "subscription_type": payment.subscription_type,
+        "period_start": start_date.isoformat(),
+        "period_end": new_end.isoformat(),
+        "notes": payment.notes or "",
+        "transaction_id": payment.transaction_id or "",
+        "created_by": admin.get("id", ""),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.saas_payments.insert_one(payment_doc)
+    
+    return {"new_subscription_ends_at": new_end.isoformat()}
+
+@api_router.get("/saas/payments", response_model=List[SubscriptionPaymentResponse])
+async def get_payments(tenant_id: Optional[str] = None, admin: dict = Depends(get_super_admin)):
+    """Get subscription payments"""
+    query = {"tenant_id": tenant_id} if tenant_id else {}
+    payments = await db.saas_payments.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return [SubscriptionPaymentResponse(**p) for p in payments]
+
+@api_router.get("/saas/stats")
+async def get_saas_stats(admin: dict = Depends(get_super_admin)):
+    """Get SaaS dashboard statistics"""
+    now = datetime.now(timezone.utc)
+    month_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    
+    total_tenants = await db.saas_tenants.count_documents({})
+    active_tenants = await db.saas_tenants.count_documents({"is_active": True})
+    trial_tenants = await db.saas_tenants.count_documents({"is_trial": True})
+    
+    # Expiring soon (within 7 days)
+    expiring_soon = await db.saas_tenants.count_documents({
+        "subscription_ends_at": {
+            "$lte": (now + timedelta(days=7)).isoformat(),
+            "$gte": now.isoformat()
+        }
+    })
+    
+    # Monthly revenue
+    month_payments = await db.saas_payments.find({
+        "created_at": {"$gte": month_start.isoformat()}
+    }).to_list(1000)
+    monthly_revenue = sum(p.get("amount", 0) for p in month_payments)
+    
+    # Total revenue
+    all_payments = await db.saas_payments.find({}).to_list(10000)
+    total_revenue = sum(p.get("amount", 0) for p in all_payments)
+    
+    # Plans distribution
+    plans_dist = {}
+    plans = await db.saas_plans.find({}, {"_id": 0, "id": 1, "name_ar": 1}).to_list(100)
+    for plan in plans:
+        count = await db.saas_tenants.count_documents({"plan_id": plan["id"]})
+        plans_dist[plan.get("name_ar", plan["id"])] = count
+    
+    return {
+        "total_tenants": total_tenants,
+        "active_tenants": active_tenants,
+        "trial_tenants": trial_tenants,
+        "expiring_soon": expiring_soon,
+        "monthly_revenue": monthly_revenue,
+        "total_revenue": total_revenue,
+        "plans_distribution": plans_dist
+    }
+
+# ============ TENANT REGISTRATION (Public) ============
+
+@api_router.post("/saas/register")
+async def register_tenant(tenant: TenantCreate):
+    """Public registration for new tenants with trial"""
+    # Check if email already exists
+    existing = await db.saas_tenants.find_one({"email": tenant.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="البريد الإلكتروني مستخدم بالفعل")
+    
+    # Get plan
+    plan = await db.saas_plans.find_one({"id": tenant.plan_id}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="الخطة غير موجودة")
+    
+    now = datetime.now(timezone.utc)
+    trial_days = 14  # 14 days free trial
+    trial_ends = now + timedelta(days=trial_days)
+    
+    tenant_id = str(uuid.uuid4())
+    
+    # Hash password
+    hashed_password = bcrypt.hashpw(tenant.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    tenant_doc = {
+        "id": tenant_id,
+        "name": tenant.name,
+        "email": tenant.email,
+        "phone": tenant.phone or "",
+        "company_name": tenant.company_name or "",
+        "hashed_password": hashed_password,
+        "plan_id": tenant.plan_id,
+        "is_active": True,
+        "is_trial": True,
+        "trial_ends_at": trial_ends.isoformat(),
+        "subscription_type": tenant.subscription_type,
+        "subscription_starts_at": now.isoformat(),
+        "subscription_ends_at": trial_ends.isoformat(),
+        "features_override": {},
+        "limits_override": {},
+        "notes": "",
+        "created_at": now.isoformat()
+    }
+    
+    await db.saas_tenants.insert_one(tenant_doc)
+    
+    # Create tenant database and admin user
+    tenant_db = client[f"tenant_{tenant_id}"]
+    
+    admin_user = {
+        "id": str(uuid.uuid4()),
+        "email": tenant.email,
+        "hashed_password": hashed_password,
+        "name": tenant.name,
+        "role": "admin",
+        "permissions": DEFAULT_PERMISSIONS["admin"],
+        "tenant_id": tenant_id,
+        "created_at": now.isoformat()
+    }
+    await tenant_db.users.insert_one(admin_user)
+    
+    # Generate token
+    token = jwt.encode({
+        "sub": admin_user["id"],
+        "tenant_id": tenant_id,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    }, SECRET_KEY, algorithm=ALGORITHM)
+    
+    return {
+        "message": "تم إنشاء حسابك بنجاح! لديك فترة تجريبية مجانية لمدة 14 يوم.",
+        "tenant_id": tenant_id,
+        "access_token": token,
+        "trial_ends_at": trial_ends.isoformat()
+    }
+
+@api_router.post("/saas/tenant-login")
+async def tenant_login(login: UserLogin):
+    """Login for tenants"""
+    # Find tenant by email
+    tenant = await db.saas_tenants.find_one({"email": login.email})
+    if not tenant:
+        raise HTTPException(status_code=401, detail="بريد إلكتروني أو كلمة مرور غير صحيحة")
+    
+    # Verify password
+    if not bcrypt.checkpw(login.password.encode('utf-8'), tenant["hashed_password"].encode('utf-8')):
+        raise HTTPException(status_code=401, detail="بريد إلكتروني أو كلمة مرور غير صحيحة")
+    
+    # Check if active
+    if not tenant.get("is_active", True):
+        raise HTTPException(status_code=403, detail="الحساب معطل. يرجى التواصل مع الدعم.")
+    
+    # Check subscription
+    now = datetime.now(timezone.utc)
+    ends_at = datetime.fromisoformat(tenant.get("subscription_ends_at", now.isoformat()).replace('Z', '+00:00'))
+    if ends_at < now:
+        raise HTTPException(status_code=403, detail="انتهت صلاحية الاشتراك. يرجى تجديد الاشتراك.")
+    
+    # Get admin user from tenant DB
+    tenant_db = client[f"tenant_{tenant['id']}"]
+    user = await tenant_db.users.find_one({"email": login.email, "role": "admin"}, {"_id": 0})
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="خطأ في الحساب")
+    
+    # Generate token
+    token = jwt.encode({
+        "sub": user["id"],
+        "tenant_id": tenant["id"],
+        "exp": datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
+    }, SECRET_KEY, algorithm=ALGORITHM)
+    
+    # Get plan features
+    plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0})
+    features = {**plan.get("features", {}), **tenant.get("features_override", {})} if plan else {}
+    limits = {**plan.get("limits", {}), **tenant.get("limits_override", {})} if plan else {}
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user["id"],
+            "name": user["name"],
+            "email": user["email"],
+            "role": user["role"],
+            "tenant_id": tenant["id"],
+            "company_name": tenant.get("company_name", ""),
+            "is_trial": tenant.get("is_trial", False),
+            "subscription_ends_at": tenant.get("subscription_ends_at"),
+            "features": features,
+            "limits": limits
+        }
+    }
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
