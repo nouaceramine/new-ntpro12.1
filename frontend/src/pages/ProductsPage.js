@@ -198,7 +198,59 @@ export default function ProductsPage() {
               </Link>
             )}
           </div>
+        ) : viewMode === 'list' ? (
+          /* List View */
+          <div className="space-y-2">
+            {products.map((product) => (
+              <Link
+                key={product.id}
+                to={`/products/${product.id}`}
+                className="block"
+                data-testid={`product-item-${product.id}`}
+              >
+                <div className="flex items-center gap-4 p-4 border rounded-lg bg-card hover:bg-muted/50 transition-colors">
+                  <img
+                    src={product.image_url || 'https://images.unsplash.com/photo-1634403665443-81dc4d75843a?crop=entropy&cs=srgb&fm=jpg&q=85'}
+                    alt={language === 'ar' ? product.name_ar : product.name_en}
+                    className="w-16 h-16 object-cover rounded-lg"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium truncate">{language === 'ar' ? product.name_ar : product.name_en}</h3>
+                    <p className="text-sm text-muted-foreground">{product.barcode}</p>
+                  </div>
+                  <div className="text-end">
+                    <p className="font-bold">{product.retail_price?.toFixed(2)} {t.currency}</p>
+                    <p className="text-sm text-muted-foreground">{t.stock}: {product.quantity}</p>
+                  </div>
+                  {getStockBadge(product.quantity)}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : viewMode === 'compact' ? (
+          /* Compact View */
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
+            {products.map((product) => (
+              <Link
+                key={product.id}
+                to={`/products/${product.id}`}
+                className="block"
+                data-testid={`product-item-${product.id}`}
+              >
+                <div className="border rounded-lg p-2 bg-card hover:bg-muted/50 transition-colors text-center">
+                  <img
+                    src={product.image_url || 'https://images.unsplash.com/photo-1634403665443-81dc4d75843a?crop=entropy&cs=srgb&fm=jpg&q=85'}
+                    alt={language === 'ar' ? product.name_ar : product.name_en}
+                    className="w-full aspect-square object-cover rounded-md mb-2"
+                  />
+                  <p className="text-xs font-medium truncate">{language === 'ar' ? product.name_ar : product.name_en}</p>
+                  <p className="text-xs font-bold text-primary">{product.retail_price?.toFixed(0)} {t.currency}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
         ) : (
+          /* Grid View (default) */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
               <Link
