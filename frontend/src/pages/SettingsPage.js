@@ -1426,15 +1426,94 @@ export default function SettingsPage() {
                     : 'Warning! All data will be permanently deleted and cannot be recovered'}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button 
-                  variant="destructive" 
-                  onClick={() => setShowResetDialog(true)}
-                  className="gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  {t.factoryReset}
-                </Button>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowResetDialog(true)}
+                    className="gap-2"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    {t.factoryReset}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="gap-2 border-amber-500 text-amber-600 hover:bg-amber-50"
+                    onClick={() => setShowSelectiveDeleteDialog(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {language === 'ar' ? 'حذف انتقائي' : 'Suppression sélective'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Backup & Restore */}
+            <Card className="border-blue-200 dark:border-blue-900">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-blue-600">
+                  <Database className="h-5 w-5" />
+                  {language === 'ar' ? 'النسخ الاحتياطي واستعادة البيانات' : 'Backup & Restore'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'حفظ نسخة احتياطية من قاعدة البيانات أو استعادتها' 
+                    : 'Save or restore a backup of the database'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={handleDownloadBackup}
+                    disabled={backupLoading}
+                  >
+                    {backupLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                    {language === 'ar' ? 'تحميل نسخة احتياطية' : 'Download Backup'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={handleSaveBackupToServer}
+                    disabled={backupLoading}
+                  >
+                    {backupLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <HardDrive className="h-4 w-4" />}
+                    {language === 'ar' ? 'حفظ على السيرفر' : 'Save to Server'}
+                  </Button>
+                  <label className="cursor-pointer">
+                    <input 
+                      type="file" 
+                      accept=".json" 
+                      className="hidden" 
+                      onChange={handleRestoreBackup}
+                      disabled={backupLoading}
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="gap-2 pointer-events-none"
+                      disabled={backupLoading}
+                    >
+                      <Upload className="h-4 w-4" />
+                      {language === 'ar' ? 'استعادة من ملف' : 'Restore from File'}
+                    </Button>
+                  </label>
+                </div>
+                
+                {/* Backup History */}
+                {backupList.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <h4 className="font-medium mb-2">{language === 'ar' ? 'النسخ الاحتياطية المحفوظة' : 'Saved Backups'}</h4>
+                    <div className="space-y-2 max-h-40 overflow-auto">
+                      {backupList.map((backup) => (
+                        <div key={backup.id} className="flex items-center justify-between p-2 bg-muted rounded-lg text-sm">
+                          <span>{backup.filename}</span>
+                          <span className="text-muted-foreground">{new Date(backup.created_at).toLocaleDateString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
