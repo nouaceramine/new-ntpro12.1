@@ -56,6 +56,7 @@ import ExpensesPage from "./pages/ExpensesPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AdvancedSalesReportPage from "./pages/AdvancedSalesReportPage";
 import SalesPermissionsPage from "./pages/SalesPermissionsPage";
+import PriceHistoryPage from "./pages/PriceHistoryPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
