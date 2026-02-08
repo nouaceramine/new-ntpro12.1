@@ -130,17 +130,17 @@ class PlanResponse(BaseModel):
     id: str
     name: str
     name_ar: str
-    description: str
-    description_ar: str
+    description: str = ""
+    description_ar: str = ""
     price_monthly: float
     price_6months: float
     price_yearly: float
-    features: dict
-    limits: dict
-    is_active: bool
-    is_popular: bool
-    sort_order: int
-    created_at: str
+    features: dict = {}
+    limits: dict = {}
+    is_active: bool = True
+    is_popular: bool = False
+    sort_order: int = 0
+    created_at: str = ""
 
 class TenantCreate(BaseModel):
     name: str
