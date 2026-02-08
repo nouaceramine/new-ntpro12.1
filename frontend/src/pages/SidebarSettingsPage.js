@@ -72,7 +72,8 @@ import {
   Globe,
   Heart,
   Zap,
-  Box
+  Box,
+  Award
 } from 'lucide-react';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
