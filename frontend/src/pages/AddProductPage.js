@@ -42,12 +42,12 @@ export default function AddProductPage() {
   const [addingFamily, setAddingFamily] = useState(false);
   
   const [formData, setFormData] = useState({
-    name_en: '',
-    name_ar: '',
+    name: '',
     description_en: '',
     description_ar: '',
     purchase_price: '',
     wholesale_price: '',
+    super_wholesale_price: '',
     retail_price: '',
     image_url: '',
     barcode: '',
