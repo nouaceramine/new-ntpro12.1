@@ -46,8 +46,10 @@ import {
   Moon,
   Sun,
   Wrench,
-  Download
+  Download,
+  Sparkles
 } from 'lucide-react';
+import { AIAssistant } from './AIAssistant';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
