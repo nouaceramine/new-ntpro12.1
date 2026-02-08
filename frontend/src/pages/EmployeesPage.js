@@ -292,13 +292,23 @@ export default function EmployeesPage() {
               </div>
               <div>
                 <Label>{language === 'ar' ? 'كلمة المرور' : 'Mot de passe'} *</Label>
-                <Input 
-                  type="password" 
-                  value={accountData.password} 
-                  onChange={e => setAccountData({...accountData, password: e.target.value})} 
-                  placeholder="********"
-                  required 
-                />
+                <div className="relative">
+                  <Input 
+                    type={showPassword ? 'text' : 'password'} 
+                    value={accountData.password} 
+                    onChange={e => setAccountData({...accountData, password: e.target.value})} 
+                    placeholder="********"
+                    required
+                    className="pe-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <Label>{language === 'ar' ? 'الدور' : 'Rôle'}</Label>
