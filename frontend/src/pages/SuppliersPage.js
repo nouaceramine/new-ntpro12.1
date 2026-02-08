@@ -296,7 +296,6 @@ export default function SuppliersPage() {
                       {language === 'ar' ? 'دفع متقدم' : 'Paiement avancé'}
                     </Button>
                   </div>
-                  </div>
                 </CardContent>
               </Card>
             ))}
