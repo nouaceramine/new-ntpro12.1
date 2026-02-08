@@ -16,8 +16,18 @@ import {
   Filter,
   Grid3X3,
   List,
-  LayoutGrid
+  LayoutGrid,
+  ArrowUpDown,
+  SortAsc,
+  SortDesc
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
