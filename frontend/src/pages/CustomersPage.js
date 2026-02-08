@@ -403,38 +403,114 @@ export default function CustomersPage() {
 
         {/* Add/Edit Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{selectedCustomer ? t.editCustomer : t.addCustomer}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>{t.customerName} *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  data-testid="customer-name-input"
-                />
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t.customerName} *</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    data-testid="customer-name-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t.phone}</Label>
+                  <Input
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    dir="ltr"
+                    data-testid="customer-phone-input"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>{t.phone}</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  dir="ltr"
-                  data-testid="customer-phone-input"
-                />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t.email}</Label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    data-testid="customer-email-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'تاريخ الميلاد' : 'Date de naissance'}</Label>
+                  <Input
+                    type="date"
+                    value={formData.birthdate}
+                    onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>{t.email}</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  data-testid="customer-email-input"
-                />
+
+              {/* ID and Business Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'رقم الهوية' : 'N° Identité'}</Label>
+                  <Input
+                    value={formData.national_id}
+                    onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
+                    placeholder={language === 'ar' ? 'رقم بطاقة الهوية' : 'Numéro CIN'}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'السجل التجاري' : 'Registre Commerce'}</Label>
+                  <Input
+                    value={formData.commercial_register}
+                    onChange={(e) => setFormData({ ...formData, commercial_register: e.target.value })}
+                    placeholder={language === 'ar' ? 'رقم السجل التجاري' : 'N° RC'}
+                  />
+                </div>
               </div>
+
+              {/* Customer Type and Limits */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'تصنيف الزبون' : 'Type client'}</Label>
+                  <Select
+                    value={formData.customer_type}
+                    onValueChange={(value) => setFormData({ ...formData, customer_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">{language === 'ar' ? 'جديد' : 'Nouveau'}</SelectItem>
+                      <SelectItem value="regular">{language === 'ar' ? 'عادي' : 'Régulier'}</SelectItem>
+                      <SelectItem value="vip">{language === 'ar' ? 'VIP' : 'VIP'}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'حد الدين الأقصى' : 'Limite crédit'}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.max_debt_limit}
+                    onChange={(e) => setFormData({ ...formData, max_debt_limit: e.target.value })}
+                    placeholder={language === 'ar' ? 'بدون حد' : 'Sans limite'}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'خصم خاص %' : 'Remise spéciale %'}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.special_discount}
+                    onChange={(e) => setFormData({ ...formData, special_discount: e.target.value })}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label>{t.address}</Label>
                 <Input
