@@ -303,6 +303,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/bulk-price-update"
         element={
           <ProtectedRoute adminOnly>
