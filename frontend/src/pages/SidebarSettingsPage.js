@@ -149,11 +149,23 @@ const defaultMenuSections = [
       { id: 'pos', path: '/pos', icon: 'ShoppingCart', labelAr: 'نقطة البيع', labelFr: 'Point de vente', visible: true },
       { id: 'daily-sessions', path: '/daily-sessions', icon: 'Clock', labelAr: 'حصص البيع اليومية', labelFr: 'Sessions', visible: true },
       { id: 'sales', path: '/sales', icon: 'Receipt', labelAr: 'المبيعات', labelFr: 'Ventes', visible: true },
-      { id: 'purchases', path: '/purchases', icon: 'ShoppingBag', labelAr: 'المشتريات', labelFr: 'Achats', visible: true },
       { id: 'expenses', path: '/expenses', icon: 'Receipt', labelAr: 'التكاليف', labelFr: 'Dépenses', visible: true },
       { id: 'cash', path: '/cash', icon: 'Wallet', labelAr: 'إدارة المال', labelFr: 'Gestion caisse', visible: true },
       { id: 'customer-debts', path: '/customer-debts', icon: 'CreditCard', labelAr: 'ديون الزبائن', labelFr: 'Dettes clients', visible: true },
       { id: 'debts', path: '/debts', icon: 'Receipt', labelAr: 'الديون', labelFr: 'Dettes', visible: true },
+    ]
+  },
+  {
+    id: 'purchases',
+    titleAr: 'المشتريات',
+    titleFr: 'Achats',
+    icon: 'ShoppingBag',
+    visible: true,
+    isCustom: false,
+    items: [
+      { id: 'purchases-list', path: '/purchases', icon: 'ShoppingBag', labelAr: 'المشتريات', labelFr: 'Achats', visible: true },
+      { id: 'suppliers', path: '/suppliers', icon: 'Truck', labelAr: 'الموردين', labelFr: 'Fournisseurs', visible: true },
+      { id: 'supplier-families', path: '/supplier-families', icon: 'FolderTree', labelAr: 'عائلات الموردين', labelFr: 'Familles fournisseurs', visible: true },
     ]
   },
   {
@@ -166,8 +178,6 @@ const defaultMenuSections = [
     items: [
       { id: 'customers', path: '/customers', icon: 'Users', labelAr: 'الزبائن', labelFr: 'Clients', visible: true },
       { id: 'customer-families', path: '/customer-families', icon: 'FolderTree', labelAr: 'عائلات الزبائن', labelFr: 'Familles clients', visible: true },
-      { id: 'suppliers', path: '/suppliers', icon: 'Truck', labelAr: 'الموردين', labelFr: 'Fournisseurs', visible: true },
-      { id: 'supplier-families', path: '/supplier-families', icon: 'FolderTree', labelAr: 'عائلات الموردين', labelFr: 'Familles fournisseurs', visible: true },
       { id: 'employees', path: '/employees', icon: 'Users', labelAr: 'الموظفين', labelFr: 'Employés', visible: true },
     ]
   },
