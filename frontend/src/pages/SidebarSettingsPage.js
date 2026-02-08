@@ -139,23 +139,6 @@ const defaultMenuSections = [
     ]
   },
   {
-    id: 'finance',
-    titleAr: 'المالية',
-    titleFr: 'Finances',
-    icon: 'Wallet',
-    visible: true,
-    isCustom: false,
-    items: [
-      { id: 'pos', path: '/pos', icon: 'ShoppingCart', labelAr: 'نقطة البيع', labelFr: 'Point de vente', visible: true },
-      { id: 'daily-sessions', path: '/daily-sessions', icon: 'Clock', labelAr: 'حصص البيع اليومية', labelFr: 'Sessions', visible: true },
-      { id: 'sales', path: '/sales', icon: 'Receipt', labelAr: 'المبيعات', labelFr: 'Ventes', visible: true },
-      { id: 'expenses', path: '/expenses', icon: 'Receipt', labelAr: 'التكاليف', labelFr: 'Dépenses', visible: true },
-      { id: 'cash', path: '/cash', icon: 'Wallet', labelAr: 'إدارة المال', labelFr: 'Gestion caisse', visible: true },
-      { id: 'customer-debts', path: '/customer-debts', icon: 'CreditCard', labelAr: 'ديون الزبائن', labelFr: 'Dettes clients', visible: true },
-      { id: 'debts', path: '/debts', icon: 'Receipt', labelAr: 'الديون', labelFr: 'Dettes', visible: true },
-    ]
-  },
-  {
     id: 'purchases',
     titleAr: 'المشتريات',
     titleFr: 'Achats',
@@ -169,16 +152,67 @@ const defaultMenuSections = [
     ]
   },
   {
-    id: 'relations',
-    titleAr: 'العلاقات',
-    titleFr: 'Relations',
+    id: 'customers',
+    titleAr: 'الزبائن',
+    titleFr: 'Clients',
     icon: 'Users',
     visible: true,
     isCustom: false,
     items: [
-      { id: 'customers', path: '/customers', icon: 'Users', labelAr: 'الزبائن', labelFr: 'Clients', visible: true },
+      { id: 'customers-list', path: '/customers', icon: 'Users', labelAr: 'الزبائن', labelFr: 'Clients', visible: true },
       { id: 'customer-families', path: '/customer-families', icon: 'FolderTree', labelAr: 'عائلات الزبائن', labelFr: 'Familles clients', visible: true },
       { id: 'employees', path: '/employees', icon: 'Users', labelAr: 'الموظفين', labelFr: 'Employés', visible: true },
+    ]
+  },
+  {
+    id: 'sales',
+    titleAr: 'المبيعات',
+    titleFr: 'Ventes',
+    icon: 'Receipt',
+    visible: true,
+    isCustom: false,
+    items: [
+      { id: 'pos', path: '/pos', icon: 'ShoppingCart', labelAr: 'نقطة البيع', labelFr: 'Point de vente', visible: true },
+      { id: 'daily-sessions', path: '/daily-sessions', icon: 'Clock', labelAr: 'حصص البيع اليومية', labelFr: 'Sessions', visible: true },
+      { id: 'sales-list', path: '/sales', icon: 'Receipt', labelAr: 'المبيعات', labelFr: 'Ventes', visible: true },
+      { id: 'expenses', path: '/expenses', icon: 'Receipt', labelAr: 'التكاليف', labelFr: 'Dépenses', visible: true },
+      { id: 'cash', path: '/cash', icon: 'Wallet', labelAr: 'إدارة المال', labelFr: 'Gestion caisse', visible: true },
+      { id: 'customer-debts', path: '/customer-debts', icon: 'CreditCard', labelAr: 'ديون الزبائن', labelFr: 'Dettes clients', visible: true },
+      { id: 'debts', path: '/debts', icon: 'Receipt', labelAr: 'الديون', labelFr: 'Dettes', visible: true },
+    ]
+  },
+  {
+    id: 'reports',
+    titleAr: 'التقارير',
+    titleFr: 'Rapports',
+    icon: 'BarChart3',
+    visible: true,
+    isCustom: false,
+    items: [
+      { id: 'reports-main', path: '/reports', icon: 'BarChart3', labelAr: 'التقارير', labelFr: 'Rapports', visible: true },
+      { id: 'analytics', path: '/analytics', icon: 'BarChart3', labelAr: 'إحصائيات متقدمة', labelFr: 'Analyses', visible: true },
+    ]
+  },
+  {
+    id: 'notifications',
+    titleAr: 'الإشعارات',
+    titleFr: 'Notifications',
+    icon: 'Bell',
+    visible: true,
+    isCustom: false,
+    items: [
+      { id: 'notifications-main', path: '/notifications', icon: 'Bell', labelAr: 'الإشعارات', labelFr: 'Notifications', visible: true },
+    ]
+  },
+  {
+    id: 'loyalty',
+    titleAr: 'الولاء والتسويق',
+    titleFr: 'Fidélité & Marketing',
+    icon: 'Award',
+    visible: true,
+    isCustom: false,
+    items: [
+      { id: 'loyalty-main', path: '/loyalty', icon: 'Award', labelAr: 'برنامج الولاء', labelFr: 'Programme fidélité', visible: true },
     ]
   },
   {
@@ -244,10 +278,6 @@ const defaultMenuSections = [
     visible: true,
     isCustom: false,
     items: [
-      { id: 'reports', path: '/reports', icon: 'BarChart3', labelAr: 'التقارير', labelFr: 'Rapports', visible: true },
-      { id: 'analytics', path: '/analytics', icon: 'BarChart3', labelAr: 'إحصائيات متقدمة', labelFr: 'Analyses', visible: true },
-      { id: 'notifications', path: '/notifications', icon: 'Bell', labelAr: 'الإشعارات', labelFr: 'Notifications', visible: true },
-      { id: 'loyalty', path: '/loyalty', icon: 'Star', labelAr: 'الولاء والتسويق', labelFr: 'Fidélité', visible: true },
       { id: 'users', path: '/users', icon: 'Shield', labelAr: 'المستخدمين', labelFr: 'Utilisateurs', visible: true },
       { id: 'api-keys', path: '/api-keys', icon: 'Key', labelAr: 'مفاتيح API', labelFr: 'Clés API', visible: true },
       { id: 'settings', path: '/settings', icon: 'Settings', labelAr: 'الإعدادات', labelFr: 'Paramètres', visible: true },

@@ -209,8 +209,28 @@ export const Layout = ({ children }) => {
       ]
     },
     {
-      title: language === 'ar' ? 'المالية' : 'Finances',
-      icon: Wallet,
+      title: language === 'ar' ? 'المشتريات' : 'Achats',
+      icon: ShoppingBag,
+      items: [
+        { path: '/purchases', icon: ShoppingBag, label: t.purchases },
+        { path: '/suppliers', icon: Truck, label: t.suppliers },
+        { path: '/supplier-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الموردين' : 'Familles fournisseurs' },
+      ]
+    },
+    {
+      title: language === 'ar' ? 'الزبائن' : 'Clients',
+      icon: Users,
+      items: [
+        { path: '/customers', icon: Users, label: t.customers },
+        ...(isAdmin ? [
+          { path: '/customer-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الزبائن' : 'Familles clients' },
+          { path: '/employees', icon: Users, label: t.employees },
+        ] : [])
+      ]
+    },
+    {
+      title: language === 'ar' ? 'المبيعات' : 'Ventes',
+      icon: Receipt,
       items: [
         { path: '/pos', icon: ShoppingCart, label: t.pos },
         { path: '/daily-sessions', icon: Clock, label: language === 'ar' ? 'حصص البيع اليومية' : 'Sessions journalières' },
@@ -226,23 +246,25 @@ export const Layout = ({ children }) => {
       ]
     },
     {
-      title: language === 'ar' ? 'المشتريات' : 'Achats',
-      icon: ShoppingBag,
+      title: language === 'ar' ? 'التقارير' : 'Rapports',
+      icon: BarChart3,
       items: [
-        { path: '/purchases', icon: ShoppingBag, label: t.purchases },
-        { path: '/suppliers', icon: Truck, label: t.suppliers },
-        { path: '/supplier-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الموردين' : 'Familles fournisseurs' },
+        { path: '/reports', icon: BarChart3, label: t.reports },
+        { path: '/analytics', icon: BarChart3, label: language === 'ar' ? 'إحصائيات متقدمة' : 'Analyses avancées' },
       ]
     },
     {
-      title: language === 'ar' ? 'العلاقات' : 'Relations',
-      icon: Users,
+      title: language === 'ar' ? 'الإشعارات' : 'Notifications',
+      icon: Bell,
       items: [
-        { path: '/customers', icon: Users, label: t.customers },
-        ...(isAdmin ? [
-          { path: '/customer-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الزبائن' : 'Familles clients' },
-          { path: '/employees', icon: Users, label: t.employees },
-        ] : [])
+        { path: '/notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات' : 'Notifications' },
+      ]
+    },
+    {
+      title: language === 'ar' ? 'الولاء والتسويق' : 'Fidélité & Marketing',
+      icon: Award,
+      items: [
+        { path: '/loyalty', icon: Award, label: language === 'ar' ? 'برنامج الولاء' : 'Programme fidélité' },
       ]
     },
     {
@@ -290,21 +312,11 @@ export const Layout = ({ children }) => {
       title: language === 'ar' ? 'الإدارة' : 'Administration',
       icon: Settings,
       items: [
-        { path: '/reports', icon: BarChart3, label: t.reports },
-        { path: '/analytics', icon: BarChart3, label: language === 'ar' ? 'إحصائيات متقدمة' : 'Analyses avancées' },
-        { path: '/notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات' : 'Notifications' },
-        { path: '/loyalty', icon: Award, label: language === 'ar' ? 'الولاء والتسويق' : 'Fidélité' },
         { path: '/users', icon: Shield, label: t.users },
         { path: '/api-keys', icon: Key, label: t.apiKeys },
         { path: '/settings', icon: Settings, label: t.settings },
       ]
-    }] : [{
-      title: language === 'ar' ? 'الإعدادات' : 'Paramètres',
-      icon: Settings,
-      items: [
-        { path: '/notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات' : 'Notifications' },
-      ]
-    }])
+    }] : [])
   ];
 
   const isActive = (path) => {
