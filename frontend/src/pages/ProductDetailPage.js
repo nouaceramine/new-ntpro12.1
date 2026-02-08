@@ -88,6 +88,48 @@ export default function ProductDetailPage() {
     fetchProduct();
   }, [id, navigate, t.notFound]);
 
+  // Fetch history data
+  const fetchHistoryData = async () => {
+    setHistoryLoading(true);
+    const token = localStorage.getItem('token');
+    try {
+      const [purchaseRes, salesRes, priceRes] = await Promise.all([
+        axios.get(`${API}/products/${id}/purchase-history`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API}/products/${id}/sales-history`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API}/products/${id}/price-history`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      setPurchaseHistory(purchaseRes.data);
+      setSalesHistory(salesRes.data);
+      setPriceHistory(priceRes.data);
+    } catch (error) {
+      console.error('Error fetching history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  // Check price warnings
+  const getPriceWarnings = () => {
+    if (!product) return [];
+    const warnings = [];
+    const purchasePrice = product.purchase_price || 0;
+    
+    if (purchasePrice > 0) {
+      if (product.retail_price && product.retail_price < purchasePrice) {
+        warnings.push({ type: 'retail', message: language === 'ar' ? 'سعر التجزئة أقل من سعر الشراء!' : 'Prix détail inférieur au prix d\'achat!' });
+      }
+      if (product.wholesale_price && product.wholesale_price < purchasePrice) {
+        warnings.push({ type: 'wholesale', message: language === 'ar' ? 'سعر الجملة أقل من سعر الشراء!' : 'Prix gros inférieur au prix d\'achat!' });
+      }
+      if (product.super_wholesale_price && product.super_wholesale_price < purchasePrice) {
+        warnings.push({ type: 'super', message: language === 'ar' ? 'سعر السوبر جملة أقل من سعر الشراء!' : 'Prix super gros inférieur au prix d\'achat!' });
+      }
+    }
+    return warnings;
+  };
+
+  const priceWarnings = getPriceWarnings();
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
