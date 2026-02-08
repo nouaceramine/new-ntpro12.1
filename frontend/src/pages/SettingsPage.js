@@ -161,6 +161,19 @@ export default function SettingsPage() {
     printCopies: 1
   });
 
+  // Receipt Settings
+  const [receiptSettings, setReceiptSettings] = useState({
+    auto_print: false,
+    show_print_dialog: true,
+    default_template_id: 'default_80mm',
+    templates: [
+      { id: 'default_58mm', name: 'Thermal 58mm', name_ar: 'حراري 58 مم', width: '58mm', show_logo: false, show_header: true, show_footer: true, header_text: '', footer_text: 'شكراً لزيارتكم', font_size: 'small', is_default: false },
+      { id: 'default_80mm', name: 'Thermal 80mm', name_ar: 'حراري 80 مم', width: '80mm', show_logo: true, show_header: true, show_footer: true, header_text: '', footer_text: 'شكراً لزيارتكم', font_size: 'normal', is_default: true },
+      { id: 'default_a4', name: 'A4 Full Page', name_ar: 'صفحة A4 كاملة', width: 'A4', show_logo: true, show_header: true, show_footer: true, header_text: '', footer_text: 'شكراً لزيارتكم', font_size: 'normal', is_default: false }
+    ]
+  });
+  const [savingReceipt, setSavingReceipt] = useState(false);
+
   // WhatsApp Settings
   const [whatsappSettings, setWhatsappSettings] = useState({
     enabled: false,
