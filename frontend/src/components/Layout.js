@@ -247,6 +247,7 @@ export const Layout = ({ children }) => {
           { path: '/inventory-count', icon: ClipboardList, label: language === 'ar' ? 'جرد المخزون' : 'Inventaire' },
           { path: '/barcode-print', icon: QrCode, label: language === 'ar' ? 'طباعة الباركود' : 'Codes-barres' },
           { path: '/bulk-price-update', icon: DollarSign, label: t.bulkPriceUpdate },
+          { path: '/price-history', icon: History, label: language === 'ar' ? 'سجل الأسعار' : 'Historique prix' },
         ] : [])
       ]
     },
