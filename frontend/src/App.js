@@ -130,7 +130,7 @@ function AppRoutes() {
       <Route
         path="/saas-admin"
         element={
-          <ProtectedRoute adminOnly>
+          <ProtectedRoute>
             <SaasAdminPage />
           </ProtectedRoute>
         }
