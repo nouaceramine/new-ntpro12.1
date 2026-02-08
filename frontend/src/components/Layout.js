@@ -282,9 +282,11 @@ export const Layout = ({ children }) => {
         { path: '/sales', icon: Receipt, label: t.sales },
         { path: '/expenses', icon: Receipt, label: language === 'ar' ? 'التكاليف' : 'Dépenses' },
         ...(isAdmin ? [
+          { path: '/sales/advanced-report', icon: BarChart3, label: language === 'ar' ? 'تقارير متقدمة' : 'Rapports avancés' },
           { path: '/cash', icon: Wallet, label: t.cashManagement },
           { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
           { path: '/debts', icon: Receipt, label: t.debts },
+          { path: '/settings/sales-permissions', icon: Shield, label: language === 'ar' ? 'صلاحيات المبيعات' : 'Permissions' },
         ] : [
           { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
         ])
