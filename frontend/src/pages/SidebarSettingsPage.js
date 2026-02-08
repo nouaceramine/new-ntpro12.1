@@ -135,7 +135,7 @@ const defaultMenuSections = [
       { id: 'warehouses', path: '/warehouses', icon: 'Warehouse', labelAr: 'المخازن', labelFr: 'Entrepôts', visible: true },
       { id: 'inventory-count', path: '/inventory-count', icon: 'ClipboardList', labelAr: 'جرد المخزون', labelFr: 'Inventaire', visible: true },
       { id: 'barcode-print', path: '/barcode-print', icon: 'QrCode', labelAr: 'طباعة الباركود', labelFr: 'Codes-barres', visible: true },
-      { id: 'bulk-price-update', path: '/bulk-price-update', icon: 'DollarSign', labelAr: 'تحديث الأسعار', labelFr: 'Mise à jour prix', visible: true },
+      { id: 'bulk-price-update', path: '/bulk-price-update', icon: 'DollarSign', labelAr: 'تحديث الأسعار الجماعي', labelFr: 'Mise à jour prix en masse', visible: true },
     ]
   },
   {
