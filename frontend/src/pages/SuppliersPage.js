@@ -61,6 +61,38 @@ export default function SuppliersPage() {
     name: '', phone: '', email: '', address: '', notes: '', family_id: ''
   });
 
+  // View mode and sorting
+  const [viewMode, setViewMode] = useState(localStorage.getItem('suppliersViewMode') || 'grid');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+
+  const changeViewMode = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('suppliersViewMode', mode);
+  };
+
+  // Sort suppliers
+  const sortedSuppliers = [...suppliers].sort((a, b) => {
+    let comparison = 0;
+    switch (sortBy) {
+      case 'name':
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case 'balance':
+        comparison = (a.balance || 0) - (b.balance || 0);
+        break;
+      case 'total_purchases':
+        comparison = (a.total_purchases || 0) - (b.total_purchases || 0);
+        break;
+      case 'advance_balance':
+        comparison = (a.advance_balance || 0) - (b.advance_balance || 0);
+        break;
+      default:
+        comparison = 0;
+    }
+    return sortOrder === 'asc' ? comparison : -comparison;
+  });
+
   // Advance Payment Dialog
   const [advancePaymentDialogOpen, setAdvancePaymentDialogOpen] = useState(false);
   const [advancePaymentData, setAdvancePaymentData] = useState({
