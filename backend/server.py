@@ -7436,6 +7436,182 @@ async def test_email_settings(user: dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"فشل إرسال البريد: {str(e)}")
 
+# ============ SMART REPORTS ============
+
+class SmartReportSettings(BaseModel):
+    daily_report_enabled: bool = False
+    daily_report_time: str = "08:00"
+    daily_report_recipients: str = ""
+    include_ai_tips: bool = True
+    include_sales_summary: bool = True
+    include_low_stock_alerts: bool = True
+    include_debt_reminders: bool = True
+
+@api_router.get("/smart-reports/settings")
+async def get_smart_report_settings(user: dict = Depends(get_current_user)):
+    """Get smart report settings"""
+    settings = await db.system_settings.find_one({"type": "smart_reports"}, {"_id": 0})
+    if not settings:
+        return SmartReportSettings().model_dump()
+    return settings
+
+@api_router.put("/smart-reports/settings")
+async def update_smart_report_settings(settings: SmartReportSettings, user: dict = Depends(get_current_user)):
+    """Update smart report settings"""
+    if user.get("role") not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="غير مصرح")
+    
+    await db.system_settings.update_one(
+        {"type": "smart_reports"},
+        {"$set": {**settings.model_dump(), "type": "smart_reports", "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"success": True}
+
+@api_router.get("/smart-reports/last")
+async def get_last_smart_report(user: dict = Depends(get_current_user)):
+    """Get last sent report info"""
+    report = await db.smart_reports_log.find_one({}, {"_id": 0}, sort=[("sent_at", -1)])
+    return report
+
+@api_router.get("/smart-reports/preview")
+async def preview_smart_report(user: dict = Depends(get_current_user)):
+    """Generate a preview of the smart report"""
+    today = datetime.now(timezone.utc).date()
+    yesterday = today - timedelta(days=1)
+    
+    # Sales summary
+    today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
+    yesterday_start = datetime.combine(yesterday, datetime.min.time()).replace(tzinfo=timezone.utc)
+    
+    today_sales = await db.sales.find({"created_at": {"$gte": today_start.isoformat()}}).to_list(1000)
+    yesterday_sales = await db.sales.find({
+        "created_at": {"$gte": yesterday_start.isoformat(), "$lt": today_start.isoformat()}
+    }).to_list(1000)
+    
+    today_total = sum(s.get("total", 0) for s in today_sales)
+    yesterday_total = sum(s.get("total", 0) for s in yesterday_sales)
+    today_profit = sum(s.get("profit", 0) for s in today_sales)
+    
+    change = 0
+    if yesterday_total > 0:
+        change = ((today_total - yesterday_total) / yesterday_total) * 100
+    
+    # Low stock products
+    low_stock = await db.products.find(
+        {"$expr": {"$lt": ["$quantity", {"$ifNull": ["$low_stock_threshold", 10]}]}},
+        {"_id": 0, "name_ar": 1, "name_en": 1, "quantity": 1}
+    ).to_list(20)
+    
+    low_stock_list = [{"name": p.get("name_ar") or p.get("name_en"), "quantity": p.get("quantity", 0)} for p in low_stock]
+    
+    # AI Tips (simple rules-based for now)
+    tips = []
+    if len(low_stock) > 5:
+        tips.append("لديك العديد من المنتجات منخفضة المخزون. يُنصح بمراجعة قائمة المشتريات.")
+    if today_total > yesterday_total:
+        tips.append(f"مبيعات اليوم أفضل من الأمس بنسبة {change:.1f}%. استمر في العمل الجيد!")
+    if today_total < yesterday_total and yesterday_total > 0:
+        tips.append("مبيعات اليوم أقل من الأمس. جرب تقديم عروض خاصة لتنشيط المبيعات.")
+    if len(today_sales) > 0:
+        avg_sale = today_total / len(today_sales)
+        tips.append(f"متوسط قيمة الفاتورة اليوم: {avg_sale:.2f} دج")
+    
+    return {
+        "sales": {
+            "today_total": today_total,
+            "today_count": len(today_sales),
+            "today_profit": today_profit,
+            "change": change
+        },
+        "low_stock": low_stock_list,
+        "ai_tips": " | ".join(tips) if tips else "لا توجد نصائح حالياً. استمر في العمل!"
+    }
+
+@api_router.post("/smart-reports/send-now")
+async def send_smart_report_now(user: dict = Depends(get_current_user)):
+    """Send smart report immediately"""
+    if not RESEND_AVAILABLE:
+        raise HTTPException(status_code=500, detail="مكتبة Resend غير متوفرة")
+    
+    # Get email settings
+    email_settings = await db.system_settings.find_one({"type": "email_settings"})
+    if not email_settings or not email_settings.get("enabled"):
+        raise HTTPException(status_code=400, detail="البريد غير مفعل")
+    
+    # Get report settings
+    report_settings = await db.system_settings.find_one({"type": "smart_reports"})
+    recipients = report_settings.get("daily_report_recipients", "") if report_settings else ""
+    
+    if not recipients:
+        # Use current user email
+        user_record = await db.users.find_one({"id": user["id"]})
+        recipients = user_record.get("email", "") if user_record else ""
+    
+    if not recipients:
+        raise HTTPException(status_code=400, detail="لا يوجد مستلمين محددين")
+    
+    # Generate report
+    preview = await preview_smart_report(user)
+    
+    # Build HTML email
+    html_content = f"""
+    <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #3b82f6;">📊 التقرير اليومي الذكي</h1>
+        <p style="color: #666;">{datetime.now().strftime('%Y-%m-%d')}</p>
+        
+        <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <h3 style="color: #166534; margin: 0 0 10px 0;">💰 ملخص المبيعات</h3>
+            <p>إجمالي اليوم: <strong>{preview['sales']['today_total']:.2f} دج</strong></p>
+            <p>عدد المبيعات: <strong>{preview['sales']['today_count']}</strong></p>
+            <p>الربح: <strong>{preview['sales']['today_profit']:.2f} دج</strong></p>
+            <p>مقارنة بالأمس: <strong style="color: {'#166534' if preview['sales']['change'] >= 0 else '#dc2626'}">{'+' if preview['sales']['change'] >= 0 else ''}{preview['sales']['change']:.1f}%</strong></p>
+        </div>
+        
+        {'<div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 15px 0;"><h3 style="color: #92400e; margin: 0 0 10px 0;">⚠️ تنبيهات المخزون ({} منتجات)</h3></div>'.format(len(preview['low_stock'])) if preview['low_stock'] else ''}
+        
+        <div style="background: #f3e8ff; padding: 15px; border-radius: 8px; margin: 15px 0;">
+            <h3 style="color: #7e22ce; margin: 0 0 10px 0;">✨ نصائح ذكية</h3>
+            <p>{preview['ai_tips']}</p>
+        </div>
+        
+        <p style="color: #999; font-size: 12px; margin-top: 30px;">
+            هذا التقرير تم إنشاؤه تلقائياً من نظام NT POS
+        </p>
+    </div>
+    """
+    
+    resend.api_key = email_settings.get("resend_api_key")
+    
+    try:
+        params = {
+            "from": email_settings.get("sender_email", "onboarding@resend.dev"),
+            "to": [r.strip() for r in recipients.split(",")],
+            "subject": f"📊 التقرير اليومي الذكي - {datetime.now().strftime('%Y-%m-%d')}",
+            "html": html_content
+        }
+        
+        await asyncio.to_thread(resend.Emails.send, params)
+        
+        # Log the report
+        await db.smart_reports_log.insert_one({
+            "id": str(uuid.uuid4()),
+            "status": "sent",
+            "recipients": recipients,
+            "sent_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"success": True, "message": "تم إرسال التقرير بنجاح"}
+    except Exception as e:
+        await db.smart_reports_log.insert_one({
+            "id": str(uuid.uuid4()),
+            "status": "failed",
+            "recipients": recipients,
+            "error": str(e),
+            "sent_at": datetime.now(timezone.utc).isoformat()
+        })
+        raise HTTPException(status_code=500, detail=f"فشل إرسال التقرير: {str(e)}")
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
