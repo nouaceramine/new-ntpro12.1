@@ -245,8 +245,6 @@ const defaultMenuSections = [
     ]
   },
 ];
-  },
-];
 
 // Draggable Item Component
 function DraggableItem({ item, language, onToggleVisibility, sectionId, onMoveItem }) {
