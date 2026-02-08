@@ -150,6 +150,7 @@ class TenantCreate(BaseModel):
     company_name: Optional[str] = ""
     plan_id: str
     subscription_type: str = "monthly"  # monthly, 6months, yearly
+    business_type: Optional[str] = "retailer"  # retailer, wholesaler, distributor
 
 class TenantUpdate(BaseModel):
     name: Optional[str] = None
@@ -161,6 +162,7 @@ class TenantUpdate(BaseModel):
     features_override: Optional[dict] = None  # Override plan features
     limits_override: Optional[dict] = None  # Override plan limits
     notes: Optional[str] = None
+    business_type: Optional[str] = None
 
 class TenantResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -181,6 +183,7 @@ class TenantResponse(BaseModel):
     limits_override: dict
     notes: str
     stats: Optional[dict] = None
+    business_type: Optional[str] = "retailer"
     created_at: str
 
 class SubscriptionPayment(BaseModel):
