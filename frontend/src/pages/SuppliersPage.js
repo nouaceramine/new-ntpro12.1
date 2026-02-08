@@ -66,8 +66,34 @@ export default function SuppliersPage() {
     }
   };
 
+  const fetchSupplierFamilies = async () => {
+    try {
+      const response = await axios.get(`${API}/supplier-families`);
+      setSupplierFamilies(response.data);
+    } catch (error) {
+      console.error('Error fetching supplier families:', error);
+    }
+  };
+
+  const handleAddFamily = async () => {
+    if (!newFamilyName.trim()) return;
+    setSavingFamily(true);
+    try {
+      await axios.post(`${API}/supplier-families`, { name: newFamilyName });
+      toast.success(language === 'ar' ? 'تمت إضافة العائلة' : 'Famille ajoutée');
+      setFamilyDialogOpen(false);
+      setNewFamilyName('');
+      fetchSupplierFamilies();
+    } catch (error) {
+      toast.error(language === 'ar' ? 'حدث خطأ' : 'Une erreur est survenue');
+    } finally {
+      setSavingFamily(false);
+    }
+  };
+
   useEffect(() => {
     fetchSuppliers();
+    fetchSupplierFamilies();
   }, [searchQuery]);
 
   const handleSubmit = async (e) => {
