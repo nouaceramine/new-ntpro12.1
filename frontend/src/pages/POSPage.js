@@ -131,6 +131,22 @@ export default function POSPage() {
   const [bankAmount, setBankAmount] = useState(0);
   const [creditAmount, setCreditAmount] = useState(0);
 
+  // Print Receipt Dialog
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
+  const [lastSaleId, setLastSaleId] = useState(null);
+  const [lastSaleInvoice, setLastSaleInvoice] = useState(null);
+  const [receiptSettings, setReceiptSettings] = useState(null);
+
+  // Previous Sales Dialog
+  const [showPreviousSalesDialog, setShowPreviousSalesDialog] = useState(false);
+  const [previousSales, setPreviousSales] = useState([]);
+  const [salesLoading, setSalesLoading] = useState(false);
+  const [salesDateFilter, setSalesDateFilter] = useState('today');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [selectedSaleForView, setSelectedSaleForView] = useState(null);
+  const [showSaleDetailsDialog, setShowSaleDetailsDialog] = useState(false);
+
   useEffect(() => {
     checkOpenSession();
     fetchProducts();
@@ -141,6 +157,7 @@ export default function POSPage() {
     fetchDebtReminders();
     fetchWilayas();
     fetchWarehouses();
+    fetchReceiptSettings();
   }, []);
 
   // Close search dropdown when clicking outside
