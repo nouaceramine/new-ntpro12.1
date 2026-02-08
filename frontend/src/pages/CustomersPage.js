@@ -308,14 +308,20 @@ export default function CustomersPage() {
                 return (
                   <Card 
                     key={customer.id} 
-                    className={`hover:shadow-md transition-shadow ${customerIsBlacklisted ? 'border-red-300 bg-red-50/50' : ''}`} 
+                    className={`hover:shadow-md transition-shadow ${customerIsBlacklisted ? 'border-red-300 bg-red-50/50' : customer.customer_type === 'vip' ? 'border-amber-300 bg-amber-50/30' : ''}`} 
                     data-testid={`customer-card-${customer.id}`}
                   >
                     <CardContent className="p-5">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="font-semibold text-lg">{customer.name}</h3>
+                            {customer.customer_type === 'vip' && (
+                              <Badge className="bg-amber-100 text-amber-700 text-xs">VIP</Badge>
+                            )}
+                            {customer.customer_type === 'new' && (
+                              <Badge className="bg-blue-100 text-blue-700 text-xs">{language === 'ar' ? 'جديد' : 'Nouveau'}</Badge>
+                            )}
                             {customerIsBlacklisted && (
                               <Badge variant="destructive" className="text-xs gap-1">
                                 <Ban className="h-3 w-3" />
@@ -339,6 +345,13 @@ export default function CustomersPage() {
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                               <MapPin className="h-4 w-4" />
                               <span>{customer.address}</span>
+                            </div>
+                          )}
+                          {customer.special_discount > 0 && (
+                            <div className="mt-2">
+                              <Badge variant="outline" className="text-green-600 border-green-300">
+                                {language === 'ar' ? `خصم ${customer.special_discount}%` : `Remise ${customer.special_discount}%`}
+                              </Badge>
                             </div>
                           )}
                         </div>
