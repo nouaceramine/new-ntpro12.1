@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Layout } from '../components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -10,8 +10,13 @@ import { Badge } from '../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { toast } from 'sonner';
-import { Users, Plus, Edit, Trash2, Calendar, DollarSign, Clock, UserPlus, KeyRound, UserX, Eye, EyeOff } from 'lucide-react';
+import { 
+  Users, Plus, Edit, Trash2, Calendar, DollarSign, Clock, UserPlus, KeyRound, UserX, Eye, EyeOff,
+  TrendingUp, Wallet, CheckCircle, XCircle, AlertTriangle, Download, FileText, BarChart3, Briefcase
+} from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -24,6 +29,7 @@ export default function EmployeesPage() {
   const [attendanceDialogOpen, setAttendanceDialogOpen] = useState(false);
   const [advanceDialogOpen, setAdvanceDialogOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [salaryDialogOpen, setSalaryDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [formData, setFormData] = useState({ name: '', phone: '', email: '', position: '', salary: '', commission_rate: '', hire_date: '' });
   const [attendanceData, setAttendanceData] = useState({ date: new Date().toISOString().split('T')[0], status: 'present', notes: '' });
@@ -31,6 +37,19 @@ export default function EmployeesPage() {
   const [accountData, setAccountData] = useState({ email: '', password: '', role: 'seller' });
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState('employees');
+  const [attendanceReport, setAttendanceReport] = useState([]);
+  const [salaryMonth, setSalaryMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [salaryReport, setSalaryReport] = useState([]);
+
+  // Statistics
+  const stats = {
+    totalEmployees: employees.length,
+    totalSalaries: employees.reduce((sum, e) => sum + (e.salary || 0), 0),
+    totalAdvances: employees.reduce((sum, e) => sum + (e.total_advances || 0), 0),
+    totalCommissions: employees.reduce((sum, e) => sum + (e.total_commission || 0), 0),
+    activeAccounts: employees.filter(e => e.user_id).length
+  };
 
   const fetchEmployees = async () => {
     try {
