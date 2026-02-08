@@ -49,7 +49,8 @@ import {
   Wrench,
   Download,
   Sparkles,
-  History
+  History,
+  Building
 } from 'lucide-react';
 import { AIAssistant } from './AIAssistant';
 
