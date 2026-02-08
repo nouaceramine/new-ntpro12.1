@@ -889,7 +889,6 @@ export default function PurchasesPage() {
                       </TableBody>
                     </Table>
                   )}
-                  )}
                 </div>
 
                 {/* Payment Type Selection */}
