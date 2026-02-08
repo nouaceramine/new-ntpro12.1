@@ -1056,6 +1056,21 @@ export default function POSPage() {
                   </Button>
                 </Link>
 
+                {/* Previous Sales Button */}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-11 w-11 border-purple-300 text-purple-600 hover:bg-purple-50"
+                  onClick={() => {
+                    setShowPreviousSalesDialog(true);
+                    fetchPreviousSales('today');
+                  }}
+                  title={language === 'ar' ? 'سجل المبيعات السابقة' : 'Historique des ventes'}
+                  data-testid="previous-sales-btn"
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+
                 {/* Debt Reminders Button */}
                 {debtReminders.length > 0 && (
                   <Button
