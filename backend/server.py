@@ -7553,6 +7553,369 @@ async def ai_analyze(request: AIAnalysisRequest, user: dict = Depends(get_curren
         logger.error(f"AI analysis error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI error: {str(e)}")
 
+# ============ ADVANCED SALES TRACKING & REPORTS ============
+
+class SalesPermissionSettings(BaseModel):
+    allow_employee_edit: bool = False
+    allow_employee_delete: bool = False
+    allow_discount_without_approval: bool = True
+    max_discount_percent: float = 50.0
+    max_debt_per_customer: float = 100000.0
+    min_sale_price_percent: float = 80.0  # Min price as % of purchase price
+
+@api_router.get("/sales/advanced-report")
+async def get_advanced_sales_report(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    employee_id: Optional[str] = None,
+    customer_id: Optional[str] = None,
+    product_id: Optional[str] = None,
+    payment_method: Optional[str] = None,
+    admin: dict = Depends(get_admin_user)
+):
+    """Get advanced sales report with filtering"""
+    query = {"status": {"$ne": "returned"}}
+    
+    if start_date:
+        query["created_at"] = {"$gte": start_date}
+    if end_date:
+        if "created_at" in query:
+            query["created_at"]["$lte"] = end_date + "T23:59:59"
+        else:
+            query["created_at"] = {"$lte": end_date + "T23:59:59"}
+    if employee_id:
+        query["employee_id"] = employee_id
+    if customer_id:
+        query["customer_id"] = customer_id
+    if payment_method:
+        query["payment_method"] = payment_method
+    
+    sales = await db.sales.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # If product filter, filter by items
+    if product_id:
+        sales = [s for s in sales if any(item.get("product_id") == product_id for item in s.get("items", []))]
+    
+    # Calculate statistics
+    total_amount = sum(s.get("total", 0) for s in sales)
+    total_paid = sum(s.get("paid_amount", 0) for s in sales)
+    total_discount = sum(s.get("discount", 0) for s in sales)
+    total_profit = 0
+    
+    for sale in sales:
+        for item in sale.get("items", []):
+            purchase_price = item.get("purchase_price", item.get("unit_price", 0) * 0.7)
+            profit = (item.get("unit_price", 0) - purchase_price) * item.get("quantity", 1)
+            total_profit += profit
+    
+    # Group by employee
+    by_employee = {}
+    for sale in sales:
+        emp_id = sale.get("employee_id", "unknown")
+        emp_name = sale.get("employee_name", "غير محدد")
+        if emp_id not in by_employee:
+            by_employee[emp_id] = {"name": emp_name, "count": 0, "total": 0}
+        by_employee[emp_id]["count"] += 1
+        by_employee[emp_id]["total"] += sale.get("total", 0)
+    
+    # Group by payment method
+    by_payment = {}
+    for sale in sales:
+        method = sale.get("payment_method", "cash")
+        if method not in by_payment:
+            by_payment[method] = {"count": 0, "total": 0}
+        by_payment[method]["count"] += 1
+        by_payment[method]["total"] += sale.get("total", 0)
+    
+    # Top products
+    product_sales = {}
+    for sale in sales:
+        for item in sale.get("items", []):
+            pid = item.get("product_id", "unknown")
+            pname = item.get("product_name", "غير محدد")
+            if pid not in product_sales:
+                product_sales[pid] = {"name": pname, "quantity": 0, "total": 0}
+            product_sales[pid]["quantity"] += item.get("quantity", 1)
+            product_sales[pid]["total"] += item.get("total", 0)
+    
+    top_products = sorted(product_sales.values(), key=lambda x: x["total"], reverse=True)[:10]
+    
+    return {
+        "sales": sales,
+        "statistics": {
+            "total_sales": len(sales),
+            "total_amount": total_amount,
+            "total_paid": total_paid,
+            "total_remaining": total_amount - total_paid,
+            "total_discount": total_discount,
+            "total_profit": total_profit,
+            "average_sale": total_amount / len(sales) if sales else 0
+        },
+        "by_employee": list(by_employee.values()),
+        "by_payment_method": by_payment,
+        "top_products": top_products
+    }
+
+@api_router.get("/sales/employee-report/{employee_id}")
+async def get_employee_sales_report(
+    employee_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    admin: dict = Depends(get_admin_user)
+):
+    """Get detailed sales report for a specific employee"""
+    query = {"employee_id": employee_id, "status": {"$ne": "returned"}}
+    
+    if start_date:
+        query["created_at"] = {"$gte": start_date}
+    if end_date:
+        if "created_at" in query:
+            query["created_at"]["$lte"] = end_date + "T23:59:59"
+        else:
+            query["created_at"] = {"$lte": end_date + "T23:59:59"}
+    
+    sales = await db.sales.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    # Get employee info
+    employee = await db.employees.find_one({"id": employee_id}, {"_id": 0})
+    
+    # Calculate stats
+    total_amount = sum(s.get("total", 0) for s in sales)
+    total_paid = sum(s.get("paid_amount", 0) for s in sales)
+    
+    # Sales by hour
+    by_hour = {}
+    for sale in sales:
+        try:
+            hour = sale.get("created_at", "")[:13].split("T")[1] if "T" in sale.get("created_at", "") else "00"
+            if hour not in by_hour:
+                by_hour[hour] = {"count": 0, "total": 0}
+            by_hour[hour]["count"] += 1
+            by_hour[hour]["total"] += sale.get("total", 0)
+        except:
+            pass
+    
+    return {
+        "employee": employee,
+        "sales": sales,
+        "statistics": {
+            "total_sales": len(sales),
+            "total_amount": total_amount,
+            "total_paid": total_paid,
+            "total_remaining": total_amount - total_paid,
+            "average_sale": total_amount / len(sales) if sales else 0
+        },
+        "by_hour": by_hour
+    }
+
+@api_router.get("/sales/peak-hours")
+async def get_peak_hours_report(
+    days: int = 30,
+    admin: dict = Depends(get_admin_user)
+):
+    """Get sales peak hours analysis"""
+    start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
+    
+    sales = await db.sales.find(
+        {"created_at": {"$gte": start_date}, "status": {"$ne": "returned"}},
+        {"_id": 0, "created_at": 1, "total": 1}
+    ).to_list(10000)
+    
+    # Group by hour
+    by_hour = {str(i).zfill(2): {"count": 0, "total": 0} for i in range(24)}
+    
+    for sale in sales:
+        try:
+            if "T" in sale.get("created_at", ""):
+                hour = sale["created_at"].split("T")[1][:2]
+                by_hour[hour]["count"] += 1
+                by_hour[hour]["total"] += sale.get("total", 0)
+        except:
+            pass
+    
+    # Group by day of week
+    by_day = {i: {"count": 0, "total": 0, "name_ar": "", "name_en": ""} for i in range(7)}
+    day_names_ar = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"]
+    day_names_en = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    
+    for i in range(7):
+        by_day[i]["name_ar"] = day_names_ar[i]
+        by_day[i]["name_en"] = day_names_en[i]
+    
+    for sale in sales:
+        try:
+            date = datetime.fromisoformat(sale["created_at"].replace("Z", "+00:00"))
+            weekday = date.weekday()
+            by_day[weekday]["count"] += 1
+            by_day[weekday]["total"] += sale.get("total", 0)
+        except:
+            pass
+    
+    return {
+        "by_hour": by_hour,
+        "by_day": list(by_day.values()),
+        "peak_hour": max(by_hour.items(), key=lambda x: x[1]["total"])[0] if by_hour else None,
+        "peak_day": max(by_day.items(), key=lambda x: x[1]["total"])[0] if by_day else None
+    }
+
+@api_router.get("/sales/returns-report")
+async def get_returns_report(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    admin: dict = Depends(get_admin_user)
+):
+    """Get returns report"""
+    query = {"status": "returned"}
+    
+    if start_date:
+        query["returned_at"] = {"$gte": start_date}
+    if end_date:
+        if "returned_at" in query:
+            query["returned_at"]["$lte"] = end_date + "T23:59:59"
+        else:
+            query["returned_at"] = {"$lte": end_date + "T23:59:59"}
+    
+    returns = await db.sales.find(query, {"_id": 0}).sort("returned_at", -1).to_list(1000)
+    
+    total_returned = sum(r.get("total", 0) for r in returns)
+    
+    # Group by reason
+    by_reason = {}
+    for ret in returns:
+        reason = ret.get("return_reason", "غير محدد")
+        if reason not in by_reason:
+            by_reason[reason] = {"count": 0, "total": 0}
+        by_reason[reason]["count"] += 1
+        by_reason[reason]["total"] += ret.get("total", 0)
+    
+    return {
+        "returns": returns,
+        "statistics": {
+            "total_returns": len(returns),
+            "total_amount": total_returned
+        },
+        "by_reason": by_reason
+    }
+
+@api_router.get("/sales/{sale_id}/audit-log")
+async def get_sale_audit_log(sale_id: str, admin: dict = Depends(get_admin_user)):
+    """Get audit log for a specific sale"""
+    logs = await db.sale_audit_logs.find(
+        {"sale_id": sale_id},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return logs
+
+@api_router.post("/sales/{sale_id}/log-action")
+async def log_sale_action(
+    sale_id: str,
+    action: str,
+    details: dict = {},
+    user: dict = Depends(get_current_user)
+):
+    """Log an action on a sale"""
+    log = {
+        "id": str(uuid.uuid4()),
+        "sale_id": sale_id,
+        "action": action,
+        "details": details,
+        "user_id": user["id"],
+        "user_name": user.get("name", user.get("email", "")),
+        "user_role": user.get("role", ""),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.sale_audit_logs.insert_one(log)
+    return {"message": "Action logged", "log_id": log["id"]}
+
+@api_router.get("/settings/sales-permissions")
+async def get_sales_permissions(admin: dict = Depends(get_admin_user)):
+    """Get sales permission settings"""
+    settings = await db.settings.find_one({"key": "sales_permissions"}, {"_id": 0})
+    if settings:
+        return settings.get("value", {})
+    return {
+        "allow_employee_edit": False,
+        "allow_employee_delete": False,
+        "allow_discount_without_approval": True,
+        "max_discount_percent": 50.0,
+        "max_debt_per_customer": 100000.0,
+        "min_sale_price_percent": 80.0
+    }
+
+@api_router.post("/settings/sales-permissions")
+async def update_sales_permissions(
+    settings: SalesPermissionSettings,
+    admin: dict = Depends(get_admin_user)
+):
+    """Update sales permission settings"""
+    await db.settings.update_one(
+        {"key": "sales_permissions"},
+        {"$set": {"key": "sales_permissions", "value": settings.model_dump()}},
+        upsert=True
+    )
+    return {"message": "Settings updated"}
+
+@api_router.get("/sales/product-tracking/{product_id}")
+async def get_product_sales_tracking(
+    product_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    user: dict = Depends(get_current_user)
+):
+    """Track all sales for a specific product"""
+    query = {"status": {"$ne": "returned"}}
+    
+    if start_date:
+        query["created_at"] = {"$gte": start_date}
+    if end_date:
+        if "created_at" in query:
+            query["created_at"]["$lte"] = end_date + "T23:59:59"
+        else:
+            query["created_at"] = {"$lte": end_date + "T23:59:59"}
+    
+    all_sales = await db.sales.find(query, {"_id": 0}).to_list(10000)
+    
+    # Filter sales containing this product
+    product_sales = []
+    total_quantity = 0
+    total_revenue = 0
+    total_profit = 0
+    
+    for sale in all_sales:
+        for item in sale.get("items", []):
+            if item.get("product_id") == product_id:
+                product_sales.append({
+                    "sale_id": sale["id"],
+                    "date": sale["created_at"],
+                    "customer": sale.get("customer_name", "زبون عابر"),
+                    "employee": sale.get("employee_name", ""),
+                    "quantity": item.get("quantity", 1),
+                    "unit_price": item.get("unit_price", 0),
+                    "total": item.get("total", 0),
+                    "payment_method": sale.get("payment_method", "cash")
+                })
+                total_quantity += item.get("quantity", 1)
+                total_revenue += item.get("total", 0)
+                purchase_price = item.get("purchase_price", item.get("unit_price", 0) * 0.7)
+                total_profit += (item.get("unit_price", 0) - purchase_price) * item.get("quantity", 1)
+    
+    # Get product info
+    product = await db.products.find_one({"id": product_id}, {"_id": 0})
+    
+    return {
+        "product": product,
+        "sales": product_sales,
+        "statistics": {
+            "total_sales": len(product_sales),
+            "total_quantity": total_quantity,
+            "total_revenue": total_revenue,
+            "total_profit": total_profit,
+            "average_price": total_revenue / total_quantity if total_quantity > 0 else 0
+        }
+    }
+
 # Include router and middleware
 app.include_router(api_router)
 
