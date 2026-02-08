@@ -3379,6 +3379,7 @@ class SidebarSection(BaseModel):
     titleFr: Optional[str] = None
     icon: Optional[str] = None
     visible: bool = True
+    isCustom: bool = False
     items: List[SidebarMenuItem] = []
 
 @api_router.put("/settings/sidebar-order")
