@@ -243,19 +243,65 @@ export default function SuppliersPage() {
           </Button>
         </div>
 
-        {/* Search */}
+        {/* Search & Filter */}
         <Card>
           <CardContent className="p-4">
-            <div className="relative">
-              <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
-              <Input
-                type="text"
-                placeholder={t.search}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
-                data-testid="supplier-search-input"
-              />
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
+                <Input
+                  type="text"
+                  placeholder={t.search}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
+                  data-testid="supplier-search-input"
+                />
+              </div>
+              
+              {/* Sort By */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[150px]">
+                  <ArrowUpDown className="h-4 w-4 me-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">{language === 'ar' ? 'الاسم' : 'Nom'}</SelectItem>
+                  <SelectItem value="balance">{language === 'ar' ? 'الرصيد' : 'Solde'}</SelectItem>
+                  <SelectItem value="total_purchases">{language === 'ar' ? 'المشتريات' : 'Achats'}</SelectItem>
+                  <SelectItem value="advance_balance">{language === 'ar' ? 'الرصيد المتقدم' : 'Avance'}</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Sort Order */}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                title={sortOrder === 'asc' ? 'تصاعدي' : 'تنازلي'}
+              >
+                {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+              </Button>
+              
+              {/* View Mode */}
+              <div className="flex border rounded-lg">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => changeViewMode('grid')}
+                  className="rounded-e-none"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="icon"
+                  onClick={() => changeViewMode('list')}
+                  className="rounded-s-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
