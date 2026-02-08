@@ -306,19 +306,85 @@ export default function SuppliersPage() {
           </CardContent>
         </Card>
 
-        {/* Suppliers Grid */}
+        {/* Suppliers Display */}
         {loading ? (
           <div className="flex items-center justify-center min-h-[40vh]">
             <div className="spinner" />
           </div>
-        ) : suppliers.length === 0 ? (
+        ) : sortedSuppliers.length === 0 ? (
           <div className="empty-state py-16">
             <Truck className="h-20 w-20 text-muted-foreground mb-4" />
             <h3 className="text-xl font-medium">{t.noSuppliers}</h3>
           </div>
+        ) : viewMode === 'list' ? (
+          /* List View - Table Format */
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{language === 'ar' ? 'الاسم' : 'Nom'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'الهاتف' : 'Téléphone'}</TableHead>
+                    <TableHead>{language === 'ar' ? 'البريد' : 'Email'}</TableHead>
+                    <TableHead className="text-center">{t.totalPurchases}</TableHead>
+                    <TableHead className="text-center">{t.balance}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'رصيد متقدم' : 'Avance'}</TableHead>
+                    <TableHead className="text-center">{language === 'ar' ? 'الإجراءات' : 'Actions'}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedSuppliers.map(supplier => (
+                    <TableRow key={supplier.id} data-testid={`supplier-row-${supplier.id}`}>
+                      <TableCell className="font-medium">{supplier.name}</TableCell>
+                      <TableCell dir="ltr" className="text-muted-foreground">
+                        {supplier.phone || '-'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {supplier.email || '-'}
+                      </TableCell>
+                      <TableCell className="text-center font-medium">
+                        {(supplier.total_purchases || 0).toFixed(2)} {t.currency}
+                      </TableCell>
+                      <TableCell className={`text-center font-medium ${supplier.balance > 0 ? 'text-destructive' : ''}`}>
+                        {(supplier.balance || 0).toFixed(2)} {t.currency}
+                      </TableCell>
+                      <TableCell className="text-center font-medium text-green-600">
+                        {(supplier.advance_balance || 0).toFixed(2)} {t.currency}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-green-600"
+                            onClick={() => openAdvancePaymentDialog(supplier)}
+                            title={language === 'ar' ? 'دفع متقدم' : 'Paiement avancé'}
+                          >
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEditDialog(supplier)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive"
+                            onClick={() => { setSelectedSupplier(supplier); setDeleteDialogOpen(true); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         ) : (
+          /* Grid View - Cards */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {suppliers.map(supplier => (
+            {sortedSuppliers.map(supplier => (
               <Card key={supplier.id} className="hover:shadow-md transition-shadow" data-testid={`supplier-card-${supplier.id}`}>
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between">
@@ -360,12 +426,12 @@ export default function SuppliersPage() {
                   <div className="flex gap-4 mt-4 pt-4 border-t">
                     <div>
                       <p className="text-xs text-muted-foreground">{t.totalPurchases}</p>
-                      <p className="font-semibold">{supplier.total_purchases.toFixed(2)} {t.currency}</p>
+                      <p className="font-semibold">{(supplier.total_purchases || 0).toFixed(2)} {t.currency}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">{t.balance}</p>
                       <p className={`font-semibold ${supplier.balance > 0 ? 'text-destructive' : ''}`}>
-                        {supplier.balance.toFixed(2)} {t.currency}
+                        {(supplier.balance || 0).toFixed(2)} {t.currency}
                       </p>
                     </div>
                     {supplier.advance_balance > 0 && (
