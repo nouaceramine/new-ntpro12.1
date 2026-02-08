@@ -425,6 +425,57 @@ export default function SettingsPage() {
     }
   };
 
+  // Edit User
+  const openEditUserDialog = (user) => {
+    setEditingUser(user);
+    setEditUserData({
+      name: user.name,
+      email: user.email,
+      role: user.role
+    });
+    setShowEditUserDialog(true);
+  };
+
+  const saveEditUser = async () => {
+    if (!editUserData.name || !editUserData.email) {
+      toast.error(language === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required');
+      return;
+    }
+    
+    setSavingEditUser(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/users/${editingUser.id}`, editUserData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم تحديث المستخدم بنجاح' : 'User updated successfully');
+      setShowEditUserDialog(false);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    } finally {
+      setSavingEditUser(false);
+    }
+  };
+
+  // Delete User
+  const deleteUser = async (userId) => {
+    if (!window.confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا المستخدم؟' : 'Are you sure you want to delete this user?')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم حذف المستخدم بنجاح' : 'User deleted successfully');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || t.error);
+    }
+  };
+
   const fetchBackupList = async () => {
     try {
       const token = localStorage.getItem('token');
