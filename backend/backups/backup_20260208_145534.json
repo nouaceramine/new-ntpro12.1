@@ -1,0 +1,953 @@
+{
+  "created_at": "2026-02-08T14:55:34.922857+00:00",
+  "version": "2.0",
+  "collections": {
+    "users": [
+      {
+        "id": "590d0186-3c7e-4287-898b-434b48c08cd0",
+        "email": "admin_test_20260206_171503@test.com",
+        "password": "$2b$12$7zVoy6KHlQXOYWL55kNeVO/qXPX1wBrpgnYovxBRaOqSP5KpNCclq",
+        "name": "Admin User 20260206_171503",
+        "role": "admin",
+        "created_at": "2026-02-06T17:15:03.888761+00:00"
+      },
+      {
+        "id": "ba4a9d1e-991d-4dc1-9c68-9503459fd490",
+        "email": "admin_ui_test_20260206_171647@test.com",
+        "password": "$2b$12$7VEfRHWhdgen9geDJiKoueq4ChtlQfmJvNUPMjE7AUUg8XonPHyhW",
+        "name": "Admin UI Test 20260206_171647",
+        "role": "admin",
+        "created_at": "2026-02-06T17:16:47.579443+00:00"
+      },
+      {
+        "id": "c2237410-62cb-47a8-95f2-cef536d8f294",
+        "email": "admin@screenguard.com",
+        "password": "$2b$12$9UAN7BYUTv/IbpA2HZPCCu8ozv.BW6q6QKPl/mzf.jo0HlCgOgveW",
+        "name": "مدير النظام",
+        "role": "admin",
+        "created_at": "2026-02-06T17:17:47.687055+00:00"
+      },
+      {
+        "id": "6cca1463-7e76-4cb0-82f7-f8de1463cb83",
+        "email": "nouaceramine017@gmail.com",
+        "password": "$2b$12$h5Afr/i1HYQgM.rLVJY9q.sI0p8UE/h.MKMqyN3IWn6OUNyzkhzDW",
+        "name": "Nouacer Amine",
+        "role": "admin",
+        "created_at": "2026-02-06T17:23:48.569047+00:00"
+      },
+      {
+        "id": "61735132-83fc-4be8-8366-40e1664149e7",
+        "email": "admin@admin.com",
+        "password": "$2b$12$yW2WBmWJqMJyxwU4WQ1it.srmUEjrNLVqd1t9x9z.n8BOmWrO8Hzi",
+        "name": "Admin",
+        "role": "admin",
+        "created_at": "2026-02-06T19:23:32.900207+00:00"
+      },
+      {
+        "id": "afd66d62-60d5-4e8e-b017-12ff1d50d7df",
+        "email": "test@test.com",
+        "password": "$2b$12$n140hdpn/Wg0vJ/LA9Np.eRbrIkSRlBEJlgV.UrIyPO.j6SvuM.pi",
+        "name": "Test User",
+        "role": "admin",
+        "created_at": "2026-02-07T21:26:49.478948+00:00"
+      },
+      {
+        "id": "a2cddbb3-c949-4830-b69d-85773a0e3c6c",
+        "email": "admin@test.com",
+        "password": "$2b$12$JMiQG9SpsMiTadmcYoit8ufh2EeoGVwRJdSuhR1JHb5hNvXIzJhJS",
+        "name": "Admin",
+        "role": "admin",
+        "created_at": "2026-02-08T14:17:18.184547+00:00"
+      }
+    ],
+    "products": [
+      {
+        "id": "aeb77268-aead-41a5-9c76-0e8df7489742",
+        "name_en": "Test Screen Protector",
+        "name_ar": "واقي شاشة تجريبي",
+        "description_en": "",
+        "description_ar": "",
+        "purchase_price": 100.0,
+        "wholesale_price": 120.0,
+        "retail_price": 150.0,
+        "quantity": -2,
+        "image_url": "/api/static/uploads/100ce8da-0440-4159-8664-2cb574613ae2.png",
+        "compatible_models": [],
+        "low_stock_threshold": 10,
+        "barcode": "",
+        "family_id": "",
+        "family_name": "",
+        "created_at": "2026-02-07T16:35:36.634324+00:00",
+        "updated_at": "2026-02-08T14:33:58.025505+00:00"
+      },
+      {
+        "id": "544d0bf4-081c-429b-9978-1d4f005b764e",
+        "name_en": "samsung s22 ultra",
+        "name_ar": "samsung s22 ultra",
+        "description_en": "",
+        "description_ar": "",
+        "purchase_price": 210000.0,
+        "wholesale_price": 215000.0,
+        "retail_price": 220000.0,
+        "quantity": -3,
+        "image_url": "",
+        "compatible_models": [
+          "samsung s22 ultra"
+        ],
+        "low_stock_threshold": 10,
+        "barcode": "",
+        "family_id": "c8bea810-16a3-4420-b93c-5614231debe7",
+        "family_name": "mobile phone",
+        "created_at": "2026-02-07T20:46:17.297978+00:00",
+        "updated_at": "2026-02-07T20:46:17.297978+00:00"
+      },
+      {
+        "id": "9365e480-6246-4be2-848e-11a039d4c412",
+        "name_en": "cable yosedo",
+        "name_ar": "cable yosedo",
+        "description_en": "",
+        "description_ar": "",
+        "purchase_price": 120.0,
+        "wholesale_price": 150.0,
+        "retail_price": 200.0,
+        "quantity": -8,
+        "image_url": "",
+        "compatible_models": [
+          "cable yosedo"
+        ],
+        "low_stock_threshold": 10,
+        "barcode": "",
+        "family_id": "",
+        "family_name": "",
+        "created_at": "2026-02-07T21:02:46.891103+00:00",
+        "updated_at": "2026-02-07T21:02:46.891103+00:00"
+      },
+      {
+        "id": "837a7dd8-f9fb-43db-9dbb-1ed48de5ad9f",
+        "name_en": "cable moxom",
+        "name_ar": "cable moxom",
+        "description_en": "",
+        "description_ar": "",
+        "purchase_price": 200.0,
+        "wholesale_price": 250.0,
+        "retail_price": 300.0,
+        "quantity": 0,
+        "image_url": "",
+        "compatible_models": [
+          "cable moxom"
+        ],
+        "low_stock_threshold": 10,
+        "barcode": "",
+        "family_id": "",
+        "family_name": "",
+        "created_at": "2026-02-07T21:03:17.889402+00:00",
+        "updated_at": "2026-02-07T21:03:17.889402+00:00"
+      }
+    ],
+    "customers": [
+      {
+        "id": "58dda39d-6a69-416b-aa71-b89ad5d40261",
+        "name": "amir",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "notes": "",
+        "family_id": "",
+        "family_name": "",
+        "total_purchases": 0,
+        "balance": 0,
+        "created_at": "2026-02-07T20:43:05.619595+00:00"
+      },
+      {
+        "id": "590be422-cf18-41f3-a450-88661e4f4925",
+        "name": "mohamed",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "notes": "",
+        "family_id": "",
+        "family_name": "",
+        "total_purchases": 220000.0,
+        "balance": 0,
+        "created_at": "2026-02-07T20:43:13.106096+00:00",
+        "total_debt": 0
+      },
+      {
+        "id": "3b2d499c-2dad-496c-8a30-fe34cb645ca5",
+        "name": "raouf",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "notes": "",
+        "family_id": "",
+        "family_name": "",
+        "total_purchases": 215000.0,
+        "balance": 215000.0,
+        "created_at": "2026-02-07T20:43:17.625262+00:00",
+        "total_debt": 215000.0
+      },
+      {
+        "id": "832f349a-1f69-4698-a5aa-79abd3d76fcc",
+        "name": "fouzi",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "notes": "",
+        "family_id": "",
+        "family_name": "",
+        "total_purchases": 220400.0,
+        "balance": 120000.0,
+        "created_at": "2026-02-07T20:43:23.739686+00:00",
+        "total_debt": 120000.0
+      },
+      {
+        "id": "356178dc-b4fc-45cb-abe1-1bcb88600f44",
+        "name": "walid",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "notes": "",
+        "family_id": "",
+        "family_name": "",
+        "total_purchases": 5500.0,
+        "balance": 0.0,
+        "created_at": "2026-02-07T20:43:29.409008+00:00",
+        "total_debt": 0.0
+      },
+      {
+        "id": "4c073211-e040-46a9-b178-349bd194f645",
+        "name": "amine",
+        "phone": "",
+        "email": "",
+        "address": "",
+        "notes": "",
+        "family_id": "",
+        "family_name": "",
+        "total_purchases": 1600.0,
+        "balance": 0.0,
+        "created_at": "2026-02-07T20:43:34.811264+00:00",
+        "total_debt": 0.0
+      },
+      {
+        "id": "3635550b-897d-4766-8e90-cf2c802524b7",
+        "name": "Test Customer With Phone",
+        "phone": "0555123456",
+        "email": "",
+        "address": "",
+        "notes": "",
+        "family_id": "",
+        "family_name": "",
+        "total_purchases": 0,
+        "balance": 0,
+        "created_at": "2026-02-07T21:31:58.754786+00:00",
+        "blacklist_reason": "",
+        "is_blacklisted": false
+      }
+    ],
+    "suppliers": [],
+    "sales": [
+      {
+        "id": "d0a7c3c5-2725-42f8-9442-8875375c7b78",
+        "invoice_number": "INV-20260207-0001",
+        "customer_id": null,
+        "customer_name": "عميل نقدي",
+        "items": [
+          {
+            "product_id": "aeb77268-aead-41a5-9c76-0e8df7489742",
+            "product_name": "واقي شاشة تجريبي",
+            "quantity": 1,
+            "unit_price": 500.0,
+            "discount": 0.0,
+            "total": 500.0
+          }
+        ],
+        "subtotal": 500.0,
+        "discount": 0.0,
+        "delivery_fee": 0,
+        "delivery": null,
+        "total": 500.0,
+        "paid_amount": 500.0,
+        "debt_amount": 0,
+        "remaining": 0,
+        "payment_method": "cash",
+        "payment_type": "cash",
+        "status": "paid",
+        "notes": "",
+        "created_at": "2026-02-07T20:32:34.809699+00:00",
+        "created_by": "Test User"
+      },
+      {
+        "id": "bb6e58d8-acc7-4427-a976-5f932c1bf564",
+        "invoice_number": "INV-20260207-0002",
+        "customer_id": "590be422-cf18-41f3-a450-88661e4f4925",
+        "customer_name": "mohamed",
+        "items": [
+          {
+            "product_id": "544d0bf4-081c-429b-9978-1d4f005b764e",
+            "product_name": "samsung s22 ultra",
+            "quantity": 1,
+            "unit_price": 220000.0,
+            "discount": 0.0,
+            "total": 220000.0
+          }
+        ],
+        "subtotal": 220000.0,
+        "discount": 0.0,
+        "delivery_fee": 0,
+        "delivery": null,
+        "total": 220000.0,
+        "paid_amount": 50000.0,
+        "debt_amount": 0,
+        "remaining": 170000.0,
+        "payment_method": "cash",
+        "payment_type": "cash",
+        "status": "partial",
+        "notes": "",
+        "created_at": "2026-02-07T21:37:21.239136+00:00",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "2f0d38e4-17df-433b-9792-b6108d89e987",
+        "invoice_number": "INV-20260207-0003",
+        "customer_id": "3b2d499c-2dad-496c-8a30-fe34cb645ca5",
+        "customer_name": "raouf",
+        "items": [
+          {
+            "product_id": "544d0bf4-081c-429b-9978-1d4f005b764e",
+            "product_name": "samsung s22 ultra",
+            "quantity": 1,
+            "unit_price": 215000.0,
+            "discount": 0.0,
+            "total": 215000.0
+          }
+        ],
+        "subtotal": 215000.0,
+        "discount": 0.0,
+        "delivery_fee": 0,
+        "delivery": null,
+        "total": 215000.0,
+        "paid_amount": 0.0,
+        "debt_amount": 215000.0,
+        "remaining": 215000.0,
+        "payment_method": "cash",
+        "payment_type": "credit",
+        "status": "unpaid",
+        "notes": "",
+        "created_at": "2026-02-07T21:40:22.984911+00:00",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "0ac0db61-8422-4c3f-ad98-d4c6866afdec",
+        "invoice_number": "INV-20260207-0004",
+        "customer_id": "356178dc-b4fc-45cb-abe1-1bcb88600f44",
+        "customer_name": "walid",
+        "items": [
+          {
+            "product_id": "aeb77268-aead-41a5-9c76-0e8df7489742",
+            "product_name": "واقي شاشة تجريبي",
+            "quantity": 11,
+            "unit_price": 500.0,
+            "discount": 0.0,
+            "total": 5500.0
+          }
+        ],
+        "subtotal": 5500.0,
+        "discount": 0.0,
+        "delivery_fee": 0,
+        "delivery": null,
+        "total": 5500.0,
+        "paid_amount": 5500.0,
+        "debt_amount": 0.0,
+        "remaining": 4000.0,
+        "payment_method": "cash",
+        "payment_type": "partial",
+        "status": "partial",
+        "notes": "",
+        "created_at": "2026-02-07T21:48:31.949820+00:00",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "70d9d667-cc35-4660-8169-8a0f98886645",
+        "invoice_number": "INV-20260207-0005",
+        "customer_id": "4c073211-e040-46a9-b178-349bd194f645",
+        "customer_name": "amine",
+        "items": [
+          {
+            "product_id": "9365e480-6246-4be2-848e-11a039d4c412",
+            "product_name": "cable yosedo",
+            "quantity": 8,
+            "unit_price": 200.0,
+            "discount": 0.0,
+            "total": 1600.0
+          }
+        ],
+        "subtotal": 1600.0,
+        "discount": 0.0,
+        "delivery_fee": 0,
+        "delivery": null,
+        "total": 1600.0,
+        "paid_amount": 1600.0,
+        "debt_amount": 0.0,
+        "remaining": 1500.0,
+        "payment_method": "cash",
+        "payment_type": "partial",
+        "status": "partial",
+        "notes": "",
+        "created_at": "2026-02-07T21:49:37.292340+00:00",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "401e840a-4b29-4b86-95c8-e3e34581957f",
+        "invoice_number": "INV-20260207-0006",
+        "customer_id": "832f349a-1f69-4698-a5aa-79abd3d76fcc",
+        "customer_name": "fouzi",
+        "items": [
+          {
+            "product_id": "544d0bf4-081c-429b-9978-1d4f005b764e",
+            "product_name": "samsung s22 ultra",
+            "quantity": 1,
+            "unit_price": 220000.0,
+            "discount": 0.0,
+            "total": 220000.0
+          }
+        ],
+        "subtotal": 220000.0,
+        "discount": 0.0,
+        "delivery_fee": 400.0,
+        "delivery": {
+          "enabled": true,
+          "wilaya_code": "05",
+          "wilaya_name": "باتنة",
+          "city": "",
+          "address": "",
+          "delivery_type": "desk",
+          "fee": 400.0
+        },
+        "total": 220400.0,
+        "paid_amount": 100400.0,
+        "debt_amount": 120000.0,
+        "remaining": 120400.0,
+        "payment_method": "cash",
+        "payment_type": "partial",
+        "status": "partial",
+        "notes": "",
+        "created_at": "2026-02-07T22:21:11.018524+00:00",
+        "created_by": "Nouacer Amine"
+      }
+    ],
+    "purchases": [],
+    "cash_boxes": [
+      {
+        "id": "cash",
+        "name": "الصندوق النقدي",
+        "type": "cash",
+        "balance": 152100.0,
+        "updated_at": "2026-02-07T22:21:11.018524+00:00"
+      },
+      {
+        "id": "bank",
+        "name": "الحساب البنكي",
+        "type": "bank",
+        "balance": 0,
+        "updated_at": "2026-02-06T19:29:42.169296+00:00"
+      },
+      {
+        "id": "wallet",
+        "name": "المحفظة الإلكترونية",
+        "type": "wallet",
+        "balance": 0,
+        "updated_at": "2026-02-06T17:57:36.064039+00:00"
+      },
+      {
+        "id": "safe",
+        "name": "الخزنة",
+        "name_fr": "Coffre-fort",
+        "type": "safe",
+        "balance": 0,
+        "updated_at": "2026-02-06T21:53:41.853101+00:00"
+      }
+    ],
+    "transactions": [
+      {
+        "id": "52813253-b43e-4af7-8682-6df77356f146",
+        "cash_box_id": "cash",
+        "type": "income",
+        "amount": 500.0,
+        "description": "مبيعات - فاتورة INV-20260207-0001",
+        "reference_type": "sale",
+        "reference_id": "d0a7c3c5-2725-42f8-9442-8875375c7b78",
+        "created_at": "2026-02-07T20:32:34.809699+00:00",
+        "created_by": "Test User"
+      },
+      {
+        "id": "396b542c-a878-463b-8f62-c0f93288bb67",
+        "cash_box_id": "cash",
+        "type": "income",
+        "amount": 50000.0,
+        "description": "مبيعات - فاتورة INV-20260207-0002",
+        "reference_type": "sale",
+        "reference_id": "bb6e58d8-acc7-4427-a976-5f932c1bf564",
+        "created_at": "2026-02-07T21:37:21.239136+00:00",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "38c7fb17-629b-4a5c-bafd-c420247476e5",
+        "cash_box_id": "cash",
+        "type": "income",
+        "amount": 1500.0,
+        "description": "مبيعات - فاتورة INV-20260207-0004",
+        "reference_type": "sale",
+        "reference_id": "0ac0db61-8422-4c3f-ad98-d4c6866afdec",
+        "created_at": "2026-02-07T21:48:31.949820+00:00",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "47211e42-d711-4783-ab9c-fee7d92a2ffe",
+        "cash_box_id": "cash",
+        "type": "income",
+        "amount": 100.0,
+        "description": "مبيعات - فاتورة INV-20260207-0005",
+        "reference_type": "sale",
+        "reference_id": "70d9d667-cc35-4660-8169-8a0f98886645",
+        "created_at": "2026-02-07T21:49:37.292340+00:00",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "706ddd41-fff0-4451-ab6a-a61b4ec2e229",
+        "cash_box_id": "cash",
+        "type": "income",
+        "amount": 100000.0,
+        "description": "مبيعات - فاتورة INV-20260207-0006",
+        "reference_type": "sale",
+        "reference_id": "401e840a-4b29-4b86-95c8-e3e34581957f",
+        "created_at": "2026-02-07T22:21:11.018524+00:00",
+        "created_by": "Nouacer Amine"
+      }
+    ],
+    "employees": [
+      {
+        "id": "ac351775-bc6c-47a2-b831-9c116609df51",
+        "name": "asiil",
+        "phone": "",
+        "email": "",
+        "position": "comercialle",
+        "salary": 0.0,
+        "hire_date": "2026-02-07",
+        "commission_rate": 0.0,
+        "total_advances": 3000.0,
+        "total_commission": 0,
+        "created_at": "2026-02-07T14:56:37.026394+00:00"
+      }
+    ],
+    "attendance": [],
+    "advances": [
+      {
+        "id": "f98b81c6-c6d2-4c74-b88c-b73fdface904",
+        "employee_id": "7a617092-9e78-4fc4-93c0-616f0c1f8607",
+        "employee_name": "bomed",
+        "amount": 500.0,
+        "notes": "",
+        "created_at": "2026-02-06T19:31:17.198003+00:00"
+      },
+      {
+        "id": "8a35eb04-8dfd-4267-9b11-908c3324284a",
+        "employee_id": "7a617092-9e78-4fc4-93c0-616f0c1f8607",
+        "employee_name": "bomed",
+        "amount": 1200.0,
+        "notes": "",
+        "created_at": "2026-02-06T19:31:23.347239+00:00"
+      },
+      {
+        "id": "f4b60473-c98a-4ea0-bc92-a8f8bb0d25c5",
+        "employee_id": "ac351775-bc6c-47a2-b831-9c116609df51",
+        "employee_name": "asiil",
+        "amount": 1000.0,
+        "notes": "",
+        "created_at": "2026-02-07T14:59:57.382255+00:00"
+      },
+      {
+        "id": "95c1a49e-dfa3-4f50-9f51-beb793a67de5",
+        "employee_id": "ac351775-bc6c-47a2-b831-9c116609df51",
+        "employee_name": "asiil",
+        "amount": 2000.0,
+        "notes": "",
+        "created_at": "2026-02-07T15:00:03.379020+00:00"
+      }
+    ],
+    "debts": [],
+    "debt_payments": [
+      {
+        "id": "ec298b19-5bb1-47ea-aca6-dbcc5269718d",
+        "customer_id": "4c073211-e040-46a9-b178-349bd194f645",
+        "customer_name": "amine",
+        "amount": 1500.0,
+        "payment_method": "cash",
+        "notes": "",
+        "sales_updated": [
+          {
+            "sale_id": "70d9d667-cc35-4660-8169-8a0f98886645",
+            "payment_applied": 1500.0,
+            "remaining_debt": 0.0
+          }
+        ],
+        "created_at": "2026-02-07T21:51:20.711049+00:00",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "71a31d0e-ce01-47ac-92da-97ca7ada404c",
+        "customer_id": "356178dc-b4fc-45cb-abe1-1bcb88600f44",
+        "customer_name": "walid",
+        "amount": 4000.0,
+        "payment_method": "cash",
+        "notes": "",
+        "sales_updated": [
+          {
+            "sale_id": "0ac0db61-8422-4c3f-ad98-d4c6866afdec",
+            "payment_applied": 4000.0,
+            "remaining_debt": 0.0
+          }
+        ],
+        "created_at": "2026-02-07T21:51:25.455530+00:00",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "e745f715-c942-413e-9860-ae5ac33a76c0",
+        "customer_id": "832f349a-1f69-4698-a5aa-79abd3d76fcc",
+        "customer_name": "fouzi",
+        "amount": 400.0,
+        "payment_method": "cash",
+        "notes": "",
+        "sales_updated": [
+          {
+            "sale_id": "401e840a-4b29-4b86-95c8-e3e34581957f",
+            "payment_applied": 400.0,
+            "remaining_debt": 120000.0
+          }
+        ],
+        "created_at": "2026-02-07T22:21:41.353354+00:00",
+        "created_by": "Nouacer Amine"
+      }
+    ],
+    "notifications": [],
+    "product_families": [
+      {
+        "id": "c8bea810-16a3-4420-b93c-5614231debe7",
+        "name_en": "mobile phone",
+        "name_ar": "mobile phone",
+        "description_en": "",
+        "description_ar": "",
+        "parent_id": "",
+        "parent_name": "",
+        "product_count": 0,
+        "created_at": "2026-02-07T15:18:03.097663+00:00"
+      },
+      {
+        "id": "dfadba2d-cebb-465b-9462-bcd1c30d246e",
+        "name_en": "charjeur",
+        "name_ar": "charjeur",
+        "description_en": "",
+        "description_ar": "",
+        "parent_id": "",
+        "parent_name": "",
+        "product_count": 0,
+        "created_at": "2026-02-07T20:44:02.610887+00:00"
+      },
+      {
+        "id": "4291c1fc-5e99-4a90-9793-9079a019ecaa",
+        "name_en": "cable",
+        "name_ar": "cable",
+        "description_en": "",
+        "description_ar": "",
+        "parent_id": "",
+        "parent_name": "",
+        "product_count": 0,
+        "created_at": "2026-02-07T20:44:25.783267+00:00"
+      },
+      {
+        "id": "80a50edc-d40b-413d-ad9a-eb7118ce48b3",
+        "name_en": "glass",
+        "name_ar": "glass",
+        "description_en": "",
+        "description_ar": "",
+        "parent_id": "",
+        "parent_name": "",
+        "product_count": 0,
+        "created_at": "2026-02-07T20:44:32.702289+00:00"
+      },
+      {
+        "id": "8f9c2491-7f68-4574-9da4-ba3c882b33fc",
+        "name_en": "demo",
+        "name_ar": "demo",
+        "description_en": "",
+        "description_ar": "",
+        "parent_id": "",
+        "parent_name": "",
+        "product_count": 0,
+        "created_at": "2026-02-07T20:45:09.612512+00:00"
+      }
+    ],
+    "customer_families": [
+      {
+        "id": "25193298-a3db-4ddc-92d7-34f260d8d53c",
+        "name": "زبائن VIP",
+        "description": "زبائن مميزون",
+        "customer_count": 0,
+        "created_at": "2026-02-07T14:44:29.838970+00:00"
+      }
+    ],
+    "supplier_families": [
+      {
+        "id": "80498783-9917-4c97-af2b-5fd1e08f60ec",
+        "name": "موردون محليون",
+        "description": "الموردون من الجزائر",
+        "supplier_count": 0,
+        "created_at": "2026-02-07T14:44:29.915091+00:00"
+      }
+    ],
+    "daily_sessions": [
+      {
+        "id": "0d45cd92-be60-452c-9473-fa8b4f0c16c1",
+        "opening_cash": 5000.0,
+        "closing_cash": 5500.0,
+        "opened_at": "2025-12-01T09:00:00.000Z",
+        "closed_at": "2025-12-01T18:00:00.000Z",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "حصة اختبارية",
+        "created_by": "Test User"
+      },
+      {
+        "id": "0c7f96ee-6d9b-4d0d-ad70-9e1c0a81c676",
+        "opening_cash": 5000.0,
+        "closing_cash": 5500.0,
+        "opened_at": "2026-02-07T14:48:35.535512",
+        "closed_at": "2026-02-07T14:48:35.625140",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "Test session cleanup",
+        "created_by": "Test User"
+      },
+      {
+        "id": "e029d527-3bb8-4671-8fdf-38067c67c98b",
+        "opening_cash": 3000.0,
+        "closing_cash": 3500.0,
+        "opened_at": "2026-02-07T14:48:35.961562",
+        "closed_at": "2026-02-07T14:48:35.999818",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "Test close session",
+        "created_by": "Test User"
+      },
+      {
+        "id": "58b95013-86d6-42c2-b238-dc426e7e507f",
+        "opening_cash": 5000.0,
+        "closing_cash": 5000.0,
+        "opened_at": "2026-02-07T14:50:30.745Z",
+        "closed_at": "2026-02-07T14:50:34.045Z",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "",
+        "created_by": "Test User"
+      },
+      {
+        "id": "adf439d1-1a3c-4b26-87f3-17e71f9f4dba",
+        "user_id": "1f56433c-21d5-42e2-9742-6ac5c6c08db1",
+        "user_name": "Test User",
+        "opening_cash": 1000.0,
+        "closing_cash": 1050.0,
+        "opened_at": "2026-01-09T09:00:00Z",
+        "closed_at": "2026-01-09T18:30:00Z",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "Owner closing own session",
+        "created_by": "Test User"
+      },
+      {
+        "id": "31785675-5cf9-4573-a455-ce623a32b0ee",
+        "user_id": "d77dad7c-3acd-4db3-b7fd-b4977e5e85a9",
+        "user_name": "Test Employee",
+        "opening_cash": 500.0,
+        "closing_cash": 500.0,
+        "opened_at": "2026-01-09T09:30:00Z",
+        "closed_at": "2026-01-09T18:00:00Z",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "Admin closing employee session",
+        "created_by": "Test Employee"
+      },
+      {
+        "id": "d4380571-24ca-4aad-a5e1-546e9bb9a89d",
+        "user_id": "1f56433c-21d5-42e2-9742-6ac5c6c08db1",
+        "user_name": "Test User",
+        "opening_cash": 5000.0,
+        "closing_cash": 3500.0,
+        "opened_at": "2026-02-07T15:17:19.000Z",
+        "closed_at": "2026-02-07T15:17:19.000Z",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "اختبار العجز",
+        "created_by": "Test User"
+      },
+      {
+        "id": "3f99aae7-b150-47a0-b7d2-6a9cbcc2dd99",
+        "user_id": "1f56433c-21d5-42e2-9742-6ac5c6c08db1",
+        "user_name": "Test User",
+        "opening_cash": 3000.0,
+        "closing_cash": 4200.0,
+        "opened_at": "2026-02-07T15:17:36.000Z",
+        "closed_at": "2026-02-07T15:17:36.000Z",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "اختبار الفائض",
+        "created_by": "Test User"
+      },
+      {
+        "id": "d093591d-7585-409d-86fb-115ed5ae6a05",
+        "user_id": "1f56433c-21d5-42e2-9742-6ac5c6c08db1",
+        "user_name": "Test User",
+        "opening_cash": 2000.0,
+        "closing_cash": 1400.0,
+        "opened_at": "2026-02-07T15:23:18.000Z",
+        "closed_at": "2026-02-07T15:23:19.000Z",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "اختبار الحد الجديد",
+        "created_by": "Test User"
+      },
+      {
+        "id": "35b09a82-5f31-40b4-b3dc-80ad93512614",
+        "user_id": "6cca1463-7e76-4cb0-82f7-f8de1463cb83",
+        "user_name": "Nouacer Amine",
+        "opening_cash": 5000.0,
+        "closing_cash": 0.0,
+        "opened_at": "2026-02-07T18:48:01.991Z",
+        "closed_at": "2026-02-07T19:12:41.705Z",
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "closed",
+        "notes": "",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "99c0a569-6dfd-4869-859b-60d07fc023f4",
+        "user_id": "1f56433c-21d5-42e2-9742-6ac5c6c08db1",
+        "user_name": "Test User",
+        "opening_cash": 5000.0,
+        "closing_cash": null,
+        "opened_at": "2026-02-07T18:54:04.792Z",
+        "closed_at": null,
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "open",
+        "notes": "",
+        "created_by": "Test User"
+      },
+      {
+        "id": "416c794b-1ca9-4db3-9f5c-eaf12ec57281",
+        "user_id": "6cca1463-7e76-4cb0-82f7-f8de1463cb83",
+        "user_name": "Nouacer Amine",
+        "opening_cash": 1.0,
+        "closing_cash": null,
+        "opened_at": "2026-02-07T20:18:41.197Z",
+        "closed_at": null,
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "open",
+        "notes": "",
+        "created_by": "Nouacer Amine"
+      },
+      {
+        "id": "3649162e-843f-4fa8-b3b1-59422513d38e",
+        "user_id": "afd66d62-60d5-4e8e-b017-12ff1d50d7df",
+        "user_name": "Test User",
+        "opening_cash": 0.0,
+        "closing_cash": null,
+        "opened_at": "2026-02-07T21:52:49Z",
+        "closed_at": null,
+        "total_sales": 0,
+        "cash_sales": 0,
+        "credit_sales": 0,
+        "sales_count": 0,
+        "status": "open",
+        "notes": "",
+        "created_by": "Test User"
+      }
+    ],
+    "expenses": [
+      {
+        "title": "إيجار المحل",
+        "category": "rent",
+        "amount": 50000.0,
+        "date": "2026-02-08",
+        "notes": "إيجار شهري",
+        "recurring": true,
+        "recurring_period": "monthly",
+        "reminder_days_before": 3,
+        "id": "0739ff05-888b-4d85-930d-de4f5143619a",
+        "created_at": "2026-02-07T19:50:36.213347+00:00",
+        "created_by": "1f56433c-21d5-42e2-9742-6ac5c6c08db1"
+      },
+      {
+        "title": "فاتورة الكهرباء",
+        "category": "utilities",
+        "amount": 15000.0,
+        "date": "2026-02-07",
+        "notes": "فاتورة شهرية",
+        "recurring": true,
+        "recurring_period": "monthly",
+        "reminder_days_before": 7,
+        "id": "d15a7408-05a5-4b54-9d44-06b8326ec764",
+        "created_at": "2026-02-07T19:51:39.503587+00:00",
+        "created_by": "1f56433c-21d5-42e2-9742-6ac5c6c08db1"
+      },
+      {
+        "title": "توصيل أسبوعي",
+        "category": "transport",
+        "amount": 5000.0,
+        "date": "2026-02-07T19:55:24.975581+00:00",
+        "notes": "توصيل البضائع",
+        "recurring": true,
+        "recurring_period": "weekly",
+        "reminder_days_before": 7,
+        "id": "72df9033-86ca-4ea1-a71e-10ccd6862f8b",
+        "created_at": "2026-02-07T19:51:58.765856+00:00",
+        "created_by": "1f56433c-21d5-42e2-9742-6ac5c6c08db1",
+        "last_paid_at": "2026-02-07T19:55:24.975590+00:00",
+        "updated_at": "2026-02-07T19:55:24.975593+00:00"
+      }
+    ]
+  }
+}
