@@ -140,7 +140,7 @@ export default function ProductsPage() {
         {/* Search & Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
                   {language === 'ar' ? 'طريقة العرض:' : 'Affichage:'}
@@ -174,6 +174,30 @@ export default function ProductsPage() {
                     <LayoutGrid className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+              
+              {/* Sort Controls */}
+              <div className="flex items-center gap-2">
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-[150px]">
+                    <ArrowUpDown className="h-4 w-4 me-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name">{language === 'ar' ? 'الاسم' : 'Nom'}</SelectItem>
+                    <SelectItem value="price">{language === 'ar' ? 'السعر' : 'Prix'}</SelectItem>
+                    <SelectItem value="stock">{language === 'ar' ? 'المخزون' : 'Stock'}</SelectItem>
+                    <SelectItem value="purchase_price">{language === 'ar' ? 'سعر الشراء' : 'Prix achat'}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  title={sortOrder === 'asc' ? 'تصاعدي' : 'تنازلي'}
+                >
+                  {sortOrder === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+                </Button>
               </div>
             </div>
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
