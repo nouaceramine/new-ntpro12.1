@@ -110,6 +110,7 @@ export default function SettingsPage() {
     role: 'seller'
   });
   const [addingUser, setAddingUser] = useState(false);
+  const [showNewUserPassword, setShowNewUserPassword] = useState(false);
   
   // Password Change
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -118,6 +119,17 @@ export default function SettingsPage() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [userPermissions, setUserPermissions] = useState({});
   const [savingPermissions, setSavingPermissions] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  
+  // Edit User
+  const [showEditUserDialog, setShowEditUserDialog] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editUserData, setEditUserData] = useState({
+    name: '',
+    email: '',
+    role: ''
+  });
+  const [savingEditUser, setSavingEditUser] = useState(false);
   
   // USB SIM Settings
   const [usbSettings, setUsbSettings] = useState({
