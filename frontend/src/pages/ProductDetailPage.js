@@ -392,6 +392,195 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
+        {/* Price Warnings */}
+        {priceWarnings.length > 0 && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-red-700 mb-2">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="font-semibold">{language === 'ar' ? 'تحذيرات الأسعار' : 'Alertes prix'}</span>
+              </div>
+              <ul className="space-y-1">
+                {priceWarnings.map((warning, idx) => (
+                  <li key={idx} className="text-red-600 text-sm flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4" />
+                    {warning.message}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Product History Section */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                {language === 'ar' ? 'سجل المنتج' : 'Historique produit'}
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={fetchHistoryData} disabled={historyLoading}>
+                <RefreshCw className={`h-4 w-4 me-2 ${historyLoading ? 'animate-spin' : ''}`} />
+                {language === 'ar' ? 'تحميل السجل' : 'Charger'}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="purchases" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="purchases" className="gap-2">
+                  <Truck className="h-4 w-4" />
+                  {language === 'ar' ? 'المشتريات' : 'Achats'} ({purchaseHistory.length})
+                </TabsTrigger>
+                <TabsTrigger value="sales" className="gap-2">
+                  <ShoppingBag className="h-4 w-4" />
+                  {language === 'ar' ? 'المبيعات' : 'Ventes'} ({salesHistory.length})
+                </TabsTrigger>
+                <TabsTrigger value="prices" className="gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  {language === 'ar' ? 'الأسعار' : 'Prix'} ({priceHistory.length})
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Purchase History */}
+              <TabsContent value="purchases">
+                {purchaseHistory.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Truck className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>{language === 'ar' ? 'لا توجد مشتريات سابقة' : 'Aucun achat'}</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                        <TableHead>{language === 'ar' ? 'المورد' : 'Fournisseur'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'سعر الوحدة' : 'Prix unit.'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'المجموع' : 'Total'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {purchaseHistory.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="text-sm">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3 text-muted-foreground" />
+                              {new Date(item.date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR')}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{item.supplier_name}</p>
+                              {item.supplier_phone && (
+                                <p className="text-xs text-muted-foreground" dir="ltr">{item.supplier_phone}</p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center font-medium">{item.quantity}</TableCell>
+                          <TableCell className="text-center">{item.unit_price?.toFixed(2)} {t.currency}</TableCell>
+                          <TableCell className="text-center font-semibold">{item.total?.toFixed(2)} {t.currency}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </TabsContent>
+
+              {/* Sales History */}
+              <TabsContent value="sales">
+                {salesHistory.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ShoppingBag className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>{language === 'ar' ? 'لا توجد مبيعات سابقة' : 'Aucune vente'}</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                        <TableHead>{language === 'ar' ? 'العميل' : 'Client'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'المجموع' : 'Total'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {salesHistory.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="text-sm">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3 text-muted-foreground" />
+                              {new Date(item.date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR')}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3 text-muted-foreground" />
+                              {item.customer_name}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center font-medium">{item.quantity}</TableCell>
+                          <TableCell className="text-center">{item.unit_price?.toFixed(2)} {t.currency}</TableCell>
+                          <TableCell className="text-center font-semibold">{item.total?.toFixed(2)} {t.currency}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </TabsContent>
+
+              {/* Price History */}
+              <TabsContent value="prices">
+                {priceHistory.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>{language === 'ar' ? 'لا توجد تغييرات في الأسعار' : 'Aucun changement de prix'}</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                        <TableHead>{language === 'ar' ? 'نوع السعر' : 'Type'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'السعر القديم' : 'Ancien'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'السعر الجديد' : 'Nouveau'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'التغيير' : 'Change'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {priceHistory.map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell className="text-sm">
+                            {new Date(item.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR')}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {item.price_type === 'purchase_price' ? (language === 'ar' ? 'شراء' : 'Achat') :
+                               item.price_type === 'retail_price' ? (language === 'ar' ? 'تجزئة' : 'Détail') :
+                               item.price_type === 'wholesale_price' ? (language === 'ar' ? 'جملة' : 'Gros') :
+                               item.price_type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">{item.old_price?.toFixed(2)} {t.currency}</TableCell>
+                          <TableCell className="text-center font-medium">{item.new_price?.toFixed(2)} {t.currency}</TableCell>
+                          <TableCell className="text-center">
+                            <span className={`flex items-center justify-center gap-1 ${item.change_percent > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {item.change_percent > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                              {item.change_percent > 0 ? '+' : ''}{item.change_percent}%
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
         {/* Delete Confirmation Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
