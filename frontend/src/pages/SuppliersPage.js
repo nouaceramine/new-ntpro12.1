@@ -23,23 +23,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import { toast } from 'sonner';
-import { Truck, Plus, Search, Edit, Trash2, Phone, Mail, MapPin } from 'lucide-react';
+import { Truck, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Users } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function SuppliersPage() {
-  const { t, isRTL } = useLanguage();
+  const { t, language, isRTL } = useLanguage();
   
   const [suppliers, setSuppliers] = useState([]);
+  const [supplierFamilies, setSupplierFamilies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', phone: '', email: '', address: '', notes: ''
+    name: '', phone: '', email: '', address: '', notes: '', family_id: ''
   });
+
+  // Family dialog
+  const [familyDialogOpen, setFamilyDialogOpen] = useState(false);
+  const [newFamilyName, setNewFamilyName] = useState('');
+  const [savingFamily, setSavingFamily] = useState(false);
 
   const fetchSuppliers = async () => {
     try {
