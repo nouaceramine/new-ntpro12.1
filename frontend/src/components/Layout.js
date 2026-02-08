@@ -63,6 +63,13 @@ const getAIContext = (pathname) => {
   return 'general';
 };
 
+// Icon mapping for dynamic sidebar
+const iconMap = {
+  LayoutDashboard, Package, ShoppingCart, Truck, Users, CreditCard, Wallet,
+  BarChart3, Settings, Bell, Wrench, Receipt, FolderTree, Warehouse,
+  ClipboardList, QrCode, DollarSign, ShoppingBag, Clock, Smartphone, Store, Shield, Key, Award, Zap
+};
+
 export const Layout = ({ children }) => {
   const { t, language, toggleLanguage, isRTL } = useLanguage();
   const { user, logout, isAdmin } = useAuth();
@@ -83,6 +90,7 @@ export const Layout = ({ children }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [customSidebarOrder, setCustomSidebarOrder] = useState(null);
 
   // Listen for PWA install prompt
   useEffect(() => {
