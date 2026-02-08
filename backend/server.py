@@ -1073,6 +1073,26 @@ async def update_product(product_id: str, updates: ProductUpdate, admin: dict = 
     update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
+    # Log price changes
+    price_fields = ["purchase_price", "wholesale_price", "retail_price"]
+    product_name = product.get("name_ar") or product.get("name_en", "")
+    for price_field in price_fields:
+        if price_field in update_data:
+            old_price = product.get(price_field, 0)
+            new_price = update_data[price_field]
+            if old_price != new_price:
+                await log_price_change(
+                    product_id=product_id,
+                    product_name=product_name,
+                    old_price=old_price,
+                    new_price=new_price,
+                    price_type=price_field,
+                    changed_by=admin["id"],
+                    changed_by_name=admin.get("name", ""),
+                    source="manual",
+                    notes=""
+                )
+    
     # Update family name if family_id changed
     if "family_id" in update_data and update_data["family_id"]:
         family = await db.product_families.find_one({"id": update_data["family_id"]}, {"_id": 0, "name_ar": 1})
