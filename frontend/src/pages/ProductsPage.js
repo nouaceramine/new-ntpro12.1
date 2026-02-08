@@ -13,7 +13,10 @@ import {
   Plus, 
   Search,
   X,
-  Filter
+  Filter,
+  Grid3X3,
+  List,
+  LayoutGrid
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -27,6 +30,12 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [modelFilter, setModelFilter] = useState(searchParams.get('model') || '');
+  const [viewMode, setViewMode] = useState(localStorage.getItem('productsViewMode') || 'grid'); // grid, list, compact
+
+  const changeViewMode = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('productsViewMode', mode);
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
