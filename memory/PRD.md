@@ -787,6 +787,10 @@ POST /api/upload/image - رفع صورة للمنتج
 | **تحذير السعر** | ✅ | ProductDetailPage.js (Lines 111-129) |
 | **خيارات إيصال POS** | ✅ | POSPage.js, SettingsPage.js |
 | **سجل مبيعات POS** | ✅ | POSPage.js (Previous Sales Dialog) |
+| **عرض/إخفاء كلمة المرور** | ✅ | LoginPage, RegisterPage, TenantLoginPage, SettingsPage, SaasAdminPage |
+| **تصنيف المشترك** | ✅ | SaasAdminPage.js (retailer, wholesaler, distributor) |
+| **إدارة المستخدمين الكاملة** | ✅ | SettingsPage.js (Edit, Delete, Permissions) |
+| **القائمة الجانبية الكاملة** | ✅ | AuthContext.js, Layout.js (isAdmin includes super_admin) |
 
 ---
 
