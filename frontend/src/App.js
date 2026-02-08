@@ -52,6 +52,7 @@ import RepairReceptionPage from "./pages/RepairReceptionPage";
 import RepairTrackingPage from "./pages/RepairTrackingPage";
 import SparePartsPage from "./pages/SparePartsPage";
 import ExpensesPage from "./pages/ExpensesPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false }) => {
