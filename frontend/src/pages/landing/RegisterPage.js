@@ -331,14 +331,21 @@ export default function RegisterPage() {
                       <Input
                         id="password"
                         name="password"
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={handleChange}
                         placeholder="6 أحرف على الأقل"
-                        className="pr-10"
+                        className="pr-10 pl-10"
                         required
                         minLength={6}
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
                     </div>
                   </div>
 
@@ -349,13 +356,20 @@ export default function RegisterPage() {
                       <Input
                         id="confirm_password"
                         name="confirm_password"
-                        type="password"
+                        type={showConfirmPassword ? 'text' : 'password'}
                         value={formData.confirm_password}
                         onChange={handleChange}
                         placeholder="أعد إدخال كلمة المرور"
-                        className="pr-10"
+                        className="pr-10 pl-10"
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
                     </div>
                   </div>
 
