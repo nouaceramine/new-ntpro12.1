@@ -304,6 +304,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/settings/sidebar"
+        element={
+          <ProtectedRoute adminOnly>
+            <SidebarSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/notifications"
         element={
           <ProtectedRoute>
