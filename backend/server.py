@@ -8074,6 +8074,7 @@ async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_ad
         "features_override": {},
         "limits_override": {},
         "notes": "",
+        "business_type": tenant.business_type or "retailer",
         "created_at": now.isoformat()
     }
     
