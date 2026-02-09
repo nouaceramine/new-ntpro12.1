@@ -928,6 +928,20 @@ export default function POSPage() {
     <Layout>
       <div className="space-y-4" data-testid="pos-page">
         
+        {/* Sale Code Badge */}
+        {saleCode && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="font-mono text-lg px-3 py-1 bg-primary/10 border-primary">
+                {saleCode}
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                {language === 'ar' ? 'رقم البيع' : 'N° vente'}
+              </span>
+            </div>
+          </div>
+        )}
+        
         {/* No Session Warning */}
         {!checkingSession && !hasOpenSession && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-center justify-between">
