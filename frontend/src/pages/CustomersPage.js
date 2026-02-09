@@ -650,105 +650,67 @@ export default function CustomersPage() {
           </div>
         )}
 
-        {/* Add/Edit Dialog */}
+        {/* Add/Edit Dialog - Compact Design */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{selectedCustomer ? t.editCustomer : t.addCustomer}</DialogTitle>
+          <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-lg">{selectedCustomer ? t.editCustomer : t.addCustomer}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Basic Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t.customerName} *</Label>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {/* Name & Phone & Email */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.customerName} *</Label>
                   <Input
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
+                    className="h-9"
                     data-testid="customer-name-input"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>{t.phone}</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.phone}</Label>
                   <Input
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     dir="ltr"
+                    className="h-9"
                     data-testid="customer-phone-input"
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t.email}</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.email}</Label>
                   <Input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="h-9"
                     data-testid="customer-email-input"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'تاريخ الميلاد' : 'Date de naissance'}</Label>
-                  <Input
-                    type="date"
-                    value={formData.birthdate}
-                    onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
-                  />
-                </div>
               </div>
-
-              {/* ID and Business Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'رقم الهوية' : 'N° Identité'}</Label>
-                  <Input
-                    value={formData.national_id}
-                    onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
-                    placeholder={language === 'ar' ? 'رقم بطاقة الهوية' : 'Numéro CIN'}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'السجل التجاري' : 'Registre Commerce'}</Label>
-                  <Input
-                    value={formData.commercial_register}
-                    onChange={(e) => setFormData({ ...formData, commercial_register: e.target.value })}
-                    placeholder={language === 'ar' ? 'رقم السجل التجاري' : 'N° RC'}
-                  />
-                </div>
-              </div>
-
-              {/* Customer Type and Limits */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'تصنيف الزبون' : 'Type client'}</Label>
+              
+              {/* Type, Discount, Debt Limit, Birthdate */}
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'التصنيف' : 'Type'}</Label>
                   <Select
                     value={formData.customer_type}
                     onValueChange={(value) => setFormData({ ...formData, customer_type: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="new">{language === 'ar' ? 'جديد' : 'Nouveau'}</SelectItem>
                       <SelectItem value="regular">{language === 'ar' ? 'عادي' : 'Régulier'}</SelectItem>
-                      <SelectItem value="vip">{language === 'ar' ? 'VIP' : 'VIP'}</SelectItem>
+                      <SelectItem value="vip">VIP</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'حد الدين الأقصى' : 'Limite crédit'}</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={formData.max_debt_limit}
-                    onChange={(e) => setFormData({ ...formData, max_debt_limit: e.target.value })}
-                    placeholder={language === 'ar' ? 'بدون حد' : 'Sans limite'}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'خصم خاص %' : 'Remise spéciale %'}</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'خصم %' : 'Remise %'}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -756,80 +718,123 @@ export default function CustomersPage() {
                     value={formData.special_discount}
                     onChange={(e) => setFormData({ ...formData, special_discount: e.target.value })}
                     placeholder="0"
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'حد الدين' : 'Limite'}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.max_debt_limit}
+                    onChange={(e) => setFormData({ ...formData, max_debt_limit: e.target.value })}
+                    placeholder={language === 'ar' ? '∞' : '∞'}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'الميلاد' : 'Naissance'}</Label>
+                  <Input
+                    type="date"
+                    value={formData.birthdate}
+                    onChange={(e) => setFormData({ ...formData, birthdate: e.target.value })}
+                    className="h-9"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>{t.address}</Label>
-                <Input
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  data-testid="customer-address-input"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t.notes}</Label>
-                <Textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  rows={2}
-                />
-              </div>
-              
-              {/* Customer Family */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>{language === 'ar' ? 'عائلة الزبون' : 'Famille client'}</Label>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setFamilyDialogOpen(true)}
-                    className="gap-1 h-7 text-xs"
-                  >
-                    <Plus className="h-3 w-3" />
-                    {language === 'ar' ? 'إضافة عائلة' : 'Ajouter'}
-                  </Button>
+              {/* ID, Commercial Register, Family */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'رقم الهوية' : 'N° ID'}</Label>
+                  <Input
+                    value={formData.national_id}
+                    onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
+                    className="h-9"
+                  />
                 </div>
-                <Select
-                  value={formData.family_id || "none"}
-                  onValueChange={(value) => setFormData({ ...formData, family_id: value === "none" ? "" : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={language === 'ar' ? 'اختر عائلة' : 'Choisir famille'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{language === 'ar' ? 'بدون عائلة' : 'Sans famille'}</SelectItem>
-                    {customerFamilies.map(family => (
-                      <SelectItem key={family.id} value={family.id}>
-                        {family.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'السجل التجاري' : 'RC'}</Label>
+                  <Input
+                    value={formData.commercial_register}
+                    onChange={(e) => setFormData({ ...formData, commercial_register: e.target.value })}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">{language === 'ar' ? 'العائلة' : 'Famille'}</Label>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setFamilyDialogOpen(true)}
+                      className="h-5 px-1 text-xs"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Select
+                    value={formData.family_id || "none"}
+                    onValueChange={(value) => setFormData({ ...formData, family_id: value === "none" ? "" : value })}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder={language === 'ar' ? 'اختر' : 'Choisir'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{language === 'ar' ? 'بدون' : 'Sans'}</SelectItem>
+                      {customerFamilies.map(family => (
+                        <SelectItem key={family.id} value={family.id}>
+                          {family.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              {/* Address & Notes */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.address}</Label>
+                  <Input
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="h-9"
+                    data-testid="customer-address-input"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.notes}</Label>
+                  <Input
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setDialogOpen(false)}>
                   {t.cancel}
                 </Button>
                 {!selectedCustomer && (
                   <Button 
                     type="button" 
                     variant="outline"
+                    size="sm"
                     onClick={() => handleSubmit(null, true)}
                     disabled={saving}
-                    className="gap-2"
+                    className="gap-1"
                     data-testid="save-and-new-customer-btn"
                   >
                     <PlusCircle className="h-4 w-4" />
-                    {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer nouveau'}
+                    {language === 'ar' ? 'حفظ وجديد' : 'Sauver + Nouveau'}
                   </Button>
                 )}
-                <Button type="submit" disabled={saving} className="gap-2" data-testid="save-customer-btn">
+                <Button type="submit" size="sm" disabled={saving} className="gap-1" data-testid="save-customer-btn">
                   <Save className="h-4 w-4" />
-                  {saving ? (language === 'ar' ? 'جاري الحفظ...' : 'Enregistrement...') : t.save}
+                  {saving ? '...' : t.save}
                 </Button>
               </div>
             </form>
