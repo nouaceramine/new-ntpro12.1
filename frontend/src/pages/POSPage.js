@@ -786,11 +786,13 @@ export default function POSPage() {
       const wilaya = wilayas.find(w => w.code === selectedWilaya);
       
       const saleData = {
+        code: saleCode,  // كود البيع
         customer_id: selectedCustomer,
         warehouse_id: selectedWarehouse || null,
         items: cart.map(item => ({
           product_id: item.is_custom ? null : item.product_id,
           product_name: item.product_name,
+          barcode: item.barcode || '',  // إضافة الباركود للوصل
           quantity: item.quantity,
           unit_price: item.unit_price,
           discount: item.discount || 0,
