@@ -309,6 +309,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/system-updates"
+        element={
+          <ProtectedRoute adminOnly>
+            <SystemUpdatesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/recharge"
         element={
           <ProtectedRoute>
