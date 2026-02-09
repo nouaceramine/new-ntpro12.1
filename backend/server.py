@@ -1111,7 +1111,7 @@ async def generate_invoice_number(prefix: str) -> str:
     return f"{prefix}-{today}-{count['seq']:04d}"
 
 async def init_cash_boxes():
-    """Initialize default cash boxes if they don't exist"""
+    """Initialize default cash boxes if they don't exist, or update existing ones with name_fr"""
     boxes = [
         {"id": "cash", "name": "الصندوق النقدي", "name_fr": "Caisse", "type": "cash", "balance": 0},
         {"id": "bank", "name": "الحساب البنكي", "name_fr": "Compte bancaire", "type": "bank", "balance": 0},
@@ -1123,6 +1123,12 @@ async def init_cash_boxes():
         if not existing:
             box["updated_at"] = datetime.now(timezone.utc).isoformat()
             await db.cash_boxes.insert_one(box)
+        elif not existing.get("name_fr"):
+            # Update existing box with name_fr if missing
+            await db.cash_boxes.update_one(
+                {"id": box["id"]},
+                {"$set": {"name_fr": box["name_fr"]}}
+            )
 
 # ============ AUTH ROUTES ============
 
