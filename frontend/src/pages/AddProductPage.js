@@ -392,31 +392,23 @@ export default function AddProductPage() {
                   <div>
                     <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageUpload} className="hidden" id="ocr-upload" />
                     <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={ocrLoading} className="gap-2" data-testid="ocr-upload-btn">
-                      {ocrLoading ? <><Loader2 className="h-4 w-4 animate-spin" />{t.extractingModels}</> : <><Camera className="h-4 w-4" />{t.extractFromImage}</>}
+                      {ocrLoading ? <><Loader2 className="h-3 w-3 animate-spin" />{t.extractingModels}</> : <><Camera className="h-3 w-3" />{t.extractFromImage}</>}
                     </Button>
                   </div>
                 </div>
-                <Textarea id="compatible_models" name="compatible_models" value={formData.compatible_models} onChange={handleChange} required placeholder="iPhone 15 Pro, Samsung Galaxy S24" rows={3} data-testid="product-models-input" />
-                <p className="text-sm text-muted-foreground">{t.compatibleModelsHelp}</p>
+                <Textarea name="compatible_models" value={formData.compatible_models} onChange={handleChange} placeholder="iPhone 15 Pro, Samsung Galaxy S24" rows={2} className="text-sm" data-testid="product-models-input" />
               </div>
 
               {/* Submit */}
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <Link to="/products">
-                  <Button type="button" variant="outline">{t.cancel}</Button>
+                  <Button type="button" variant="outline" size="sm">{t.cancel}</Button>
                 </Link>
-                <Button 
-                  type="button" 
-                  variant="outline"
-                  onClick={() => handleSubmit(null, true)} 
-                  disabled={loading} 
-                  className="gap-2" 
-                  data-testid="save-and-new-btn"
-                >
+                <Button type="button" variant="outline" size="sm" onClick={() => handleSubmit(null, true)} disabled={loading} className="gap-1" data-testid="save-and-new-btn">
                   <PlusCircle className="h-4 w-4" />
-                  {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer nouveau'}
+                  {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer'}
                 </Button>
-                <Button type="submit" disabled={loading} className="gap-2" data-testid="save-product-btn">
+                <Button type="submit" size="sm" disabled={loading} className="gap-1" data-testid="save-product-btn">
                   <Save className="h-4 w-4" />
                   {loading && !saveAndNew ? t.loading : t.save}
                 </Button>
@@ -428,35 +420,22 @@ export default function AddProductPage() {
 
       {/* Add Family Dialog */}
       <Dialog open={showAddFamilyDialog} onOpenChange={setShowAddFamilyDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t.addNewFamily}</DialogTitle>
+        <DialogContent className="max-w-xs">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-lg">{t.addNewFamily}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>{t.familyNameAr}</Label>
-              <Input
-                value={newFamily.name_ar}
-                onChange={(e) => setNewFamily({...newFamily, name_ar: e.target.value})}
-                dir="rtl"
-                placeholder={language === 'ar' ? 'مثال: واقيات الشاشة' : 'e.g., Screen Protectors'}
-              />
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">{t.familyNameAr}</Label>
+              <Input className="h-9" value={newFamily.name_ar} onChange={(e) => setNewFamily({...newFamily, name_ar: e.target.value})} dir="rtl" />
             </div>
-            <div>
-              <Label>{t.familyNameEn}</Label>
-              <Input
-                value={newFamily.name_en}
-                onChange={(e) => setNewFamily({...newFamily, name_en: e.target.value})}
-                placeholder="e.g., Screen Protectors"
-              />
+            <div className="space-y-1">
+              <Label className="text-xs">{t.familyNameEn}</Label>
+              <Input className="h-9" value={newFamily.name_en} onChange={(e) => setNewFamily({...newFamily, name_en: e.target.value})} />
             </div>
-            <div className="flex gap-2 pt-2">
-              <Button variant="outline" onClick={() => setShowAddFamilyDialog(false)} className="flex-1">
-                {t.cancel}
-              </Button>
-              <Button onClick={handleAddFamily} disabled={addingFamily} className="flex-1">
-                {addingFamily ? t.loading : t.save}
-              </Button>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" size="sm" onClick={() => setShowAddFamilyDialog(false)} className="flex-1">{t.cancel}</Button>
+              <Button size="sm" onClick={handleAddFamily} disabled={addingFamily} className="flex-1">{addingFamily ? t.loading : t.save}</Button>
             </div>
           </div>
         </DialogContent>
