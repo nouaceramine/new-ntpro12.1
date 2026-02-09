@@ -151,10 +151,8 @@ export default function ProductFamiliesPage() {
   const resetForm = () => {
     setEditingFamily(null);
     setForm({
-      name_en: '',
-      name_ar: '',
-      description_en: '',
-      description_ar: '',
+      name: '',
+      description: '',
       parent_id: ''
     });
   };
