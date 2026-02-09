@@ -805,6 +805,7 @@ export default function RepairTrackingPage() {
                       setProductSearch(e.target.value);
                       searchProducts(e.target.value);
                     }}
+                    onFocus={() => searchProducts(productSearch)}
                   />
                 </div>
                 
