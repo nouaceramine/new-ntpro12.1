@@ -223,7 +223,7 @@ export default function CashManagementPage() {
                   <SelectContent>
                     {cashBoxes.map(box => (
                       <SelectItem key={box.id} value={box.id} disabled={box.id === transferData.to_box}>
-                        {box.name} ({box.balance.toFixed(2)} {t.currency})
+                        {language === 'fr' ? (box.name_fr || box.name) : box.name} ({box.balance.toFixed(2)} {t.currency})
                       </SelectItem>
                     ))}
                   </SelectContent>
