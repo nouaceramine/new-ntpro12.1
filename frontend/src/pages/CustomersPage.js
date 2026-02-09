@@ -321,10 +321,35 @@ export default function CustomersPage() {
             <h1 className="text-3xl font-bold tracking-tight">{t.customers}</h1>
             <p className="text-muted-foreground mt-1">{customers.length} {t.customers}</p>
           </div>
-          <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="gap-2" data-testid="add-customer-btn">
-            <Plus className="h-5 w-5" />
-            {t.addCustomer}
-          </Button>
+          <div className="flex gap-2 items-center">
+            <ExportPrintButtons
+              data={sortedCustomers.map(c => ({
+                code: c.code || '-',
+                name: c.name,
+                phone: c.phone || '-',
+                email: c.email || '-',
+                type: c.customer_type === 'vip' ? 'VIP' : c.customer_type === 'new' ? (language === 'ar' ? 'جديد' : 'Nouveau') : (language === 'ar' ? 'عادي' : 'Régulier'),
+                total_purchases: (c.total_purchases || 0).toLocaleString(),
+                balance: (c.balance || 0).toLocaleString()
+              }))}
+              columns={[
+                { key: 'code', label: language === 'ar' ? 'الكود' : 'Code' },
+                { key: 'name', label: language === 'ar' ? 'الاسم' : 'Nom' },
+                { key: 'phone', label: language === 'ar' ? 'الهاتف' : 'Téléphone' },
+                { key: 'email', label: language === 'ar' ? 'البريد' : 'Email' },
+                { key: 'type', label: language === 'ar' ? 'النوع' : 'Type' },
+                { key: 'total_purchases', label: language === 'ar' ? 'المشتريات' : 'Achats' },
+                { key: 'balance', label: language === 'ar' ? 'الرصيد' : 'Solde' }
+              ]}
+              filename={`customers_${new Date().toISOString().split('T')[0]}`}
+              title={language === 'ar' ? 'قائمة الزبائن' : 'Liste des Clients'}
+              language={language}
+            />
+            <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="gap-2" data-testid="add-customer-btn">
+              <Plus className="h-5 w-5" />
+              {t.addCustomer}
+            </Button>
+          </div>
         </div>
 
         {/* Search & Filter */}
