@@ -1439,9 +1439,9 @@ async def generate_article_code():
     """Generate next article code (AR00001, AR00002, etc.)"""
     # Find the highest article code
     pipeline = [
-        {"$match": {"article_code": {"$regex": "^AR\\d{5}$"}}},
+        {"$match": {"article_code": {"$regex": "^AR\\d{4}$"}}},
         {"$project": {
-            "num": {"$toInt": {"$substr": ["$article_code", 2, 5]}}
+            "num": {"$toInt": {"$substr": ["$article_code", 2, 4]}}
         }},
         {"$sort": {"num": -1}},
         {"$limit": 1}
@@ -1454,121 +1454,121 @@ async def generate_article_code():
     else:
         next_num = 1
     
-    article_code = f"AR{str(next_num).zfill(5)}"
+    article_code = f"AR{str(next_num).zfill(4)}"
     return {"article_code": article_code}
 
 # ============ CODE GENERATORS FOR ALL ENTITIES ============
 
 @api_router.get("/customers/generate-code")
 async def generate_customer_code():
-    """Generate next customer code (CL00001, CL00002, etc.)"""
+    """Generate next customer code (CL0001, CL0002, etc.)"""
     pipeline = [
-        {"$match": {"code": {"$regex": "^CL\\d{5}$"}}},
-        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 5]}}}},
+        {"$match": {"code": {"$regex": "^CL\\d{4}$"}}},
+        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 4]}}}},
         {"$sort": {"num": -1}},
         {"$limit": 1}
     ]
     result = await db.customers.aggregate(pipeline).to_list(1)
     next_num = result[0]["num"] + 1 if result else 1
-    return {"code": f"CL{str(next_num).zfill(5)}"}
+    return {"code": f"CL{str(next_num).zfill(4)}"}
 
 @api_router.get("/suppliers/generate-code")
 async def generate_supplier_code():
-    """Generate next supplier code (FR00001, FR00002, etc.)"""
-    year = datetime.now().year
+    """Generate next supplier code (FR0001/26, etc.)"""
+    year = str(datetime.now().year)[2:]  # 2026 -> 26
     pipeline = [
-        {"$match": {"code": {"$regex": f"^FR\\d{{5}}/{year}$"}}},
-        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 5]}}}},
+        {"$match": {"code": {"$regex": f"^FR\\d{{4}}/{year}$"}}},
+        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 4]}}}},
         {"$sort": {"num": -1}},
         {"$limit": 1}
     ]
     result = await db.suppliers.aggregate(pipeline).to_list(1)
     next_num = result[0]["num"] + 1 if result else 1
-    return {"code": f"FR{str(next_num).zfill(5)}/{year}"}
+    return {"code": f"FR{str(next_num).zfill(4)}/{year}"}
 
 @api_router.get("/sales/generate-code")
 async def generate_sale_code():
-    """Generate next sale code (BV00001/2026, etc.)"""
-    year = datetime.now().year
+    """Generate next sale code (BV0001/26, etc.)"""
+    year = str(datetime.now().year)[2:]  # 2026 -> 26
     pipeline = [
-        {"$match": {"code": {"$regex": f"^BV\\d{{5}}/{year}$"}}},
-        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 5]}}}},
+        {"$match": {"code": {"$regex": f"^BV\\d{{4}}/{year}$"}}},
+        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 4]}}}},
         {"$sort": {"num": -1}},
         {"$limit": 1}
     ]
     result = await db.sales.aggregate(pipeline).to_list(1)
     next_num = result[0]["num"] + 1 if result else 1
-    return {"code": f"BV{str(next_num).zfill(5)}/{year}"}
+    return {"code": f"BV{str(next_num).zfill(4)}/{year}"}
 
 @api_router.get("/purchases/generate-code")
 async def generate_purchase_code():
-    """Generate next purchase code (AC00001/2026, etc.)"""
-    year = datetime.now().year
+    """Generate next purchase code (AC0001/26, etc.)"""
+    year = str(datetime.now().year)[2:]  # 2026 -> 26
     pipeline = [
-        {"$match": {"code": {"$regex": f"^AC\\d{{5}}/{year}$"}}},
-        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 5]}}}},
+        {"$match": {"code": {"$regex": f"^AC\\d{{4}}/{year}$"}}},
+        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 4]}}}},
         {"$sort": {"num": -1}},
         {"$limit": 1}
     ]
     result = await db.purchases.aggregate(pipeline).to_list(1)
     next_num = result[0]["num"] + 1 if result else 1
-    return {"code": f"AC{str(next_num).zfill(5)}/{year}"}
+    return {"code": f"AC{str(next_num).zfill(4)}/{year}"}
 
 @api_router.get("/expenses/generate-code")
 async def generate_expense_code():
-    """Generate next expense code (CH00001/2026, etc.)"""
-    year = datetime.now().year
+    """Generate next expense code (CH0001/26, etc.)"""
+    year = str(datetime.now().year)[2:]  # 2026 -> 26
     pipeline = [
-        {"$match": {"code": {"$regex": f"^CH\\d{{5}}/{year}$"}}},
-        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 5]}}}},
+        {"$match": {"code": {"$regex": f"^CH\\d{{4}}/{year}$"}}},
+        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 4]}}}},
         {"$sort": {"num": -1}},
         {"$limit": 1}
     ]
     result = await db.expenses.aggregate(pipeline).to_list(1)
     next_num = result[0]["num"] + 1 if result else 1
-    return {"code": f"CH{str(next_num).zfill(5)}/{year}"}
+    return {"code": f"CH{str(next_num).zfill(4)}/{year}"}
 
 @api_router.get("/inventory-sessions/generate-code")
 async def generate_inventory_code():
-    """Generate next inventory code (IN00001/2026, etc.)"""
-    year = datetime.now().year
+    """Generate next inventory code (IN0001/26, etc.)"""
+    year = str(datetime.now().year)[2:]  # 2026 -> 26
     pipeline = [
-        {"$match": {"code": {"$regex": f"^IN\\d{{5}}/{year}$"}}},
-        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 5]}}}},
+        {"$match": {"code": {"$regex": f"^IN\\d{{4}}/{year}$"}}},
+        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 4]}}}},
         {"$sort": {"num": -1}},
         {"$limit": 1}
     ]
     result = await db.inventory_sessions.aggregate(pipeline).to_list(1)
     next_num = result[0]["num"] + 1 if result else 1
-    return {"code": f"IN{str(next_num).zfill(5)}/{year}"}
+    return {"code": f"IN{str(next_num).zfill(4)}/{year}"}
 
 @api_router.get("/price-updates/generate-code")
 async def generate_price_update_code():
-    """Generate next price update code (MT00001/2026, etc.)"""
-    year = datetime.now().year
+    """Generate next price update code (MT0001/26, etc.)"""
+    year = str(datetime.now().year)[2:]  # 2026 -> 26
     pipeline = [
-        {"$match": {"code": {"$regex": f"^MT\\d{{5}}/{year}$"}}},
-        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 5]}}}},
+        {"$match": {"code": {"$regex": f"^MT\\d{{4}}/{year}$"}}},
+        {"$project": {"num": {"$toInt": {"$substr": ["$code", 2, 4]}}}},
         {"$sort": {"num": -1}},
         {"$limit": 1}
     ]
     result = await db.price_update_logs.aggregate(pipeline).to_list(1)
     next_num = result[0]["num"] + 1 if result else 1
-    return {"code": f"MT{str(next_num).zfill(5)}/{year}"}
+    return {"code": f"MT{str(next_num).zfill(4)}/{year}"}
 
 @api_router.get("/daily-sessions/generate-code")
 async def generate_session_code():
-    """Generate next session code (S0001/2026, etc.)"""
-    year = datetime.now().year
+    """Generate next session code (S001/26, etc.)"""
+    year = str(datetime.now().year)[2:]  # 2026 -> 26
     pipeline = [
-        {"$match": {"code": {"$regex": f"^S\\d{{4}}/{year}$"}}},
-        {"$project": {"num": {"$toInt": {"$substr": ["$code", 1, 4]}}}},
+        {"$match": {"code": {"$regex": f"^S\\d{{3}}/{year}$"}}},
+        {"$project": {"num": {"$toInt": {"$substr": ["$code", 1, 3]}}}},
         {"$sort": {"num": -1}},
         {"$limit": 1}
     ]
     result = await db.daily_sessions.aggregate(pipeline).to_list(1)
     next_num = result[0]["num"] + 1 if result else 1
-    return {"code": f"S{str(next_num).zfill(4)}/{year}"}
+    return {"code": f"S{str(next_num).zfill(3)}/{year}"}
 
 @api_router.get("/products/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: str):
