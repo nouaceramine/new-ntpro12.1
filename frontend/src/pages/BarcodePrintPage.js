@@ -166,7 +166,8 @@ export default function BarcodePrintPage() {
     const matchesSearch = searchQuery === '' || 
       p.name_ar?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.name_en?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.barcode?.toLowerCase().includes(searchQuery.toLowerCase());
+      p.barcode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.article_code?.toLowerCase().includes(searchQuery.toLowerCase());  // البحث بكود المنتج
     
     const matchesFamily = selectedFamily === 'all' || p.family_id === selectedFamily;
     
