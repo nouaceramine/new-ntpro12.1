@@ -232,6 +232,7 @@ export default function AddProductPage() {
         quantity: 0,
         image_url: formData.image_url,
         barcode: formData.barcode,
+        article_code: formData.article_code,
         family_id: formData.family_id || null,
         compatible_models: formData.compatible_models.split(',').map(m => m.trim()).filter(m => m),
         low_stock_threshold: parseInt(formData.low_stock_threshold) || 10,
@@ -247,9 +248,29 @@ export default function AddProductPage() {
       toast.success(t.productAdded);
       
       if (createNew) {
-        resetForm();
+        // Generate new article code for next product
+        try {
+          const codeResponse = await axios.get(`${API}/products/generate-article-code`);
+          setFormData(prev => ({
+            ...prev,
+            name: '',
+            description_en: '',
+            description_ar: '',
+            wholesale_price: '0',
+            super_wholesale_price: '0',
+            retail_price: '0',
+            image_url: '',
+            barcode: '',
+            article_code: codeResponse.data.article_code,
+            family_id: '',
+            compatible_models: '',
+            low_stock_threshold: '10'
+          }));
+        } catch {
+          resetForm();
+        }
         // Focus on first input
-        document.querySelector('[data-testid="product-name-en-input"]')?.focus();
+        document.querySelector('[data-testid="product-name-input"]')?.focus();
       } else {
         navigate('/products');
       }
