@@ -218,14 +218,20 @@ export default function SuppliersPage() {
       email: supplier.email,
       address: supplier.address,
       notes: supplier.notes,
-      family_id: supplier.family_id || ''
+      family_id: supplier.family_id || '',
+      code: supplier.code || ''
     });
     setDialogOpen(true);
   };
 
-  const resetForm = () => {
+  const resetForm = async () => {
     setSelectedSupplier(null);
-    setFormData({ name: '', phone: '', email: '', address: '', notes: '', family_id: '' });
+    try {
+      const response = await axios.get(`${API}/suppliers/generate-code`);
+      setFormData({ name: '', phone: '', email: '', address: '', notes: '', family_id: '', code: response.data.code });
+    } catch (error) {
+      setFormData({ name: '', phone: '', email: '', address: '', notes: '', family_id: '', code: '' });
+    }
   };
 
   return (
