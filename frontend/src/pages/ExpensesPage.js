@@ -180,16 +180,25 @@ export default function ExpensesPage() {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      category: '',
-      amount: '',
-      date: new Date().toISOString().split('T')[0],
-      notes: '',
-      recurring: false,
-      recurring_period: 'monthly'
-    });
+  const resetForm = async () => {
+    try {
+      const response = await axios.get(`${API}/expenses/generate-code`);
+      setFormData({
+        title: '',
+        category: '',
+        amount: '',
+        date: new Date().toISOString().split('T')[0],
+        notes: '',
+        code: response.data.code,  // كود التكلفة التلقائي
+        recurring: false,
+        recurring_period: 'monthly'
+      });
+    } catch (error) {
+      setFormData({
+        title: '', category: '', amount: '', date: new Date().toISOString().split('T')[0],
+        notes: '', code: '', recurring: false, recurring_period: 'monthly'
+      });
+    }
     setEditingExpense(null);
   };
 
@@ -201,6 +210,7 @@ export default function ExpensesPage() {
       amount: expense.amount.toString(),
       date: expense.date?.split('T')[0] || new Date().toISOString().split('T')[0],
       notes: expense.notes || '',
+      code: expense.code || '',
       recurring: expense.recurring || false,
       recurring_period: expense.recurring_period || 'monthly'
     });
