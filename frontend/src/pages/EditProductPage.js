@@ -206,11 +206,11 @@ export default function EditProductPage() {
               </div>
 
               {/* Submit */}
-              <div className="flex justify-end gap-4 pt-4">
+              <div className="flex justify-end gap-2 pt-2">
                 <Link to={`/products/${id}`}>
-                  <Button type="button" variant="outline">{t.cancel}</Button>
+                  <Button type="button" variant="outline" size="sm">{t.cancel}</Button>
                 </Link>
-                <Button type="submit" disabled={loading} className="gap-2" data-testid="update-product-btn">
+                <Button type="submit" size="sm" disabled={loading} className="gap-1" data-testid="update-product-btn">
                   <Save className="h-4 w-4" />
                   {loading ? t.loading : t.save}
                 </Button>
