@@ -165,6 +165,7 @@ export default function POSPage() {
   const [editingShortcutIndex, setEditingShortcutIndex] = useState(null);
   const [shortcutColor, setShortcutColor] = useState('#e5e7eb');
   const [shortcutProductId, setShortcutProductId] = useState('');
+  const [shortcutSearchQuery, setShortcutSearchQuery] = useState('');
   
   // Drag and Drop states
   const [draggedIndex, setDraggedIndex] = useState(null);
