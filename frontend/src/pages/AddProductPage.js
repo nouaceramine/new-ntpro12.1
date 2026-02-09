@@ -324,7 +324,26 @@ export default function AddProductPage() {
               {/* Prices - 4 columns with super wholesale */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="purchase_price">{t.purchasePrice} ({t.currency}) *</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="purchase_price">{t.purchasePrice} ({t.currency}) *</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-1.5">
+                            <Calculator className={`h-4 w-4 ${useAveragePrice ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <Switch 
+                              checked={useAveragePrice} 
+                              onCheckedChange={setUseAveragePrice}
+                              className="scale-75"
+                            />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{language === 'ar' ? 'حساب السعر المتوسط' : 'Calcul prix moyen'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input id="purchase_price" name="purchase_price" type="number" step="0.01" min="0" value={formData.purchase_price} onChange={handleChange} className="h-11" data-testid="purchase-price-input" />
                 </div>
                 <div className="space-y-2">
