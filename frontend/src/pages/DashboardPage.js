@@ -40,6 +40,12 @@ export default function DashboardPage() {
     month: { total: 0, count: 0 },
     year: { total: 0, count: 0 }
   });
+  const [profitStats, setProfitStats] = useState({
+    monthly_revenue: 0,
+    monthly_expenses: 0,
+    monthly_profit: 0,
+    monthly_purchase_cost: 0
+  });
   const [recentProducts, setRecentProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
