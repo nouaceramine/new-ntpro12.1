@@ -140,66 +140,69 @@ export default function EditProductPage() {
               </div>
 
               {/* Prices */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label>{t.purchasePrice} ({t.currency})</Label>
-                  <Input name="purchase_price" type="number" step="0.01" min="0" value={formData.purchase_price} onChange={handleChange} className="h-11" />
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">{t.purchasePrice}</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-1">
+                            <Calculator className={`h-3 w-3 ${useAveragePrice ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <Switch checked={useAveragePrice} onCheckedChange={setUseAveragePrice} className="scale-[0.6]" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{language === 'ar' ? 'حساب السعر المتوسط' : 'Calcul prix moyen'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <Input name="purchase_price" type="number" step="0.01" min="0" value={formData.purchase_price} onChange={handleChange} className="h-9" />
                 </div>
-                <div className="space-y-2">
-                  <Label>{t.wholesalePrice} ({t.currency})</Label>
-                  <Input name="wholesale_price" type="number" step="0.01" min="0" value={formData.wholesale_price} onChange={handleChange} className="h-11" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'سوبر الجملة' : 'Super gros'}</Label>
+                  <Input name="super_wholesale_price" type="number" step="0.01" min="0" value={formData.super_wholesale_price} onChange={handleChange} className="h-9" />
                 </div>
-                <div className="space-y-2">
-                  <Label>{t.retailPrice} ({t.currency})</Label>
-                  <Input name="retail_price" type="number" step="0.01" min="0" value={formData.retail_price} onChange={handleChange} className="h-11" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.wholesalePrice}</Label>
+                  <Input name="wholesale_price" type="number" step="0.01" min="0" value={formData.wholesale_price} onChange={handleChange} className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.retailPrice}</Label>
+                  <Input name="retail_price" type="number" step="0.01" min="0" value={formData.retail_price} onChange={handleChange} className="h-9" />
                 </div>
               </div>
 
-              {/* Quantity (Read-only), Threshold & Barcode */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
+              {/* Quantity, Threshold, Barcode */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs flex items-center gap-1">
                     {t.quantity}
-                    <span className="text-xs text-muted-foreground">
-                      ({language === 'ar' ? 'للقراءة فقط' : 'lecture seule'})
-                    </span>
+                    <span className="text-[10px] text-muted-foreground">({language === 'ar' ? 'للقراءة' : 'lecture'})</span>
                   </Label>
-                  <Input 
-                    name="quantity" 
-                    type="number" 
-                    value={formData.quantity} 
-                    readOnly 
-                    disabled
-                    className="h-11 bg-muted cursor-not-allowed" 
-                  />
-                  <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <Info className="h-3 w-3" />
-                    {language === 'ar' 
-                      ? 'يتم تحديث المخزون من خلال المشتريات فقط'
-                      : 'Stock mis à jour via les achats uniquement'}
-                  </p>
+                  <Input name="quantity" type="number" value={formData.quantity} readOnly disabled className="h-9 bg-muted cursor-not-allowed" />
                 </div>
-                <div className="space-y-2">
-                  <Label>{t.lowStockThreshold}</Label>
-                  <Input name="low_stock_threshold" type="number" min="1" value={formData.low_stock_threshold} onChange={handleChange} className="h-11" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.lowStockThreshold}</Label>
+                  <Input name="low_stock_threshold" type="number" min="1" value={formData.low_stock_threshold} onChange={handleChange} className="h-9" />
                 </div>
-                <div className="space-y-2">
-                  <Label>{t.barcode}</Label>
-                  <Input name="barcode" value={formData.barcode} onChange={handleChange} className="h-11" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.barcode}</Label>
+                  <Input name="barcode" value={formData.barcode} onChange={handleChange} className="h-9" />
                 </div>
               </div>
 
-              {/* Image URL */}
-              <div className="space-y-2">
-                <Label>{t.imageUrl}</Label>
-                <Input name="image_url" type="url" value={formData.image_url} onChange={handleChange} className="h-11" />
-              </div>
-
-              {/* Compatible Models */}
-              <div className="space-y-2">
-                <Label>{t.compatibleModels}</Label>
-                <Textarea name="compatible_models" value={formData.compatible_models} onChange={handleChange} rows={3} />
-                <p className="text-sm text-muted-foreground">{t.compatibleModelsHelp}</p>
+              {/* Image & Models */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.imageUrl}</Label>
+                  <Input name="image_url" type="url" value={formData.image_url} onChange={handleChange} className="h-9" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.compatibleModels}</Label>
+                  <Input name="compatible_models" value={formData.compatible_models} onChange={handleChange} className="h-9" placeholder={language === 'ar' ? 'مفصولة بفواصل' : 'séparés par virgules'} />
+                </div>
               </div>
 
               {/* Submit */}
