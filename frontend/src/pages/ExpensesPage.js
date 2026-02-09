@@ -530,45 +530,49 @@ export default function ExpensesPage() {
           </CardContent>
         </Card>
 
-        {/* Add/Edit Dialog */}
+        {/* Add/Edit Dialog - Compact Design */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-lg">
                 {editingExpense 
                   ? (language === 'ar' ? 'تعديل التكلفة' : 'Modifier la dépense')
                   : (language === 'ar' ? 'إضافة تكلفة جديدة' : 'Ajouter une dépense')}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>{language === 'ar' ? 'الفئة *' : 'Catégorie *'}</Label>
-                <Select value={formData.category} onValueChange={(v) => setFormData(p => ({ ...p, category: v }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={language === 'ar' ? 'اختر الفئة' : 'Choisir'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {EXPENSE_CATEGORIES.map(cat => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {language === 'ar' ? cat.name_ar : cat.name_fr}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="space-y-3">
+              {/* Category & Description */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'الفئة *' : 'Catégorie *'}</Label>
+                  <Select value={formData.category} onValueChange={(v) => setFormData(p => ({ ...p, category: v }))}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder={language === 'ar' ? 'اختر' : 'Choisir'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXPENSE_CATEGORIES.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {language === 'ar' ? cat.name_ar : cat.name_fr}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'الوصف *' : 'Description *'}</Label>
+                  <Input
+                    value={formData.title}
+                    onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
+                    placeholder={language === 'ar' ? 'وصف' : 'Description'}
+                    className="h-9"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>{language === 'ar' ? 'الوصف *' : 'Description *'}</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
-                  placeholder={language === 'ar' ? 'وصف التكلفة' : 'Description'}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'المبلغ *' : 'Montant *'}</Label>
+              {/* Amount & Date */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'المبلغ *' : 'Montant *'}</Label>
                   <Input
                     type="number"
                     min="0"
@@ -576,77 +580,75 @@ export default function ExpensesPage() {
                     value={formData.amount}
                     onChange={(e) => setFormData(p => ({ ...p, amount: e.target.value }))}
                     placeholder="0.00"
+                    className="h-9"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>{language === 'ar' ? 'التاريخ' : 'Date'}</Label>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'التاريخ' : 'Date'}</Label>
                   <Input
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData(p => ({ ...p, date: e.target.value }))}
+                    className="h-9"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
-                <Textarea
+              {/* Notes */}
+              <div className="space-y-1">
+                <Label className="text-xs">{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
+                <Input
                   value={formData.notes}
                   onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
-                  placeholder={language === 'ar' ? 'ملاحظات إضافية...' : 'Notes...'}
-                  rows={2}
+                  placeholder={language === 'ar' ? 'ملاحظات...' : 'Notes...'}
+                  className="h-9"
                 />
               </div>
 
-              {/* Recurring Options */}
-              <div className="p-4 border rounded-lg space-y-4">
+              {/* Recurring Options - Compact */}
+              <div className="p-3 border rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-base">{language === 'ar' ? 'تكلفة متكررة' : 'Dépense récurrente'}</Label>
-                    <p className="text-xs text-muted-foreground">
-                      {language === 'ar' ? 'تفعيل التذكير التلقائي' : 'Activer le rappel automatique'}
-                    </p>
-                  </div>
+                  <Label className="text-sm">{language === 'ar' ? 'تكلفة متكررة' : 'Récurrente'}</Label>
                   <input
                     type="checkbox"
                     checked={formData.recurring}
                     onChange={(e) => setFormData(p => ({ ...p, recurring: e.target.checked }))}
-                    className="w-5 h-5 accent-primary"
+                    className="w-4 h-4 accent-primary"
                   />
                 </div>
                 
                 {formData.recurring && (
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-2">
-                      <Label>{language === 'ar' ? 'فترة التكرار' : 'Période'}</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">{language === 'ar' ? 'الفترة' : 'Période'}</Label>
                       <Select 
                         value={formData.recurring_period} 
                         onValueChange={(v) => setFormData(p => ({ ...p, recurring_period: v }))}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="weekly">{language === 'ar' ? 'أسبوعي' : 'Hebdomadaire'}</SelectItem>
+                          <SelectItem value="weekly">{language === 'ar' ? 'أسبوعي' : 'Hebdo'}</SelectItem>
                           <SelectItem value="monthly">{language === 'ar' ? 'شهري' : 'Mensuel'}</SelectItem>
                           <SelectItem value="yearly">{language === 'ar' ? 'سنوي' : 'Annuel'}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label>{language === 'ar' ? 'التذكير قبل (أيام)' : 'Rappel avant (jours)'}</Label>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{language === 'ar' ? 'تذكير قبل' : 'Rappel'}</Label>
                       <Select 
                         value={formData.reminder_days_before?.toString()} 
                         onValueChange={(v) => setFormData(p => ({ ...p, reminder_days_before: parseInt(v) }))}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1">1 {language === 'ar' ? 'يوم' : 'jour'}</SelectItem>
-                          <SelectItem value="3">3 {language === 'ar' ? 'أيام' : 'jours'}</SelectItem>
-                          <SelectItem value="5">5 {language === 'ar' ? 'أيام' : 'jours'}</SelectItem>
-                          <SelectItem value="7">7 {language === 'ar' ? 'أيام' : 'jours'}</SelectItem>
+                          <SelectItem value="1">1 {language === 'ar' ? 'يوم' : 'j'}</SelectItem>
+                          <SelectItem value="3">3 {language === 'ar' ? 'أيام' : 'j'}</SelectItem>
+                          <SelectItem value="5">5 {language === 'ar' ? 'أيام' : 'j'}</SelectItem>
+                          <SelectItem value="7">7 {language === 'ar' ? 'أيام' : 'j'}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -654,11 +656,11 @@ export default function ExpensesPage() {
                 )}
               </div>
 
-              <div className="flex gap-2 pt-4">
-                <Button variant="outline" className="flex-1" onClick={() => setShowAddDialog(false)}>
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowAddDialog(false)}>
                   {language === 'ar' ? 'إلغاء' : 'Annuler'}
                 </Button>
-                <Button className="flex-1" onClick={handleSubmit}>
+                <Button size="sm" className="flex-1" onClick={handleSubmit}>
                   {editingExpense 
                     ? (language === 'ar' ? 'تحديث' : 'Mettre à jour')
                     : (language === 'ar' ? 'إضافة' : 'Ajouter')}
