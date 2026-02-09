@@ -106,11 +106,38 @@ export default function SalesHistoryPage() {
             <h1 className="text-3xl font-bold tracking-tight">{t.sales}</h1>
             <p className="text-muted-foreground mt-1">{sales.length} {t.sales}</p>
           </div>
-          <Link to="/pos">
-            <Button className="gap-2" data-testid="new-sale-btn">
-              {t.newSale}
-            </Button>
-          </Link>
+          <div className="flex gap-2 items-center">
+            <ExportPrintButtons
+              data={sales.map(s => ({
+                invoice: s.invoice_number || '-',
+                customer: s.customer_name || (language === 'ar' ? 'زبون مجهول' : 'Client anonyme'),
+                total: s.total?.toFixed(2) || '0',
+                paid: s.paid_amount?.toFixed(2) || '0',
+                remaining: s.remaining?.toFixed(2) || '0',
+                payment: s.payment_method === 'cash' ? (language === 'ar' ? 'نقدي' : 'Espèces') : 
+                         s.payment_method === 'bank' ? (language === 'ar' ? 'بنكي' : 'Banque') : 
+                         (language === 'ar' ? 'محفظة' : 'Portefeuille'),
+                date: formatDate(s.created_at)
+              }))}
+              columns={[
+                { key: 'invoice', label: language === 'ar' ? 'رقم الفاتورة' : 'N° Facture' },
+                { key: 'customer', label: language === 'ar' ? 'الزبون' : 'Client' },
+                { key: 'total', label: language === 'ar' ? 'الإجمالي' : 'Total' },
+                { key: 'paid', label: language === 'ar' ? 'المدفوع' : 'Payé' },
+                { key: 'remaining', label: language === 'ar' ? 'الباقي' : 'Restant' },
+                { key: 'payment', label: language === 'ar' ? 'طريقة الدفع' : 'Paiement' },
+                { key: 'date', label: language === 'ar' ? 'التاريخ' : 'Date' }
+              ]}
+              filename={`sales_${new Date().toISOString().split('T')[0]}`}
+              title={language === 'ar' ? 'سجل المبيعات' : 'Historique des Ventes'}
+              language={language}
+            />
+            <Link to="/pos">
+              <Button className="gap-2" data-testid="new-sale-btn">
+                {t.newSale}
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Sales List */}
