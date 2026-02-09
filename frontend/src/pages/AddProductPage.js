@@ -76,17 +76,27 @@ export default function AddProductPage() {
     }
   }, [formData.name]);
 
-  // Generate article code on page load
+  // Generate article code and barcode on page load
   useEffect(() => {
-    const generateArticleCode = async () => {
+    const generateCodes = async () => {
       try {
-        const response = await axios.get(`${API}/products/generate-article-code`);
-        setFormData(prev => ({ ...prev, article_code: response.data.article_code }));
+        // Generate article code first
+        const codeResponse = await axios.get(`${API}/products/generate-article-code`);
+        const articleCode = codeResponse.data.article_code;
+        
+        // Generate barcode based on article code
+        const barcodeResponse = await axios.get(`${API}/products/generate-barcode?article_code=${articleCode}`);
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          article_code: articleCode,
+          barcode: barcodeResponse.data.barcode
+        }));
       } catch (error) {
-        console.error('Error generating article code:', error);
+        console.error('Error generating codes:', error);
       }
     };
-    generateArticleCode();
+    generateCodes();
   }, []);
 
   useEffect(() => {
