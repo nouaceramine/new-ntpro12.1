@@ -76,12 +76,13 @@ export default function EditProductPage() {
         description_ar: formData.description_ar,
         purchase_price: parseFloat(formData.purchase_price) || 0,
         wholesale_price: parseFloat(formData.wholesale_price) || 0,
+        super_wholesale_price: parseFloat(formData.super_wholesale_price) || 0,
         retail_price: parseFloat(formData.retail_price) || 0,
-        // الكمية لا تُرسل - تُحدّث فقط من خلال عمليات الشراء
         image_url: formData.image_url,
         barcode: formData.barcode,
         compatible_models: formData.compatible_models.split(',').map(m => m.trim()).filter(m => m),
-        low_stock_threshold: parseInt(formData.low_stock_threshold) || 10
+        low_stock_threshold: parseInt(formData.low_stock_threshold) || 10,
+        use_average_price: useAveragePrice
       };
 
       await axios.put(`${API}/products/${id}`, payload);
