@@ -59,6 +59,8 @@ import SalesPermissionsPage from "./pages/SalesPermissionsPage";
 import PriceHistoryPage from "./pages/PriceHistoryPage";
 import SmartReportsPage from "./pages/SmartReportsPage";
 import EmployeeAlertsPage from "./pages/EmployeeAlertsPage";
+import FeaturesPage from "./pages/FeaturesPage";
+import PermissionsPage from "./pages/PermissionsPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
