@@ -6528,6 +6528,7 @@ class DailySessionCreate(BaseModel):
     opening_cash: float
     opened_at: str
     status: str = "open"
+    code: Optional[str] = ""  # كود الحصة S0001
 
 class DailySessionClose(BaseModel):
     closing_cash: float
@@ -6538,6 +6539,7 @@ class DailySessionClose(BaseModel):
 class DailySessionResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    code: str = ""  # كود الحصة
     user_id: str = ""
     user_name: str = ""
     opening_cash: float
