@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 
 class ScreenGuardPOSAPITester:
-    def __init__(self, base_url="https://pos-crash-fix.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://add-pages-upgrade.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.admin_token = None
         self.user_token = None
