@@ -2505,29 +2505,90 @@ export default function POSPage() {
 
       {/* Shortcut Edit Dialog */}
       <Dialog open={showShortcutDialog} onOpenChange={setShowShortcutDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>
               {language === 'ar' ? `تعديل الاختصار ${editingShortcutIndex !== null ? editingShortcutIndex + 1 : ''}` : `Modifier raccourci ${editingShortcutIndex !== null ? editingShortcutIndex + 1 : ''}`}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            {/* Product Selection */}
+            {/* Product Search & Selection */}
             <div>
-              <Label>{language === 'ar' ? 'اختر المنتج' : 'Sélectionner produit'}</Label>
-              <Select value={shortcutProductId || 'none'} onValueChange={(v) => setShortcutProductId(v === 'none' ? '' : v)}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder={language === 'ar' ? 'اختر منتج...' : 'Choisir produit...'} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  <SelectItem value="none">{language === 'ar' ? 'بدون منتج' : 'Aucun produit'}</SelectItem>
-                  {products.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name_ar || p.name_en} - {p.retail_price?.toFixed(2)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>{language === 'ar' ? 'ابحث واختر المنتج' : 'Rechercher et sélectionner'}</Label>
+              <div className="relative mt-1">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={language === 'ar' ? 'ابحث بالاسم أو الباركود...' : 'Rechercher par nom ou code-barres...'}
+                  value={shortcutSearchQuery || ''}
+                  onChange={(e) => setShortcutSearchQuery(e.target.value)}
+                  className="pe-10"
+                  autoFocus
+                />
+              </div>
+              
+              {/* Products List */}
+              <div className="mt-2 max-h-48 overflow-y-auto border rounded-lg">
+                {/* Clear selection option */}
+                <button
+                  onClick={() => {
+                    setShortcutProductId('');
+                    toast.success(language === 'ar' ? 'تم إزالة المنتج' : 'Produit supprimé');
+                  }}
+                  className={`w-full p-2 text-right hover:bg-muted transition-colors flex items-center gap-2 border-b ${!shortcutProductId ? 'bg-primary/10' : ''}`}
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{language === 'ar' ? 'بدون منتج (مسح)' : 'Aucun produit (effacer)'}</span>
+                </button>
+                
+                {products
+                  .filter(p => {
+                    if (!shortcutSearchQuery) return true;
+                    const query = shortcutSearchQuery.toLowerCase();
+                    return (p.name_ar?.toLowerCase().includes(query) || 
+                            p.name_en?.toLowerCase().includes(query) ||
+                            p.barcode?.toLowerCase().includes(query) ||
+                            p.article_code?.toLowerCase().includes(query));
+                  })
+                  .slice(0, 20)
+                  .map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        setShortcutProductId(p.id);
+                        // Auto-save when product is selected
+                        if (editingShortcutIndex !== null) {
+                          const newShortcuts = [...productShortcuts];
+                          newShortcuts[editingShortcutIndex] = {
+                            productId: p.id,
+                            color: shortcutColor
+                          };
+                          saveShortcuts(newShortcuts);
+                          setShowShortcutDialog(false);
+                          setShortcutSearchQuery('');
+                          toast.success(language === 'ar' ? `تم إضافة ${p.name_ar || p.name_en}` : `${p.name_en || p.name_ar} ajouté`);
+                          playSuccessBeep();
+                        }
+                      }}
+                      className={`w-full p-2 text-right hover:bg-muted transition-colors flex items-center justify-between ${shortcutProductId === p.id ? 'bg-primary/10' : ''}`}
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="text-sm font-medium">{p.name_ar || p.name_en}</span>
+                        <span className="text-xs text-muted-foreground">{p.article_code} • {p.retail_price?.toFixed(2)} {language === 'ar' ? 'دج' : 'DA'}</span>
+                      </div>
+                      {shortcutProductId === p.id && <Check className="h-4 w-4 text-primary" />}
+                    </button>
+                  ))
+                }
+                {products.filter(p => {
+                  if (!shortcutSearchQuery) return true;
+                  const query = shortcutSearchQuery.toLowerCase();
+                  return (p.name_ar?.toLowerCase().includes(query) || p.name_en?.toLowerCase().includes(query));
+                }).length === 0 && (
+                  <div className="p-4 text-center text-muted-foreground text-sm">
+                    {language === 'ar' ? 'لا توجد منتجات' : 'Aucun produit trouvé'}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Color Selection */}
@@ -2546,36 +2607,19 @@ export default function POSPage() {
             </div>
 
             {/* Preview */}
-            <div className="flex items-center justify-center p-4 bg-muted rounded-lg">
+            <div className="flex items-center justify-center p-3 bg-muted rounded-lg">
               <div 
-                className="h-14 w-20 rounded-lg flex items-center justify-center text-white text-xs font-medium"
+                className="h-12 w-16 rounded-lg flex items-center justify-center text-white text-xs font-medium"
                 style={{ backgroundColor: shortcutColor }}
               >
-                {shortcutProductId ? (products.find(p => p.id === shortcutProductId)?.[language === 'ar' ? 'name_ar' : 'name_en']?.substring(0, 10) || '...') : (language === 'ar' ? 'فارغ' : 'Vide')}
+                {shortcutProductId ? (products.find(p => p.id === shortcutProductId)?.name_ar?.substring(0, 8) || products.find(p => p.id === shortcutProductId)?.name_en?.substring(0, 8) || '...') : (language === 'ar' ? 'فارغ' : 'Vide')}
               </div>
             </div>
 
             {/* Actions */}
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowShortcutDialog(false)} className="flex-1">
-                {language === 'ar' ? 'إلغاء' : 'Annuler'}
-              </Button>
-              <Button 
-                onClick={() => {
-                  if (editingShortcutIndex !== null) {
-                    const newShortcuts = [...productShortcuts];
-                    newShortcuts[editingShortcutIndex] = {
-                      productId: shortcutProductId || null,
-                      color: shortcutColor
-                    };
-                    saveShortcuts(newShortcuts);
-                    setShowShortcutDialog(false);
-                    toast.success(language === 'ar' ? 'تم حفظ الاختصار' : 'Raccourci enregistré');
-                  }
-                }}
-                className="flex-1"
-              >
-                {language === 'ar' ? 'حفظ' : 'Enregistrer'}
+              <Button variant="outline" onClick={() => { setShowShortcutDialog(false); setShortcutSearchQuery(''); }} className="flex-1">
+                {language === 'ar' ? 'إغلاق' : 'Fermer'}
               </Button>
             </div>
           </div>
