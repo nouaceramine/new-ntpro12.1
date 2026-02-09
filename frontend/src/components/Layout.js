@@ -316,13 +316,11 @@ export const Layout = ({ children }) => {
         { path: '/cash', icon: Wallet, label: t.cashManagement },
         { path: '/expenses', icon: Receipt, label: language === 'ar' ? 'التكاليف' : 'Dépenses' },
         { path: '/debts', icon: Receipt, label: t.debts },
-        ...(isAdmin ? [
-          { path: '/employees', icon: Users, label: language === 'ar' ? 'الموظفين' : 'Employés' },
-          { path: '/employee-alerts', icon: Bell, label: language === 'ar' ? 'تنبيهات الحدود' : 'Alertes limites' },
-          { path: '/users', icon: Shield, label: language === 'ar' ? 'المستخدمين' : 'Utilisateurs' },
-          { path: '/permissions', icon: Shield, label: language === 'ar' ? 'الصلاحيات' : 'Permissions' },
-          { path: '/settings/sales-permissions', icon: Shield, label: language === 'ar' ? 'صلاحيات المبيعات' : 'Permissions ventes' },
-        ] : []),
+        { path: '/employees', icon: Users, label: language === 'ar' ? 'الموظفين' : 'Employés' },
+        { path: '/employee-alerts', icon: Bell, label: language === 'ar' ? 'تنبيهات الحدود' : 'Alertes limites' },
+        { path: '/users', icon: Shield, label: language === 'ar' ? 'المستخدمين' : 'Utilisateurs' },
+        { path: '/permissions', icon: Shield, label: language === 'ar' ? 'الصلاحيات' : 'Permissions' },
+        { path: '/settings/sales-permissions', icon: Shield, label: language === 'ar' ? 'صلاحيات المبيعات' : 'Permissions ventes' },
       ]
     },
     {
