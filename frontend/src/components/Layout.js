@@ -340,7 +340,6 @@ export const Layout = ({ children }) => {
       items: [
         { path: '/repairs', icon: ClipboardList, label: language === 'ar' ? 'تتبع الصيانة' : 'Suivi réparations' },
         { path: '/repairs/new', icon: Smartphone, label: language === 'ar' ? 'استقبال جهاز' : 'Réception appareil' },
-        { path: '/repairs/parts', icon: Package, label: language === 'ar' ? 'قطع الغيار' : 'Pièces de rechange' },
       ]
     },
     {
