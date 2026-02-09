@@ -2312,6 +2312,19 @@ export default function POSPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Calculator Button - Fixed Position */}
+      <button
+        onClick={() => setShowCalculator(true)}
+        className="fixed bottom-24 left-6 z-40 h-14 w-14 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center"
+        data-testid="calculator-btn"
+        title={language === 'ar' ? 'الآلة الحاسبة' : 'Calculatrice'}
+      >
+        <CalcIcon className="h-6 w-6" />
+      </button>
+
+      {/* Calculator Modal */}
+      <Calculator isOpen={showCalculator} onClose={() => setShowCalculator(false)} />
     </Layout>
   );
 }
