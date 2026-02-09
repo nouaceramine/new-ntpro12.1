@@ -2549,6 +2549,7 @@ async def create_sale(sale: SaleCreate, user: dict = Depends(get_current_user)):
     
     sale_doc = {
         "id": sale_id, "invoice_number": invoice_number,
+        "code": sale.code or "",  # كود البيع
         "customer_id": sale.customer_id, "customer_name": customer_name,
         "items": [item.model_dump() for item in sale.items],
         "subtotal": sale.subtotal, "discount": sale.discount,
