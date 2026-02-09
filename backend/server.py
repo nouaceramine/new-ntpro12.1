@@ -3114,6 +3114,53 @@ async def get_sales_stats(user: dict = Depends(get_current_user)):
         }
     }
 
+
+@api_router.get("/dashboard/profit-stats")
+async def get_profit_stats(user: dict = Depends(get_current_user)):
+    """Get monthly profit statistics (Revenue - Purchase Cost - Expenses)"""
+    now = datetime.now(timezone.utc)
+    month_start = now.strftime("%Y-%m-01")
+    
+    # Monthly sales revenue
+    sales_pipeline = [
+        {"$match": {"created_at": {"$gte": month_start}, "status": {"$ne": "returned"}}},
+        {"$group": {"_id": None, "total": {"$sum": "$total"}}}
+    ]
+    sales_result = await db.sales.aggregate(sales_pipeline).to_list(1)
+    monthly_revenue = sales_result[0]["total"] if sales_result else 0
+    
+    # Monthly purchase cost (from sales items)
+    # Calculate total purchase cost based on sold items
+    sales_items_pipeline = [
+        {"$match": {"created_at": {"$gte": month_start}, "status": {"$ne": "returned"}}},
+        {"$unwind": "$items"},
+        {"$group": {"_id": None, "total_cost": {"$sum": {"$multiply": ["$items.quantity", "$items.purchase_price"]}}}}
+    ]
+    try:
+        sales_cost_result = await db.sales.aggregate(sales_items_pipeline).to_list(1)
+        monthly_purchase_cost = sales_cost_result[0]["total_cost"] if sales_cost_result else 0
+    except:
+        monthly_purchase_cost = 0
+    
+    # Monthly expenses
+    expenses_pipeline = [
+        {"$match": {"date": {"$gte": month_start}}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    expenses_result = await db.expenses.aggregate(expenses_pipeline).to_list(1)
+    monthly_expenses = expenses_result[0]["total"] if expenses_result else 0
+    
+    # Calculate net profit: Revenue - Purchase Cost - Expenses
+    monthly_profit = monthly_revenue - monthly_purchase_cost - monthly_expenses
+    
+    return {
+        "monthly_revenue": monthly_revenue,
+        "monthly_purchase_cost": monthly_purchase_cost,
+        "monthly_expenses": monthly_expenses,
+        "monthly_profit": monthly_profit
+    }
+
+
 @api_router.get("/analytics/sales-chart")
 async def get_sales_chart_data(period: str = "week", admin: dict = Depends(get_admin_user)):
     """Get sales data for charts (daily for week/month, monthly for year)"""
