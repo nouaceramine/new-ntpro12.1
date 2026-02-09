@@ -510,7 +510,10 @@ export default function CustomersPage() {
                           </TableCell>
                           <TableCell className="text-center text-sm text-muted-foreground">
                             {customer.last_purchase_date 
-                              ? new Date(customer.last_purchase_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR')
+                              ? (() => {
+                                  const d = new Date(customer.last_purchase_date);
+                                  return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+                                })()
                               : '-'
                             }
                           </TableCell>
