@@ -578,7 +578,7 @@ export const Layout = ({ children }) => {
                 {!sidebarCollapsed && (
                   <button
                     onClick={() => toggleSection(section.title)}
-                    className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider hover:bg-muted/50 rounded-lg transition-colors"
+                    className="w-full flex items-center justify-between px-3 py-2 text-sm font-bold text-foreground uppercase tracking-wider hover:bg-muted/50 rounded-lg transition-colors"
                   >
                     <div className="flex items-center gap-2">
                       <section.icon className="h-4 w-4" />
