@@ -95,10 +95,8 @@ export default function DashboardPage() {
     { title: t.totalCash, value: `${stats.total_cash?.toFixed(2) || 0} ${t.currency}`, icon: Banknote, color: 'text-blue-600', bgColor: 'bg-blue-100', link: '/cash' },
     { title: t.totalProducts, value: stats.total_products, icon: Package, color: 'text-primary', bgColor: 'bg-primary/10', link: '/products' },
     { title: t.lowStock, value: stats.low_stock_count, icon: AlertTriangle, color: 'text-amber-600', bgColor: 'bg-amber-100', link: '/products?filter=low-stock' },
-    ...(isAdmin ? [
-      { title: t.totalCustomers, value: stats.total_customers, icon: Users, color: 'text-purple-600', bgColor: 'bg-purple-100', link: '/customers' },
-      { title: t.totalSuppliers, value: stats.total_suppliers, icon: Truck, color: 'text-orange-600', bgColor: 'bg-orange-100', link: '/suppliers' }
-    ] : [])
+    { title: t.totalCustomers, value: stats.total_customers, icon: Users, color: 'text-purple-600', bgColor: 'bg-purple-100', link: '/customers' },
+    { title: t.totalSuppliers, value: stats.total_suppliers, icon: Truck, color: 'text-orange-600', bgColor: 'bg-orange-100', link: '/suppliers' }
   ];
 
   if (loading) {
