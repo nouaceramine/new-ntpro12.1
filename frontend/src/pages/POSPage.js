@@ -2399,7 +2399,7 @@ export default function POSPage() {
         <CardHeader className="py-2 px-4">
           <CardTitle className="text-sm flex items-center justify-between">
             <span>{language === 'ar' ? 'اختصارات المنتجات' : 'Raccourcis produits'}</span>
-            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'اضغط مطولاً للتعديل' : 'Appui long pour modifier'}</span>
+            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'اضغط للتعديل أو إضافة منتج' : 'Cliquez pour modifier ou ajouter'}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2">
@@ -2411,12 +2411,20 @@ export default function POSPage() {
                   key={index}
                   onClick={() => {
                     if (product) {
+                      // إذا كان المربع يحتوي على منتج، أضفه للسلة
                       addToCart(product);
                       playSuccessBeep();
+                    } else {
+                      // إذا كان المربع فارغاً، افتح حوار الاختيار
+                      setEditingShortcutIndex(index);
+                      setShortcutColor(shortcut.color || '#e5e7eb');
+                      setShortcutProductId('');
+                      setShowShortcutDialog(true);
                     }
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault();
+                    // النقر بالزر الأيمن يفتح حوار التعديل دائماً
                     setEditingShortcutIndex(index);
                     setShortcutColor(shortcut.color || '#e5e7eb');
                     setShortcutProductId(shortcut.productId || '');
@@ -2427,13 +2435,13 @@ export default function POSPage() {
                     backgroundColor: shortcut.color || '#e5e7eb',
                     borderColor: product ? 'transparent' : '#d1d5db'
                   }}
-                  title={product ? (language === 'ar' ? product.name_ar : product.name_en) : (language === 'ar' ? 'فارغ - اضغط يمين للتعديل' : 'Vide - Clic droit pour modifier')}
+                  title={product ? (language === 'ar' ? `${product.name_ar || product.name_en} - انقر لإضافة, زر يمين للتعديل` : `${product.name_en || product.name_ar} - Clic pour ajouter, clic droit pour modifier`) : (language === 'ar' ? 'انقر لإضافة منتج' : 'Cliquez pour ajouter un produit')}
                   data-testid={`shortcut-${index}`}
                 >
                   {product ? (
                     <>
                       <span className="truncate w-full text-center px-0.5 text-white drop-shadow-sm" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                        {(language === 'ar' ? product.name_ar : product.name_en)?.substring(0, 8)}
+                        {(product.name_ar || product.name_en)?.substring(0, 8)}
                       </span>
                       <span className="text-[8px] text-white/80">{product.retail_price?.toFixed(0)}</span>
                     </>
