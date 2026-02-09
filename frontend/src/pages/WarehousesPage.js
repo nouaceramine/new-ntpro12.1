@@ -47,7 +47,9 @@ import {
   Building2,
   Boxes,
   TrendingUp,
-  Search
+  Search,
+  Grid3X3,
+  List
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -60,6 +62,7 @@ export default function WarehousesPage() {
   const [transfers, setTransfers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('warehouses');
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('warehousesViewMode') || 'grid');
   
   // Dialogs
   const [showAddWarehouse, setShowAddWarehouse] = useState(false);
