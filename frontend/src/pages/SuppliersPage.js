@@ -627,6 +627,19 @@ export default function SuppliersPage() {
                 <Button type="button" variant="outline" size="sm" onClick={() => setDialogOpen(false)}>
                   {t.cancel}
                 </Button>
+                {!selectedSupplier && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleSubmit(null, true)}
+                    className="gap-1"
+                    data-testid="save-and-new-supplier-btn"
+                  >
+                    <Plus className="h-4 w-4" />
+                    {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer'}
+                  </Button>
+                )}
                 <Button type="submit" size="sm" data-testid="save-supplier-btn">{t.save}</Button>
               </div>
             </form>
