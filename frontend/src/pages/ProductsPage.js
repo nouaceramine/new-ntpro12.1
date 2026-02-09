@@ -276,7 +276,11 @@ export default function ProductsPage() {
                   />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium truncate">{language === 'ar' ? product.name_ar : product.name_en}</h3>
-                    <p className="text-sm text-muted-foreground">{product.barcode}</p>
+                    <div className="flex gap-2 text-sm text-muted-foreground">
+                      {product.article_code && <span className="font-mono">{product.article_code}</span>}
+                      {product.article_code && product.barcode && <span>|</span>}
+                      {product.barcode && <span>{product.barcode}</span>}
+                    </div>
                   </div>
                   <div className="text-end">
                     <p className="font-bold">{product.retail_price?.toFixed(2)} {t.currency}</p>
