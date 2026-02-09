@@ -239,6 +239,15 @@ export default function POSPage() {
     }
   };
 
+  const fetchSaleCode = async () => {
+    try {
+      const response = await axios.get(`${API}/sales/generate-code`);
+      setSaleCode(response.data.code);
+    } catch (error) {
+      console.error('Error fetching sale code:', error);
+    }
+  };
+
   const fetchCustomers = async () => {
     try {
       const response = await axios.get(`${API}/customers`);
