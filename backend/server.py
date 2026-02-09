@@ -6693,6 +6693,7 @@ async def create_daily_session(session: DailySessionCreate, user: dict = Depends
     
     session_doc = {
         "id": session_id,
+        "code": session.code or "",  # كود الحصة
         "user_id": user["id"],
         "user_name": user.get("name", ""),
         "opening_cash": session.opening_cash,
