@@ -443,7 +443,8 @@ export default function POSPage() {
     if (selectedFamily !== 'all' && p.family_id !== selectedFamily) {
       return false;
     }
-    if (!searchQuery) return false; // Only show when there's a search query
+    // Show all products if search is focused, filter by query if typing
+    if (!searchQuery) return true; // Show all when no search query
     const query = searchQuery.toLowerCase();
     return (
       p.name_en.toLowerCase().includes(query) ||
