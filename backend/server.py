@@ -562,6 +562,7 @@ class CustomerCreate(BaseModel):
     address: Optional[str] = ""
     notes: Optional[str] = ""
     family_id: Optional[str] = None
+    code: Optional[str] = ""  # كود الزبون CL00001
 
 class CustomerUpdate(BaseModel):
     name: Optional[str] = None
@@ -570,6 +571,7 @@ class CustomerUpdate(BaseModel):
     address: Optional[str] = None
     notes: Optional[str] = None
     family_id: Optional[str] = None
+    code: Optional[str] = None
 
 class CustomerResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -579,6 +581,7 @@ class CustomerResponse(BaseModel):
     email: str
     address: str
     notes: str
+    code: str = ""
     family_id: str = ""
     family_name: str = ""
     total_purchases: float = 0
