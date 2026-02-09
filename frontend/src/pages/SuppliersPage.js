@@ -244,10 +244,35 @@ export default function SuppliersPage() {
             <h1 className="text-3xl font-bold tracking-tight">{t.suppliers}</h1>
             <p className="text-muted-foreground mt-1">{suppliers.length} {t.suppliers}</p>
           </div>
-          <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="gap-2" data-testid="add-supplier-btn">
-            <Plus className="h-5 w-5" />
-            {t.addSupplier}
-          </Button>
+          <div className="flex gap-2 items-center">
+            <ExportPrintButtons
+              data={sortedSuppliers.map(s => ({
+                code: s.code || '-',
+                name: s.name,
+                phone: s.phone || '-',
+                email: s.email || '-',
+                total_purchases: (s.total_purchases || 0).toLocaleString(),
+                balance: (s.balance || 0).toLocaleString(),
+                advance_balance: (s.advance_balance || 0).toLocaleString()
+              }))}
+              columns={[
+                { key: 'code', label: language === 'ar' ? 'الكود' : 'Code' },
+                { key: 'name', label: language === 'ar' ? 'الاسم' : 'Nom' },
+                { key: 'phone', label: language === 'ar' ? 'الهاتف' : 'Téléphone' },
+                { key: 'email', label: language === 'ar' ? 'البريد' : 'Email' },
+                { key: 'total_purchases', label: language === 'ar' ? 'المشتريات' : 'Achats' },
+                { key: 'balance', label: language === 'ar' ? 'الرصيد' : 'Solde' },
+                { key: 'advance_balance', label: language === 'ar' ? 'المتقدم' : 'Avance' }
+              ]}
+              filename={`suppliers_${new Date().toISOString().split('T')[0]}`}
+              title={language === 'ar' ? 'قائمة الموردين' : 'Liste des Fournisseurs'}
+              language={language}
+            />
+            <Button onClick={() => { resetForm(); setDialogOpen(true); }} className="gap-2" data-testid="add-supplier-btn">
+              <Plus className="h-5 w-5" />
+              {t.addSupplier}
+            </Button>
+          </div>
         </div>
 
         {/* Search & Filter */}
