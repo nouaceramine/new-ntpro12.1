@@ -850,7 +850,9 @@ export default function SettingsPage() {
                             u.role === 'super_admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
                             u.role === 'manager' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
                             u.role === 'seller' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                            u.role === 'ecommerce_manager' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                            u.role === 'sales_supervisor' ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' :
+                            u.role === 'inventory_manager' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                            u.role === 'ecommerce_manager' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' :
                             u.role === 'accountant' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
                             'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400'
                           }`}>
@@ -858,7 +860,9 @@ export default function SettingsPage() {
                              u.role === 'admin' ? (language === 'ar' ? 'مدير' : 'Admin') :
                              u.role === 'manager' ? (language === 'ar' ? 'مشرف' : 'Manager') :
                              u.role === 'seller' ? (language === 'ar' ? 'بائع' : 'Vendeur') :
-                             u.role === 'ecommerce_manager' ? (language === 'ar' ? 'مسؤول متجر إلكتروني' : 'E-commerce') :
+                             u.role === 'sales_supervisor' ? (language === 'ar' ? 'مشرف مبيعات' : 'Sales Supervisor') :
+                             u.role === 'inventory_manager' ? (language === 'ar' ? 'مدير مخزون' : 'Inventory Manager') :
+                             u.role === 'ecommerce_manager' ? (language === 'ar' ? 'مسؤول متجر' : 'E-commerce') :
                              u.role === 'accountant' ? (language === 'ar' ? 'محاسب' : 'Comptable') :
                              (language === 'ar' ? 'مستخدم' : 'User')}
                           </span>
