@@ -699,6 +699,7 @@ class CashBoxResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     name: str
+    name_fr: str = ""
     type: str  # cash, bank, wallet
     balance: float
     updated_at: str
