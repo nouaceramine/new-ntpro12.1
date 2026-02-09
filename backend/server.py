@@ -151,6 +151,7 @@ class TenantCreate(BaseModel):
     plan_id: str
     subscription_type: str = "monthly"  # monthly, 6months, yearly
     business_type: Optional[str] = "retailer"  # retailer, wholesaler, distributor
+    role: Optional[str] = "admin"  # admin, manager, seller, etc.
 
 class TenantUpdate(BaseModel):
     name: Optional[str] = None
