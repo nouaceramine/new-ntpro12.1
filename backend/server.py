@@ -7825,6 +7825,7 @@ async def create_expense(expense: ExpenseCreate, user: dict = Depends(get_curren
     expense_data["date"] = expense_data["date"] or datetime.now(timezone.utc).isoformat()
     expense_data["created_at"] = datetime.now(timezone.utc).isoformat()
     expense_data["created_by"] = user["id"]
+    expense_data["code"] = expense_data.get("code") or ""  # كود التكلفة
     
     await db.expenses.insert_one(expense_data)
     expense_data.pop("_id", None)
