@@ -486,12 +486,6 @@ export default function AddProductPage() {
                 </p>
               </div>
 
-              {/* Image URL */}
-              <div className="space-y-2">
-                <Label htmlFor="image_url">{t.imageUrl}</Label>
-                <Input id="image_url" name="image_url" type="url" value={formData.image_url} onChange={handleChange} className="h-11" />
-              </div>
-
               {/* Compatible Models with OCR */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
