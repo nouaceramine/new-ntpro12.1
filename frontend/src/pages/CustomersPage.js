@@ -681,7 +681,10 @@ export default function CustomersPage() {
                         {customer.last_purchase_date && (
                           <div>
                             <p className="text-xs text-muted-foreground">{language === 'ar' ? 'آخر زيارة' : 'Dernière visite'}</p>
-                            <p className="text-sm">{new Date(customer.last_purchase_date).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR')}</p>
+                            <p className="text-sm">{(() => {
+                              const d = new Date(customer.last_purchase_date);
+                              return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+                            })()}</p>
                           </div>
                         )}
                       </div>
