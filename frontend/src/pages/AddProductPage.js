@@ -122,6 +122,28 @@ export default function AddProductPage() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Upload product image
+  const handleProductImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setUploadingProductImage(true);
+    try {
+      // Convert to base64 and use as data URL (for demo)
+      // In production, you would upload to a server/cloud storage
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setFormData(prev => ({ ...prev, image_url: event.target.result }));
+        toast.success(language === 'ar' ? 'تم رفع الصورة' : 'Image téléchargée');
+        setUploadingProductImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error(language === 'ar' ? 'فشل رفع الصورة' : 'Échec du téléchargement');
+      setUploadingProductImage(false);
+    }
+  };
+
   const generateBarcode = async () => {
     setGeneratingBarcode(true);
     try {
@@ -136,8 +158,8 @@ export default function AddProductPage() {
   };
 
   const handleAddFamily = async () => {
-    if (!newFamily.name_ar && !newFamily.name_en) {
-      toast.error(language === 'ar' ? 'يرجى إدخال اسم العائلة' : 'Please enter family name');
+    if (!newFamily.name) {
+      toast.error(language === 'ar' ? 'يرجى إدخال اسم العائلة' : 'Veuillez entrer le nom de la famille');
       return;
     }
 
