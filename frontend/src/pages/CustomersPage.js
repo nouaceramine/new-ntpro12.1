@@ -271,6 +271,7 @@ export default function CustomersPage() {
       address: customer.address || '',
       notes: customer.notes || '',
       family_id: customer.family_id || '',
+      code: customer.code || '',  // كود الزبون
       national_id: customer.national_id || '',
       commercial_register: customer.commercial_register || '',
       birthdate: customer.birthdate || '',
@@ -281,22 +282,33 @@ export default function CustomersPage() {
     setDialogOpen(true);
   };
 
-  const resetForm = () => {
+  const resetForm = async () => {
     setSelectedCustomer(null);
-    setFormData({ 
-      name: '', 
-      phone: '', 
-      email: '', 
-      address: '', 
-      notes: '', 
-      family_id: '',
-      national_id: '',
-      commercial_register: '',
-      birthdate: '',
-      customer_type: 'regular',
-      max_debt_limit: '',
-      special_discount: ''
-    });
+    // Generate new customer code
+    try {
+      const response = await axios.get(`${API}/customers/generate-code`);
+      setFormData({ 
+        name: '', 
+        phone: '', 
+        email: '', 
+        address: '', 
+        notes: '', 
+        family_id: '',
+        code: response.data.code,  // كود الزبون التلقائي
+        national_id: '',
+        commercial_register: '',
+        birthdate: '',
+        customer_type: 'regular',
+        max_debt_limit: '',
+        special_discount: ''
+      });
+    } catch (error) {
+      setFormData({ 
+        name: '', phone: '', email: '', address: '', notes: '', family_id: '', code: '',
+        national_id: '', commercial_register: '', birthdate: '', customer_type: 'regular',
+        max_debt_limit: '', special_discount: ''
+      });
+    }
   };
 
   return (
