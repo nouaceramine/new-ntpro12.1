@@ -92,7 +92,17 @@ export default function ExpensesPage() {
     fetchExpenses();
     fetchStats();
     fetchReminders();
+    fetchExpenseCode();
   }, []);
+
+  const fetchExpenseCode = async () => {
+    try {
+      const response = await axios.get(`${API}/expenses/generate-code`);
+      setFormData(prev => ({ ...prev, code: response.data.code }));
+    } catch (error) {
+      console.error('Error fetching expense code:', error);
+    }
+  };
 
   const fetchExpenses = async () => {
     try {
