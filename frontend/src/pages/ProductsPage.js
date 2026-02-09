@@ -118,6 +118,39 @@ export default function ProductsPage() {
     return <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">{t.inStock}</Badge>;
   };
 
+  // Quick export to Excel function
+  const quickExportToExcel = () => {
+    const headers = [
+      language === 'ar' ? 'الكود' : 'Code',
+      language === 'ar' ? 'المنتج' : 'Produit',
+      language === 'ar' ? 'العائلة' : 'Famille',
+      language === 'ar' ? 'المخزون' : 'Stock',
+      language === 'ar' ? 'سعر البيع' : 'Prix vente',
+      language === 'ar' ? 'سعر الشراء' : 'Prix achat'
+    ];
+    
+    let tableHtml = `<table><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>`;
+    products.forEach(p => {
+      tableHtml += `<tr>
+        <td>${p.article_code || '-'}</td>
+        <td>${language === 'ar' ? p.name_ar : p.name_en}</td>
+        <td>${p.family_name || '-'}</td>
+        <td>${p.quantity}</td>
+        <td>${p.retail_price?.toFixed(2) || '0.00'}</td>
+        <td>${p.purchase_price?.toFixed(2) || '0.00'}</td>
+      </tr>`;
+    });
+    tableHtml += '</table>';
+    
+    const blob = new Blob([`<html><head><meta charset="UTF-8"></head><body>${tableHtml}</body></html>`], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `products_${new Date().toISOString().split('T')[0]}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Layout>
       <div className="space-y-6 animate-fade-in" data-testid="products-page">
@@ -129,14 +162,19 @@ export default function ProductsPage() {
               {products.length} {t.products.toLowerCase()}
             </p>
           </div>
-          {isAdmin && (
+          <div className="flex gap-2 items-center">
+            {/* Quick Excel Export Button */}
+            <Button variant="outline" onClick={quickExportToExcel} className="gap-2" data-testid="quick-export-excel-btn">
+              <FileSpreadsheet className="h-5 w-5 text-green-600" />
+              <span className="hidden sm:inline">Excel</span>
+            </Button>
             <Link to="/products/add">
               <Button className="gap-2" data-testid="add-product-btn">
                 <Plus className="h-5 w-5" />
                 {t.addProduct}
               </Button>
             </Link>
-          )}
+          </div>
         </div>
 
         {/* Search & Filters */}
