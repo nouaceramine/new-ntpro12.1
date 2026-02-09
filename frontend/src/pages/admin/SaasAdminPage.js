@@ -409,7 +409,7 @@ export default function SaasAdminPage() {
   
   const [tenantForm, setTenantForm] = useState({
     name: '', email: '', phone: '', company_name: '', password: '',
-    plan_id: '', subscription_type: 'monthly', business_type: 'retailer'
+    plan_id: '', subscription_type: 'monthly', business_type: 'retailer', role: 'admin'
   });
 
   const [showPassword, setShowPassword] = useState(false);
