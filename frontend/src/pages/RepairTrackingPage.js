@@ -210,13 +210,12 @@ export default function RepairTrackingPage() {
 
   // Search products for spare parts
   const searchProducts = async (query) => {
-    if (!query) {
-      setProductResults([]);
-      return;
-    }
     try {
       setSearchingProducts(true);
-      const response = await axios.get(`${API}/products?search=${encodeURIComponent(query)}`);
+      const url = query 
+        ? `${API}/products?search=${encodeURIComponent(query)}`
+        : `${API}/products?limit=10`;
+      const response = await axios.get(url);
       setProductResults(response.data?.slice(0, 10) || []);
     } catch (error) {
       console.error('Error searching products:', error);
