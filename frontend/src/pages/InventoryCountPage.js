@@ -173,7 +173,20 @@ export default function InventoryCountPage() {
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Generate inventory code first
+      let code = '';
+      try {
+        const codeRes = await axios.get(`${API}/inventory-sessions/generate-code`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        code = codeRes.data.code;
+      } catch (e) {
+        console.error('Error generating inventory code:', e);
+      }
+      
       const session = {
+        code: code,
         name: sessionName,
         family_filter: selectedFamily,
         status: 'active',
@@ -188,6 +201,7 @@ export default function InventoryCountPage() {
       setCountedItems({});
       setShowStartDialog(false);
       setSessionName('');
+      setInventoryCode('');
       toast.success(language === 'ar' ? 'تم بدء الجرد' : 'Inventaire démarré');
       
       // Focus barcode input
