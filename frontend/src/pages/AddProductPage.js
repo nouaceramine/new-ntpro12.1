@@ -33,14 +33,16 @@ export default function AddProductPage() {
   const { t, language, isRTL } = useLanguage();
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
   const fileInputRef = useRef(null);
+  const imageUploadRef = useRef(null);
   
   const [loading, setLoading] = useState(false);
   const [saveAndNew, setSaveAndNew] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [generatingBarcode, setGeneratingBarcode] = useState(false);
+  const [uploadingProductImage, setUploadingProductImage] = useState(false);
   const [families, setFamilies] = useState([]);
   const [showAddFamilyDialog, setShowAddFamilyDialog] = useState(false);
-  const [newFamily, setNewFamily] = useState({ name_ar: '', name_en: '' });
+  const [newFamily, setNewFamily] = useState({ name: '' });
   const [addingFamily, setAddingFamily] = useState(false);
   const [useAveragePrice, setUseAveragePrice] = useState(false);
   
