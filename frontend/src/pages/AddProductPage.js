@@ -167,8 +167,8 @@ export default function AddProductPage() {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(`${API}/product-families`, {
-        name_ar: newFamily.name_ar || newFamily.name_en,
-        name_en: newFamily.name_en || newFamily.name_ar
+        name_ar: newFamily.name,
+        name_en: newFamily.name
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -176,7 +176,7 @@ export default function AddProductPage() {
       setFamilies(prev => [...prev, response.data]);
       setFormData(prev => ({ ...prev, family_id: response.data.id }));
       setShowAddFamilyDialog(false);
-      setNewFamily({ name_ar: '', name_en: '' });
+      setNewFamily({ name: '' });
       toast.success(t.familyAdded);
     } catch (error) {
       toast.error(error.response?.data?.detail || t.error);
