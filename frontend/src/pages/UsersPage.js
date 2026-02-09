@@ -171,11 +171,21 @@ export default function UsersPage() {
     <Layout>
       <div className="space-y-6 animate-fade-in" data-testid="users-page">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t.userManagement}</h1>
-          <p className="text-muted-foreground mt-1">
-            {users.length} {t.users}
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t.userManagement}</h1>
+            <p className="text-muted-foreground mt-1">
+              {users.length} {t.users}
+            </p>
+          </div>
+          <Button 
+            onClick={() => setAddDialogOpen(true)}
+            className="gap-2"
+            data-testid="add-user-btn"
+          >
+            <UserPlus className="h-4 w-4" />
+            {language === 'ar' ? 'إضافة مستخدم' : 'Add User'}
+          </Button>
         </div>
 
         {/* Users Table */}
