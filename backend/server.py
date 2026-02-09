@@ -653,11 +653,13 @@ class SaleCreate(BaseModel):
     payment_type: Literal["cash", "credit", "partial"] = "cash"  # نقدي أو دين أو جزئي
     notes: Optional[str] = ""
     delivery: Optional[DeliveryInfo] = None
+    code: Optional[str] = ""  # كود البيع BV00001
 
 class SaleResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     invoice_number: str
+    code: str = ""  # كود البيع
     customer_id: Optional[str]
     customer_name: str
     items: List[SaleItem]
