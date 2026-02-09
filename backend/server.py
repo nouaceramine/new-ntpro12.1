@@ -508,6 +508,7 @@ class ProductCreate(BaseModel):
     compatible_models: List[str] = []
     low_stock_threshold: int = 10
     barcode: Optional[str] = ""
+    article_code: Optional[str] = ""  # كود المنتج AR00001
     family_id: Optional[str] = None  # عائلة المنتج
     use_average_price: Optional[bool] = False  # حساب السعر المتوسط
 
@@ -525,6 +526,7 @@ class ProductUpdate(BaseModel):
     compatible_models: Optional[List[str]] = None
     low_stock_threshold: Optional[int] = None
     barcode: Optional[str] = None
+    article_code: Optional[str] = None  # كود المنتج
     family_id: Optional[str] = None
     use_average_price: Optional[bool] = None
 
@@ -544,6 +546,7 @@ class ProductResponse(BaseModel):
     compatible_models: List[str] = []
     low_stock_threshold: int = 10
     barcode: str = ""
+    article_code: str = ""  # كود المنتج
     family_id: str = ""
     family_name: str = ""
     use_average_price: bool = False
