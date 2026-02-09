@@ -88,6 +88,7 @@ export default function PurchasesPage() {
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentType, setPaymentType] = useState('cash'); // cash, credit, partial
   const [notes, setNotes] = useState('');
+  const [purchaseCode, setPurchaseCode] = useState('');  // كود الشراء
   const [loading, setLoading] = useState(false);
   const [showNewPurchaseDialog, setShowNewPurchaseDialog] = useState(false);
   const [showPayDebtDialog, setShowPayDebtDialog] = useState(false);
