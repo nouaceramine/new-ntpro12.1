@@ -325,10 +325,33 @@ export default function ExpensesPage() {
               {language === 'ar' ? 'تتبع وإدارة مصاريف المحل' : 'Suivre et gérer les dépenses du magasin'}
             </p>
           </div>
-          <Button onClick={() => { resetForm(); setShowAddDialog(true); }} data-testid="add-expense-btn">
-            <Plus className="h-4 w-4 me-2" />
-            {language === 'ar' ? 'إضافة تكلفة' : 'Ajouter'}
-          </Button>
+          <div className="flex gap-2 items-center">
+            <ExportPrintButtons
+              data={filteredExpenses.map(e => ({
+                code: e.code || '-',
+                title: e.title,
+                category: getCategoryInfo(e.category)?.[language === 'ar' ? 'name_ar' : 'name_fr'] || e.category,
+                amount: formatCurrency(e.amount),
+                date: formatDate(e.date),
+                notes: e.notes || '-'
+              }))}
+              columns={[
+                { key: 'code', label: language === 'ar' ? 'الكود' : 'Code' },
+                { key: 'title', label: language === 'ar' ? 'الوصف' : 'Description' },
+                { key: 'category', label: language === 'ar' ? 'الفئة' : 'Catégorie' },
+                { key: 'amount', label: language === 'ar' ? 'المبلغ' : 'Montant' },
+                { key: 'date', label: language === 'ar' ? 'التاريخ' : 'Date' },
+                { key: 'notes', label: language === 'ar' ? 'ملاحظات' : 'Notes' }
+              ]}
+              filename={`expenses_${new Date().toISOString().split('T')[0]}`}
+              title={language === 'ar' ? 'قائمة التكاليف' : 'Liste des Dépenses'}
+              language={language}
+            />
+            <Button onClick={() => { resetForm(); setShowAddDialog(true); }} data-testid="add-expense-btn">
+              <Plus className="h-4 w-4 me-2" />
+              {language === 'ar' ? 'إضافة تكلفة' : 'Ajouter'}
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
