@@ -450,6 +450,7 @@ export default function POSPage() {
       p.name_en.toLowerCase().includes(query) ||
       p.name_ar.toLowerCase().includes(query) ||
       p.barcode?.toLowerCase().includes(query) ||
+      p.article_code?.toLowerCase().includes(query) ||  // البحث بكود المنتج
       p.compatible_models.some(m => m.toLowerCase().includes(query))
     );
   });
