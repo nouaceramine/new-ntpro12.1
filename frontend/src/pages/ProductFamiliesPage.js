@@ -73,17 +73,18 @@ export default function ProductFamiliesPage() {
   };
 
   const handleSubmit = async (createNew = false) => {
-    if (!form.name_ar && !form.name_en) {
-      toast.error(t.familyName + ' ' + t.error);
+    if (!form.name) {
+      toast.error(language === 'ar' ? 'يرجى إدخال اسم العائلة' : 'Veuillez entrer le nom de la famille');
       return;
     }
 
     try {
       const token = localStorage.getItem('token');
       const data = {
-        ...form,
-        name_en: form.name_en || form.name_ar,
-        name_ar: form.name_ar || form.name_en,
+        name_en: form.name,
+        name_ar: form.name,
+        description_en: form.description,
+        description_ar: form.description,
         parent_id: form.parent_id || null
       };
 
@@ -117,10 +118,8 @@ export default function ProductFamiliesPage() {
   const handleEdit = (family) => {
     setEditingFamily(family);
     setForm({
-      name_en: family.name_en,
-      name_ar: family.name_ar,
-      description_en: family.description_en,
-      description_ar: family.description_ar,
+      name: family.name_ar || family.name_en,
+      description: family.description_ar || family.description_en,
       parent_id: family.parent_id || ''
     });
     setShowDialog(true);
