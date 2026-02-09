@@ -63,8 +63,10 @@ import {
   Calendar,
   Eye,
   FileText,
-  Filter
+  Filter,
+  Calculator as CalcIcon
 } from 'lucide-react';
+import { Calculator } from '../components/Calculator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
