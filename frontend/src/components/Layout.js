@@ -243,14 +243,12 @@ export const Layout = ({ children }) => {
       icon: Package,
       items: [
         { path: '/products', icon: Package, label: t.products },
-        ...(isAdmin ? [
-          { path: '/product-families', icon: FolderTree, label: t.productFamilies },
-          { path: '/warehouses', icon: Warehouse, label: language === 'ar' ? 'المخازن' : 'Entrepôts' },
-          { path: '/inventory-count', icon: ClipboardList, label: language === 'ar' ? 'جرد المخزون' : 'Inventaire' },
-          { path: '/barcode-print', icon: QrCode, label: language === 'ar' ? 'طباعة الباركود' : 'Codes-barres' },
-          { path: '/bulk-price-update', icon: DollarSign, label: t.bulkPriceUpdate },
-          { path: '/price-history', icon: History, label: language === 'ar' ? 'سجل الأسعار' : 'Historique prix' },
-        ] : [])
+        { path: '/product-families', icon: FolderTree, label: t.productFamilies },
+        { path: '/warehouses', icon: Warehouse, label: language === 'ar' ? 'المخازن' : 'Entrepôts' },
+        { path: '/inventory-count', icon: ClipboardList, label: language === 'ar' ? 'جرد المخزون' : 'Inventaire' },
+        { path: '/barcode-print', icon: QrCode, label: language === 'ar' ? 'طباعة الباركود' : 'Codes-barres' },
+        { path: '/bulk-price-update', icon: DollarSign, label: t.bulkPriceUpdate },
+        { path: '/price-history', icon: History, label: language === 'ar' ? 'سجل الأسعار' : 'Historique prix' },
       ]
     },
     {
