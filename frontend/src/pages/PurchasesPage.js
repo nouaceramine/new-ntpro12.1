@@ -167,7 +167,8 @@ export default function PurchasesPage() {
     return (
       p.name_ar?.toLowerCase().includes(query) ||
       p.name_en?.toLowerCase().includes(query) ||
-      p.barcode?.toLowerCase().includes(query)
+      p.barcode?.toLowerCase().includes(query) ||
+      p.article_code?.toLowerCase().includes(query)  // البحث بكود المنتج
     );
   });
 
