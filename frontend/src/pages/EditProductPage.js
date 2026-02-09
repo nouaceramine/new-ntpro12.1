@@ -23,9 +23,10 @@ export default function EditProductPage() {
   
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [useAveragePrice, setUseAveragePrice] = useState(false);
   const [formData, setFormData] = useState({
     name_en: '', name_ar: '', description_en: '', description_ar: '',
-    purchase_price: '', wholesale_price: '', retail_price: '',
+    purchase_price: '', wholesale_price: '', retail_price: '', super_wholesale_price: '',
     quantity: '', image_url: '', barcode: '', compatible_models: '', low_stock_threshold: ''
   });
 
