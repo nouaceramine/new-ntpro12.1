@@ -2271,6 +2271,7 @@ async def create_supplier(supplier: SupplierCreate, admin: dict = Depends(get_ad
         "id": supplier_id, "name": supplier.name,
         "phone": supplier.phone or "", "email": supplier.email or "",
         "address": supplier.address or "", "notes": supplier.notes or "",
+        "code": supplier.code or "",  # كود المورد
         "family_id": supplier.family_id or "", "family_name": family_name,
         "total_purchases": 0, "balance": 0, "created_at": now
     }
@@ -2283,7 +2284,8 @@ async def get_suppliers(search: Optional[str] = None, family_id: Optional[str] =
     if search:
         query["$or"] = [
             {"name": {"$regex": search, "$options": "i"}},
-            {"phone": {"$regex": search, "$options": "i"}}
+            {"phone": {"$regex": search, "$options": "i"}},
+            {"code": {"$regex": search, "$options": "i"}}  # بحث بالكود
         ]
     if family_id:
         query["family_id"] = family_id
@@ -2299,6 +2301,8 @@ async def get_suppliers(search: Optional[str] = None, family_id: Optional[str] =
             supplier["family_name"] = ""
         if not supplier.get("family_id"):
             supplier["family_id"] = ""
+        if not supplier.get("code"):
+            supplier["code"] = ""
     
     return [SupplierResponse(**s) for s in suppliers]
 
