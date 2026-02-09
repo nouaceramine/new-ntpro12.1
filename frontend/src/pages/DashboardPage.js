@@ -125,7 +125,6 @@ export default function DashboardPage() {
                   {t.addProduct}
                 </Button>
               </Link>
-            )}
           </div>
         </div>
 
@@ -152,12 +151,11 @@ export default function DashboardPage() {
         </div>
 
         {/* Sales Summary - Today/Month/Year */}
-        {isAdmin && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-emerald-600" />
-                {language === 'ar' ? 'ملخص المبيعات' : 'Résumé des ventes'}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-emerald-600" />
+              {language === 'ar' ? 'ملخص المبيعات' : 'Résumé des ventes'}
               </CardTitle>
             </CardHeader>
             <CardContent>
