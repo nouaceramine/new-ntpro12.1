@@ -81,6 +81,7 @@ export default function ExpensesPage() {
     amount: '',
     date: new Date().toISOString().split('T')[0],
     notes: '',
+    code: '',  // كود التكلفة
     recurring: false,
     recurring_period: 'monthly',
     reminder_days_before: 3
