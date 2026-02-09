@@ -1030,18 +1030,7 @@ export default function InventoryCountPage() {
         )}
 
         {/* Start Session Dialog */}
-        <Dialog open={showStartDialog} onOpenChange={(open) => {
-          setShowStartDialog(open);
-          if (open && !inventoryCode) {
-            // Generate inventory code when dialog opens
-            const token = localStorage.getItem('token');
-            axios.get(`${API}/inventory-sessions/generate-code`, {
-              headers: { Authorization: `Bearer ${token}` }
-            }).then(res => {
-              setInventoryCode(res.data.code);
-            }).catch(() => {});
-          }
-        }}>
+        <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
