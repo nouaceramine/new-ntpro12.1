@@ -458,92 +458,105 @@ export default function SuppliersPage() {
           </div>
         )}
 
-        {/* Add/Edit Dialog */}
+        {/* Add/Edit Dialog - Compact Design */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{selectedSupplier ? t.editSupplier : t.addSupplier}</DialogTitle>
+          <DialogContent className="max-w-md">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-lg">{selectedSupplier ? t.editSupplier : t.addSupplier}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>{t.supplierName} *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  data-testid="supplier-name-input"
-                />
+            <form onSubmit={handleSubmit} className="space-y-3">
+              {/* Name & Phone */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.supplierName} *</Label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    className="h-9"
+                    data-testid="supplier-name-input"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.phone}</Label>
+                  <Input
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    dir="ltr"
+                    className="h-9"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>{t.phone}</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  dir="ltr"
-                />
+              
+              {/* Email & Family */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.email}</Label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">{language === 'ar' ? 'العائلة' : 'Famille'}</Label>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setFamilyDialogOpen(true)}
+                      className="h-5 px-1 text-xs"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <Select
+                    value={formData.family_id || "none"}
+                    onValueChange={(value) => setFormData({ ...formData, family_id: value === "none" ? "" : value })}
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder={language === 'ar' ? 'اختر' : 'Choisir'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{language === 'ar' ? 'بدون' : 'Sans'}</SelectItem>
+                      {supplierFamilies.map(family => (
+                        <SelectItem key={family.id} value={family.id}>
+                          {family.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>{t.email}</Label>
-                <Input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{t.address}</Label>
+              
+              {/* Address */}
+              <div className="space-y-1">
+                <Label className="text-xs">{t.address}</Label>
                 <Input
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="h-9"
                 />
               </div>
-              <div className="space-y-2">
-                <Label>{t.notes}</Label>
+              
+              {/* Notes */}
+              <div className="space-y-1">
+                <Label className="text-xs">{t.notes}</Label>
                 <Textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={2}
+                  className="text-sm"
                 />
               </div>
-              
-              {/* Supplier Family */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>{language === 'ar' ? 'عائلة المورد' : 'Famille fournisseur'}</Label>
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setFamilyDialogOpen(true)}
-                    className="gap-1 h-7 text-xs"
-                  >
-                    <Plus className="h-3 w-3" />
-                    {language === 'ar' ? 'إضافة عائلة' : 'Ajouter'}
-                  </Button>
-                </div>
-                <Select
-                  value={formData.family_id || "none"}
-                  onValueChange={(value) => setFormData({ ...formData, family_id: value === "none" ? "" : value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={language === 'ar' ? 'اختر عائلة' : 'Choisir famille'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{language === 'ar' ? 'بدون عائلة' : 'Sans famille'}</SelectItem>
-                    {supplierFamilies.map(family => (
-                      <SelectItem key={family.id} value={family.id}>
-                        {family.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => setDialogOpen(false)}>
                   {t.cancel}
                 </Button>
-                <Button type="submit" data-testid="save-supplier-btn">{t.save}</Button>
+                <Button type="submit" size="sm" data-testid="save-supplier-btn">{t.save}</Button>
               </div>
             </form>
           </DialogContent>
