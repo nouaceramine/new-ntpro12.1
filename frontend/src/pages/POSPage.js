@@ -961,7 +961,7 @@ export default function POSPage() {
                   </div>
                 )}
 
-                {showSearchResults && searchQuery && filteredProducts.length === 0 && (
+                {showSearchResults && filteredProducts.length === 0 && products.length > 0 && searchQuery && (
                   <div className="absolute z-50 top-full mt-1 w-full bg-white border rounded-lg shadow-lg p-4 text-center text-muted-foreground">
                     <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     {language === 'ar' ? 'لا توجد منتجات مطابقة' : 'Aucun article trouvé'}
