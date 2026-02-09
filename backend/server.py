@@ -1393,6 +1393,29 @@ async def generate_sku(family_id: Optional[str] = None):
     
     return {"sku": sku}
 
+@api_router.get("/products/generate-article-code")
+async def generate_article_code():
+    """Generate next article code (AR00001, AR00002, etc.)"""
+    # Find the highest article code
+    pipeline = [
+        {"$match": {"article_code": {"$regex": "^AR\\d{5}$"}}},
+        {"$project": {
+            "num": {"$toInt": {"$substr": ["$article_code", 2, 5]}}
+        }},
+        {"$sort": {"num": -1}},
+        {"$limit": 1}
+    ]
+    
+    result = await db.products.aggregate(pipeline).to_list(1)
+    
+    if result:
+        next_num = result[0]["num"] + 1
+    else:
+        next_num = 1
+    
+    article_code = f"AR{str(next_num).zfill(5)}"
+    return {"article_code": article_code}
+
 @api_router.get("/products/{product_id}", response_model=ProductResponse)
 async def get_product(product_id: str):
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
