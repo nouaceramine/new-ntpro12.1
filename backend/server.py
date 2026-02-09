@@ -502,12 +502,14 @@ class ProductCreate(BaseModel):
     purchase_price: Optional[float] = 0  # سعر الشراء (اختياري)
     wholesale_price: Optional[float] = 0  # سعر الجملة (اختياري)
     retail_price: Optional[float] = 0  # سعر التجزئة (اختياري)
+    super_wholesale_price: Optional[float] = 0  # سعر سوبر الجملة
     quantity: int = 0
     image_url: Optional[str] = ""
     compatible_models: List[str] = []
     low_stock_threshold: int = 10
     barcode: Optional[str] = ""
     family_id: Optional[str] = None  # عائلة المنتج
+    use_average_price: Optional[bool] = False  # حساب السعر المتوسط
 
 class ProductUpdate(BaseModel):
     name_en: Optional[str] = None
@@ -517,12 +519,14 @@ class ProductUpdate(BaseModel):
     purchase_price: Optional[float] = None
     wholesale_price: Optional[float] = None
     retail_price: Optional[float] = None
+    super_wholesale_price: Optional[float] = None
     quantity: Optional[int] = None
     image_url: Optional[str] = None
     compatible_models: Optional[List[str]] = None
     low_stock_threshold: Optional[int] = None
     barcode: Optional[str] = None
     family_id: Optional[str] = None
+    use_average_price: Optional[bool] = None
 
 class ProductResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
