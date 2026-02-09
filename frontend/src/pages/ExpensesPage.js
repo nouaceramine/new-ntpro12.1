@@ -50,6 +50,7 @@ import {
   MoreHorizontal,
   RefreshCw
 } from 'lucide-react';
+import { ExportPrintButtons } from '../components/ExportPrintButtons';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
