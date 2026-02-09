@@ -379,7 +379,8 @@ export default function PurchasesPage() {
         paid_amount: paidAmount,
         payment_method: paymentMethod,
         payment_type: paymentType,
-        notes
+        notes,
+        code: purchaseCode  // كود الشراء
       };
 
       await axios.post(`${API}/purchases`, purchaseData);
@@ -397,6 +398,7 @@ export default function PurchasesPage() {
       setPaidAmount(0);
       setSelectedSupplier(null);
       setNotes('');
+      setPurchaseCode('');  // Reset code
       setPaymentType('cash');
       setShowNewPurchaseDialog(false);
       fetchData();
