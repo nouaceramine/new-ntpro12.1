@@ -318,17 +318,13 @@ export default function AddProductPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="purchase_price">{t.purchasePrice} ({t.currency}) *</Label>
+                    <Label className="text-xs">{t.purchasePrice} *</Label>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div className="flex items-center gap-1.5">
-                            <Calculator className={`h-4 w-4 ${useAveragePrice ? 'text-primary' : 'text-muted-foreground'}`} />
-                            <Switch 
-                              checked={useAveragePrice} 
-                              onCheckedChange={setUseAveragePrice}
-                              className="scale-75"
-                            />
+                          <div className="flex items-center gap-1">
+                            <Calculator className={`h-3 w-3 ${useAveragePrice ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <Switch checked={useAveragePrice} onCheckedChange={setUseAveragePrice} className="scale-[0.6]" />
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -337,62 +333,44 @@ export default function AddProductPage() {
                       </Tooltip>
                     </TooltipProvider>
                   </div>
-                  <Input id="purchase_price" name="purchase_price" type="number" step="0.01" min="0" value={formData.purchase_price} onChange={handleChange} className="h-11" data-testid="purchase-price-input" />
+                  <Input name="purchase_price" type="number" step="0.01" min="0" value={formData.purchase_price} onChange={handleChange} className="h-9" data-testid="purchase-price-input" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="super_wholesale_price">{language === 'ar' ? 'سعر سوبر الجملة' : 'Prix super gros'} ({t.currency})</Label>
-                  <Input id="super_wholesale_price" name="super_wholesale_price" type="number" step="0.01" min="0" value={formData.super_wholesale_price} onChange={handleChange} className="h-11" data-testid="super-wholesale-price-input" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'سوبر الجملة' : 'Super gros'}</Label>
+                  <Input name="super_wholesale_price" type="number" step="0.01" min="0" value={formData.super_wholesale_price} onChange={handleChange} className="h-9" data-testid="super-wholesale-price-input" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="wholesale_price">{t.wholesalePrice} ({t.currency}) *</Label>
-                  <Input id="wholesale_price" name="wholesale_price" type="number" step="0.01" min="0" value={formData.wholesale_price} onChange={handleChange} className="h-11" data-testid="wholesale-price-input" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.wholesalePrice} *</Label>
+                  <Input name="wholesale_price" type="number" step="0.01" min="0" value={formData.wholesale_price} onChange={handleChange} className="h-9" data-testid="wholesale-price-input" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="retail_price">{t.retailPrice} ({t.currency}) *</Label>
-                  <Input id="retail_price" name="retail_price" type="number" step="0.01" min="0" value={formData.retail_price} onChange={handleChange} className="h-11" data-testid="retail-price-input" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.retailPrice} *</Label>
+                  <Input name="retail_price" type="number" step="0.01" min="0" value={formData.retail_price} onChange={handleChange} className="h-9" data-testid="retail-price-input" />
                 </div>
               </div>
 
               {/* Threshold, Barcode */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="low_stock_threshold">{t.lowStockThreshold}</Label>
-                  <Input id="low_stock_threshold" name="low_stock_threshold" type="number" min="1" value={formData.low_stock_threshold} onChange={handleChange} className="h-11" />
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.lowStockThreshold}</Label>
+                  <Input name="low_stock_threshold" type="number" min="1" value={formData.low_stock_threshold} onChange={handleChange} className="h-9" />
                 </div>
-                <div className="space-y-2">
+                <div className="col-span-2 space-y-1">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="barcode">{t.barcode}</Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={generateBarcode}
-                      disabled={generatingBarcode}
-                      className="gap-1 h-auto py-1"
-                    >
-                      {generatingBarcode ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-4 w-4" />
-                      )}
+                    <Label className="text-xs">{t.barcode}</Label>
+                    <Button type="button" variant="ghost" size="sm" onClick={generateBarcode} disabled={generatingBarcode} className="h-5 px-1 text-xs">
+                      {generatingBarcode ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                       {t.generateBarcode}
                     </Button>
                   </div>
-                  <Input 
-                    id="barcode" 
-                    name="barcode" 
-                    value={formData.barcode} 
-                    onChange={handleChange} 
-                    className="h-11 font-mono" 
-                    data-testid="barcode-input" 
-                  />
+                  <Input name="barcode" value={formData.barcode} onChange={handleChange} className="h-9 font-mono" data-testid="barcode-input" />
                 </div>
               </div>
 
               {/* Stock Info */}
-              <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                <p className="text-sm text-amber-700 dark:text-amber-400 flex items-center gap-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                <p className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                   </svg>
                   {language === 'ar' 
