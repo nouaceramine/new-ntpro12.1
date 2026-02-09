@@ -359,15 +359,41 @@ export default function AddProductPage() {
                 </div>
               </div>
 
-              {/* Descriptions */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Image Upload & Description */}
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">{t.descriptionEn}</Label>
-                  <Textarea name="description_en" value={formData.description_en} onChange={handleChange} rows={2} className="text-sm" />
+                  <Label className="text-xs">{language === 'ar' ? 'صورة المنتج' : 'Image produit'}</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      name="image_url" 
+                      value={formData.image_url} 
+                      onChange={handleChange} 
+                      placeholder="URL..."
+                      className="h-9 flex-1" 
+                    />
+                    <input
+                      ref={imageUploadRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProductImageUpload}
+                      className="hidden"
+                      id="product-image-upload"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => imageUploadRef.current?.click()}
+                      disabled={uploadingProductImage}
+                      className="h-9 px-2"
+                    >
+                      {uploadingProductImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">{t.descriptionAr}</Label>
-                  <Textarea name="description_ar" value={formData.description_ar} onChange={handleChange} rows={2} dir="rtl" className="text-sm" />
+                <div className="col-span-2 space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'الوصف' : 'Description'}</Label>
+                  <Input name="description_en" value={formData.description_en} onChange={handleChange} className="h-9" placeholder={language === 'ar' ? 'وصف المنتج...' : 'Description du produit...'} />
                 </div>
               </div>
 
