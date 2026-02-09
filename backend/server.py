@@ -1364,7 +1364,7 @@ async def get_products(search: Optional[str] = None, model: Optional[str] = None
     
     products = await db.products.find(query, {"_id": 0}).to_list(1000)
     
-    # Add family names for products without them
+    # Add family names and last purchase date for products
     for product in products:
         if product.get("family_id") and not product.get("family_name"):
             family = await db.product_families.find_one({"id": product["family_id"]}, {"_id": 0, "name_ar": 1})
@@ -1373,6 +1373,16 @@ async def get_products(search: Optional[str] = None, model: Optional[str] = None
             product["family_name"] = ""
         if not product.get("article_code"):
             product["article_code"] = ""
+        
+        # Get last purchase date for this product
+        if not product.get("last_purchase_date"):
+            last_purchase = await db.purchases.find_one(
+                {"items.product_id": product["id"]},
+                {"_id": 0, "created_at": 1},
+                sort=[("created_at", -1)]
+            )
+            if last_purchase:
+                product["last_purchase_date"] = last_purchase["created_at"]
     
     return [ProductResponse(**p) for p in products]
 
