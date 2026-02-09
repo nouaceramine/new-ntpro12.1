@@ -512,13 +512,15 @@ export default function SaasAdminPage() {
       setTenantForm({
         name: tenant.name, email: tenant.email, phone: tenant.phone,
         company_name: tenant.company_name, password: '',
-        plan_id: tenant.plan_id, subscription_type: tenant.subscription_type
+        plan_id: tenant.plan_id, subscription_type: tenant.subscription_type,
+        business_type: tenant.business_type || 'retailer', role: tenant.role || 'admin'
       });
     } else {
       setEditingTenant(null);
       setTenantForm({
         name: '', email: '', phone: '', company_name: '', password: '',
-        plan_id: plans[0]?.id || '', subscription_type: 'monthly'
+        plan_id: plans[0]?.id || '', subscription_type: 'monthly',
+        business_type: 'retailer', role: 'admin'
       });
     }
     setTenantDialogOpen(true);
