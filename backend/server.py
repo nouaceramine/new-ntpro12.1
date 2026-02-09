@@ -597,6 +597,7 @@ class SupplierCreate(BaseModel):
     address: Optional[str] = ""
     notes: Optional[str] = ""
     family_id: Optional[str] = None
+    code: Optional[str] = ""  # كود المورد FR00001
 
 class SupplierUpdate(BaseModel):
     name: Optional[str] = None
@@ -605,6 +606,7 @@ class SupplierUpdate(BaseModel):
     address: Optional[str] = None
     notes: Optional[str] = None
     family_id: Optional[str] = None
+    code: Optional[str] = None
 
 class SupplierResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -614,6 +616,7 @@ class SupplierResponse(BaseModel):
     email: str
     address: str
     notes: str
+    code: str = ""
     family_id: str = ""
     family_name: str = ""
     total_purchases: float = 0
