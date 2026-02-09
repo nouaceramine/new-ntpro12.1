@@ -875,12 +875,16 @@ export default function POSPage() {
         addToCart(product);
         setSearchQuery('');
         setShowSearchResults(false);
+        playSuccessBeep();  // صوت التنبيه عند النجاح
         toast.success(language === 'ar' ? `تمت إضافة: ${product.name_ar}` : `Ajouté: ${product.name_en}`);
       } else if (filteredProducts.length === 1) {
         // If only one result, add it
         addToCart(filteredProducts[0]);
         setSearchQuery('');
         setShowSearchResults(false);
+        playSuccessBeep();  // صوت التنبيه عند النجاح
+      } else {
+        playErrorBeep();  // صوت خطأ عند عدم العثور على المنتج
       }
     } else if (e.key === 'Escape') {
       setShowSearchResults(false);
