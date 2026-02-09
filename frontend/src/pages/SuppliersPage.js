@@ -181,18 +181,29 @@ export default function SuppliersPage() {
     fetchSupplierFamilies();
   }, [searchQuery]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, createNew = false) => {
+    if (e) e.preventDefault();
     try {
       if (selectedSupplier) {
         await axios.put(`${API}/suppliers/${selectedSupplier.id}`, formData);
         toast.success(t.supplierUpdated);
+        setDialogOpen(false);
+        resetForm();
       } else {
         await axios.post(`${API}/suppliers`, formData);
         toast.success(t.supplierAdded);
+        if (createNew) {
+          resetForm();
+          // Generate new code
+          try {
+            const codeRes = await axios.get(`${API}/suppliers/generate-code`);
+            setFormData(prev => ({ ...prev, code: codeRes.data.code }));
+          } catch (e) {}
+        } else {
+          setDialogOpen(false);
+          resetForm();
+        }
       }
-      setDialogOpen(false);
-      resetForm();
       fetchSuppliers();
     } catch (error) {
       toast.error(t.somethingWentWrong);
