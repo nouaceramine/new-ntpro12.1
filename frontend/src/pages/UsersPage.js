@@ -48,6 +48,29 @@ export default function UsersPage() {
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // Add User Dialog
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    password: '',
+    role: 'user'
+  });
+
+  const roles = [
+    { value: 'super_admin', label: language === 'ar' ? 'سوبر أدمين' : 'Super Admin', icon: Shield },
+    { value: 'admin', label: language === 'ar' ? 'مدير' : 'Admin', icon: Shield },
+    { value: 'manager', label: language === 'ar' ? 'مدير فرع' : 'Manager', icon: User },
+    { value: 'seller', label: language === 'ar' ? 'بائع' : 'Seller', icon: User },
+    { value: 'accountant', label: language === 'ar' ? 'محاسب' : 'Accountant', icon: User },
+    { value: 'inventory_manager', label: language === 'ar' ? 'مدير مخزون' : 'Inventory Manager', icon: User },
+    { value: 'delivery', label: language === 'ar' ? 'مندوب توصيل' : 'Delivery', icon: User },
+    { value: 'technician', label: language === 'ar' ? 'فني صيانة' : 'Technician', icon: User },
+    { value: 'user', label: language === 'ar' ? 'مستخدم' : 'User', icon: User },
+  ];
+
   const fetchUsers = async () => {
     try {
       const response = await axios.get(`${API}/users`);
