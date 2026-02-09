@@ -791,7 +791,10 @@ POST /api/upload/image - رفع صورة للمنتج
 | **تصنيف المشترك** | ✅ | SaasAdminPage.js (retailer, wholesaler, distributor) |
 | **إدارة المستخدمين الكاملة** | ✅ | SettingsPage.js (Edit, Delete, Permissions) |
 | **القائمة الجانبية الكاملة** | ✅ | AuthContext.js, Layout.js (isAdmin includes super_admin) |
-| **نظام الأدوار المتقدم** | ✅ | server.py (9 أدوار), SettingsPage.js (8 أدوار في الواجهة) |
+| **نظام الأدوار المتقدم** | ✅ | server.py (9 أدوار), SettingsPage.js (9 أدوار في الواجهة) |
+| **إدارة الموظفين الكاملة** | ✅ | EmployeesPage.js (إحصائيات، جدول رواتب، حضور) |
+| **التقارير الذكية** | ✅ | SmartReportsPage.js (نصائح AI، جدولة، إرسال) |
+| **WooCommerce** | ✅ | WooCommercePage.js (تكامل، مزامنة منتجات) |
 
 ---
 
