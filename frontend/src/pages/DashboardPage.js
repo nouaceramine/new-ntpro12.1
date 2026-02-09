@@ -216,7 +216,7 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {stats.cash_boxes.map(box => (
                   <div key={box.id} className="p-4 rounded-xl bg-muted/50 border">
-                    <p className="text-sm text-muted-foreground">{box.name}</p>
+                    <p className="text-sm text-muted-foreground">{language === 'fr' ? (box.name_fr || box.name) : box.name}</p>
                     <p className="text-xl font-bold mt-1">{box.balance?.toFixed(2)} {t.currency}</p>
                   </div>
                 ))}
