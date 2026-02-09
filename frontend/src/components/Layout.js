@@ -379,14 +379,21 @@ export const Layout = ({ children }) => {
       ]
     }] : []),
     ...(isAdmin ? [{
-      id: 'admin',
-      title: language === 'ar' ? 'الإدارة' : 'Administration',
+      id: 'settings',
+      title: language === 'ar' ? 'الإعدادات' : 'Paramètres',
       icon: Settings,
       items: [
-        { path: '/features', icon: LayoutDashboard, label: language === 'ar' ? 'مميزات البرنامج' : 'Fonctionnalités' },
         { path: '/api-keys', icon: Key, label: t.apiKeys },
         { path: '/settings', icon: Settings, label: t.settings },
         { path: '/settings/sidebar', icon: LayoutDashboard, label: language === 'ar' ? 'ترتيب القائمة' : 'Ordre menu' },
+      ]
+    }] : []),
+    ...(isAdmin ? [{
+      id: 'admin',
+      title: language === 'ar' ? 'الإدارة' : 'Administration',
+      icon: Shield,
+      items: [
+        { path: '/features', icon: LayoutDashboard, label: language === 'ar' ? 'مميزات البرنامج' : 'Fonctionnalités' },
       ]
     }] : []),
     ...(user?.role === 'super_admin' ? [{
