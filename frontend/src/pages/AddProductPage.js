@@ -22,7 +22,9 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import { toast } from 'sonner';
-import { ArrowRight, ArrowLeft, Save, Camera, Loader2, RefreshCw, Plus, FolderTree, PlusCircle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Save, Camera, Loader2, RefreshCw, Plus, FolderTree, PlusCircle, Calculator } from 'lucide-react';
+import { Switch } from '../components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../components/ui/tooltip';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
