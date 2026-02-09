@@ -325,24 +325,12 @@ export default function ProductFamiliesPage() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>{t.familyNameAr} *</Label>
+                <Label>{language === 'ar' ? 'اسم العائلة' : 'Nom de la famille'} *</Label>
                 <Input
-                  value={form.name_ar}
-                  onChange={(e) => setForm({ ...form, name_ar: e.target.value })}
-                  placeholder={language === 'ar' ? 'مثال: واقيات الشاشة' : 'e.g., Screen Protectors'}
-                  dir="rtl"
-                  data-testid="family-name-ar-input"
-                />
-              </div>
-
-              <div>
-                <Label>{t.familyNameEn}</Label>
-                <Input
-                  value={form.name_en}
-                  onChange={(e) => setForm({ ...form, name_en: e.target.value })}
-                  placeholder="e.g., Screen Protectors"
-                  dir="ltr"
-                  data-testid="family-name-en-input"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder={language === 'ar' ? 'مثال: واقيات الشاشة' : 'Ex: Protections d\'écran'}
+                  data-testid="family-name-input"
                 />
               </div>
 
@@ -361,7 +349,7 @@ export default function ProductFamiliesPage() {
                       .filter(f => !f.parent_id && f.id !== editingFamily?.id)
                       .map((f) => (
                         <SelectItem key={f.id} value={f.id}>
-                          {language === 'ar' ? f.name_ar : f.name_en}
+                          {f.name_ar || f.name_en}
                         </SelectItem>
                       ))
                     }
@@ -370,22 +358,12 @@ export default function ProductFamiliesPage() {
               </div>
 
               <div>
-                <Label>{language === 'ar' ? 'الوصف (عربي)' : 'Description (Arabic)'}</Label>
+                <Label>{language === 'ar' ? 'الوصف' : 'Description'}</Label>
                 <Input
-                  value={form.description_ar}
-                  onChange={(e) => setForm({ ...form, description_ar: e.target.value })}
-                  dir="rtl"
-                  data-testid="family-desc-ar-input"
-                />
-              </div>
-
-              <div>
-                <Label>{language === 'ar' ? 'الوصف (إنجليزي)' : 'Description (English)'}</Label>
-                <Input
-                  value={form.description_en}
-                  onChange={(e) => setForm({ ...form, description_en: e.target.value })}
-                  dir="ltr"
-                  data-testid="family-desc-en-input"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder={language === 'ar' ? 'وصف اختياري...' : 'Description optionnelle...'}
+                  data-testid="family-desc-input"
                 />
               </div>
 
@@ -396,7 +374,7 @@ export default function ProductFamiliesPage() {
                 {!editingFamily && (
                   <Button variant="outline" onClick={() => handleSubmit(true)} className="gap-2" data-testid="save-and-new-family-btn">
                     <PlusCircle className="h-4 w-4" />
-                    {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer nouveau'}
+                    {language === 'ar' ? 'حفظ وإنشاء جديد' : 'Enregistrer et créer'}
                   </Button>
                 )}
                 <Button onClick={() => handleSubmit(false)} className="gap-2" data-testid="save-family-btn">
