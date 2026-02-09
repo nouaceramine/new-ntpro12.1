@@ -128,6 +128,18 @@ export default function InventoryCountPage() {
     fetchData();
   }, []);
 
+  // Fetch inventory code when dialog opens
+  useEffect(() => {
+    if (showStartDialog && !inventoryCode) {
+      const token = localStorage.getItem('token');
+      axios.get(`${API}/inventory-sessions/generate-code`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => setInventoryCode(res.data.code))
+        .catch(() => {});
+    }
+  }, [showStartDialog]);
+
   // Auto-focus barcode input
   useEffect(() => {
     if (activeSession && autoFocus) {
