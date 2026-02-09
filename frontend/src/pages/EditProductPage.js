@@ -40,6 +40,7 @@ export default function EditProductPage() {
           description_en: p.description_en || '', description_ar: p.description_ar || '',
           purchase_price: p.purchase_price?.toString() || '0',
           wholesale_price: p.wholesale_price?.toString() || '0',
+          super_wholesale_price: p.super_wholesale_price?.toString() || '0',
           retail_price: p.retail_price?.toString() || '0',
           quantity: p.quantity.toString(),
           image_url: p.image_url || '',
@@ -47,6 +48,7 @@ export default function EditProductPage() {
           compatible_models: p.compatible_models.join(', '),
           low_stock_threshold: p.low_stock_threshold?.toString() || '10'
         });
+        setUseAveragePrice(p.use_average_price || false);
       } catch (error) {
         toast.error(t.notFound);
         navigate('/products');
