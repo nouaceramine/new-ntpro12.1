@@ -304,8 +304,11 @@ export default function RepairTrackingPage() {
     setUpdateForm({
       status: repair.status,
       notes: '',
-      actual_cost: repair.actual_cost?.toString() || ''
+      actual_cost: repair.actual_cost?.toString() || '',
+      spare_parts: repair.spare_parts || []
     });
+    setProductSearch('');
+    setProductResults([]);
     setShowUpdateDialog(true);
   };
 
