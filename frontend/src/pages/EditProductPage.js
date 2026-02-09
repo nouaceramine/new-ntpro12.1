@@ -27,7 +27,7 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState({
     name_en: '', name_ar: '', description_en: '', description_ar: '',
     purchase_price: '', wholesale_price: '', retail_price: '', super_wholesale_price: '',
-    quantity: '', image_url: '', barcode: '', compatible_models: '', low_stock_threshold: ''
+    quantity: '', image_url: '', barcode: '', article_code: '', compatible_models: '', low_stock_threshold: ''
   });
 
   useEffect(() => {
@@ -45,6 +45,7 @@ export default function EditProductPage() {
           quantity: p.quantity.toString(),
           image_url: p.image_url || '',
           barcode: p.barcode || '',
+          article_code: p.article_code || '',
           compatible_models: p.compatible_models.join(', '),
           low_stock_threshold: p.low_stock_threshold?.toString() || '10'
         });
