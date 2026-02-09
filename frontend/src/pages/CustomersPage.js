@@ -72,6 +72,7 @@ export default function CustomersPage() {
     address: '', 
     notes: '', 
     family_id: '',
+    code: '',  // كود الزبون
     // New fields
     national_id: '',
     commercial_register: '',
