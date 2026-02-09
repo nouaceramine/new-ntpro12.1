@@ -153,6 +153,25 @@ export default function POSPage() {
   // Calculator
   const [showCalculator, setShowCalculator] = useState(false);
 
+  // Sale Code
+  const [saleCode, setSaleCode] = useState('');
+
+  // Product Shortcuts (20 quick access boxes)
+  const [productShortcuts, setProductShortcuts] = useState(() => {
+    const saved = localStorage.getItem('posProductShortcuts');
+    return saved ? JSON.parse(saved) : Array(20).fill({ productId: null, color: '#e5e7eb' });
+  });
+  const [showShortcutDialog, setShowShortcutDialog] = useState(false);
+  const [editingShortcutIndex, setEditingShortcutIndex] = useState(null);
+  const [shortcutColor, setShortcutColor] = useState('#e5e7eb');
+  const [shortcutProductId, setShortcutProductId] = useState('');
+
+  // Save shortcuts to localStorage
+  const saveShortcuts = (shortcuts) => {
+    setProductShortcuts(shortcuts);
+    localStorage.setItem('posProductShortcuts', JSON.stringify(shortcuts));
+  };
+
   useEffect(() => {
     checkOpenSession();
     fetchProducts();
