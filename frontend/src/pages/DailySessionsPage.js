@@ -162,7 +162,17 @@ export default function DailySessionsPage() {
 
   const startSession = async () => {
     try {
+      // Generate session code first
+      let code = '';
+      try {
+        const codeRes = await axios.get(`${API}/daily-sessions/generate-code`);
+        code = codeRes.data.code;
+      } catch (e) {
+        console.error('Error generating session code:', e);
+      }
+      
       const session = {
+        code: code,
         opening_cash: openingCash,
         opened_at: new Date().toISOString(),
         status: 'open'
@@ -171,6 +181,7 @@ export default function DailySessionsPage() {
       const response = await axios.post(`${API}/daily-sessions`, session);
       setCurrentSession(response.data);
       setShowStartDialog(false);
+      setSessionCode('');
       toast.success(language === 'ar' ? 'تم فتح الحصة بنجاح' : 'Session ouverte avec succès');
       fetchData();
     } catch (error) {
