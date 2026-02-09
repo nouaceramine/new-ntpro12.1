@@ -259,37 +259,64 @@ export default function ProductsPage() {
             )}
           </div>
         ) : viewMode === 'list' ? (
-          /* List View */
-          <div className="space-y-2">
-            {sortedProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/products/${product.id}`}
-                className="block"
-                data-testid={`product-item-${product.id}`}
-              >
-                <div className="flex items-center gap-4 p-4 border rounded-lg bg-card hover:bg-muted/50 transition-colors">
-                  <img
-                    src={product.image_url || 'https://images.unsplash.com/photo-1634403665443-81dc4d75843a?crop=entropy&cs=srgb&fm=jpg&q=85'}
-                    alt={language === 'ar' ? product.name_ar : product.name_en}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium truncate">{language === 'ar' ? product.name_ar : product.name_en}</h3>
-                    <div className="flex gap-2 text-sm text-muted-foreground">
-                      {product.article_code && <span className="font-mono">{product.article_code}</span>}
-                      {product.article_code && product.barcode && <span>|</span>}
-                      {product.barcode && <span>{product.barcode}</span>}
+          /* List View - Table style with all info */
+          <div className="border rounded-lg overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-6 gap-2 p-3 bg-muted/50 text-xs font-medium border-b">
+              <div>{language === 'ar' ? 'كود المنتج' : 'Code Article'}</div>
+              <div>{language === 'ar' ? 'اسم المنتج' : 'Nom d\'article'}</div>
+              <div>{language === 'ar' ? 'العائلة' : 'Famille'}</div>
+              <div className="text-center">{language === 'ar' ? 'المخزون' : 'Stock'}</div>
+              <div className="text-center">{language === 'ar' ? 'السعر' : 'Prix'}</div>
+              <div className="text-center">{language === 'ar' ? 'آخر شراء' : 'Dernier Achat'}</div>
+            </div>
+            {/* Table Body */}
+            <div className="divide-y">
+              {sortedProducts.map((product) => (
+                <Link
+                  key={product.id}
+                  to={`/products/${product.id}`}
+                  className="block hover:bg-muted/30 transition-colors"
+                  data-testid={`product-item-${product.id}`}
+                >
+                  <div className="grid grid-cols-6 gap-2 p-3 items-center text-sm">
+                    {/* Code Article */}
+                    <div className="font-mono text-xs text-blue-600 font-medium">
+                      {product.article_code || '-'}
+                    </div>
+                    {/* Nom d'article */}
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={product.image_url || 'https://images.unsplash.com/photo-1634403665443-81dc4d75843a?crop=entropy&cs=srgb&fm=jpg&q=85'}
+                        alt=""
+                        className="w-8 h-8 object-cover rounded"
+                      />
+                      <span className="truncate font-medium">
+                        {language === 'ar' ? product.name_ar : product.name_en}
+                      </span>
+                    </div>
+                    {/* Famille */}
+                    <div className="text-muted-foreground text-xs">
+                      {product.family_name || '-'}
+                    </div>
+                    {/* Stock */}
+                    <div className="text-center">
+                      {getStockBadge(product.quantity)}
+                    </div>
+                    {/* Prix */}
+                    <div className="text-center font-bold">
+                      {product.retail_price?.toFixed(2)} <span className="text-xs font-normal">{t.currency}</span>
+                    </div>
+                    {/* Dernier Achat */}
+                    <div className="text-center text-xs text-muted-foreground">
+                      {product.last_purchase_date 
+                        ? new Date(product.last_purchase_date).toLocaleDateString(language === 'ar' ? 'ar-DZ' : 'fr-FR')
+                        : '-'}
                     </div>
                   </div>
-                  <div className="text-end">
-                    <p className="font-bold">{product.retail_price?.toFixed(2)} {t.currency}</p>
-                    <p className="text-sm text-muted-foreground">{t.stock}: {product.quantity}</p>
-                  </div>
-                  {getStockBadge(product.quantity)}
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
           </div>
         ) : viewMode === 'compact' ? (
           /* Compact View */
