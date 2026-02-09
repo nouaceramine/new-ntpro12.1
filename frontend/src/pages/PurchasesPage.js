@@ -731,9 +731,14 @@ export default function PurchasesPage() {
         <Dialog open={showNewPurchaseDialog} onOpenChange={setShowNewPurchaseDialog}>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5" />
-                {t.newPurchase}
+              <DialogTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5" />
+                  {t.newPurchase}
+                </div>
+                {purchaseCode && (
+                  <span className="font-mono text-sm bg-muted px-2 py-1 rounded">{purchaseCode}</span>
+                )}
               </DialogTitle>
             </DialogHeader>
 
@@ -745,10 +750,11 @@ export default function PurchasesPage() {
                   <Input
                     ref={searchInputRef}
                     type="text"
-                    placeholder={t.searchPlaceholder}
+                    placeholder={language === 'ar' ? 'البحث بالاسم أو الباركود أو كود المنتج...' : 'Rechercher par nom, code-barres ou code article...'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
+                    autoComplete="off"
                   />
                 </div>
 
@@ -762,6 +768,9 @@ export default function PurchasesPage() {
                       <p className="font-medium text-sm line-clamp-1">
                         {language === 'ar' ? product.name_ar : product.name_en}
                       </p>
+                      {product.article_code && (
+                        <p className="text-xs font-mono text-blue-600">{product.article_code}</p>
+                      )}
                       <p className="text-xs text-muted-foreground mt-1">
                         {(product.purchase_price || product.price || 0).toFixed(2)} {t.currency}
                       </p>
