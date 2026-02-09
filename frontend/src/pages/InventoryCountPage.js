@@ -92,6 +92,7 @@ export default function InventoryCountPage() {
   const [countedItems, setCountedItems] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
+  const [inventoryCode, setInventoryCode] = useState('');  // كود الجرد
   
   // Dialogs
   const [showStartDialog, setShowStartDialog] = useState(false);
