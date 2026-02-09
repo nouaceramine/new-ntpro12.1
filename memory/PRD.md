@@ -5,7 +5,49 @@
 
 ---
 
-## التحديثات الأخيرة (2026-02-09) - الجلسة الأخيرة
+## التحديثات الأخيرة (2026-02-09) - الجلسة الحالية
+
+### 11. أزرار الطباعة والتصدير الشاملة ✅ جديد
+تم إضافة مكون `ExportPrintButtons` إلى جميع الصفحات الرئيسية:
+
+**الصفحات المُحدّثة:**
+- صفحة المنتجات (ProductsPage) ✅ موجود سابقاً
+- صفحة الزبائن (CustomersPage) ✅ جديد
+- صفحة الموردين (SuppliersPage) ✅ جديد
+- صفحة التكاليف (ExpensesPage) ✅ جديد
+- صفحة المبيعات (SalesHistoryPage) ✅ جديد
+- صفحة المشتريات (PurchasesPage) ✅ جديد
+
+**الوظائف المتاحة:**
+- طباعة (Print) - يفتح نافذة الطباعة
+- تصدير إلى Excel (.xls)
+- تصدير إلى CSV
+- تصدير إلى PDF
+
+**المكون:** `/frontend/src/components/ExportPrintButtons.js`
+
+### 12. Custom Hook لماسح الباركود ✅ جديد
+تم إنشاء hook قابل لإعادة الاستخدام لدعم ماسح الباركود:
+
+**الملف:** `/frontend/src/hooks/useBarcodeScanner.js`
+
+**الاستخدام:**
+```javascript
+const { handleKeyDown } = useBarcodeScanner((barcode) => {
+  // Handle scanned barcode
+  searchProducts(barcode);
+}, { playSound: true });
+```
+
+**الخيارات:**
+- `playSound`: تشغيل صوت عند المسح (افتراضي: true)
+- `minLength`: الحد الأدنى لطول الباركود (افتراضي: 3)
+- `maxTime`: أقصى وقت بين الضغطات (افتراضي: 100ms)
+- `enabled`: تفعيل/تعطيل المسح (افتراضي: true)
+
+---
+
+## التحديثات السابقة (2026-02-09)
 
 ### 6. كود المنتج التلقائي (Article Code) ✅ جديد
 تمت إضافة حقل "كود المنتج" مع توليد تلقائي بصيغة AR00001, AR00002, ...
