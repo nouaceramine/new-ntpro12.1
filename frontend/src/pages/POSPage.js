@@ -183,6 +183,7 @@ export default function POSPage() {
     fetchWilayas();
     fetchWarehouses();
     fetchReceiptSettings();
+    fetchSaleCode();
   }, []);
 
   // Close search dropdown when clicking outside
