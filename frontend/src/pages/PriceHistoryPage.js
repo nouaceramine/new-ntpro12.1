@@ -101,17 +101,19 @@ export default function PriceHistoryPage() {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('fr-DZ').format(amount);
+    if (amount === null || amount === undefined) return '0';
+    return parseFloat(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/,/g, ' ');
   };
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
   return (
