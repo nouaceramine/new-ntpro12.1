@@ -781,6 +781,28 @@ export default function PurchasesPage() {
                     placeholder={language === 'ar' ? 'البحث بالاسم أو الباركود أو كود المنتج...' : 'Rechercher par nom, code-barres ou code article...'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        // Add first matching product to cart
+                        if (filteredProducts.length > 0) {
+                          addToCart(filteredProducts[0]);
+                          setSearchQuery('');
+                        }
+                        // Play beep sound
+                        try {
+                          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                          const oscillator = audioContext.createOscillator();
+                          const gainNode = audioContext.createGain();
+                          oscillator.connect(gainNode);
+                          gainNode.connect(audioContext.destination);
+                          oscillator.frequency.value = 1200;
+                          gainNode.gain.value = 0.3;
+                          oscillator.start();
+                          setTimeout(() => oscillator.stop(), 100);
+                        } catch (e) {}
+                      }
+                    }}
                     className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
                     autoComplete="off"
                   />
