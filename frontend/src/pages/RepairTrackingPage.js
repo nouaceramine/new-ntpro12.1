@@ -208,6 +208,67 @@ export default function RepairTrackingPage() {
     filterRepairs();
   }, [searchQuery, statusFilter, repairs]);
 
+  // Search products for spare parts
+  const searchProducts = async (query) => {
+    if (!query || query.length < 2) {
+      setProductResults([]);
+      return;
+    }
+    try {
+      setSearchingProducts(true);
+      const response = await axios.get(`${API}/products?search=${encodeURIComponent(query)}`);
+      setProductResults(response.data?.slice(0, 10) || []);
+    } catch (error) {
+      console.error('Error searching products:', error);
+    } finally {
+      setSearchingProducts(false);
+    }
+  };
+
+  // Add spare part to form
+  const addSparePart = (product) => {
+    const existingPart = updateForm.spare_parts.find(p => p.id === product.id);
+    if (existingPart) {
+      setUpdateForm(prev => ({
+        ...prev,
+        spare_parts: prev.spare_parts.map(p => 
+          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
+        )
+      }));
+    } else {
+      setUpdateForm(prev => ({
+        ...prev,
+        spare_parts: [...prev.spare_parts, {
+          id: product.id,
+          name: product.name_ar || product.name_en || product.name,
+          price: product.retail_price || product.purchase_price || 0,
+          quantity: 1
+        }]
+      }));
+    }
+    setProductSearch('');
+    setProductResults([]);
+  };
+
+  // Remove spare part
+  const removeSparePart = (productId) => {
+    setUpdateForm(prev => ({
+      ...prev,
+      spare_parts: prev.spare_parts.filter(p => p.id !== productId)
+    }));
+  };
+
+  // Update spare part quantity
+  const updateSparePartQty = (productId, qty) => {
+    if (qty < 1) return;
+    setUpdateForm(prev => ({
+      ...prev,
+      spare_parts: prev.spare_parts.map(p => 
+        p.id === productId ? { ...p, quantity: qty } : p
+      )
+    }));
+  };
+
   const filterRepairs = () => {
     let filtered = [...repairs];
 
