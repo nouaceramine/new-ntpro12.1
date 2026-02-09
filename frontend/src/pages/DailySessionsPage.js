@@ -738,12 +738,23 @@ export default function DailySessionsPage() {
 
   function renderStartDialog() {
     return (
-      <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
+      <Dialog open={showStartDialog} onOpenChange={(open) => {
+        setShowStartDialog(open);
+        if (open && !sessionCode) {
+          // Generate session code when dialog opens
+          axios.get(`${API}/daily-sessions/generate-code`).then(res => {
+            setSessionCode(res.data.code);
+          }).catch(() => {});
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Play className="h-5 w-5 text-emerald-600" />
               {language === 'ar' ? 'فتح حصة جديدة' : 'Ouvrir une session'}
+              {sessionCode && (
+                <span className="font-mono text-sm bg-emerald-100 text-emerald-700 px-2 py-1 rounded ms-2">{sessionCode}</span>
+              )}
             </DialogTitle>
             <DialogDescription>
               {language === 'ar' ? 'أدخل رصيد الصندوق الافتتاحي' : 'Entrez le solde d\'ouverture de la caisse'}
