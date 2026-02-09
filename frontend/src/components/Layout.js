@@ -142,6 +142,20 @@ export const Layout = ({ children }) => {
     return () => window.removeEventListener('sidebarOrderChanged', handleSidebarOrderChange);
   }, []);
 
+  // Auto-expand section containing active page
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const activeSection = navSections.find(section => 
+      section.items?.some(item => {
+        if (item.path === '/') return currentPath === '/';
+        return currentPath.startsWith(item.path);
+      })
+    );
+    if (activeSection && !expandedSections.includes(activeSection.title)) {
+      setExpandedSections(prev => [...prev, activeSection.title]);
+    }
+  }, [location.pathname, navSections]);
+
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       // If we have native prompt, use it
