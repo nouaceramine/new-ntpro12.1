@@ -241,22 +241,18 @@ export default function UsersPage() {
                             onValueChange={(value) => handleRoleChange(user.id, value)}
                             disabled={currentUser?.id === user.id}
                           >
-                            <SelectTrigger className="w-32" data-testid={`role-select-${user.id}`}>
+                            <SelectTrigger className="w-36" data-testid={`role-select-${user.id}`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="admin">
-                                <div className="flex items-center gap-2">
-                                  <Shield className="h-4 w-4" />
-                                  {t.adminRole}
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="user">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4" />
-                                  {t.userRoleLabel}
-                                </div>
-                              </SelectItem>
+                              {roles.map((role) => (
+                                <SelectItem key={role.value} value={role.value}>
+                                  <div className="flex items-center gap-2">
+                                    <role.icon className="h-4 w-4" />
+                                    {role.label}
+                                  </div>
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </td>
