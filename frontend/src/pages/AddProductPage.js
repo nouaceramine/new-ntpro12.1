@@ -249,75 +249,68 @@ export default function AddProductPage() {
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in" data-testid="add-product-page">
+      <div className="max-w-2xl mx-auto space-y-4 animate-fade-in" data-testid="add-product-page">
         <Link to="/products">
-          <Button variant="ghost" className="gap-2" data-testid="back-to-products-btn">
+          <Button variant="ghost" size="sm" className="gap-2" data-testid="back-to-products-btn">
             <BackArrow className="h-4 w-4" />
             {t.products}
           </Button>
         </Link>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">{t.addNewProduct}</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl">{t.addNewProduct}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Product Name - Single Field */}
-              <div className="space-y-2">
-                <Label htmlFor="name">{language === 'ar' ? 'اسم المنتج' : 'Nom du produit'} *</Label>
-                <Input 
-                  id="name" 
-                  name="name" 
-                  value={formData.name} 
-                  onChange={handleChange} 
-                  required 
-                  className="h-11" 
-                  data-testid="product-name-input"
-                  placeholder={language === 'ar' ? 'يقبل العربية والفرنسية' : 'Accepte arabe et français'}
-                />
-              </div>
-
-              {/* Family Selection with Quick Add */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>{t.productFamilies}</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAddFamilyDialog(true)}
-                    className="gap-1"
-                  >
-                    <Plus className="h-4 w-4" />
-                    {t.quickAddFamily}
-                  </Button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Product Name & Family */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'اسم المنتج' : 'Nom du produit'} *</Label>
+                  <Input 
+                    name="name" 
+                    value={formData.name} 
+                    onChange={handleChange} 
+                    required 
+                    className="h-9" 
+                    data-testid="product-name-input"
+                    placeholder={language === 'ar' ? 'يقبل العربية والفرنسية' : 'Accepte arabe et français'}
+                  />
                 </div>
-                <Select value={formData.family_id || "none"} onValueChange={(v) => setFormData({...formData, family_id: v === "none" ? "" : v})}>
-                  <SelectTrigger data-testid="family-select">
-                    <FolderTree className="h-4 w-4 me-2" />
-                    <SelectValue placeholder={t.selectFamily} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{language === 'ar' ? 'بدون عائلة' : 'No Family'}</SelectItem>
-                    {families.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {language === 'ar' ? f.name_ar : f.name_en}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">{t.productFamilies}</Label>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setShowAddFamilyDialog(true)} className="h-5 px-1 text-xs">
+                      <Plus className="h-3 w-3" />
+                      {t.quickAddFamily}
+                    </Button>
+                  </div>
+                  <Select value={formData.family_id || "none"} onValueChange={(v) => setFormData({...formData, family_id: v === "none" ? "" : v})}>
+                    <SelectTrigger className="h-9" data-testid="family-select">
+                      <FolderTree className="h-3 w-3 me-1" />
+                      <SelectValue placeholder={t.selectFamily} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{language === 'ar' ? 'بدون عائلة' : 'No Family'}</SelectItem>
+                      {families.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {language === 'ar' ? f.name_ar : f.name_en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Descriptions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="description_en">{t.descriptionEn}</Label>
-                  <Textarea id="description_en" name="description_en" value={formData.description_en} onChange={handleChange} rows={2} />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.descriptionEn}</Label>
+                  <Textarea name="description_en" value={formData.description_en} onChange={handleChange} rows={2} className="text-sm" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description_ar">{t.descriptionAr}</Label>
-                  <Textarea id="description_ar" name="description_ar" value={formData.description_ar} onChange={handleChange} rows={2} dir="rtl" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.descriptionAr}</Label>
+                  <Textarea name="description_ar" value={formData.description_ar} onChange={handleChange} rows={2} dir="rtl" className="text-sm" />
                 </div>
               </div>
 
