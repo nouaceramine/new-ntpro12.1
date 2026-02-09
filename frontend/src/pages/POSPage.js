@@ -895,7 +895,7 @@ export default function POSPage() {
                   placeholder={language === 'ar' ? 'البحث عن منتج بالاسم أو الباركود...' : 'Rechercher un article...'}
                   value={searchQuery}
                   onChange={handleSearchChange}
-                  onFocus={() => searchQuery && setShowSearchResults(true)}
+                  onFocus={() => setShowSearchResults(true)}
                   className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
                   data-testid="pos-search-input"
                 />
