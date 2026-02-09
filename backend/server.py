@@ -9419,6 +9419,200 @@ async def get_product_sales_tracking(
         }
     }
 
+
+# ============ SYSTEM UPDATES (Super Admin Only) ============
+
+class AnnouncementCreate(BaseModel):
+    title_ar: str
+    title_fr: str = ""
+    message_ar: str
+    message_fr: str = ""
+    type: str = "info"  # info, feature, maintenance, warning, promotion
+    priority: str = "normal"  # low, normal, high, urgent
+    target: str = "all"  # all, active
+
+class SettingsPush(BaseModel):
+    settings: List[str]
+
+async def get_super_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Verify user is super_admin"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        role = payload.get("role")
+        if role != "super_admin":
+            raise HTTPException(status_code=403, detail="Super admin access required")
+        user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@api_router.get("/system-updates/stats")
+async def get_system_stats(admin: dict = Depends(get_super_admin)):
+    """Get system statistics for super admin"""
+    total_tenants = await db.saas_tenants.count_documents({})
+    active_tenants = await db.saas_tenants.count_documents({"status": "active"})
+    total_announcements = await db.system_announcements.count_documents({})
+    
+    return {
+        "total_tenants": total_tenants,
+        "active_tenants": active_tenants,
+        "total_announcements": total_announcements
+    }
+
+@api_router.get("/system-updates/announcements")
+async def get_announcements(admin: dict = Depends(get_super_admin)):
+    """Get all system announcements"""
+    announcements = await db.system_announcements.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return announcements
+
+@api_router.post("/system-updates/announcements")
+async def create_announcement(data: AnnouncementCreate, admin: dict = Depends(get_super_admin)):
+    """Create and broadcast a new announcement"""
+    now = datetime.now(timezone.utc).isoformat()
+    announcement_id = str(uuid.uuid4())
+    
+    announcement = {
+        "id": announcement_id,
+        "title_ar": data.title_ar,
+        "title_fr": data.title_fr,
+        "message_ar": data.message_ar,
+        "message_fr": data.message_fr,
+        "type": data.type,
+        "priority": data.priority,
+        "target": data.target,
+        "created_by": admin["id"],
+        "created_at": now,
+        "read_count": 0
+    }
+    
+    await db.system_announcements.insert_one(announcement)
+    
+    # Create notifications for all users
+    query = {}
+    if data.target == "active":
+        # Get active tenant IDs
+        active_tenants = await db.saas_tenants.find({"status": "active"}, {"id": 1}).to_list(1000)
+        tenant_ids = [t["id"] for t in active_tenants]
+        query = {"tenant_id": {"$in": tenant_ids}}
+    
+    users = await db.users.find(query, {"id": 1}).to_list(10000)
+    
+    notifications = []
+    for user in users:
+        notifications.append({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "type": f"system_{data.type}",
+            "title": data.title_ar,
+            "title_ar": data.title_ar,
+            "title_fr": data.title_fr,
+            "message": data.message_ar,
+            "message_ar": data.message_ar,
+            "message_fr": data.message_fr,
+            "priority": data.priority,
+            "announcement_id": announcement_id,
+            "read": False,
+            "created_at": now
+        })
+    
+    if notifications:
+        await db.notifications.insert_many(notifications)
+    
+    return {"message": "Announcement created and sent", "id": announcement_id, "recipients": len(notifications)}
+
+@api_router.delete("/system-updates/announcements/{announcement_id}")
+async def delete_announcement(announcement_id: str, admin: dict = Depends(get_super_admin)):
+    """Delete an announcement"""
+    result = await db.system_announcements.delete_one({"id": announcement_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Announcement not found")
+    
+    # Also delete related notifications
+    await db.notifications.delete_many({"announcement_id": announcement_id})
+    
+    return {"message": "Announcement deleted"}
+
+@api_router.post("/system-updates/push-settings")
+async def push_settings(data: SettingsPush, admin: dict = Depends(get_super_admin)):
+    """Push settings to all tenants"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get current admin settings as template
+    admin_settings = {}
+    
+    for setting_type in data.settings:
+        if setting_type == "receipt_settings":
+            settings = await db.settings.find_one({"type": "receipt"}, {"_id": 0})
+            if settings:
+                admin_settings["receipt"] = settings
+        elif setting_type == "notification_settings":
+            settings = await db.notification_settings.find_one({}, {"_id": 0})
+            if settings:
+                admin_settings["notifications"] = settings
+        elif setting_type == "loyalty_settings":
+            settings = await db.loyalty_settings.find_one({}, {"_id": 0})
+            if settings:
+                admin_settings["loyalty"] = settings
+        elif setting_type == "pos_settings":
+            settings = await db.settings.find_one({"type": "pos"}, {"_id": 0})
+            if settings:
+                admin_settings["pos"] = settings
+    
+    # Get all active tenants
+    tenants = await db.saas_tenants.find({"status": "active"}, {"database_name": 1}).to_list(1000)
+    
+    updated_count = 0
+    for tenant in tenants:
+        try:
+            tenant_db = client[tenant["database_name"]]
+            for key, value in admin_settings.items():
+                if key == "receipt":
+                    await tenant_db.settings.update_one(
+                        {"type": "receipt"}, 
+                        {"$set": value}, 
+                        upsert=True
+                    )
+                elif key == "notifications":
+                    await tenant_db.notification_settings.update_one(
+                        {}, 
+                        {"$set": value}, 
+                        upsert=True
+                    )
+                elif key == "loyalty":
+                    await tenant_db.loyalty_settings.update_one(
+                        {}, 
+                        {"$set": value}, 
+                        upsert=True
+                    )
+                elif key == "pos":
+                    await tenant_db.settings.update_one(
+                        {"type": "pos"}, 
+                        {"$set": value}, 
+                        upsert=True
+                    )
+            updated_count += 1
+        except Exception as e:
+            print(f"Error updating tenant {tenant.get('database_name')}: {e}")
+    
+    # Log the action
+    await db.system_logs.insert_one({
+        "id": str(uuid.uuid4()),
+        "action": "push_settings",
+        "settings": data.settings,
+        "updated_tenants": updated_count,
+        "admin_id": admin["id"],
+        "created_at": now
+    })
+    
+    return {"message": f"Settings pushed to {updated_count} tenants", "updated_count": updated_count}
+
+
+
 # Include router and middleware
 app.include_router(api_router)
 
