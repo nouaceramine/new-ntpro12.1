@@ -1289,13 +1289,16 @@ async def create_product(product: ProductCreate, admin: dict = Depends(get_admin
         "purchase_price": product.purchase_price,
         "wholesale_price": product.wholesale_price,
         "retail_price": product.retail_price,
+        "super_wholesale_price": product.super_wholesale_price,
         "quantity": product.quantity,
         "image_url": product.image_url or "",
         "compatible_models": product.compatible_models,
         "low_stock_threshold": product.low_stock_threshold,
         "barcode": product.barcode or "",
+        "article_code": product.article_code or "",
         "family_id": product.family_id or "",
         "family_name": family_name,
+        "use_average_price": product.use_average_price or False,
         "created_at": now, "updated_at": now
     }
     await db.products.insert_one(product_doc)
