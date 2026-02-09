@@ -175,6 +175,29 @@ export default function ProductsPage() {
                     <LayoutGrid className="h-4 w-4" />
                   </Button>
                 </div>
+                
+                {/* Export & Print */}
+                <ExportPrintButtons
+                  data={products.map(p => ({
+                    article_code: p.article_code || '-',
+                    name: language === 'ar' ? p.name_ar : p.name_en,
+                    family: p.family_name || '-',
+                    stock: p.quantity,
+                    price: p.retail_price?.toFixed(2) || '0.00',
+                    purchase_price: p.purchase_price?.toFixed(2) || '0.00'
+                  }))}
+                  columns={[
+                    { key: 'article_code', label: language === 'ar' ? 'الكود' : 'Code' },
+                    { key: 'name', label: language === 'ar' ? 'المنتج' : 'Produit' },
+                    { key: 'family', label: language === 'ar' ? 'العائلة' : 'Famille' },
+                    { key: 'stock', label: language === 'ar' ? 'المخزون' : 'Stock' },
+                    { key: 'price', label: language === 'ar' ? 'السعر' : 'Prix' },
+                    { key: 'purchase_price', label: language === 'ar' ? 'سعر الشراء' : 'Prix achat' }
+                  ]}
+                  filename="products"
+                  title={language === 'ar' ? 'قائمة المنتجات' : 'Liste des produits'}
+                  language={language}
+                />
               </div>
               
               {/* Sort Controls */}
