@@ -52,15 +52,16 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsRes, statsRes, salesStatsRes] = await Promise.all([
+        const [productsRes, statsRes, salesStatsRes, profitRes] = await Promise.all([
           axios.get(`${API}/products`),
-          isAdmin ? axios.get(`${API}/stats`) : Promise.resolve({ data: {} }),
-          isAdmin ? axios.get(`${API}/dashboard/sales-stats`).catch(() => ({ data: null })) : Promise.resolve({ data: null })
+          axios.get(`${API}/stats`).catch(() => ({ data: {} })),
+          axios.get(`${API}/dashboard/sales-stats`).catch(() => ({ data: null })),
+          axios.get(`${API}/dashboard/profit-stats`).catch(() => ({ data: null }))
         ]);
         
         setRecentProducts(productsRes.data.slice(0, 6));
         
-        if (isAdmin && statsRes.data) {
+        if (statsRes.data) {
           setStats(statsRes.data);
         } else {
           setStats(prev => ({
@@ -73,6 +74,10 @@ export default function DashboardPage() {
         if (salesStatsRes.data) {
           setSalesStats(salesStatsRes.data);
         }
+        
+        if (profitRes.data) {
+          setProfitStats(profitRes.data);
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -81,7 +86,7 @@ export default function DashboardPage() {
     };
 
     fetchData();
-  }, [isAdmin]);
+  }, []);
 
   const Arrow = isRTL ? ArrowLeft : ArrowRight;
 
