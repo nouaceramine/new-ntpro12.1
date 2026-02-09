@@ -99,6 +99,15 @@ export default function DailySessionsPage() {
     fetchData();
   }, []);
 
+  // Fetch session code when dialog opens
+  useEffect(() => {
+    if (showStartDialog && !sessionCode) {
+      axios.get(`${API}/daily-sessions/generate-code`)
+        .then(res => setSessionCode(res.data.code))
+        .catch(() => {});
+    }
+  }, [showStartDialog]);
+
   useEffect(() => {
     if (isAdmin && activeTab === 'reports') {
       fetchSummary();
