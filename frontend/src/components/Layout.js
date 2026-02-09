@@ -279,9 +279,7 @@ export const Layout = ({ children }) => {
         { path: '/pos', icon: ShoppingCart, label: t.pos },
         { path: '/daily-sessions', icon: Clock, label: language === 'ar' ? 'حصص البيع اليومية' : 'Sessions journalières' },
         { path: '/sales', icon: Receipt, label: t.sales },
-        ...(isAdmin ? [
-          { path: '/sales/advanced-report', icon: BarChart3, label: language === 'ar' ? 'تقارير متقدمة' : 'Rapports avancés' },
-        ] : [])
+        { path: '/sales/advanced-report', icon: BarChart3, label: language === 'ar' ? 'تقارير متقدمة' : 'Rapports avancés' },
       ]
     },
     {
