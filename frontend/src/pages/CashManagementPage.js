@@ -150,7 +150,7 @@ export default function CashManagementPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">{box.name}</p>
+                      <p className="text-sm text-muted-foreground">{language === 'fr' ? (box.name_fr || box.name) : box.name}</p>
                       <p className="text-3xl font-bold mt-2">{box.balance.toFixed(2)}</p>
                       <p className="text-sm text-muted-foreground">{t.currency}</p>
                     </div>
