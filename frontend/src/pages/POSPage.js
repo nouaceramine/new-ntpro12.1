@@ -2520,10 +2520,10 @@ export default function POSPage() {
                   <SelectValue placeholder={language === 'ar' ? 'اختر منتج...' : 'Choisir produit...'} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
-                  <SelectItem value="">{language === 'ar' ? 'بدون منتج' : 'Aucun produit'}</SelectItem>
+                  <SelectItem value="none">{language === 'ar' ? 'بدون منتج' : 'Aucun produit'}</SelectItem>
                   {products.map(p => (
                     <SelectItem key={p.id} value={p.id}>
-                      {language === 'ar' ? p.name_ar : p.name_en} - {p.retail_price?.toFixed(2)}
+                      {p.name_ar || p.name_en} - {p.retail_price?.toFixed(2)}
                     </SelectItem>
                   ))}
                 </SelectContent>
