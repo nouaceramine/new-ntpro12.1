@@ -4506,12 +4506,17 @@ async def get_invoice_pdf(sale_id: str, user: dict = Depends(get_current_user)):
     if not sale:
         raise HTTPException(status_code=404, detail="Sale not found")
     
+    # Get sale code if exists
+    sale_code = sale.get("code", "")
+    
     # Generate simple HTML invoice
     items_html = ""
     for i, item in enumerate(sale["items"], 1):
+        barcode = item.get('barcode', '-')
         items_html += f"""
         <tr>
             <td>{i}</td>
+            <td>{barcode}</td>
             <td>{item['product_name']}</td>
             <td>{item['quantity']}</td>
             <td>{item['unit_price']:.2f} {CURRENCY}</td>
@@ -4530,11 +4535,13 @@ async def get_invoice_pdf(sale_id: str, user: dict = Depends(get_current_user)):
             body {{ font-family: 'Cairo', Arial, sans-serif; margin: 20px; direction: rtl; }}
             .header {{ text-align: center; margin-bottom: 30px; }}
             .header h1 {{ color: #2563EB; margin: 0; }}
+            .sale-code {{ font-family: monospace; font-size: 14px; background: #f0f0f0; padding: 4px 8px; border-radius: 4px; }}
             .info {{ display: flex; justify-content: space-between; margin-bottom: 20px; }}
             .info div {{ width: 48%; }}
             table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
             th, td {{ border: 1px solid #ddd; padding: 10px; text-align: right; }}
             th {{ background: #2563EB; color: white; }}
+            .barcode {{ font-family: monospace; font-size: 11px; }}
             .totals {{ text-align: left; margin-top: 20px; }}
             .totals table {{ width: 300px; margin-right: 0; margin-left: auto; }}
             .footer {{ text-align: center; margin-top: 40px; color: #666; }}
@@ -4544,6 +4551,7 @@ async def get_invoice_pdf(sale_id: str, user: dict = Depends(get_current_user)):
         <div class="header">
             <h1>NT</h1>
             <p>فاتورة مبيعات</p>
+            {f'<p class="sale-code">{sale_code}</p>' if sale_code else ''}
         </div>
         
         <div class="info">
@@ -4563,6 +4571,7 @@ async def get_invoice_pdf(sale_id: str, user: dict = Depends(get_current_user)):
             <thead>
                 <tr>
                     <th>#</th>
+                    <th>الباركود</th>
                     <th>المنتج</th>
                     <th>الكمية</th>
                     <th>السعر</th>
