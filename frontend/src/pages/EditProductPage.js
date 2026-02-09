@@ -101,41 +101,41 @@ export default function EditProductPage() {
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto space-y-6 animate-fade-in" data-testid="edit-product-page">
+      <div className="max-w-2xl mx-auto space-y-4 animate-fade-in" data-testid="edit-product-page">
         <Link to={`/products/${id}`}>
-          <Button variant="ghost" className="gap-2">
+          <Button variant="ghost" size="sm" className="gap-2">
             <BackArrow className="h-4 w-4" />
             {t.viewDetails}
           </Button>
         </Link>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">{t.editProduct}</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl">{t.editProduct}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Names */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>{t.productNameEn} *</Label>
-                  <Input name="name_en" value={formData.name_en} onChange={handleChange} required className="h-11" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.productNameEn} *</Label>
+                  <Input name="name_en" value={formData.name_en} onChange={handleChange} required className="h-9" />
                 </div>
-                <div className="space-y-2">
-                  <Label>{t.productNameAr} *</Label>
-                  <Input name="name_ar" value={formData.name_ar} onChange={handleChange} required className="h-11" dir="rtl" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.productNameAr} *</Label>
+                  <Input name="name_ar" value={formData.name_ar} onChange={handleChange} required className="h-9" dir="rtl" />
                 </div>
               </div>
 
               {/* Descriptions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label>{t.descriptionEn}</Label>
-                  <Textarea name="description_en" value={formData.description_en} onChange={handleChange} rows={2} />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.descriptionEn}</Label>
+                  <Textarea name="description_en" value={formData.description_en} onChange={handleChange} rows={2} className="text-sm" />
                 </div>
-                <div className="space-y-2">
-                  <Label>{t.descriptionAr}</Label>
-                  <Textarea name="description_ar" value={formData.description_ar} onChange={handleChange} rows={2} dir="rtl" />
+                <div className="space-y-1">
+                  <Label className="text-xs">{t.descriptionAr}</Label>
+                  <Textarea name="description_ar" value={formData.description_ar} onChange={handleChange} rows={2} dir="rtl" className="text-sm" />
                 </div>
               </div>
 
