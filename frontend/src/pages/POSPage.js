@@ -165,11 +165,50 @@ export default function POSPage() {
   const [editingShortcutIndex, setEditingShortcutIndex] = useState(null);
   const [shortcutColor, setShortcutColor] = useState('#e5e7eb');
   const [shortcutProductId, setShortcutProductId] = useState('');
+  
+  // Drag and Drop states
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   // Save shortcuts to localStorage
   const saveShortcuts = (shortcuts) => {
     setProductShortcuts(shortcuts);
     localStorage.setItem('posProductShortcuts', JSON.stringify(shortcuts));
+  };
+
+  // Handle drag and drop
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+      const newShortcuts = [...productShortcuts];
+      const draggedItem = newShortcuts[draggedIndex];
+      newShortcuts.splice(draggedIndex, 1);
+      newShortcuts.splice(dropIndex, 0, draggedItem);
+      saveShortcuts(newShortcuts);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   useEffect(() => {
