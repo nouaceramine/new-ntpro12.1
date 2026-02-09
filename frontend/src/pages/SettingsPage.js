@@ -675,13 +675,14 @@ export default function SettingsPage() {
 
   // Available roles
   const availableRoles = [
-    { value: 'seller', label_ar: 'بائع', label_fr: 'Vendeur', color: 'bg-green-500', desc_ar: 'عمليات البيع الأساسية فقط', desc_fr: 'Basic sales operations only' },
-    { value: 'sales_supervisor', label_ar: 'مشرف مبيعات', label_fr: 'Sales Supervisor', color: 'bg-teal-500', desc_ar: 'إشراف على المبيعات والعملاء', desc_fr: 'Sales and customer oversight' },
-    { value: 'inventory_manager', label_ar: 'مدير مخزون', label_fr: 'Inventory Manager', color: 'bg-orange-500', desc_ar: 'إدارة المخزون والمشتريات', desc_fr: 'Stock and purchase management' },
-    { value: 'ecommerce_manager', label_ar: 'مسؤول متجر إلكتروني', label_fr: 'E-commerce Manager', color: 'bg-purple-500', desc_ar: 'إدارة المتجر الإلكتروني', desc_fr: 'Online store management' },
-    { value: 'accountant', label_ar: 'محاسب', label_fr: 'Comptable', color: 'bg-amber-500', desc_ar: 'التقارير المالية والديون والمصاريف', desc_fr: 'Financial reports, debts, and expenses' },
-    { value: 'manager', label_ar: 'مشرف', label_fr: 'Manager', color: 'bg-blue-500', desc_ar: 'إدارة العمليات اليومية', desc_fr: 'Daily operations management' },
+    { value: 'super_admin', label_ar: 'سوبر أدمين', label_fr: 'Super Admin', color: 'bg-purple-600', desc_ar: 'صلاحيات كاملة على النظام بالكامل + إدارة SaaS', desc_fr: 'Full system access + SaaS management' },
     { value: 'admin', label_ar: 'مدير', label_fr: 'Admin', color: 'bg-red-500', desc_ar: 'صلاحيات كاملة على المتجر', desc_fr: 'Full store access' },
+    { value: 'manager', label_ar: 'مشرف', label_fr: 'Manager', color: 'bg-blue-500', desc_ar: 'إدارة العمليات اليومية', desc_fr: 'Daily operations management' },
+    { value: 'sales_supervisor', label_ar: 'مشرف مبيعات', label_fr: 'Sales Supervisor', color: 'bg-teal-500', desc_ar: 'إشراف على المبيعات والعملاء', desc_fr: 'Sales and customer oversight' },
+    { value: 'seller', label_ar: 'بائع', label_fr: 'Vendeur', color: 'bg-green-500', desc_ar: 'عمليات البيع الأساسية فقط', desc_fr: 'Basic sales operations only' },
+    { value: 'inventory_manager', label_ar: 'مدير مخزون', label_fr: 'Inventory Manager', color: 'bg-orange-500', desc_ar: 'إدارة المخزون والمشتريات', desc_fr: 'Stock and purchase management' },
+    { value: 'ecommerce_manager', label_ar: 'مسؤول متجر إلكتروني', label_fr: 'E-commerce Manager', color: 'bg-indigo-500', desc_ar: 'إدارة المتجر الإلكتروني', desc_fr: 'Online store management' },
+    { value: 'accountant', label_ar: 'محاسب', label_fr: 'Comptable', color: 'bg-amber-500', desc_ar: 'التقارير المالية والديون والمصاريف', desc_fr: 'Financial reports, debts, and expenses' },
     { value: 'user', label_ar: 'مستخدم عادي', label_fr: 'Utilisateur', color: 'bg-gray-500', desc_ar: 'عرض فقط', desc_fr: 'View only' },
   ];
 
