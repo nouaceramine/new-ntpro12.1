@@ -283,9 +283,25 @@ export default function SuppliersPage() {
                 <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
                 <Input
                   type="text"
-                  placeholder={t.search}
+                  placeholder={language === 'ar' ? 'ابحث بالاسم أو الكود أو الهاتف...' : 'Rechercher par nom, code ou téléphone...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        oscillator.frequency.value = 1200;
+                        gainNode.gain.value = 0.3;
+                        oscillator.start();
+                        setTimeout(() => oscillator.stop(), 100);
+                      } catch (e) {}
+                    }
+                  }}
                   className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
                   data-testid="supplier-search-input"
                 />
