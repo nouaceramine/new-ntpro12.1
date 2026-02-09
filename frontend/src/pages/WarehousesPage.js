@@ -224,6 +224,25 @@ export default function WarehousesPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex border rounded-lg">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                size="icon"
+                onClick={() => setViewModeAndSave('grid')}
+                className="rounded-e-none"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="icon"
+                onClick={() => setViewModeAndSave('list')}
+                className="rounded-s-none"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
             <Button onClick={() => setShowTransfer(true)} variant="outline" className="gap-2">
               <ArrowRightLeft className="h-4 w-4" />
               {language === 'ar' ? 'تحويل مخزون' : 'Transférer'}
