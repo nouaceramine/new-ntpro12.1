@@ -2394,6 +2394,138 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Product Shortcuts - 20 Quick Access Boxes */}
+      <Card className="mt-4">
+        <CardHeader className="py-2 px-4">
+          <CardTitle className="text-sm flex items-center justify-between">
+            <span>{language === 'ar' ? 'اختصارات المنتجات' : 'Raccourcis produits'}</span>
+            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'اضغط مطولاً للتعديل' : 'Appui long pour modifier'}</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-2">
+          <div className="grid grid-cols-10 gap-1">
+            {productShortcuts.map((shortcut, index) => {
+              const product = shortcut.productId ? products.find(p => p.id === shortcut.productId) : null;
+              return (
+                <button
+                  key={index}
+                  onClick={() => {
+                    if (product) {
+                      addToCart(product);
+                      playSuccessBeep();
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setEditingShortcutIndex(index);
+                    setShortcutColor(shortcut.color || '#e5e7eb');
+                    setShortcutProductId(shortcut.productId || '');
+                    setShowShortcutDialog(true);
+                  }}
+                  className="h-12 w-full rounded-lg border-2 flex flex-col items-center justify-center text-[10px] font-medium transition-all hover:scale-105 hover:shadow-md cursor-pointer"
+                  style={{ 
+                    backgroundColor: shortcut.color || '#e5e7eb',
+                    borderColor: product ? 'transparent' : '#d1d5db'
+                  }}
+                  title={product ? (language === 'ar' ? product.name_ar : product.name_en) : (language === 'ar' ? 'فارغ - اضغط يمين للتعديل' : 'Vide - Clic droit pour modifier')}
+                  data-testid={`shortcut-${index}`}
+                >
+                  {product ? (
+                    <>
+                      <span className="truncate w-full text-center px-0.5 text-white drop-shadow-sm" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                        {(language === 'ar' ? product.name_ar : product.name_en)?.substring(0, 8)}
+                      </span>
+                      <span className="text-[8px] text-white/80">{product.retail_price?.toFixed(0)}</span>
+                    </>
+                  ) : (
+                    <Plus className="h-4 w-4 text-gray-400" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Shortcut Edit Dialog */}
+      <Dialog open={showShortcutDialog} onOpenChange={setShowShortcutDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {language === 'ar' ? `تعديل الاختصار ${editingShortcutIndex !== null ? editingShortcutIndex + 1 : ''}` : `Modifier raccourci ${editingShortcutIndex !== null ? editingShortcutIndex + 1 : ''}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            {/* Product Selection */}
+            <div>
+              <Label>{language === 'ar' ? 'اختر المنتج' : 'Sélectionner produit'}</Label>
+              <Select value={shortcutProductId} onValueChange={setShortcutProductId}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={language === 'ar' ? 'اختر منتج...' : 'Choisir produit...'} />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="">{language === 'ar' ? 'بدون منتج' : 'Aucun produit'}</SelectItem>
+                  {products.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {language === 'ar' ? p.name_ar : p.name_en} - {p.retail_price?.toFixed(2)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Color Selection */}
+            <div>
+              <Label>{language === 'ar' ? 'اختر اللون' : 'Choisir couleur'}</Label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280', '#1f2937'].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => setShortcutColor(color)}
+                    className={`h-8 w-8 rounded-lg border-2 transition-all ${shortcutColor === color ? 'border-black scale-110' : 'border-transparent'}`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div className="flex items-center justify-center p-4 bg-muted rounded-lg">
+              <div 
+                className="h-14 w-20 rounded-lg flex items-center justify-center text-white text-xs font-medium"
+                style={{ backgroundColor: shortcutColor }}
+              >
+                {shortcutProductId ? (products.find(p => p.id === shortcutProductId)?.[language === 'ar' ? 'name_ar' : 'name_en']?.substring(0, 10) || '...') : (language === 'ar' ? 'فارغ' : 'Vide')}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowShortcutDialog(false)} className="flex-1">
+                {language === 'ar' ? 'إلغاء' : 'Annuler'}
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (editingShortcutIndex !== null) {
+                    const newShortcuts = [...productShortcuts];
+                    newShortcuts[editingShortcutIndex] = {
+                      productId: shortcutProductId || null,
+                      color: shortcutColor
+                    };
+                    saveShortcuts(newShortcuts);
+                    setShowShortcutDialog(false);
+                    toast.success(language === 'ar' ? 'تم حفظ الاختصار' : 'Raccourci enregistré');
+                  }
+                }}
+                className="flex-1"
+              >
+                {language === 'ar' ? 'حفظ' : 'Enregistrer'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Calculator Button - Fixed Position */}
       <button
         onClick={() => setShowCalculator(true)}
