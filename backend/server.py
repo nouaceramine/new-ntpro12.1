@@ -694,11 +694,13 @@ class PurchaseCreate(BaseModel):
     paid_amount: float
     payment_method: Literal["cash", "bank", "wallet"] = "cash"
     notes: Optional[str] = ""
+    code: Optional[str] = ""  # كود الشراء AC00001
 
 class PurchaseResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     invoice_number: str
+    code: str = ""  # كود الشراء
     supplier_id: str
     supplier_name: str
     items: List[PurchaseItem]
