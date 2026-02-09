@@ -19,7 +19,10 @@ import {
   Banknote,
   TrendingUp,
   Calendar,
-  CalendarDays
+  CalendarDays,
+  Receipt,
+  Minus,
+  Equal
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
