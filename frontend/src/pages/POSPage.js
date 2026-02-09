@@ -857,7 +857,7 @@ export default function POSPage() {
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
-    setShowSearchResults(value.length > 0);
+    setShowSearchResults(true);
   };
 
   return (
