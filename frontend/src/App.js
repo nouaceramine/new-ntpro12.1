@@ -292,6 +292,22 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/features"
+        element={
+          <ProtectedRoute adminOnly>
+            <FeaturesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/permissions"
+        element={
+          <ProtectedRoute adminOnly>
+            <PermissionsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/recharge"
         element={
           <ProtectedRoute>
