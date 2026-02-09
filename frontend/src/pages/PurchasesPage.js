@@ -514,7 +514,16 @@ export default function PurchasesPage() {
               {language === 'ar' ? 'إدارة المشتريات وحسابات الموردين' : 'Gestion des achats et comptes fournisseurs'}
             </p>
           </div>
-          <Button onClick={() => setShowNewPurchaseDialog(true)} className="gap-2" data-testid="new-purchase-btn">
+          <Button onClick={async () => {
+            // Generate purchase code
+            try {
+              const response = await axios.get(`${API}/purchases/generate-code`);
+              setPurchaseCode(response.data.code);
+            } catch (error) {
+              setPurchaseCode('');
+            }
+            setShowNewPurchaseDialog(true);
+          }} className="gap-2" data-testid="new-purchase-btn">
             <Plus className="h-5 w-5" />
             {t.newPurchase}
           </Button>
