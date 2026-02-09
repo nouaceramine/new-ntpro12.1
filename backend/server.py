@@ -2703,6 +2703,7 @@ async def create_purchase(purchase: PurchaseCreate, admin: dict = Depends(get_ad
     
     purchase_doc = {
         "id": purchase_id, "invoice_number": invoice_number,
+        "code": purchase.code or "",  # كود الشراء
         "supplier_id": purchase.supplier_id, "supplier_name": supplier["name"],
         "items": [item.model_dump() for item in purchase.items],
         "total": purchase.total, "paid_amount": purchase.paid_amount,
