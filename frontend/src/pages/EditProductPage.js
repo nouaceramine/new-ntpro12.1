@@ -116,8 +116,8 @@ export default function EditProductPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Names */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Names & Article Code */}
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">{t.productNameEn} *</Label>
                   <Input name="name_en" value={formData.name_en} onChange={handleChange} required className="h-9" />
@@ -125,6 +125,16 @@ export default function EditProductPage() {
                 <div className="space-y-1">
                   <Label className="text-xs">{t.productNameAr} *</Label>
                   <Input name="name_ar" value={formData.name_ar} onChange={handleChange} required className="h-9" dir="rtl" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'كود المنتج' : 'Code Article'}</Label>
+                  <Input 
+                    name="article_code" 
+                    value={formData.article_code} 
+                    className="h-9 font-mono text-sm bg-muted/50" 
+                    readOnly
+                    placeholder="AR00001"
+                  />
                 </div>
               </div>
 
