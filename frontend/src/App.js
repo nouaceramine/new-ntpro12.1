@@ -61,6 +61,7 @@ import SmartReportsPage from "./pages/SmartReportsPage";
 import EmployeeAlertsPage from "./pages/EmployeeAlertsPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import PermissionsPage from "./pages/PermissionsPage";
+import SystemUpdatesPage from "./pages/SystemUpdatesPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
