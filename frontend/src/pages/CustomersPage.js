@@ -670,8 +670,8 @@ export default function CustomersPage() {
               <DialogTitle className="text-lg">{selectedCustomer ? t.editCustomer : t.addCustomer}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-3">
-              {/* Name & Phone & Email */}
-              <div className="grid grid-cols-3 gap-3">
+              {/* Name & Code & Phone & Email */}
+              <div className="grid grid-cols-4 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">{t.customerName} *</Label>
                   <Input
@@ -680,6 +680,16 @@ export default function CustomersPage() {
                     required
                     className="h-9"
                     data-testid="customer-name-input"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'الكود' : 'Code'}</Label>
+                  <Input
+                    value={formData.code}
+                    className="h-9 font-mono text-sm bg-muted/50"
+                    readOnly
+                    placeholder="CL00001"
+                    data-testid="customer-code-input"
                   />
                 </div>
                 <div className="space-y-1">
