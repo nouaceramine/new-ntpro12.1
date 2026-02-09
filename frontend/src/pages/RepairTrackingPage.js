@@ -160,9 +160,14 @@ export default function RepairTrackingPage() {
   const [selectedRepair, setSelectedRepair] = useState(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
-  const [updateForm, setUpdateForm] = useState({ status: '', notes: '', actual_cost: '' });
+  const [updateForm, setUpdateForm] = useState({ status: '', notes: '', actual_cost: '', spare_parts: [] });
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, inProgress: 0, ready: 0, delivered: 0 });
+  
+  // Spare parts search
+  const [productSearch, setProductSearch] = useState('');
+  const [productResults, setProductResults] = useState([]);
+  const [searchingProducts, setSearchingProducts] = useState(false);
 
   // Fetch repairs from API
   const fetchRepairs = async () => {
