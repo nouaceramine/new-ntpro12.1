@@ -87,6 +87,34 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
+  const handleAddUser = async () => {
+    if (!newUser.name || !newUser.email || !newUser.password) {
+      toast.error(language === 'ar' ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/users`, newUser, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم إضافة المستخدم بنجاح' : 'User added successfully');
+      setAddDialogOpen(false);
+      setNewUser({ name: '', email: '', password: '', role: 'user' });
+      fetchUsers();
+    } catch (error) {
+      console.error('Error adding user:', error);
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error(t.somethingWentWrong);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleRoleChange = async (userId, newRole) => {
     try {
       await axios.put(`${API}/users/${userId}`, { role: newRole });
