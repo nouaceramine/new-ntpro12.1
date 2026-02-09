@@ -49,6 +49,7 @@ export function ProductSearchDropdown({
       p.name_en?.toLowerCase().includes(query) ||
       p.name_ar?.toLowerCase().includes(query) ||
       p.barcode?.toLowerCase().includes(query) ||
+      p.article_code?.toLowerCase().includes(query) ||  // البحث بكود المنتج
       (p.compatible_models && p.compatible_models.some(m => m.toLowerCase().includes(query)))
     );
   });
@@ -66,6 +67,25 @@ export function ProductSearchDropdown({
     const value = e.target.value;
     setSearchQuery(value);
     setShowResults(value.length > 0);
+  };
+
+  // Handle barcode scanner input (Enter key)
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && searchQuery) {
+      // Find product by exact barcode or article code match
+      const exactMatch = products.find(p => 
+        p.barcode === searchQuery || 
+        p.article_code?.toLowerCase() === searchQuery.toLowerCase()
+      );
+      
+      if (exactMatch) {
+        handleSelect(exactMatch);
+      } else if (filteredProducts.length === 1) {
+        handleSelect(filteredProducts[0]);
+      }
+    } else if (e.key === 'Escape') {
+      setShowResults(false);
+    }
   };
 
   const getProductPrice = (product) => {
