@@ -918,12 +918,14 @@ export default function POSPage() {
                 <Input
                   ref={searchInputRef}
                   type="text"
-                  placeholder={language === 'ar' ? 'البحث عن منتج بالاسم أو الباركود...' : 'Rechercher un article...'}
+                  placeholder={language === 'ar' ? 'البحث بالاسم أو الباركود أو كود المنتج...' : 'Rechercher par nom, code-barres ou code article...'}
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  onKeyDown={handleSearchKeyDown}
                   onFocus={() => setShowSearchResults(true)}
                   className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
                   data-testid="pos-search-input"
+                  autoComplete="off"
                 />
                 
                 {/* Search Results Dropdown */}
