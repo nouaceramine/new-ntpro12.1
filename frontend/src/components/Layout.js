@@ -269,9 +269,8 @@ export const Layout = ({ children }) => {
       icon: Users,
       items: [
         { path: '/customers', icon: Users, label: t.customers },
-        ...(isAdmin ? [
-          { path: '/customer-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الزبائن' : 'Familles clients' },
-        ] : [])
+        { path: '/customer-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الزبائن' : 'Familles clients' },
+        { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
       ]
     },
     {
@@ -282,16 +281,9 @@ export const Layout = ({ children }) => {
         { path: '/pos', icon: ShoppingCart, label: t.pos },
         { path: '/daily-sessions', icon: Clock, label: language === 'ar' ? 'حصص البيع اليومية' : 'Sessions journalières' },
         { path: '/sales', icon: Receipt, label: t.sales },
-        { path: '/expenses', icon: Receipt, label: language === 'ar' ? 'التكاليف' : 'Dépenses' },
         ...(isAdmin ? [
           { path: '/sales/advanced-report', icon: BarChart3, label: language === 'ar' ? 'تقارير متقدمة' : 'Rapports avancés' },
-          { path: '/cash', icon: Wallet, label: t.cashManagement },
-          { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
-          { path: '/debts', icon: Receipt, label: t.debts },
-          { path: '/settings/sales-permissions', icon: Shield, label: language === 'ar' ? 'صلاحيات المبيعات' : 'Permissions' },
-        ] : [
-          { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
-        ])
+        ] : [])
       ]
     },
     {
@@ -321,15 +313,19 @@ export const Layout = ({ children }) => {
       ]
     },
     {
-      id: 'employee-management',
-      title: language === 'ar' ? 'إدارة الموظفين' : 'Gestion employés',
-      icon: Users,
+      id: 'administration',
+      title: language === 'ar' ? 'الإدارة' : 'Administration',
+      icon: Settings,
       items: [
-        { path: '/employees', icon: Users, label: language === 'ar' ? 'الموظفين' : 'Employés' },
-        { path: '/employee-alerts', icon: Bell, label: language === 'ar' ? 'تنبيهات الحدود' : 'Alertes limites' },
+        { path: '/cash', icon: Wallet, label: t.cashManagement },
+        { path: '/expenses', icon: Receipt, label: language === 'ar' ? 'التكاليف' : 'Dépenses' },
+        { path: '/debts', icon: Receipt, label: t.debts },
         ...(isAdmin ? [
+          { path: '/employees', icon: Users, label: language === 'ar' ? 'الموظفين' : 'Employés' },
+          { path: '/employee-alerts', icon: Bell, label: language === 'ar' ? 'تنبيهات الحدود' : 'Alertes limites' },
           { path: '/users', icon: Shield, label: language === 'ar' ? 'المستخدمين' : 'Utilisateurs' },
           { path: '/permissions', icon: Shield, label: language === 'ar' ? 'الصلاحيات' : 'Permissions' },
+          { path: '/settings/sales-permissions', icon: Shield, label: language === 'ar' ? 'صلاحيات المبيعات' : 'Permissions ventes' },
         ] : []),
       ]
     },
