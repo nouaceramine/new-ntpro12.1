@@ -570,11 +570,33 @@ export default function ExpensesPage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'الكود' : 'Code'}</Label>
+                  <Input
+                    value={formData.code}
+                    className="h-9 font-mono text-sm bg-muted/50"
+                    readOnly
+                    placeholder="CH00001/2026"
+                  />
+                </div>
+              </div>
+
+              {/* Description & Notes */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
                   <Label className="text-xs">{language === 'ar' ? 'الوصف *' : 'Description *'}</Label>
                   <Input
                     value={formData.title}
                     onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))}
                     placeholder={language === 'ar' ? 'وصف' : 'Description'}
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
+                  <Input
+                    value={formData.notes}
+                    onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
+                    placeholder={language === 'ar' ? 'ملاحظات...' : 'Notes...'}
                     className="h-9"
                   />
                 </div>
@@ -603,17 +625,6 @@ export default function ExpensesPage() {
                     className="h-9"
                   />
                 </div>
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-1">
-                <Label className="text-xs">{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
-                <Input
-                  value={formData.notes}
-                  onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
-                  placeholder={language === 'ar' ? 'ملاحظات...' : 'Notes...'}
-                  className="h-9"
-                />
               </div>
 
               {/* Recurring Options - Compact */}
