@@ -18,11 +18,46 @@
 - يزيد تلقائياً مع كل منتج جديد
 - يظهر في قائمة المنتجات (list view)
 
+### 7. نظام الأكواد التلقائية لجميع القطاعات ✅ جديد
+تم إضافة أكواد تلقائية لجميع القطاعات الرئيسية:
+
+| القطاع | الصيغة | مثال |
+|--------|--------|------|
+| المنتجات | AR + 5 أرقام | AR00001 |
+| الزبائن | CL + 5 أرقام | CL00001 |
+| الموردين | FR + 5 أرقام/السنة | FR00001/2026 |
+| المبيعات | BV + 5 أرقام/السنة | BV00001/2026 |
+| المشتريات | AC + 5 أرقام/السنة | AC00001/2026 |
+| التكاليف | CH + 5 أرقام/السنة | CH00001/2026 |
+| الجرد | IN + 5 أرقام/السنة | IN00001/2026 |
+| تحديث الأسعار | MT + 5 أرقام/السنة | MT00001/2026 |
+| حصة البيع | S + 4 أرقام/السنة | S0001/2026 |
+
+**APIs الجديدة:**
+- `GET /api/products/generate-article-code`
+- `GET /api/customers/generate-code`
+- `GET /api/suppliers/generate-code`
+- `GET /api/sales/generate-code`
+- `GET /api/purchases/generate-code`
+- `GET /api/expenses/generate-code`
+- `GET /api/inventory-sessions/generate-code`
+- `GET /api/price-updates/generate-code`
+- `GET /api/daily-sessions/generate-code`
+
+### 8. البحث بالكود ✅ جديد
+تم تفعيل البحث بالكود في جميع أشرطة البحث:
+- البحث في المنتجات يشمل: الاسم، الباركود، كود المنتج
+- البحث في الزبائن يشمل: الاسم، الهاتف، الكود
+- البحث في الموردين يشمل: الاسم، الهاتف، الكود
+
 **الملفات المعدلة:**
-- `backend/server.py`: API `/products/generate-article-code`
-- `frontend/src/pages/AddProductPage.js`: حقل الكود + توليد تلقائي
+- `backend/server.py`: جميع APIs التوليد والبحث
+- `frontend/src/pages/AddProductPage.js`: حقل كود المنتج
 - `frontend/src/pages/EditProductPage.js`: عرض الكود
 - `frontend/src/pages/ProductsPage.js`: عرض الكود في القائمة
+- `frontend/src/pages/CustomersPage.js`: حقل كود الزبون
+- `frontend/src/pages/SuppliersPage.js`: حقل كود المورد
+- `frontend/src/pages/ExpensesPage.js`: حقل كود التكلفة
 
 ### 5. التصميم المضغوط لصفحات الإضافة ✅ 
 تم تطبيق تصميم مضغوط على جميع نماذج الإضافة لتقليل التمرير وتحسين تجربة المستخدم:
