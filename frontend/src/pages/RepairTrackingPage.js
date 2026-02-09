@@ -763,30 +763,107 @@ export default function RepairTrackingPage() {
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>{language === 'ar' ? 'الحالة الجديدة' : 'Nouveau statut'}</Label>
-                <Select value={updateForm.status} onValueChange={(value) => setUpdateForm(prev => ({ ...prev, status: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {REPAIR_STATUSES.map(status => (
-                      <SelectItem key={status.id} value={status.id}>
-                        {language === 'ar' ? status.label.ar : status.label.fr}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'الحالة الجديدة' : 'Nouveau statut'}</Label>
+                  <Select value={updateForm.status} onValueChange={(value) => setUpdateForm(prev => ({ ...prev, status: value }))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {REPAIR_STATUSES.map(status => (
+                        <SelectItem key={status.id} value={status.id}>
+                          {language === 'ar' ? status.label.ar : status.label.fr}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'التكلفة الفعلية' : 'Coût réel'}</Label>
+                  <Input
+                    type="number"
+                    value={updateForm.actual_cost}
+                    onChange={(e) => setUpdateForm(prev => ({ ...prev, actual_cost: e.target.value }))}
+                    placeholder="0"
+                  />
+                </div>
               </div>
 
+              {/* Spare Parts Section */}
               <div className="space-y-2">
-                <Label>{language === 'ar' ? 'التكلفة الفعلية' : 'Coût réel'}</Label>
-                <Input
-                  type="number"
-                  value={updateForm.actual_cost}
-                  onChange={(e) => setUpdateForm(prev => ({ ...prev, actual_cost: e.target.value }))}
-                  placeholder="0"
-                />
+                <Label>{language === 'ar' ? 'قطع الغيار المستخدمة' : 'Pièces de rechange'}</Label>
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    className="pe-10"
+                    placeholder={language === 'ar' ? 'ابحث عن منتج لإضافته...' : 'Rechercher un produit...'}
+                    value={productSearch}
+                    onChange={(e) => {
+                      setProductSearch(e.target.value);
+                      searchProducts(e.target.value);
+                    }}
+                  />
+                </div>
+                
+                {/* Search Results Dropdown */}
+                {productResults.length > 0 && (
+                  <div className="border rounded-lg max-h-40 overflow-y-auto bg-background shadow-lg">
+                    {productResults.map(product => (
+                      <div
+                        key={product.id}
+                        onClick={() => addSparePart(product)}
+                        className="p-2 hover:bg-muted cursor-pointer flex justify-between items-center border-b last:border-b-0"
+                      >
+                        <span className="text-sm">{product.name_ar || product.name_en || product.name}</span>
+                        <span className="text-sm text-muted-foreground">{product.retail_price || 0} {language === 'ar' ? 'دج' : 'DA'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Selected Parts List */}
+                {updateForm.spare_parts?.length > 0 && (
+                  <div className="border rounded-lg p-2 space-y-2 mt-2">
+                    {updateForm.spare_parts.map(part => (
+                      <div key={part.id} className="flex items-center justify-between gap-2 bg-muted/50 p-2 rounded">
+                        <span className="text-sm flex-1 truncate">{part.name}</span>
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-6 w-6"
+                            onClick={() => updateSparePartQty(part.id, part.quantity - 1)}
+                          >-</Button>
+                          <span className="w-8 text-center text-sm">{part.quantity}</span>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="icon" 
+                            className="h-6 w-6"
+                            onClick={() => updateSparePartQty(part.id, part.quantity + 1)}
+                          >+</Button>
+                        </div>
+                        <span className="text-sm font-medium w-20 text-left">{(part.price * part.quantity).toFixed(0)} {language === 'ar' ? 'دج' : 'DA'}</span>
+                        <Button 
+                          type="button" 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 text-destructive"
+                          onClick={() => removeSparePart(part.id)}
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="flex justify-between pt-2 border-t font-medium">
+                      <span>{language === 'ar' ? 'إجمالي القطع' : 'Total pièces'}</span>
+                      <span>{updateForm.spare_parts.reduce((sum, p) => sum + (p.price * p.quantity), 0).toFixed(0)} {language === 'ar' ? 'دج' : 'DA'}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -795,7 +872,7 @@ export default function RepairTrackingPage() {
                   value={updateForm.notes}
                   onChange={(e) => setUpdateForm(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder={language === 'ar' ? 'ملاحظات إضافية...' : 'Notes supplémentaires...'}
-                  rows={3}
+                  rows={2}
                 />
               </div>
             </div>
