@@ -8493,6 +8493,87 @@ async def get_payments(tenant_id: Optional[str] = None, admin: dict = Depends(ge
     payments = await db.saas_payments.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return [SubscriptionPaymentResponse(**p) for p in payments]
 
+
+@api_router.get("/saas/finance-reports")
+async def get_finance_reports(range: str = "all", admin: dict = Depends(get_super_admin)):
+    """Get comprehensive finance reports"""
+    now = datetime.now(timezone.utc)
+    
+    # Define date range
+    start_date = None
+    if range == "today":
+        start_date = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
+    elif range == "week":
+        start_date = now - timedelta(days=7)
+    elif range == "month":
+        start_date = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    elif range == "year":
+        start_date = datetime(now.year, 1, 1, tzinfo=timezone.utc)
+    
+    # Get payments with optional date filter
+    query = {}
+    if start_date:
+        query = {"created_at": {"$gte": start_date.isoformat()}}
+    
+    all_payments = await db.saas_payments.find(query, {"_id": 0}).to_list(10000)
+    
+    # Calculate totals
+    total_revenue = sum(p.get("amount", 0) for p in all_payments)
+    
+    # Monthly revenue
+    month_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    monthly_revenue = sum(
+        p.get("amount", 0) for p in all_payments 
+        if p.get("created_at", "") >= month_start.isoformat()
+    )
+    
+    # Yearly revenue
+    year_start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
+    yearly_revenue = sum(
+        p.get("amount", 0) for p in all_payments 
+        if p.get("created_at", "") >= year_start.isoformat()
+    )
+    
+    # Payment methods breakdown
+    payment_methods = {
+        "cash": {"count": 0, "amount": 0},
+        "ccp": {"count": 0, "amount": 0},
+        "bank_transfer": {"count": 0, "amount": 0},
+        "stripe": {"count": 0, "amount": 0},
+        "manual": {"count": 0, "amount": 0}
+    }
+    
+    for p in all_payments:
+        method = p.get("payment_method", "manual")
+        if method in payment_methods:
+            payment_methods[method]["count"] += 1
+            payment_methods[method]["amount"] += p.get("amount", 0)
+    
+    # Estimate expenses (30% of revenue - can be customized)
+    expenses = total_revenue * 0.3
+    net_profit = total_revenue - expenses
+    
+    # Pending payments (tenants without recent payment)
+    pending_payments = 0
+    tenants = await db.saas_tenants.find({"is_active": True}, {"_id": 0, "id": 1, "subscription_ends_at": 1}).to_list(1000)
+    for tenant in tenants:
+        ends_at = tenant.get("subscription_ends_at", "")
+        if ends_at and ends_at < now.isoformat():
+            pending_payments += 1
+    
+    return {
+        "total_revenue": total_revenue,
+        "monthly_revenue": monthly_revenue,
+        "yearly_revenue": yearly_revenue,
+        "pending_payments": pending_payments,
+        "expenses": expenses,
+        "net_profit": net_profit,
+        "payment_methods": payment_methods,
+        "monthly_breakdown": []
+    }
+
+
+
 @api_router.get("/saas/stats")
 async def get_saas_stats(admin: dict = Depends(get_super_admin)):
     """Get SaaS dashboard statistics"""
