@@ -45,16 +45,29 @@ export default function AddProductPage() {
     name: '',
     description_en: '',
     description_ar: '',
-    purchase_price: '',
-    wholesale_price: '',
-    super_wholesale_price: '',
-    retail_price: '',
+    purchase_price: '0',
+    wholesale_price: '0',
+    super_wholesale_price: '0',
+    retail_price: '0',
     image_url: '',
     barcode: '',
     family_id: '',
     compatible_models: '',
     low_stock_threshold: '10'
   });
+
+  // Auto-add product name to compatible models
+  useEffect(() => {
+    if (formData.name.trim()) {
+      const currentModels = formData.compatible_models.split(',').map(m => m.trim()).filter(m => m);
+      if (!currentModels.includes(formData.name.trim())) {
+        const newModels = currentModels.length > 0 
+          ? `${formData.compatible_models}, ${formData.name.trim()}`
+          : formData.name.trim();
+        setFormData(prev => ({ ...prev, compatible_models: newModels }));
+      }
+    }
+  }, [formData.name]);
 
   useEffect(() => {
     fetchFamilies();
