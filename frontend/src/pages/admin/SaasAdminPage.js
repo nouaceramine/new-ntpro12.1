@@ -1054,81 +1054,82 @@ export default function SaasAdminPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Tenant Dialog */}
+        {/* Tenant Dialog - Compact */}
         <Dialog open={tenantDialogOpen} onOpenChange={setTenantDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingTenant ? 'تعديل المشترك' : 'إضافة مشترك جديد'}</DialogTitle>
+          <DialogContent className="max-w-md">
+            <DialogHeader className="pb-2">
+              <DialogTitle className="text-lg">{editingTenant ? 'تعديل المشترك' : 'إضافة مشترك جديد'}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>الاسم</Label>
-                <Input value={tenantForm.name} onChange={e => setTenantForm({...tenantForm, name: e.target.value})} />
+            <div className="grid grid-cols-2 gap-3 py-2">
+              <div className="space-y-1">
+                <Label className="text-xs">الاسم</Label>
+                <Input className="h-8 text-sm" value={tenantForm.name} onChange={e => setTenantForm({...tenantForm, name: e.target.value})} />
               </div>
-              <div className="space-y-2">
-                <Label>البريد الإلكتروني</Label>
-                <Input type="email" value={tenantForm.email} onChange={e => setTenantForm({...tenantForm, email: e.target.value})} />
+              <div className="space-y-1">
+                <Label className="text-xs">البريد الإلكتروني</Label>
+                <Input className="h-8 text-sm" type="email" value={tenantForm.email} onChange={e => setTenantForm({...tenantForm, email: e.target.value})} />
               </div>
-              <div className="space-y-2">
-                <Label>الهاتف</Label>
-                <Input value={tenantForm.phone} onChange={e => setTenantForm({...tenantForm, phone: e.target.value})} />
+              <div className="space-y-1">
+                <Label className="text-xs">الهاتف</Label>
+                <Input className="h-8 text-sm" value={tenantForm.phone} onChange={e => setTenantForm({...tenantForm, phone: e.target.value})} />
               </div>
-              <div className="space-y-2">
-                <Label>اسم الشركة</Label>
-                <Input value={tenantForm.company_name} onChange={e => setTenantForm({...tenantForm, company_name: e.target.value})} />
+              <div className="space-y-1">
+                <Label className="text-xs">اسم الشركة</Label>
+                <Input className="h-8 text-sm" value={tenantForm.company_name} onChange={e => setTenantForm({...tenantForm, company_name: e.target.value})} />
               </div>
               {!editingTenant && (
-                <div className="space-y-2">
-                  <Label>كلمة المرور</Label>
+                <div className="space-y-1 col-span-2">
+                  <Label className="text-xs">كلمة المرور</Label>
                   <div className="relative">
                     <Input 
+                      className="h-8 text-sm pe-8"
                       type={showPassword ? 'text' : 'password'} 
                       value={tenantForm.password} 
                       onChange={e => setTenantForm({...tenantForm, password: e.target.value})}
-                      className="pe-10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                     </button>
                   </div>
                 </div>
               )}
-              <div className="space-y-2">
-                <Label>تصنيف المشترك</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">التصنيف</Label>
                 <Select value={tenantForm.business_type} onValueChange={v => setTenantForm({...tenantForm, business_type: v})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر التصنيف" />
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="retailer">
-                      <div className="flex items-center gap-2">
-                        <Store className="h-4 w-4 text-blue-500" />
-                        <span>تاجر تجزئة</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="wholesaler">
-                      <div className="flex items-center gap-2">
-                        <ShoppingBag className="h-4 w-4 text-green-500" />
-                        <span>تاجر جملة</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="distributor">
-                      <div className="flex items-center gap-2">
-                        <Truck className="h-4 w-4 text-orange-500" />
-                        <span>موزع</span>
-                      </div>
-                    </SelectItem>
+                    <SelectItem value="retailer">تاجر تجزئة</SelectItem>
+                    <SelectItem value="wholesaler">تاجر جملة</SelectItem>
+                    <SelectItem value="distributor">موزع</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>الخطة</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">الصلاحية</Label>
+                <Select value={tenantForm.role} onValueChange={v => setTenantForm({...tenantForm, role: v})}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">مدير (صلاحيات كاملة)</SelectItem>
+                    <SelectItem value="manager">مشرف (عمليات يومية)</SelectItem>
+                    <SelectItem value="sales_supervisor">مشرف مبيعات</SelectItem>
+                    <SelectItem value="seller">بائع</SelectItem>
+                    <SelectItem value="inventory_manager">مدير مخزون</SelectItem>
+                    <SelectItem value="accountant">محاسب</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">الخطة</Label>
                 <Select value={tenantForm.plan_id} onValueChange={v => setTenantForm({...tenantForm, plan_id: v})}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1138,10 +1139,10 @@ export default function SaasAdminPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>نوع الاشتراك</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">نوع الاشتراك</Label>
                 <Select value={tenantForm.subscription_type} onValueChange={v => setTenantForm({...tenantForm, subscription_type: v})}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1152,9 +1153,9 @@ export default function SaasAdminPage() {
                 </Select>
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setTenantDialogOpen(false)}>إلغاء</Button>
-              <Button onClick={saveTenant}>حفظ</Button>
+            <DialogFooter className="pt-2">
+              <Button variant="outline" size="sm" onClick={() => setTenantDialogOpen(false)}>إلغاء</Button>
+              <Button size="sm" onClick={saveTenant}>حفظ</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
