@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Search, Package } from 'lucide-react';
+import { playSuccessBeep, playErrorBeep } from '../utils/beep';
 
 /**
  * ProductSearchDropdown - A reusable search component for products
@@ -10,6 +11,7 @@ import { Search, Package } from 'lucide-react';
  * - Shows product name, barcode, stock, and price
  * - Click to select product
  * - Closes when clicking outside
+ * - Barcode scanner support with beep sound
  */
 export function ProductSearchDropdown({
   products = [],
