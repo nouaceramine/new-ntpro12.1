@@ -1343,7 +1343,8 @@ async def get_products(search: Optional[str] = None, model: Optional[str] = None
             {"description_en": {"$regex": search, "$options": "i"}},
             {"description_ar": {"$regex": search, "$options": "i"}},
             {"compatible_models": {"$regex": search, "$options": "i"}},
-            {"barcode": {"$regex": search, "$options": "i"}}
+            {"barcode": {"$regex": search, "$options": "i"}},
+            {"article_code": {"$regex": search, "$options": "i"}}  # بحث بكود المنتج
         ]
     
     if model:
@@ -1369,6 +1370,8 @@ async def get_products(search: Optional[str] = None, model: Optional[str] = None
             product["family_name"] = family["name_ar"] if family else ""
         elif not product.get("family_name"):
             product["family_name"] = ""
+        if not product.get("article_code"):
+            product["article_code"] = ""
     
     return [ProductResponse(**p) for p in products]
 
