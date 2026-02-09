@@ -62,6 +62,7 @@ export function ProductSearchDropdown({
     }
     setSearchQuery('');
     setShowResults(false);
+    playSuccessBeep();  // صوت التنبيه عند النجاح
     inputRef.current?.focus();
   };
 
@@ -84,6 +85,8 @@ export function ProductSearchDropdown({
         handleSelect(exactMatch);
       } else if (filteredProducts.length === 1) {
         handleSelect(filteredProducts[0]);
+      } else {
+        playErrorBeep();  // صوت خطأ عند عدم العثور
       }
     } else if (e.key === 'Escape') {
       setShowResults(false);
