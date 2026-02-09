@@ -1792,6 +1792,7 @@ async def create_customer(customer: CustomerCreate, user: dict = Depends(get_cur
         "id": customer_id, "name": customer.name,
         "phone": customer.phone or "", "email": customer.email or "",
         "address": customer.address or "", "notes": customer.notes or "",
+        "code": customer.code or "",  # كود الزبون
         "family_id": customer.family_id or "", "family_name": family_name,
         "total_purchases": 0, "balance": 0, "created_at": now
     }
@@ -1804,7 +1805,8 @@ async def get_customers(search: Optional[str] = None, family_id: Optional[str] =
     if search:
         query["$or"] = [
             {"name": {"$regex": search, "$options": "i"}},
-            {"phone": {"$regex": search, "$options": "i"}}
+            {"phone": {"$regex": search, "$options": "i"}},
+            {"code": {"$regex": search, "$options": "i"}}  # بحث بالكود
         ]
     if family_id:
         query["family_id"] = family_id
@@ -1820,6 +1822,8 @@ async def get_customers(search: Optional[str] = None, family_id: Optional[str] =
             customer["family_name"] = ""
         if not customer.get("family_id"):
             customer["family_id"] = ""
+        if not customer.get("code"):
+            customer["code"] = ""
     
     return [CustomerResponse(**c) for c in customers]
 
