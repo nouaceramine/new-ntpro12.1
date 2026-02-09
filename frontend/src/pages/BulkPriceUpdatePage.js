@@ -161,7 +161,8 @@ export default function BulkPriceUpdatePage() {
       if (searchQuery) {
         filteredPreviews = filteredPreviews.filter(p => 
           p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.barcode?.toLowerCase().includes(searchQuery.toLowerCase())
+          p.barcode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.article_code?.toLowerCase().includes(searchQuery.toLowerCase())  // البحث بكود المنتج
         );
       }
       
