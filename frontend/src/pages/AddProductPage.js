@@ -277,8 +277,8 @@ export default function AddProductPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Product Name & Family */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Product Name, Article Code & Family */}
+              <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">{language === 'ar' ? 'اسم المنتج' : 'Nom du produit'} *</Label>
                   <Input 
@@ -289,6 +289,18 @@ export default function AddProductPage() {
                     className="h-9" 
                     data-testid="product-name-input"
                     placeholder={language === 'ar' ? 'يقبل العربية والفرنسية' : 'Accepte arabe et français'}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'كود المنتج' : 'Code Article'}</Label>
+                  <Input 
+                    name="article_code" 
+                    value={formData.article_code} 
+                    onChange={handleChange} 
+                    className="h-9 font-mono text-sm bg-muted/50" 
+                    data-testid="article-code-input"
+                    placeholder="AR00001"
+                    readOnly
                   />
                 </div>
                 <div className="space-y-1">
