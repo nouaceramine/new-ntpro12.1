@@ -593,15 +593,15 @@ export const Layout = ({ children }) => {
                         key={item.path}
                         to={item.path}
                         onClick={() => setSidebarOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
                           isActive(item.path) 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'hover:bg-muted'
+                            ? 'bg-primary text-primary-foreground font-medium shadow-md ring-2 ring-primary/30' 
+                            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
                         } ${sidebarCollapsed ? 'justify-center' : ''}`}
                         data-testid={`nav-${item.path.replace(/\//g, '-') || 'home'}`}
                         title={sidebarCollapsed ? item.label : ''}
                       >
-                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive(item.path) ? '' : 'opacity-70'}`} />
                         {!sidebarCollapsed && <span className="truncate text-sm">{item.label}</span>}
                       </Link>
                     ))}
