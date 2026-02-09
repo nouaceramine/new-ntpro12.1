@@ -218,8 +218,14 @@ export default function AddProductPage() {
         barcode: formData.barcode,
         family_id: formData.family_id || null,
         compatible_models: formData.compatible_models.split(',').map(m => m.trim()).filter(m => m),
-        low_stock_threshold: parseInt(formData.low_stock_threshold) || 10
+        low_stock_threshold: parseInt(formData.low_stock_threshold) || 10,
+        use_average_price: useAveragePrice
       };
+
+      // Save last purchase price to localStorage
+      if (formData.purchase_price && parseFloat(formData.purchase_price) > 0) {
+        localStorage.setItem('lastPurchasePrice', formData.purchase_price);
+      }
 
       await axios.post(`${API}/products`, payload);
       toast.success(t.productAdded);
