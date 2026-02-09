@@ -747,15 +747,7 @@ export default function DailySessionsPage() {
 
   function renderStartDialog() {
     return (
-      <Dialog open={showStartDialog} onOpenChange={(open) => {
-        setShowStartDialog(open);
-        if (open && !sessionCode) {
-          // Generate session code when dialog opens
-          axios.get(`${API}/daily-sessions/generate-code`).then(res => {
-            setSessionCode(res.data.code);
-          }).catch(() => {});
-        }
-      }}>
+      <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
