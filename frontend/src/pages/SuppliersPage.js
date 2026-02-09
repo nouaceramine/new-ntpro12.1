@@ -471,7 +471,7 @@ export default function SuppliersPage() {
               <DialogTitle className="text-lg">{selectedSupplier ? t.editSupplier : t.addSupplier}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-3">
-              {/* Name & Phone */}
+              {/* Name & Code */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">{t.supplierName} *</Label>
@@ -484,6 +484,20 @@ export default function SuppliersPage() {
                   />
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs">{language === 'ar' ? 'الكود' : 'Code'}</Label>
+                  <Input
+                    value={formData.code}
+                    className="h-9 font-mono text-sm bg-muted/50"
+                    readOnly
+                    placeholder="FR00001/2026"
+                    data-testid="supplier-code-input"
+                  />
+                </div>
+              </div>
+
+              {/* Phone & Email */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
                   <Label className="text-xs">{t.phone}</Label>
                   <Input
                     value={formData.phone}
@@ -492,10 +506,6 @@ export default function SuppliersPage() {
                     className="h-9"
                   />
                 </div>
-              </div>
-              
-              {/* Email & Family */}
-              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label className="text-xs">{t.email}</Label>
                   <Input
@@ -505,29 +515,32 @@ export default function SuppliersPage() {
                     className="h-9"
                   />
                 </div>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-xs">{language === 'ar' ? 'العائلة' : 'Famille'}</Label>
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setFamilyDialogOpen(true)}
-                      className="h-5 px-1 text-xs"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  <Select
-                    value={formData.family_id || "none"}
-                    onValueChange={(value) => setFormData({ ...formData, family_id: value === "none" ? "" : value })}
+              </div>
+              
+              {/* Family */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">{language === 'ar' ? 'العائلة' : 'Famille'}</Label>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setFamilyDialogOpen(true)}
+                    className="h-5 px-1 text-xs"
                   >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder={language === 'ar' ? 'اختر' : 'Choisir'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">{language === 'ar' ? 'بدون' : 'Sans'}</SelectItem>
-                      {supplierFamilies.map(family => (
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+                <Select
+                  value={formData.family_id || "none"}
+                  onValueChange={(value) => setFormData({ ...formData, family_id: value === "none" ? "" : value })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder={language === 'ar' ? 'اختر' : 'Choisir'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{language === 'ar' ? 'بدون' : 'Sans'}</SelectItem>
+                    {supplierFamilies.map(family => (
                         <SelectItem key={family.id} value={family.id}>
                           {family.name}
                         </SelectItem>
