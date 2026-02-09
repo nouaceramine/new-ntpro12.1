@@ -57,6 +57,7 @@ export default function AddProductPage() {
     retail_price: '0',
     image_url: '',
     barcode: '',
+    article_code: '',
     family_id: '',
     compatible_models: '',
     low_stock_threshold: '10'
@@ -74,6 +75,19 @@ export default function AddProductPage() {
       }
     }
   }, [formData.name]);
+
+  // Generate article code on page load
+  useEffect(() => {
+    const generateArticleCode = async () => {
+      try {
+        const response = await axios.get(`${API}/products/generate-article-code`);
+        setFormData(prev => ({ ...prev, article_code: response.data.article_code }));
+      } catch (error) {
+        console.error('Error generating article code:', error);
+      }
+    };
+    generateArticleCode();
+  }, []);
 
   useEffect(() => {
     fetchFamilies();
