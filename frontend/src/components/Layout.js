@@ -327,7 +327,10 @@ export const Layout = ({ children }) => {
       items: [
         { path: '/employees', icon: Users, label: language === 'ar' ? 'الموظفين' : 'Employés' },
         { path: '/employee-alerts', icon: Bell, label: language === 'ar' ? 'تنبيهات الحدود' : 'Alertes limites' },
-        { path: '/sales-permissions', icon: Shield, label: language === 'ar' ? 'صلاحيات المبيعات' : 'Permissions ventes' },
+        ...(isAdmin ? [
+          { path: '/users', icon: Shield, label: language === 'ar' ? 'المستخدمين' : 'Utilisateurs' },
+          { path: '/permissions', icon: Shield, label: language === 'ar' ? 'الصلاحيات' : 'Permissions' },
+        ] : []),
       ]
     },
     {
