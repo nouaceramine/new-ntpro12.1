@@ -119,10 +119,9 @@ export default function DashboardPage() {
                 {t.pos}
               </Button>
             </Link>
-            {isAdmin && (
-              <Link to="/products/add">
-                <Button variant="outline" className="gap-2" data-testid="add-product-btn">
-                  <Plus className="h-5 w-5" />
+            <Link to="/products/add">
+              <Button variant="outline" className="gap-2" data-testid="add-product-btn">
+                <Plus className="h-5 w-5" />
                   {t.addProduct}
                 </Button>
               </Link>
