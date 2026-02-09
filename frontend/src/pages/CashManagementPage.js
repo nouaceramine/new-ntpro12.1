@@ -238,7 +238,7 @@ export default function CashManagementPage() {
                   <SelectContent>
                     {cashBoxes.map(box => (
                       <SelectItem key={box.id} value={box.id} disabled={box.id === transferData.from_box}>
-                        {box.name}
+                        {language === 'fr' ? (box.name_fr || box.name) : box.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
