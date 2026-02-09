@@ -533,12 +533,8 @@ export default function AddProductPage() {
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1">
-              <Label className="text-xs">{t.familyNameAr}</Label>
-              <Input className="h-9" value={newFamily.name_ar} onChange={(e) => setNewFamily({...newFamily, name_ar: e.target.value})} dir="rtl" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">{t.familyNameEn}</Label>
-              <Input className="h-9" value={newFamily.name_en} onChange={(e) => setNewFamily({...newFamily, name_en: e.target.value})} />
+              <Label className="text-xs">{language === 'ar' ? 'اسم العائلة' : 'Nom de la famille'}</Label>
+              <Input className="h-9" value={newFamily.name} onChange={(e) => setNewFamily({...newFamily, name: e.target.value})} placeholder={language === 'ar' ? 'مثال: شاشات' : 'Ex: Écrans'} />
             </div>
             <div className="flex gap-2 pt-1">
               <Button variant="outline" size="sm" onClick={() => setShowAddFamilyDialog(false)} className="flex-1">{t.cancel}</Button>
