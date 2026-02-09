@@ -40,12 +40,16 @@ export default function AddProductPage() {
   const [showAddFamilyDialog, setShowAddFamilyDialog] = useState(false);
   const [newFamily, setNewFamily] = useState({ name_ar: '', name_en: '' });
   const [addingFamily, setAddingFamily] = useState(false);
+  const [useAveragePrice, setUseAveragePrice] = useState(false);
+  
+  // Get last purchase price from localStorage
+  const lastPurchasePrice = localStorage.getItem('lastPurchasePrice') || '0';
   
   const [formData, setFormData] = useState({
     name: '',
     description_en: '',
     description_ar: '',
-    purchase_price: '0',
+    purchase_price: lastPurchasePrice,
     wholesale_price: '0',
     super_wholesale_price: '0',
     retail_price: '0',
