@@ -463,9 +463,25 @@ export default function ExpensesPage() {
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder={language === 'ar' ? 'بحث...' : 'Rechercher...'}
+                  placeholder={language === 'ar' ? 'ابحث بالوصف أو الكود...' : 'Rechercher par description ou code...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        oscillator.frequency.value = 1200;
+                        gainNode.gain.value = 0.3;
+                        oscillator.start();
+                        setTimeout(() => oscillator.stop(), 100);
+                      } catch (e) {}
+                    }
+                  }}
                   className="pe-10"
                 />
               </div>
