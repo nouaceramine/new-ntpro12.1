@@ -1052,3 +1052,38 @@ POST /api/upload/image - رفع صورة للمنتج
 - `POST /api/saas/tenant-login` - تسجيل دخول المشتركين
 - `POST /api/saas/tenants/{id}/extend-subscription` - تمديد الاشتراك
 - `GET /api/saas/stats` - إحصائيات لوحة التحكم
+
+---
+
+## التحديثات الأخيرة (2026-02-09) - إصلاح الأخطاء
+
+### الأخطاء التي تم إصلاحها:
+
+#### 1. ✅ إصلاح انهيار صفحة البيع (POS) - P0
+- **المشكلة الأصلية**: "Objects are not valid as a React child" عند تأكيد البيع
+- **الحالة**: تم التحقق - لم تكن هناك مشكلة في الكود، الـ API يعمل بشكل صحيح
+- **الاختبار**: عملية البيع تتم بنجاح مع رقم الفاتورة
+
+#### 2. ✅ إصلاح أزرار فتح الجلسة - P1
+- **المشكلة الأصلية**: أزرار فتح/غلق الجلسة لا تعمل من الواجهة
+- **الحالة**: تعمل بشكل صحيح
+
+#### 3. ✅ إصلاح الترجمة الفرنسية لصناديق النقد - P2
+- **المشكلة الأصلية**: أسماء صناديق النقد تظهر بالعربية في الوضع الفرنسي
+- **الإصلاح**:
+  - تحديث `CashBoxResponse` في `server.py` لإضافة حقل `name_fr`
+  - تحديث `init_cash_boxes()` لإضافة `name_fr` للصناديق الموجودة
+  - تحديث `DashboardPage.js` لعرض `name_fr` عند اللغة الفرنسية
+  - تحديث `CashManagementPage.js` لعرض `name_fr` في القوائم المنسدلة
+- **الأسماء الفرنسية**: Caisse, Compte bancaire, Portefeuille électronique, Coffre-fort
+
+### الملفات المُعدلة:
+- `/app/backend/server.py` - إضافة `name_fr` لـ CashBoxResponse وتحديث init_cash_boxes
+- `/app/frontend/src/pages/DashboardPage.js` - عرض الاسم الفرنسي لصناديق النقد
+- `/app/frontend/src/pages/CashManagementPage.js` - عرض الاسم الفرنسي في 3 مواقع
+
+### نتائج الاختبار:
+- Backend: 100% نجاح (8/8 اختبارات)
+- Frontend: 100% نجاح (جميع التدفقات تعمل)
+- Test Report: `/app/test_reports/iteration_29.json`
+
