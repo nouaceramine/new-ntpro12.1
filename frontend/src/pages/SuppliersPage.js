@@ -58,7 +58,7 @@ export default function SuppliersPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', phone: '', email: '', address: '', notes: '', family_id: ''
+    name: '', phone: '', email: '', address: '', notes: '', family_id: '', code: ''
   });
 
   // View mode and sorting
