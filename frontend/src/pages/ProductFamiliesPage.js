@@ -48,10 +48,8 @@ export default function ProductFamiliesPage() {
   const [showDialog, setShowDialog] = useState(false);
   const [editingFamily, setEditingFamily] = useState(null);
   const [form, setForm] = useState({
-    name_en: '',
-    name_ar: '',
-    description_en: '',
-    description_ar: '',
+    name: '',  // خانة واحدة فقط
+    description: '',
     parent_id: ''
   });
 
