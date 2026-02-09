@@ -319,7 +319,9 @@ export default function RepairTrackingPage() {
       // Call API to update repair status
       await axios.put(`${API}/repairs/${selectedRepair.id}`, {
         status: updateForm.status,
-        final_cost: parseFloat(updateForm.actual_cost) || selectedRepair.estimated_cost
+        final_cost: parseFloat(updateForm.actual_cost) || selectedRepair.estimated_cost,
+        spare_parts: updateForm.spare_parts,
+        notes: updateForm.notes
       });
 
       // Try to send WhatsApp notification (silent fail if not configured)
