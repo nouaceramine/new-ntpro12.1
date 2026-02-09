@@ -624,6 +624,11 @@ export default function SaasAdminPage() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Finance Reports Tab */}
+          <TabsContent value="finance" className="space-y-6">
+            <FinanceReportsSection tenants={tenants} payments={payments} />
+          </TabsContent>
         </Tabs>
 
         {/* Plan Dialog */}
