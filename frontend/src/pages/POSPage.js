@@ -612,6 +612,8 @@ export default function POSPage() {
     setDeliveryAddress('');
     setDeliveryCity('');
     setPaymentType('cash');
+    // جلب كود البيع الجديد
+    fetchSaleCode();
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
