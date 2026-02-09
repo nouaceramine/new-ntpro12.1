@@ -1018,12 +1018,26 @@ export default function InventoryCountPage() {
         )}
 
         {/* Start Session Dialog */}
-        <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
+        <Dialog open={showStartDialog} onOpenChange={(open) => {
+          setShowStartDialog(open);
+          if (open && !inventoryCode) {
+            // Generate inventory code when dialog opens
+            const token = localStorage.getItem('token');
+            axios.get(`${API}/inventory-sessions/generate-code`, {
+              headers: { Authorization: `Bearer ${token}` }
+            }).then(res => {
+              setInventoryCode(res.data.code);
+            }).catch(() => {});
+          }
+        }}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <ClipboardList className="h-5 w-5" />
                 {language === 'ar' ? 'بدء جرد جديد' : 'Démarrer un inventaire'}
+                {inventoryCode && (
+                  <span className="font-mono text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded ms-2">{inventoryCode}</span>
+                )}
               </DialogTitle>
               <DialogDescription>
                 {language === 'ar' ? 'أدخل اسم الجرد واختر العائلة (اختياري)' : 'Entrez un nom et sélectionnez une famille (optionnel)'}
