@@ -148,6 +148,9 @@ export default function POSPage() {
   const [customEndDate, setCustomEndDate] = useState('');
   const [selectedSaleForView, setSelectedSaleForView] = useState(null);
   const [showSaleDetailsDialog, setShowSaleDetailsDialog] = useState(false);
+  
+  // Calculator
+  const [showCalculator, setShowCalculator] = useState(false);
 
   useEffect(() => {
     checkOpenSession();
