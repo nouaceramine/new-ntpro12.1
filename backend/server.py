@@ -8377,13 +8377,16 @@ async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_ad
     # Create tenant database and admin user
     tenant_db = client[f"tenant_{tenant_id}"]
     
+    # Use provided role or default to admin
+    user_role = tenant.role or "admin"
+    
     admin_user = {
         "id": str(uuid.uuid4()),
         "email": tenant.email,
         "hashed_password": hashed_password,
         "name": tenant.name,
-        "role": "admin",
-        "permissions": DEFAULT_PERMISSIONS["admin"],
+        "role": user_role,
+        "permissions": DEFAULT_PERMISSIONS.get(user_role, DEFAULT_PERMISSIONS["admin"]),
         "tenant_id": tenant_id,
         "created_at": now.isoformat()
     }
