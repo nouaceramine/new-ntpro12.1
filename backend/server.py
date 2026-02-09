@@ -538,6 +538,7 @@ class ProductResponse(BaseModel):
     purchase_price: float = 0
     wholesale_price: float = 0
     retail_price: float = 0
+    super_wholesale_price: float = 0
     quantity: int
     image_url: str = ""
     compatible_models: List[str] = []
@@ -545,6 +546,7 @@ class ProductResponse(BaseModel):
     barcode: str = ""
     family_id: str = ""
     family_name: str = ""
+    use_average_price: bool = False
     created_at: str
     updated_at: str
 
