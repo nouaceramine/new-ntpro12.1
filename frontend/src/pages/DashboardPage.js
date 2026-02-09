@@ -213,7 +213,6 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-        )}
 
         {/* Monthly Profit Calculation (Revenue - Purchase Cost - Expenses) */}
         <Card>
