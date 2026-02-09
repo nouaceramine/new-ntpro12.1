@@ -218,8 +218,97 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* Cash Boxes (Admin) */}
-        {isAdmin && stats.cash_boxes?.length > 0 && (
+        {/* Monthly Profit Calculation (Revenue - Purchase Cost - Expenses) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Banknote className="h-5 w-5 text-green-600" />
+              {language === 'ar' ? 'الفوائد الشهرية (المبيعات - تكلفة الشراء - التكاليف)' : 'Bénéfice mensuel (Ventes - Coût d\'achat - Dépenses)'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Monthly Revenue */}
+              <div className="p-4 bg-emerald-50 rounded-xl text-center border border-emerald-200">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <TrendingUp className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-medium text-emerald-700">
+                    {language === 'ar' ? 'المبيعات الشهرية' : 'Ventes mensuelles'}
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-emerald-700">
+                  {(profitStats.monthly_revenue || salesStats.month.total || 0).toFixed(2)}
+                </p>
+                <p className="text-xs text-emerald-600">{t.currency}</p>
+              </div>
+
+              {/* Monthly Purchase Cost */}
+              <div className="p-4 bg-blue-50 rounded-xl text-center border border-blue-200">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Minus className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-700">
+                    {language === 'ar' ? 'تكلفة الشراء' : 'Coût d\'achat'}
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-blue-700">
+                  {(profitStats.monthly_purchase_cost || 0).toFixed(2)}
+                </p>
+                <p className="text-xs text-blue-600">{t.currency}</p>
+              </div>
+
+              {/* Monthly Expenses */}
+              <div className="p-4 bg-red-50 rounded-xl text-center border border-red-200">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Receipt className="h-4 w-4 text-red-600" />
+                  <span className="text-sm font-medium text-red-700">
+                    {language === 'ar' ? 'التكاليف الشهرية' : 'Dépenses mensuelles'}
+                  </span>
+                </div>
+                <p className="text-2xl font-bold text-red-700">
+                  {(profitStats.monthly_expenses || 0).toFixed(2)}
+                </p>
+                <p className="text-xs text-red-600">{t.currency}</p>
+              </div>
+
+              {/* Net Profit */}
+              <div className={`p-4 rounded-xl text-center border ${
+                (profitStats.monthly_profit || 0) >= 0 
+                  ? 'bg-green-50 border-green-200' 
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Equal className="h-4 w-4" />
+                  <span className={`text-sm font-medium ${
+                    (profitStats.monthly_profit || 0) >= 0 ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    {language === 'ar' ? 'صافي الربح' : 'Bénéfice net'}
+                  </span>
+                </div>
+                <p className={`text-2xl font-bold ${
+                  (profitStats.monthly_profit || 0) >= 0 ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {(profitStats.monthly_profit || 0).toFixed(2)}
+                </p>
+                <p className={`text-xs ${
+                  (profitStats.monthly_profit || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>{t.currency}</p>
+              </div>
+            </div>
+
+            {/* Profit Formula Explanation */}
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-xs text-muted-foreground text-center">
+                {language === 'ar' 
+                  ? `صافي الربح = المبيعات (${(profitStats.monthly_revenue || salesStats.month.total || 0).toFixed(2)}) - تكلفة الشراء (${(profitStats.monthly_purchase_cost || 0).toFixed(2)}) - التكاليف (${(profitStats.monthly_expenses || 0).toFixed(2)}) = ${(profitStats.monthly_profit || 0).toFixed(2)} ${t.currency}`
+                  : `Bénéfice net = Ventes (${(profitStats.monthly_revenue || salesStats.month.total || 0).toFixed(2)}) - Coût d'achat (${(profitStats.monthly_purchase_cost || 0).toFixed(2)}) - Dépenses (${(profitStats.monthly_expenses || 0).toFixed(2)}) = ${(profitStats.monthly_profit || 0).toFixed(2)} ${t.currency}`
+                }
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cash Boxes */}
+        {stats.cash_boxes?.length > 0 && (
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="text-xl">{t.cashManagement}</CardTitle>
