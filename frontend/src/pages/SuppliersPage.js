@@ -548,7 +548,6 @@ export default function SuppliersPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
               
               {/* Address */}
               <div className="space-y-1">
