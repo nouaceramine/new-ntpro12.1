@@ -390,6 +390,10 @@ export default function SaasAdminPage() {
               <CreditCard className="h-4 w-4" />
               المدفوعات
             </TabsTrigger>
+            <TabsTrigger value="finance" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              التقارير المالية
+            </TabsTrigger>
           </TabsList>
 
           {/* Tenants Tab */}
