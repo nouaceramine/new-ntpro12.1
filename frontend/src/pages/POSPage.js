@@ -2433,28 +2433,35 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Product Shortcuts - 20 Quick Access Boxes */}
+      {/* Product Shortcuts - 20 Quick Access Boxes with Drag & Drop */}
       <Card className="mt-4">
         <CardHeader className="py-2 px-4">
           <CardTitle className="text-sm flex items-center justify-between">
             <span>{language === 'ar' ? 'اختصارات المنتجات' : 'Raccourcis produits'}</span>
-            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'اضغط للتعديل أو إضافة منتج' : 'Cliquez pour modifier ou ajouter'}</span>
+            <span className="text-xs text-muted-foreground">{language === 'ar' ? 'اسحب للترتيب • انقر للإضافة • يمين للتعديل' : 'Glisser pour réorganiser • Clic pour ajouter • Droit pour modifier'}</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-2">
           <div className="grid grid-cols-10 gap-1">
             {productShortcuts.map((shortcut, index) => {
               const product = shortcut.productId ? products.find(p => p.id === shortcut.productId) : null;
+              const isDragging = draggedIndex === index;
+              const isDragOver = dragOverIndex === index;
+              
               return (
-                <button
+                <div
                   key={index}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
                   onClick={() => {
                     if (product) {
-                      // إذا كان المربع يحتوي على منتج، أضفه للسلة
                       addToCart(product);
                       playSuccessBeep();
                     } else {
-                      // إذا كان المربع فارغاً، افتح حوار الاختيار
                       setEditingShortcutIndex(index);
                       setShortcutColor(shortcut.color || '#e5e7eb');
                       setShortcutProductId('');
@@ -2463,31 +2470,33 @@ export default function POSPage() {
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    // النقر بالزر الأيمن يفتح حوار التعديل دائماً
                     setEditingShortcutIndex(index);
                     setShortcutColor(shortcut.color || '#e5e7eb');
                     setShortcutProductId(shortcut.productId || '');
                     setShowShortcutDialog(true);
                   }}
-                  className="h-12 w-full rounded-lg border-2 flex flex-col items-center justify-center text-[10px] font-medium transition-all hover:scale-105 hover:shadow-md cursor-pointer"
+                  className={`h-12 w-full rounded-lg border-2 flex flex-col items-center justify-center text-[10px] font-medium transition-all cursor-grab active:cursor-grabbing
+                    ${isDragging ? 'opacity-50 scale-95' : 'hover:scale-105 hover:shadow-md'}
+                    ${isDragOver ? 'ring-2 ring-primary ring-offset-1' : ''}
+                  `}
                   style={{ 
                     backgroundColor: shortcut.color || '#e5e7eb',
-                    borderColor: product ? 'transparent' : '#d1d5db'
+                    borderColor: isDragOver ? 'var(--primary)' : (product ? 'transparent' : '#d1d5db')
                   }}
-                  title={product ? (language === 'ar' ? `${product.name_ar || product.name_en} - انقر لإضافة, زر يمين للتعديل` : `${product.name_en || product.name_ar} - Clic pour ajouter, clic droit pour modifier`) : (language === 'ar' ? 'انقر لإضافة منتج' : 'Cliquez pour ajouter un produit')}
+                  title={product ? (language === 'ar' ? `${product.name_ar || product.name_en} - انقر للإضافة • اسحب للترتيب` : `${product.name_en || product.name_ar} - Clic pour ajouter • Glisser pour réorganiser`) : (language === 'ar' ? 'انقر لإضافة منتج' : 'Cliquez pour ajouter')}
                   data-testid={`shortcut-${index}`}
                 >
                   {product ? (
                     <>
-                      <span className="truncate w-full text-center px-0.5 text-white drop-shadow-sm" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                      <span className="truncate w-full text-center px-0.5 text-white drop-shadow-sm select-none" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
                         {(product.name_ar || product.name_en)?.substring(0, 8)}
                       </span>
-                      <span className="text-[8px] text-white/80">{product.retail_price?.toFixed(0)}</span>
+                      <span className="text-[8px] text-white/80 select-none">{product.retail_price?.toFixed(0)}</span>
                     </>
                   ) : (
                     <Plus className="h-4 w-4 text-gray-400" />
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
