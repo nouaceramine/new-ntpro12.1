@@ -661,11 +661,12 @@ export const Layout = ({ children }) => {
               <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
               <input
                 type="text"
-                placeholder={t.searchPlaceholder}
+                placeholder={language === 'ar' ? 'ابحث بالاسم أو الباركود أو كود المنتج...' : 'Rechercher par nom, code-barres ou code article...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`w-full h-11 ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} rounded-lg border bg-background search-input focus:outline-none focus:ring-2 focus:ring-primary/20`}
                 data-testid="search-input"
+                autoComplete="off"
               />
             </div>
           </form>
