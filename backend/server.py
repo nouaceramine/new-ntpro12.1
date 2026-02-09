@@ -829,6 +829,7 @@ class InventorySessionCreate(BaseModel):
     status: str = "active"
     started_at: str
     counted_items: dict = {}
+    code: Optional[str] = ""  # كود الجرد IN00001
 
 class InventorySessionUpdate(BaseModel):
     name: Optional[str] = None
@@ -836,11 +837,13 @@ class InventorySessionUpdate(BaseModel):
     completed_at: Optional[str] = None
     applied_changes: Optional[bool] = None
     counted_items: Optional[dict] = None
+    code: Optional[str] = None
 
 class InventorySessionResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     name: str
+    code: str = ""
     family_filter: str
     status: str
     started_at: str
