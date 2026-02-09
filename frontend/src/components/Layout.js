@@ -383,8 +383,6 @@ export const Layout = ({ children }) => {
       title: language === 'ar' ? 'الإدارة' : 'Administration',
       icon: Settings,
       items: [
-        { path: '/users', icon: Shield, label: t.users },
-        { path: '/permissions', icon: Shield, label: language === 'ar' ? 'الصلاحيات' : 'Permissions' },
         { path: '/features', icon: LayoutDashboard, label: language === 'ar' ? 'مميزات البرنامج' : 'Fonctionnalités' },
         { path: '/api-keys', icon: Key, label: t.apiKeys },
         { path: '/settings', icon: Settings, label: t.settings },
