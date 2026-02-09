@@ -229,8 +229,10 @@ export default function ExpensesPage() {
   };
 
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         expense.notes?.toLowerCase().includes(searchQuery.toLowerCase());
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = expense.title?.toLowerCase().includes(query) ||
+                         expense.notes?.toLowerCase().includes(query) ||
+                         expense.code?.toLowerCase().includes(query);  // البحث بالكود
     const matchesCategory = categoryFilter === 'all' || expense.category === categoryFilter;
     
     let matchesDate = true;
