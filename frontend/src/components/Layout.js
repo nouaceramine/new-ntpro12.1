@@ -457,6 +457,20 @@ export const Layout = ({ children }) => {
       .filter(section => section.items.length > 0);
   })();
 
+  // Auto-expand section containing active page
+  useEffect(() => {
+    const currentPath = location.pathname;
+    const activeSection = navSections.find(section => 
+      section.items?.some(item => {
+        if (item.path === '/') return currentPath === '/';
+        return currentPath.startsWith(item.path);
+      })
+    );
+    if (activeSection && !expandedSections.includes(activeSection.title)) {
+      setExpandedSections(prev => [...prev, activeSection.title]);
+    }
+  }, [location.pathname]);
+
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path);
