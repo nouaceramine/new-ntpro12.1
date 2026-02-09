@@ -1376,10 +1376,32 @@ async def get_products(search: Optional[str] = None, model: Optional[str] = None
     return [ProductResponse(**p) for p in products]
 
 @api_router.get("/products/generate-barcode")
-async def generate_barcode():
-    """Generate a unique product barcode"""
+async def generate_barcode(article_code: Optional[str] = None):
+    """Generate a unique product barcode based on article code"""
     import random
     
+    if article_code:
+        # Use article code as base for barcode (e.g., AR00001 -> 2130000100001)
+        # Extract number from article code
+        try:
+            num = article_code.replace("AR", "").lstrip("0") or "1"
+            num = int(num)
+        except:
+            num = random.randint(1, 99999)
+        
+        prefix = "213"  # Algeria
+        company = "0001"
+        product_num = str(num).zfill(5)
+        
+        code = prefix + company + product_num
+        odd_sum = sum(int(code[i]) for i in range(0, 12, 2))
+        even_sum = sum(int(code[i]) for i in range(1, 12, 2))
+        check_digit = (10 - ((odd_sum + even_sum * 3) % 10)) % 10
+        
+        barcode = code + str(check_digit)
+        return {"barcode": barcode}
+    
+    # Fallback to random barcode generation
     while True:
         # Generate EAN-13 format barcode
         prefix = "213"  # Algeria
