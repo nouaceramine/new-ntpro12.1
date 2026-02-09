@@ -35,6 +35,7 @@ import {
   Truck, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, Users, DollarSign,
   Grid3X3, List, ArrowUpDown, SortAsc, SortDesc
 } from 'lucide-react';
+import { ExportPrintButtons } from '../components/ExportPrintButtons';
 import {
   Table,
   TableBody,

@@ -28,6 +28,7 @@ import {
   Users, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, PlusCircle, Save, Ban, Shield, ShieldOff,
   Grid3X3, List, ArrowUpDown, SortAsc, SortDesc, Calendar, DollarSign, ShoppingCart
 } from 'lucide-react';
+import { ExportPrintButtons } from '../components/ExportPrintButtons';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
 import {
