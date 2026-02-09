@@ -100,8 +100,8 @@ export function ProductSearchDropdown({
   };
 
   const defaultPlaceholder = language === 'ar' 
-    ? 'البحث عن منتج بالاسم أو الباركود...' 
-    : 'Rechercher un article...';
+    ? 'البحث بالاسم أو الباركود أو كود المنتج...' 
+    : 'Rechercher par nom, code-barres ou code article...';
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
@@ -112,10 +112,12 @@ export function ProductSearchDropdown({
         placeholder={placeholder || defaultPlaceholder}
         value={searchQuery}
         onChange={handleSearchChange}
+        onKeyDown={handleKeyDown}
         onFocus={() => searchQuery && setShowResults(true)}
         className={`${isRTL ? 'pr-10' : 'pl-10'}`}
         disabled={disabled}
         data-testid="product-search-input"
+        autoComplete="off"
       />
       
       {/* Search Results Dropdown */}
