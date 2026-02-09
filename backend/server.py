@@ -6976,6 +6976,8 @@ class RepairUpdate(BaseModel):
     final_cost: Optional[float] = None
     completed_at: Optional[str] = None
     delivered_at: Optional[str] = None
+    spare_parts: Optional[List[dict]] = None
+    notes: Optional[str] = None
 
 class SparePartCreate(BaseModel):
     name: str
