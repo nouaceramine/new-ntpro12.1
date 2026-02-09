@@ -78,6 +78,7 @@ export default function DailySessionsPage() {
   const [summary, setSummary] = useState(null);
   const [summaryDays, setSummaryDays] = useState('7');
   const [activeTab, setActiveTab] = useState('my-sessions');
+  const [sessionCode, setSessionCode] = useState('');  // كود الحصة
   
   // Dialogs
   const [showStartDialog, setShowStartDialog] = useState(false);
