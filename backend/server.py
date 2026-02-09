@@ -9166,6 +9166,65 @@ async def get_sale_audit_log(sale_id: str, admin: dict = Depends(get_admin_user)
     
     return logs
 
+# ============ FEATURES MANAGEMENT ============
+
+@api_router.get("/settings/features")
+async def get_features_settings(admin: dict = Depends(get_admin_user)):
+    """Get enabled/disabled features for the system"""
+    settings = await db.settings.find_one({"key": "features"}, {"_id": 0})
+    if settings:
+        return settings.get("value", {})
+    
+    # Return default features
+    return {
+        "sales": {"enabled": True, "subFeatures": {"pos": True, "invoices": True, "quotes": True, "returns": True, "discounts": True, "price_types": True}},
+        "inventory": {"enabled": True, "subFeatures": {"products": True, "categories": True, "stock_alerts": True, "barcode": True, "warehouses": False, "stock_transfer": False, "inventory_count": True}},
+        "purchases": {"enabled": True, "subFeatures": {"purchase_orders": True, "suppliers": True, "supplier_payments": True, "purchase_returns": False}},
+        "customers": {"enabled": True, "subFeatures": {"customer_list": True, "customer_debts": True, "customer_families": True, "blacklist": True, "debt_reminders": True}},
+        "employees": {"enabled": True, "subFeatures": {"employee_list": True, "attendance": True, "salaries": True, "commissions": True, "advances": True, "employee_accounts": True}},
+        "reports": {"enabled": True, "subFeatures": {"sales_reports": True, "inventory_reports": True, "financial_reports": True, "customer_reports": True, "smart_reports": False, "export_reports": True}},
+        "expenses": {"enabled": True, "subFeatures": {"expense_tracking": True, "expense_categories": True, "recurring_expenses": False}},
+        "repairs": {"enabled": True, "subFeatures": {"repair_tickets": True, "repair_status": True, "repair_invoice": True}},
+        "delivery": {"enabled": True, "subFeatures": {"delivery_tracking": True, "shipping_companies": True, "delivery_fees": True, "yalidine_integration": False}},
+        "ecommerce": {"enabled": False, "subFeatures": {"woocommerce": False, "product_sync": False, "order_sync": False}},
+        "loyalty": {"enabled": False, "subFeatures": {"loyalty_points": False, "coupons": False, "promotions": True}},
+        "notifications": {"enabled": True, "subFeatures": {"push_notifications": True, "email_notifications": False, "sms_notifications": False, "whatsapp_notifications": False}},
+        "services": {"enabled": False, "subFeatures": {"flexy_recharge": False, "bill_payment": False}}
+    }
+
+@api_router.post("/settings/features")
+async def save_features_settings(features: dict, admin: dict = Depends(get_admin_user)):
+    """Save features settings - Super Admin only applies to all sub-accounts"""
+    if admin.get("role") not in ["admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Only admins can change features")
+    
+    await db.settings.update_one(
+        {"key": "features"},
+        {"$set": {"key": "features", "value": features, "updated_by": admin["id"], "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"message": "Features saved successfully"}
+
+# ============ USER PERMISSIONS MANAGEMENT ============
+
+@api_router.put("/users/{user_id}/permissions")
+async def update_user_permissions(user_id: str, data: dict, admin: dict = Depends(get_admin_user)):
+    """Update specific user permissions"""
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Only super_admin can modify super_admin permissions
+    if user.get("role") == "super_admin" and admin.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Only super admin can modify super admin permissions")
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"permissions": data.get("permissions", {}), "permissions_updated_at": datetime.now(timezone.utc).isoformat(), "permissions_updated_by": admin["id"]}}
+    )
+    
+    return {"message": "Permissions updated successfully"}
+
 @api_router.post("/sales/{sale_id}/log-action")
 async def log_sale_action(
     sale_id: str,
