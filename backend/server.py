@@ -1175,6 +1175,41 @@ async def get_all_users(admin: dict = Depends(get_admin_user)):
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
     return [UserResponse(**u) for u in users]
 
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str = "user"
+
+@api_router.post("/users", response_model=UserResponse)
+async def create_user(user_data: UserCreate, admin: dict = Depends(get_admin_user)):
+    """Create a new user (admin only)"""
+    # Check if email already exists
+    existing = await db.users.find_one({"email": user_data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="البريد الإلكتروني مستخدم بالفعل")
+    
+    if len(user_data.password) < 4:
+        raise HTTPException(status_code=400, detail="كلمة المرور يجب أن تكون 4 أحرف على الأقل")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    new_user = {
+        "id": str(uuid.uuid4()),
+        "name": user_data.name,
+        "email": user_data.email,
+        "password": hash_password(user_data.password),
+        "role": user_data.role,
+        "tenant_id": admin.get("tenant_id"),
+        "permissions": {},
+        "created_at": now
+    }
+    
+    await db.users.insert_one(new_user)
+    
+    # Return without password
+    del new_user["password"]
+    return UserResponse(**new_user)
+
 @api_router.put("/users/{user_id}", response_model=UserResponse)
 async def update_user(user_id: str, updates: UserUpdate, admin: dict = Depends(get_admin_user)):
     user = await db.users.find_one({"id": user_id})
