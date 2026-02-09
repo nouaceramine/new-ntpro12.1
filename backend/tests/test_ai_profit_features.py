@@ -13,7 +13,7 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://add-pages-upgrade.preview.emergentagent.com"
+    BASE_URL = "https://auto-code-hub.preview.emergentagent.com"
 
 # Test credentials
 TEST_EMAIL = "admin@test.com"
