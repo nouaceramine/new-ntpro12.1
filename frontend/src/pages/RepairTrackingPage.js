@@ -210,7 +210,7 @@ export default function RepairTrackingPage() {
 
   // Search products for spare parts
   const searchProducts = async (query) => {
-    if (!query || query.length < 2) {
+    if (!query) {
       setProductResults([]);
       return;
     }
