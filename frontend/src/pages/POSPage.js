@@ -2515,7 +2515,7 @@ export default function POSPage() {
             {/* Product Selection */}
             <div>
               <Label>{language === 'ar' ? 'اختر المنتج' : 'Sélectionner produit'}</Label>
-              <Select value={shortcutProductId} onValueChange={setShortcutProductId}>
+              <Select value={shortcutProductId || 'none'} onValueChange={(v) => setShortcutProductId(v === 'none' ? '' : v)}>
                 <SelectTrigger className="mt-1">
                   <SelectValue placeholder={language === 'ar' ? 'اختر منتج...' : 'Choisir produit...'} />
                 </SelectTrigger>
