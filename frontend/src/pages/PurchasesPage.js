@@ -517,19 +517,46 @@ export default function PurchasesPage() {
               {language === 'ar' ? 'إدارة المشتريات وحسابات الموردين' : 'Gestion des achats et comptes fournisseurs'}
             </p>
           </div>
-          <Button onClick={async () => {
-            // Generate purchase code
-            try {
-              const response = await axios.get(`${API}/purchases/generate-code`);
-              setPurchaseCode(response.data.code);
-            } catch (error) {
-              setPurchaseCode('');
-            }
-            setShowNewPurchaseDialog(true);
-          }} className="gap-2" data-testid="new-purchase-btn">
-            <Plus className="h-5 w-5" />
-            {t.newPurchase}
-          </Button>
+          <div className="flex gap-2 items-center">
+            <ExportPrintButtons
+              data={purchases.map(p => ({
+                code: p.code || '-',
+                supplier: p.supplier_name || '-',
+                total: p.total?.toFixed(2) || '0',
+                paid: p.paid_amount?.toFixed(2) || '0',
+                remaining: p.remaining?.toFixed(2) || '0',
+                status: p.status === 'paid' ? (language === 'ar' ? 'مدفوع' : 'Payé') : 
+                        p.status === 'partial' ? (language === 'ar' ? 'جزئي' : 'Partiel') : 
+                        (language === 'ar' ? 'غير مدفوع' : 'Impayé'),
+                date: formatDate(p.created_at)
+              }))}
+              columns={[
+                { key: 'code', label: language === 'ar' ? 'الكود' : 'Code' },
+                { key: 'supplier', label: language === 'ar' ? 'المورد' : 'Fournisseur' },
+                { key: 'total', label: language === 'ar' ? 'الإجمالي' : 'Total' },
+                { key: 'paid', label: language === 'ar' ? 'المدفوع' : 'Payé' },
+                { key: 'remaining', label: language === 'ar' ? 'الباقي' : 'Restant' },
+                { key: 'status', label: language === 'ar' ? 'الحالة' : 'Statut' },
+                { key: 'date', label: language === 'ar' ? 'التاريخ' : 'Date' }
+              ]}
+              filename={`purchases_${new Date().toISOString().split('T')[0]}`}
+              title={language === 'ar' ? 'سجل المشتريات' : 'Historique des Achats'}
+              language={language}
+            />
+            <Button onClick={async () => {
+              // Generate purchase code
+              try {
+                const response = await axios.get(`${API}/purchases/generate-code`);
+                setPurchaseCode(response.data.code);
+              } catch (error) {
+                setPurchaseCode('');
+              }
+              setShowNewPurchaseDialog(true);
+            }} className="gap-2" data-testid="new-purchase-btn">
+              <Plus className="h-5 w-5" />
+              {t.newPurchase}
+            </Button>
+          </div>
         </div>
 
         {/* Statistics Cards */}
