@@ -1386,6 +1386,79 @@ async def get_products(search: Optional[str] = None, model: Optional[str] = None
     
     return [ProductResponse(**p) for p in products]
 
+# Paginated products endpoint
+class PaginatedProductsResponse(BaseModel):
+    items: List[ProductResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+@api_router.get("/products/paginated", response_model=PaginatedProductsResponse)
+async def get_products_paginated(
+    search: Optional[str] = None, 
+    model: Optional[str] = None, 
+    barcode: Optional[str] = None, 
+    family_id: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20
+):
+    """Get products with pagination support"""
+    query = {}
+    
+    if barcode:
+        query["barcode"] = barcode
+    elif search:
+        query["$or"] = [
+            {"name_en": {"$regex": search, "$options": "i"}},
+            {"name_ar": {"$regex": search, "$options": "i"}},
+            {"description_en": {"$regex": search, "$options": "i"}},
+            {"description_ar": {"$regex": search, "$options": "i"}},
+            {"compatible_models": {"$regex": search, "$options": "i"}},
+            {"barcode": {"$regex": search, "$options": "i"}},
+            {"article_code": {"$regex": search, "$options": "i"}}
+        ]
+    
+    if model:
+        if "$or" in query:
+            query = {"$and": [{"$or": query["$or"]}, {"compatible_models": {"$regex": model, "$options": "i"}}]}
+        else:
+            query["compatible_models"] = {"$regex": model, "$options": "i"}
+    
+    if family_id:
+        if "$and" in query:
+            query["$and"].append({"family_id": family_id})
+        elif "$or" in query:
+            query = {"$and": [{"$or": query["$or"]}, {"family_id": family_id}]}
+        else:
+            query["family_id"] = family_id
+    
+    # Get total count
+    total = await db.products.count_documents(query)
+    total_pages = (total + page_size - 1) // page_size if page_size > 0 else 1
+    
+    # Get paginated products
+    skip = (page - 1) * page_size
+    products = await db.products.find(query, {"_id": 0}).skip(skip).limit(page_size).to_list(page_size)
+    
+    # Add family names
+    for product in products:
+        if product.get("family_id") and not product.get("family_name"):
+            family = await db.product_families.find_one({"id": product["family_id"]}, {"_id": 0, "name_ar": 1})
+            product["family_name"] = family["name_ar"] if family else ""
+        elif not product.get("family_name"):
+            product["family_name"] = ""
+        if not product.get("article_code"):
+            product["article_code"] = ""
+    
+    return PaginatedProductsResponse(
+        items=[ProductResponse(**p) for p in products],
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages
+    )
+
 @api_router.get("/products/generate-barcode")
 async def generate_barcode(article_code: Optional[str] = None):
     """Generate a unique product barcode based on article code"""
