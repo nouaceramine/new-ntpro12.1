@@ -4447,6 +4447,81 @@ async def list_backups(admin: dict = Depends(get_admin_user)):
     backups = await db.backups.find({}, {"_id": 0}).sort("created_at", -1).to_list(20)
     return backups
 
+# Auto-backup settings model
+class AutoBackupSettings(BaseModel):
+    enabled: bool = False
+    frequency: str = "daily"  # daily, weekly, monthly
+    time: str = "02:00"  # HH:MM format
+    keep_count: int = 10  # Number of backups to keep
+
+@api_router.get("/backup/auto-settings")
+async def get_auto_backup_settings(admin: dict = Depends(get_admin_user)):
+    """Get auto-backup settings"""
+    settings = await db.settings.find_one({"type": "auto_backup"}, {"_id": 0})
+    if not settings:
+        return AutoBackupSettings().model_dump()
+    return settings.get("settings", AutoBackupSettings().model_dump())
+
+@api_router.post("/backup/auto-settings")
+async def save_auto_backup_settings(settings: AutoBackupSettings, admin: dict = Depends(get_admin_user)):
+    """Save auto-backup settings"""
+    await db.settings.update_one(
+        {"type": "auto_backup"},
+        {"$set": {"type": "auto_backup", "settings": settings.model_dump(), "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"success": True, "message": "Auto-backup settings saved"}
+
+@api_router.post("/backup/run-auto")
+async def run_auto_backup(admin: dict = Depends(get_admin_user)):
+    """Manually trigger auto backup (for testing)"""
+    now = datetime.now(timezone.utc)
+    
+    # Collect all data
+    backup_data = {
+        "products": await db.products.find({}, {"_id": 0}).to_list(10000),
+        "customers": await db.customers.find({}, {"_id": 0}).to_list(10000),
+        "suppliers": await db.suppliers.find({}, {"_id": 0}).to_list(10000),
+        "sales": await db.sales.find({}, {"_id": 0}).to_list(10000),
+        "purchases": await db.purchases.find({}, {"_id": 0}).to_list(10000),
+        "expenses": await db.expenses.find({}, {"_id": 0}).to_list(10000),
+        "employees": await db.employees.find({}, {"_id": 0}).to_list(1000),
+        "product_families": await db.product_families.find({}, {"_id": 0}).to_list(1000),
+        "customer_families": await db.customer_families.find({}, {"_id": 0}).to_list(1000),
+    }
+    
+    filename = f"auto_backup_{now.strftime('%Y%m%d_%H%M%S')}.json"
+    
+    # Save backup record to database
+    await db.backups.insert_one({
+        "id": str(uuid.uuid4()),
+        "filename": filename,
+        "type": "auto",
+        "size_bytes": len(str(backup_data)),
+        "stats": {
+            "products": len(backup_data["products"]),
+            "customers": len(backup_data["customers"]),
+            "suppliers": len(backup_data["suppliers"]),
+            "sales": len(backup_data["sales"]),
+            "purchases": len(backup_data["purchases"]),
+            "expenses": len(backup_data["expenses"]),
+        },
+        "created_at": now.isoformat(),
+        "created_by": admin.get("id", "system")
+    })
+    
+    # Clean up old backups (keep only latest N)
+    settings = await db.settings.find_one({"type": "auto_backup"}, {"_id": 0})
+    keep_count = settings.get("settings", {}).get("keep_count", 10) if settings else 10
+    
+    all_backups = await db.backups.find({"type": "auto"}).sort("created_at", -1).to_list(1000)
+    if len(all_backups) > keep_count:
+        old_backups = all_backups[keep_count:]
+        for old in old_backups:
+            await db.backups.delete_one({"id": old["id"]})
+    
+    return {"success": True, "filename": filename, "message": "Auto backup completed"}
+
 # ============ SELECTIVE DATA DELETE ============
 
 class SelectiveDeleteRequest(BaseModel):
