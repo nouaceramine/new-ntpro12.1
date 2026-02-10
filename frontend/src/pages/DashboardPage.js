@@ -118,6 +118,14 @@ export default function DashboardPage() {
             <p className="text-muted-foreground mt-1">{t.quickStats}</p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="icon"
+              onClick={() => setShowCustomizer(true)}
+              data-testid="customize-dashboard-btn"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
             <Link to="/pos">
               <Button className="gap-2" data-testid="go-to-pos-btn">
                 <ShoppingCart className="h-5 w-5" />
@@ -134,6 +142,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Cards */}
+        {isWidgetVisible('stats') && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {statsCards.map((stat, index) => (
             <Link key={index} to={stat.link}>
