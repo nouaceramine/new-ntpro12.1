@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,7 @@ import { Badge } from '../components/ui/badge';
 import { ExportPrintButtons } from '../components/ExportPrintButtons';
 import { Pagination } from '../components/Pagination';
 import { LazyImage } from '../components/LazyImage';
+import { ProductAutocomplete } from '../components/ProductAutocomplete';
 import { 
   Package, 
   Plus, 
@@ -23,7 +24,8 @@ import {
   ArrowUpDown,
   SortAsc,
   SortDesc,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Zap
 } from 'lucide-react';
 import {
   Select,
