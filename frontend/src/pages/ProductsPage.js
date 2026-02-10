@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { ExportPrintButtons } from '../components/ExportPrintButtons';
+import { Pagination } from '../components/Pagination';
 import { 
   Package, 
   Plus, 
@@ -45,6 +46,12 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState(localStorage.getItem('productsViewMode') || 'grid'); // grid, list, compact
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(parseInt(localStorage.getItem('productsPerPage')) || 20);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const changeViewMode = (mode) => {
     setViewMode(mode);
