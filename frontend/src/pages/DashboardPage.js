@@ -320,9 +320,10 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Cash Boxes */}
-        {stats.cash_boxes?.length > 0 && (
+        {isWidgetVisible('cashBoxes') && stats.cash_boxes?.length > 0 && (
           <Card>
             <CardHeader className="pb-4">
               <CardTitle className="text-xl">{t.cashManagement}</CardTitle>
@@ -341,9 +342,10 @@ export default function DashboardPage() {
         )}
 
         {/* Smart Notifications */}
-        <SmartNotifications />
+        {isWidgetVisible('notifications') && <SmartNotifications />}
 
         {/* Recent Products */}
+        {isWidgetVisible('recentProducts') && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <CardTitle className="text-xl">{t.recentProducts}</CardTitle>
