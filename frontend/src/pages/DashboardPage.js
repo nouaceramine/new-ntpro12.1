@@ -323,6 +323,9 @@ export default function DashboardPage() {
           </Card>
         )}
 
+        {/* Smart Notifications */}
+        <SmartNotifications />
+
         {/* Recent Products */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-4">
