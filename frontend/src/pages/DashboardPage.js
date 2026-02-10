@@ -400,6 +400,14 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+        )}
+
+        {/* Dashboard Customizer Dialog */}
+        <DashboardCustomizer 
+          isOpen={showCustomizer} 
+          onClose={() => setShowCustomizer(false)}
+          onSave={setWidgets}
+        />
       </div>
     </Layout>
   );
