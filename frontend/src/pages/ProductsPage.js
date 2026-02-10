@@ -99,11 +99,25 @@ export default function ProductsPage() {
       const params = new URLSearchParams();
       if (searchQuery) params.set('search', searchQuery);
       if (modelFilter) params.set('model', modelFilter);
+      params.set('page', currentPage.toString());
+      params.set('page_size', itemsPerPage.toString());
       
-      const response = await axios.get(`${API}/products?${params.toString()}`);
-      setProducts(response.data);
+      const response = await axios.get(`${API}/products/paginated?${params.toString()}`);
+      setProducts(response.data.items);
+      setTotalItems(response.data.total);
     } catch (error) {
       console.error('Error fetching products:', error);
+      // Fallback to non-paginated endpoint
+      try {
+        const params = new URLSearchParams();
+        if (searchQuery) params.set('search', searchQuery);
+        if (modelFilter) params.set('model', modelFilter);
+        const response = await axios.get(`${API}/products?${params.toString()}`);
+        setProducts(response.data);
+        setTotalItems(response.data.length);
+      } catch (e) {
+        console.error('Fallback also failed:', e);
+      }
     } finally {
       setLoading(false);
     }
@@ -111,7 +125,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [searchQuery, modelFilter]);
+  }, [searchQuery, modelFilter, currentPage, itemsPerPage]);
 
   const handleSearch = (e) => {
     e.preventDefault();
