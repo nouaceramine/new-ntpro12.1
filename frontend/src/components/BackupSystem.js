@@ -358,6 +358,41 @@ export function BackupSystem() {
         </CardContent>
       </Card>
 
+      {/* Auto-Backup Settings Card */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            {language === 'ar' ? 'النسخ الاحتياطي التلقائي' : 'Sauvegarde automatique'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">{language === 'ar' ? 'تفعيل النسخ التلقائي' : 'Activer la sauvegarde auto'}</p>
+              <p className="text-sm text-muted-foreground">
+                {autoBackupSettings.enabled 
+                  ? (language === 'ar' ? `كل ${autoBackupSettings.frequency === 'daily' ? 'يوم' : autoBackupSettings.frequency === 'weekly' ? 'أسبوع' : 'شهر'} الساعة ${autoBackupSettings.time}` : `Chaque ${autoBackupSettings.frequency} à ${autoBackupSettings.time}`)
+                  : (language === 'ar' ? 'غير مفعل' : 'Désactivé')}
+              </p>
+            </div>
+            <Badge variant={autoBackupSettings.enabled ? "default" : "secondary"}>
+              {autoBackupSettings.enabled ? (language === 'ar' ? 'مفعل' : 'Activé') : (language === 'ar' ? 'معطل' : 'Désactivé')}
+            </Badge>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowSettingsDialog(true)} className="flex-1 gap-2">
+              <Settings className="h-4 w-4" />
+              {language === 'ar' ? 'إعدادات' : 'Paramètres'}
+            </Button>
+            <Button onClick={runAutoBackup} className="flex-1 gap-2">
+              <Database className="h-4 w-4" />
+              {language === 'ar' ? 'نسخ الآن' : 'Sauvegarder'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Import Confirmation Dialog */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogContent>
