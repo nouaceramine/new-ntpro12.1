@@ -229,8 +229,10 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+        )}
 
         {/* Monthly Profit Calculation (Revenue - Purchase Cost - Expenses) */}
+        {isWidgetVisible('profit') && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
