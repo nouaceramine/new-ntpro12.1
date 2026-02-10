@@ -257,7 +257,7 @@ export default function CustomersPage() {
     fetchCustomers();
     fetchBlacklist();
     fetchCustomerFamilies();
-  }, [searchQuery]);
+  }, [searchQuery, currentPage, itemsPerPage]);
 
   const handleSubmit = async (e, createNew = false) => {
     e?.preventDefault();
