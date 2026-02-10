@@ -428,6 +428,87 @@ export function BackupSystem() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Auto-Backup Settings Dialog */}
+      <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              {language === 'ar' ? 'إعدادات النسخ التلقائي' : 'Paramètres de sauvegarde auto'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <div className="flex items-center justify-between">
+              <Label>{language === 'ar' ? 'تفعيل النسخ التلقائي' : 'Activer la sauvegarde auto'}</Label>
+              <Switch
+                checked={autoBackupSettings.enabled}
+                onCheckedChange={(checked) => setAutoBackupSettings({...autoBackupSettings, enabled: checked})}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'التكرار' : 'Fréquence'}</Label>
+              <Select 
+                value={autoBackupSettings.frequency}
+                onValueChange={(v) => setAutoBackupSettings({...autoBackupSettings, frequency: v})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">{language === 'ar' ? 'يومي' : 'Quotidien'}</SelectItem>
+                  <SelectItem value="weekly">{language === 'ar' ? 'أسبوعي' : 'Hebdomadaire'}</SelectItem>
+                  <SelectItem value="monthly">{language === 'ar' ? 'شهري' : 'Mensuel'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'وقت النسخ' : 'Heure de sauvegarde'}</Label>
+              <Select 
+                value={autoBackupSettings.time}
+                onValueChange={(v) => setAutoBackupSettings({...autoBackupSettings, time: v})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="00:00">00:00</SelectItem>
+                  <SelectItem value="02:00">02:00</SelectItem>
+                  <SelectItem value="04:00">04:00</SelectItem>
+                  <SelectItem value="06:00">06:00</SelectItem>
+                  <SelectItem value="12:00">12:00</SelectItem>
+                  <SelectItem value="18:00">18:00</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>{language === 'ar' ? 'عدد النسخ المحفوظة' : 'Nombre de sauvegardes à conserver'}</Label>
+              <Select 
+                value={autoBackupSettings.keep_count.toString()}
+                onValueChange={(v) => setAutoBackupSettings({...autoBackupSettings, keep_count: parseInt(v)})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Button onClick={saveAutoBackupSettings} className="w-full gap-2">
+              <CheckCircle className="h-4 w-4" />
+              {language === 'ar' ? 'حفظ الإعدادات' : 'Enregistrer'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
