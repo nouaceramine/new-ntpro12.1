@@ -379,7 +379,7 @@ export const Layout = ({ children }) => {
     }] : []),
     ...(isAdmin ? [{
       id: 'admin',
-      title: language === 'ar' ? 'الإدارة' : 'Administration',
+      title: language === 'ar' ? 'النظام' : 'Système',
       icon: Shield,
       items: [
         { path: '/features', icon: LayoutDashboard, label: language === 'ar' ? 'مميزات البرنامج' : 'Fonctionnalités' },
