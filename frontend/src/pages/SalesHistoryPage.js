@@ -244,6 +244,19 @@ export default function SalesHistoryPage() {
           </CardContent>
         </Card>
 
+        {/* Pagination */}
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            className="mt-6"
+          />
+        )}
+
         {/* Return Dialog */}
         <AlertDialog open={returnDialogOpen} onOpenChange={setReturnDialogOpen}>
           <AlertDialogContent>
