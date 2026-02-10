@@ -201,11 +201,28 @@ export default function CustomersPage() {
 
   const fetchCustomers = async () => {
     try {
-      const params = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
-      const response = await axios.get(`${API}/customers${params}`);
-      setCustomers(response.data);
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('search', searchQuery);
+      params.set('page', currentPage.toString());
+      params.set('page_size', itemsPerPage.toString());
+      
+      const response = await axios.get(`${API}/customers/paginated?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCustomers(response.data.items);
+      setTotalItems(response.data.total);
     } catch (error) {
       console.error('Error fetching customers:', error);
+      // Fallback to non-paginated endpoint
+      try {
+        const params = searchQuery ? `?search=${encodeURIComponent(searchQuery)}` : '';
+        const response = await axios.get(`${API}/customers${params}`);
+        setCustomers(response.data);
+        setTotalItems(response.data.length);
+      } catch (e) {
+        console.error('Fallback also failed:', e);
+      }
     } finally {
       setLoading(false);
     }
