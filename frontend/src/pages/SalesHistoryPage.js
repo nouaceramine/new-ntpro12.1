@@ -14,6 +14,7 @@ import {
   Eye
 } from 'lucide-react';
 import { ExportPrintButtons } from '../components/ExportPrintButtons';
+import { Pagination } from '../components/Pagination';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,13 +35,46 @@ export default function SalesHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [selectedSale, setSelectedSale] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(parseInt(localStorage.getItem('salesPerPage')) || 20);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const handleItemsPerPageChange = (newValue) => {
+    setItemsPerPage(newValue);
+    setCurrentPage(1);
+    localStorage.setItem('salesPerPage', newValue.toString());
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const fetchSales = async () => {
     try {
-      const response = await axios.get(`${API}/sales`);
-      setSales(response.data);
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams();
+      params.set('page', currentPage.toString());
+      params.set('page_size', itemsPerPage.toString());
+      
+      const response = await axios.get(`${API}/sales/paginated?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSales(response.data.items);
+      setTotalItems(response.data.total);
     } catch (error) {
       console.error('Error fetching sales:', error);
+      // Fallback to non-paginated endpoint
+      try {
+        const response = await axios.get(`${API}/sales`);
+        setSales(response.data);
+        setTotalItems(response.data.length);
+      } catch (e) {
+        console.error('Fallback also failed:', e);
+      }
     } finally {
       setLoading(false);
     }
@@ -48,7 +82,7 @@ export default function SalesHistoryPage() {
 
   useEffect(() => {
     fetchSales();
-  }, []);
+  }, [currentPage, itemsPerPage]);
 
   const handleReturn = async () => {
     try {
