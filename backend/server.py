@@ -2794,6 +2794,51 @@ async def get_sales(
     sales = await db.sales.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return [SaleResponse(**s) for s in sales]
 
+# Paginated sales endpoint
+class PaginatedSalesResponse(BaseModel):
+    items: List[SaleResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+@api_router.get("/sales/paginated", response_model=PaginatedSalesResponse)
+async def get_sales_paginated(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    customer_id: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    user: dict = Depends(get_current_user)
+):
+    """Get sales with pagination support"""
+    query = {}
+    if customer_id:
+        query["customer_id"] = customer_id
+    if start_date:
+        query["created_at"] = {"$gte": start_date}
+    if end_date:
+        if "created_at" in query:
+            query["created_at"]["$lte"] = end_date
+        else:
+            query["created_at"] = {"$lte": end_date}
+    
+    # Get total count
+    total = await db.sales.count_documents(query)
+    total_pages = (total + page_size - 1) // page_size if page_size > 0 else 1
+    
+    # Get paginated sales
+    skip = (page - 1) * page_size
+    sales = await db.sales.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return PaginatedSalesResponse(
+        items=[SaleResponse(**s) for s in sales],
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages
+    )
+
 @api_router.get("/sales/{sale_id}", response_model=SaleResponse)
 async def get_sale(sale_id: str, user: dict = Depends(get_current_user)):
     sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
