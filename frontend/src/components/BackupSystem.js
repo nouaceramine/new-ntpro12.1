@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
+import { Switch } from './ui/switch';
+import { Label } from './ui/label';
 import { 
   Download, Upload, Database, FileJson, FileSpreadsheet,
-  CheckCircle, AlertCircle, Clock, HardDrive, RefreshCw
+  CheckCircle, AlertCircle, Clock, HardDrive, RefreshCw, Settings
 } from 'lucide-react';
 import {
   Dialog,
@@ -16,6 +18,13 @@ import {
   DialogTitle,
   DialogDescription,
 } from './ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 import { toast } from 'sonner';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
