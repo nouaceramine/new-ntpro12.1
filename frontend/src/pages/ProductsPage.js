@@ -10,6 +10,7 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { ExportPrintButtons } from '../components/ExportPrintButtons';
 import { Pagination } from '../components/Pagination';
+import { LazyImage } from '../components/LazyImage';
 import { 
   Package, 
   Plus, 
