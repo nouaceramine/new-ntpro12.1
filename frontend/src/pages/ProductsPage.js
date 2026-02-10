@@ -63,6 +63,16 @@ export default function ProductsPage() {
     localStorage.setItem('productsViewMode', mode);
   };
 
+  const toggleQuickSearch = () => {
+    const newValue = !useQuickSearch;
+    setUseQuickSearch(newValue);
+    localStorage.setItem('useQuickSearch', newValue.toString());
+  };
+
+  const handleQuickSelect = (product) => {
+    navigate(`/products/${product.id}`);
+  };
+
   const handleItemsPerPageChange = (newValue) => {
     setItemsPerPage(newValue);
     setCurrentPage(1);
