@@ -107,6 +107,17 @@ export default function CustomersPage() {
     localStorage.setItem('customersViewMode', mode);
   };
 
+  const handleItemsPerPageChange = (newValue) => {
+    setItemsPerPage(newValue);
+    setCurrentPage(1);
+    localStorage.setItem('customersPerPage', newValue.toString());
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Sort customers
   const sortedCustomers = [...customers].sort((a, b) => {
     let comparison = 0;
