@@ -163,8 +163,10 @@ export default function DashboardPage() {
             </Link>
           ))}
         </div>
+        )}
 
         {/* Sales Summary - Today/Month/Year */}
+        {isWidgetVisible('stats') && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
