@@ -747,6 +747,19 @@ export default function CustomersPage() {
           </div>
         )}
 
+        {/* Pagination */}
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            className="mt-6"
+          />
+        )}
+
         {/* Add/Edit Dialog - Compact Design */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
