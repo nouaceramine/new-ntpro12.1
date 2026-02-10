@@ -41,6 +41,7 @@ export default function ProductsPage() {
   const { t, isRTL, language } = useLanguage();
   const { isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +50,7 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState(localStorage.getItem('productsViewMode') || 'grid'); // grid, list, compact
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [useQuickSearch, setUseQuickSearch] = useState(localStorage.getItem('useQuickSearch') === 'true');
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
