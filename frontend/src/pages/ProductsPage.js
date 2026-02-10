@@ -58,6 +58,17 @@ export default function ProductsPage() {
     localStorage.setItem('productsViewMode', mode);
   };
 
+  const handleItemsPerPageChange = (newValue) => {
+    setItemsPerPage(newValue);
+    setCurrentPage(1);
+    localStorage.setItem('productsPerPage', newValue.toString());
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Sort products
   const sortedProducts = [...products].sort((a, b) => {
     let comparison = 0;
