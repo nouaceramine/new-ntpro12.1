@@ -35,10 +35,60 @@ export function BackupSystem() {
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [lastBackup, setLastBackup] = useState(() => {
     return localStorage.getItem('lastBackupDate') || null;
   });
+  
+  // Auto-backup settings
+  const [autoBackupSettings, setAutoBackupSettings] = useState({
+    enabled: false,
+    frequency: 'daily',
+    time: '02:00',
+    keep_count: 10
+  });
+  
+  useEffect(() => {
+    fetchAutoBackupSettings();
+  }, []);
+  
+  const fetchAutoBackupSettings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/backup/auto-settings`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAutoBackupSettings(response.data);
+    } catch (error) {
+      console.error('Error fetching auto-backup settings:', error);
+    }
+  };
+  
+  const saveAutoBackupSettings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/backup/auto-settings`, autoBackupSettings, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم حفظ الإعدادات' : 'Paramètres enregistrés');
+      setShowSettingsDialog(false);
+    } catch (error) {
+      toast.error(language === 'ar' ? 'فشل حفظ الإعدادات' : 'Échec de l\'enregistrement');
+    }
+  };
+  
+  const runAutoBackup = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/backup/run-auto`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(language === 'ar' ? 'تم إنشاء نسخة احتياطية' : 'Sauvegarde créée');
+    } catch (error) {
+      toast.error(language === 'ar' ? 'فشل النسخ الاحتياطي' : 'Échec de la sauvegarde');
+    }
+  };
 
   const exportData = async (format = 'json') => {
     setExporting(true);
