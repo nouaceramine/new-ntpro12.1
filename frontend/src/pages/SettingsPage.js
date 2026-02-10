@@ -8,6 +8,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { BackupSystem } from '../components/BackupSystem';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,7 @@ import {
   Wifi,
   Cable,
   Monitor,
+  Database,
   Key,
   ImageIcon,
   MessageCircle,
