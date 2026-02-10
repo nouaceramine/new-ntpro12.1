@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Switch } from './ui/switch';
-import { Label } from './ui/label';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
   Dialog,
@@ -25,12 +25,58 @@ const DEFAULT_WIDGETS = [
   { id: 'cashBoxes', name_ar: 'إدارة المال', name_fr: 'Gestion de trésorerie', visible: true, order: 2 },
   { id: 'notifications', name_ar: 'الإشعارات الذكية', name_fr: 'Notifications intelligentes', visible: true, order: 3 },
   { id: 'recentProducts', name_ar: 'أحدث المنتجات', name_fr: 'Produits récents', visible: true, order: 4 },
-  { id: 'lowStock', name_ar: 'المنتجات منخفضة المخزون', name_fr: 'Produits en rupture', visible: true, order: 5 },
 ];
+
+function SortableItem({ widget, language, onToggle }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: widget.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-lg border bg-card ${isDragging ? 'shadow-lg' : ''}`}
+    >
+      <div {...attributes} {...listeners}>
+        <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+      </div>
+      <span className="flex-1 font-medium">
+        {language === 'ar' ? widget.name_ar : widget.name_fr}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onToggle(widget.id)}
+        className={widget.visible ? 'text-primary' : 'text-muted-foreground'}
+      >
+        {widget.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+      </Button>
+    </div>
+  );
+}
 
 export function DashboardCustomizer({ isOpen, onClose, onSave }) {
   const { language } = useLanguage();
   const [widgets, setWidgets] = useState([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     const saved = localStorage.getItem('dashboardWidgets');
@@ -41,16 +87,17 @@ export function DashboardCustomizer({ isOpen, onClose, onSave }) {
     }
   }, [isOpen]);
 
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
     
-    const items = Array.from(widgets);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    // Update order
-    const updatedItems = items.map((item, index) => ({ ...item, order: index }));
-    setWidgets(updatedItems);
+    if (active.id !== over?.id) {
+      setWidgets((items) => {
+        const oldIndex = items.findIndex((i) => i.id === active.id);
+        const newIndex = items.findIndex((i) => i.id === over?.id);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        return newItems.map((item, index) => ({ ...item, order: index }));
+      });
+    }
   };
 
   const toggleWidget = (widgetId) => {
@@ -86,47 +133,27 @@ export function DashboardCustomizer({ isOpen, onClose, onSave }) {
               : 'Glissez pour réorganiser ou masquez/affichez les widgets'}
           </p>
           
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="widgets">
-              {(provided) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="space-y-2"
-                >
-                  {widgets.sort((a, b) => a.order - b.order).map((widget, index) => (
-                    <Draggable key={widget.id} draggableId={widget.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className={`flex items-center gap-3 p-3 rounded-lg border bg-card ${
-                            snapshot.isDragging ? 'shadow-lg' : ''
-                          }`}
-                        >
-                          <div {...provided.dragHandleProps}>
-                            <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-                          </div>
-                          <span className="flex-1 font-medium">
-                            {language === 'ar' ? widget.name_ar : widget.name_fr}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => toggleWidget(widget.id)}
-                            className={widget.visible ? 'text-primary' : 'text-muted-foreground'}
-                          >
-                            {widget.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                          </Button>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={widgets.map(w => w.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {widgets.sort((a, b) => a.order - b.order).map((widget) => (
+                  <SortableItem 
+                    key={widget.id} 
+                    widget={widget} 
+                    language={language}
+                    onToggle={toggleWidget}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
           
           <div className="flex gap-2 pt-4">
             <Button variant="outline" onClick={resetToDefault} className="flex-1 gap-2">
