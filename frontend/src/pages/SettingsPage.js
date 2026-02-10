@@ -67,7 +67,6 @@ import {
   Send,
   Download,
   Upload,
-  Database,
   HardDrive,
   GripVertical,
   ChevronRight
