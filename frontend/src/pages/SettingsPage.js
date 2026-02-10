@@ -784,10 +784,14 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="permissions" className="space-y-6">
-          <TabsList className="grid w-full max-w-4xl grid-cols-6">
+          <TabsList className="grid w-full max-w-4xl grid-cols-7">
             <TabsTrigger value="permissions" className="gap-2">
               <Shield className="h-4 w-4" />
               {t.permissions}
+            </TabsTrigger>
+            <TabsTrigger value="backup" className="gap-2">
+              <Database className="h-4 w-4" />
+              {language === 'ar' ? 'النسخ الاحتياطي' : 'Sauvegarde'}
             </TabsTrigger>
             <TabsTrigger value="whatsapp" className="gap-2">
               <MessageCircle className="h-4 w-4" />
@@ -810,6 +814,11 @@ export default function SettingsPage() {
               {language === 'ar' ? 'النظام' : 'Système'}
             </TabsTrigger>
           </TabsList>
+
+          {/* Backup Tab */}
+          <TabsContent value="backup" className="space-y-6">
+            <BackupSystem />
+          </TabsContent>
 
           {/* Permissions Tab */}
           <TabsContent value="permissions" className="space-y-6">
