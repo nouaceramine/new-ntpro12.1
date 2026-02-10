@@ -138,6 +138,7 @@ export default function ProductsPage() {
   const clearFilters = () => {
     setSearchQuery('');
     setModelFilter('');
+    setCurrentPage(1);
     setSearchParams({});
   };
 
