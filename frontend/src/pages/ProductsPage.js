@@ -449,8 +449,8 @@ export default function ProductsPage() {
               >
                 <div className="product-card border rounded-xl overflow-hidden bg-card h-full flex flex-col">
                   <div className="product-image-container aspect-square relative">
-                    <img
-                      src={product.image_url || 'https://images.unsplash.com/photo-1634403665443-81dc4d75843a?crop=entropy&cs=srgb&fm=jpg&q=85'}
+                    <LazyImage
+                      src={product.image_url}
                       alt={language === 'ar' ? product.name_ar : product.name_en}
                       className="w-full h-full object-cover"
                     />
