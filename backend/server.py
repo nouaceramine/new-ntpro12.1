@@ -1936,6 +1936,61 @@ async def get_customers(search: Optional[str] = None, family_id: Optional[str] =
     
     return [CustomerResponse(**c) for c in customers]
 
+# Paginated customers endpoint
+class PaginatedCustomersResponse(BaseModel):
+    items: List[CustomerResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+@api_router.get("/customers/paginated", response_model=PaginatedCustomersResponse)
+async def get_customers_paginated(
+    search: Optional[str] = None, 
+    family_id: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 20,
+    user: dict = Depends(get_current_user)
+):
+    """Get customers with pagination support"""
+    query = {}
+    if search:
+        query["$or"] = [
+            {"name": {"$regex": search, "$options": "i"}},
+            {"phone": {"$regex": search, "$options": "i"}},
+            {"code": {"$regex": search, "$options": "i"}}
+        ]
+    if family_id:
+        query["family_id"] = family_id
+    
+    # Get total count
+    total = await db.customers.count_documents(query)
+    total_pages = (total + page_size - 1) // page_size if page_size > 0 else 1
+    
+    # Get paginated customers
+    skip = (page - 1) * page_size
+    customers = await db.customers.find(query, {"_id": 0}).skip(skip).limit(page_size).to_list(page_size)
+    
+    # Add family names
+    for customer in customers:
+        if customer.get("family_id") and not customer.get("family_name"):
+            family = await db.customer_families.find_one({"id": customer["family_id"]}, {"_id": 0, "name": 1})
+            customer["family_name"] = family["name"] if family else ""
+        elif not customer.get("family_name"):
+            customer["family_name"] = ""
+        if not customer.get("family_id"):
+            customer["family_id"] = ""
+        if not customer.get("code"):
+            customer["code"] = ""
+    
+    return PaginatedCustomersResponse(
+        items=[CustomerResponse(**c) for c in customers],
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages
+    )
+
 @api_router.get("/customers/{customer_id}", response_model=CustomerResponse)
 async def get_customer(customer_id: str, user: dict = Depends(get_current_user)):
     customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
