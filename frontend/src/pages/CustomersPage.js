@@ -67,6 +67,12 @@ export default function CustomersPage() {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(parseInt(localStorage.getItem('customersPerPage')) || 20);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
   const [formData, setFormData] = useState({
     name: '', 
     phone: '', 
