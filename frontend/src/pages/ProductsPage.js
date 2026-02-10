@@ -497,6 +497,19 @@ export default function ProductsPage() {
             ))}
           </div>
         )}
+
+        {/* Pagination */}
+        {totalItems > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            className="mt-6"
+          />
+        )}
       </div>
     </Layout>
   );
