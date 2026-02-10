@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { SmartNotifications } from '../components/SmartNotifications';
+import { DashboardCustomizer, useDashboardWidgets } from '../components/DashboardCustomizer';
 import { 
   Package, 
   Users, 
@@ -23,7 +24,8 @@ import {
   CalendarDays,
   Receipt,
   Minus,
-  Equal
+  Equal,
+  Settings
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -31,6 +33,8 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export default function DashboardPage() {
   const { t, isRTL, language } = useLanguage();
   const { isAdmin } = useAuth();
+  const { widgets, setWidgets, isWidgetVisible, getWidgetOrder } = useDashboardWidgets();
+  const [showCustomizer, setShowCustomizer] = useState(false);
   const [stats, setStats] = useState({
     total_products: 0, total_customers: 0, total_suppliers: 0,
     low_stock_count: 0, today_sales_total: 0, today_sales_count: 0,
