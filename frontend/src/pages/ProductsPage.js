@@ -312,17 +312,36 @@ export default function ProductsPage() {
               </div>
             </div>
             <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
-                <Input
-                  type="text"
+              {useQuickSearch ? (
+                <ProductAutocomplete
+                  onSelect={handleQuickSelect}
                   placeholder={t.searchPlaceholder}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
-                  data-testid="product-search-input"
+                  className="flex-1"
+                  clearOnSelect={false}
                 />
-              </div>
+              ) : (
+                <div className="relative flex-1">
+                  <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
+                  <Input
+                    type="text"
+                    placeholder={t.searchPlaceholder}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
+                    data-testid="product-search-input"
+                  />
+                </div>
+              )}
+              <Button
+                type="button"
+                variant={useQuickSearch ? "default" : "outline"}
+                size="icon"
+                onClick={toggleQuickSearch}
+                title={language === 'ar' ? 'بحث فوري' : 'Recherche rapide'}
+                className="h-11 w-11"
+              >
+                <Zap className={`h-5 w-5 ${useQuickSearch ? 'text-yellow-300' : ''}`} />
+              </Button>
               <div className="relative flex-1 sm:max-w-xs">
                 <Filter className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
                 <Input
