@@ -192,7 +192,7 @@ export default function ProductsPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{t.products}</h1>
             <p className="text-muted-foreground mt-1">
-              {products.length} {t.products.toLowerCase()}
+              {totalItems} {t.products.toLowerCase()}
             </p>
           </div>
           <div className="flex gap-2 items-center">
