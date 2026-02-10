@@ -29,6 +29,7 @@ import {
   Grid3X3, List, ArrowUpDown, SortAsc, SortDesc, Calendar, DollarSign, ShoppingCart
 } from 'lucide-react';
 import { ExportPrintButtons } from '../components/ExportPrintButtons';
+import { Pagination } from '../components/Pagination';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
 import {
