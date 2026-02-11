@@ -9906,7 +9906,7 @@ async def get_saas_stats_extended(admin: dict = Depends(get_super_admin)):
 
 @api_router.post("/saas/register")
 async def register_tenant(tenant: TenantCreate):
-    """Public registration for new tenants with trial"""
+    """Public registration for new tenants with trial - creates separate database"""
     # Check if email already exists
     existing = await db.saas_tenants.find_one({"email": tenant.email})
     if existing:
@@ -9932,8 +9932,9 @@ async def register_tenant(tenant: TenantCreate):
         "email": tenant.email,
         "phone": tenant.phone or "",
         "company_name": tenant.company_name or "",
-        "hashed_password": hashed_password,
+        "password": hashed_password,
         "plan_id": tenant.plan_id,
+        "agent_id": None,
         "is_active": True,
         "is_trial": True,
         "trial_ends_at": trial_ends.isoformat(),
@@ -9943,14 +9944,16 @@ async def register_tenant(tenant: TenantCreate):
         "features_override": {},
         "limits_override": {},
         "notes": "",
+        "database_name": f"tenant_{tenant_id.replace('-', '_')}",
         "created_at": now.isoformat()
     }
     
     await db.saas_tenants.insert_one(tenant_doc)
     
-    # Create tenant database and admin user
-    tenant_db = client[f"tenant_{tenant_id}"]
+    # Initialize tenant database with default data
+    tenant_db = await init_tenant_database(tenant_id)
     
+    # Create admin user in tenant database
     admin_user = {
         "id": str(uuid.uuid4()),
         "email": tenant.email,
@@ -9963,9 +9966,14 @@ async def register_tenant(tenant: TenantCreate):
     }
     await tenant_db.users.insert_one(admin_user)
     
-    # Generate token
+    logger.info(f"Registered new tenant with database: tenant_{tenant_id.replace('-', '_')}")
+    
+    # Generate token with tenant info
     token = jwt.encode({
         "sub": admin_user["id"],
+        "email": tenant.email,
+        "role": "admin",
+        "type": "tenant",
         "tenant_id": tenant_id,
         "exp": datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     }, SECRET_KEY, algorithm=ALGORITHM)
@@ -9974,7 +9982,8 @@ async def register_tenant(tenant: TenantCreate):
         "message": "تم إنشاء حسابك بنجاح! لديك فترة تجريبية مجانية لمدة 14 يوم.",
         "tenant_id": tenant_id,
         "access_token": token,
-        "trial_ends_at": trial_ends.isoformat()
+        "trial_ends_at": trial_ends.isoformat(),
+        "database_name": f"tenant_{tenant_id.replace('-', '_')}"
     }
 
 @api_router.post("/saas/tenant-login")
