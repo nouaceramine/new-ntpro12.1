@@ -86,7 +86,7 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/portal" replace />;
   }
 
   if (adminOnly && !isAdmin) {
