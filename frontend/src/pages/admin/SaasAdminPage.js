@@ -723,6 +723,10 @@ export default function SaasAdminPage() {
               <Users className="h-4 w-4" />
               المشتركين
             </TabsTrigger>
+            <TabsTrigger value="agents" className="gap-2">
+              <Truck className="h-4 w-4" />
+              الوكلاء
+            </TabsTrigger>
             <TabsTrigger value="plans" className="gap-2">
               <Package className="h-4 w-4" />
               الخطط
