@@ -127,6 +127,9 @@ function AppRoutes() {
       <Route path="/agent-login" element={<AgentLoginPage />} />
       <Route path="/agent/dashboard" element={<AgentDashboardPage />} />
 
+      {/* Tenant Routes */}
+      <Route path="/tenant/dashboard" element={<TenantDashboardPage />} />
+
       {/* Admin Login */}
       {/* Unified Login - Main Entry Point */}
       <Route path="/portal" element={<UnifiedLoginPage />} />
