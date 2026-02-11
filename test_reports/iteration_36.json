@@ -1,0 +1,71 @@
+{
+  "summary": "Testing iteration 36: Tenant Dashboard redirect bug fix verification. All 3 reported issues have been fixed and verified: 1) /api/auth/me now returns created_at for tenants, 2) UnifiedLoginPage stores token in localStorage['token'] for AuthContext compatibility, 3) Products table uses correct field names (name_ar/name_en, retail_price, quantity). Backend: 100% (9/9 tests passed). Frontend: 100% - all tabs navigate without redirect to login.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "/api/notifications/generate",
+        "issue": "Returns 403 for some requests (visible in console logs) - not critical to tenant dashboard functionality"
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_tenant_auth_flow.py",
+    "/app/test_reports/pytest/pytest_tenant_auth.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py Lines 1239-1270: get_current_user properly handles tenant users and adds created_at from saas_tenants record",
+    "UnifiedLoginPage.js Lines 47-52: Tenant login now stores token in both 'tenantToken' AND 'token' localStorage keys for Layout/AuthContext compatibility",
+    "TenantDashboardPage.js Lines 736-761: Products table correctly uses name_ar/name_en, retail_price, and quantity field names"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_tenant_auth_flow.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "100%"
+  },
+  "test_credentials": {
+    "tenant": {"email": "ahmed@store.com", "password": "password"},
+    "admin": {"email": "super@ntcommerce.com", "password": "password"}
+  },
+  "seed_data_creation": "None required",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Tenant dashboard bug fix verified. Login flow works correctly: tenant logs in via /portal -> token stored in localStorage['token'] and localStorage['tenantToken'] -> redirected to /tenant/dashboard -> AuthContext reads token from localStorage['token'] -> /api/auth/me returns user with created_at -> dashboard tabs work without redirect to login.",
+  "verified_fixes": {
+    "issue_1_auth_me_created_at": {
+      "status": "FIXED",
+      "description": "/api/auth/me now returns created_at field for tenant users",
+      "verification": "Backend test test_auth_me_returns_created_at passed - created_at field present in response",
+      "code_location": "server.py Lines 1239-1270"
+    },
+    "issue_2_token_storage": {
+      "status": "FIXED",
+      "description": "UnifiedLoginPage stores tenant token in localStorage['token'] for AuthContext compatibility",
+      "verification": "UI test shows successful login and navigation without redirect to login page",
+      "code_location": "UnifiedLoginPage.js Lines 47-52"
+    },
+    "issue_3_product_field_names": {
+      "status": "FIXED",
+      "description": "Products table uses correct field names (name_ar/name_en, retail_price, quantity)",
+      "verification": "Products tab displays products with correct names, prices, and stock values",
+      "code_location": "TenantDashboardPage.js Lines 736-761"
+    }
+  },
+  "tested_tabs": {
+    "products": "PASS - Table displays with product names, prices, stock quantities",
+    "sales": "PASS - Tab navigates correctly, no redirect",
+    "customers": "PASS - Tab navigates correctly, no redirect",
+    "suppliers": "PASS - Tab navigates correctly, no redirect",
+    "employees": "PASS - Tab navigates correctly, no redirect",
+    "finance_reports": "PASS - Tab navigates correctly, shows revenue stats",
+    "settings": "PASS - Tab navigates correctly, shows subscription info"
+  }
+}
