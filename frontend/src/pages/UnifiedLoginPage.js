@@ -51,7 +51,8 @@ export default function UnifiedLoginPage() {
       
       // Redirect after short delay
       setTimeout(() => {
-        navigate(redirect_to);
+        // Use window.location for full page reload to update AuthContext
+        window.location.href = redirect_to;
       }, 1500);
       
     } catch (error) {
