@@ -40,9 +40,10 @@ import {
   AlertTriangle, DollarSign, Search, MoreHorizontal,
   Star, Eye, EyeOff, Ban, RefreshCw, Calendar, Store, Truck, ShoppingBag,
   Banknote, Wallet, PiggyBank, Receipt, Calculator, FileText, ArrowUpRight, ArrowDownRight,
-  Send
+  Send, Database
 } from 'lucide-react';
 import { SyncManager } from '../../components/SyncManager';
+import { DatabaseManager } from '../../components/DatabaseManager';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
