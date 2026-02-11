@@ -149,9 +149,11 @@ class TenantCreate(BaseModel):
     password: str
     company_name: Optional[str] = ""
     plan_id: str
+    agent_id: Optional[str] = None  # الوكيل المسؤول
     subscription_type: str = "monthly"  # monthly, 6months, yearly
     business_type: Optional[str] = "retailer"  # retailer, wholesaler, distributor
     role: Optional[str] = "admin"  # admin, manager, seller, etc.
+    notes: Optional[str] = ""
 
 class TenantUpdate(BaseModel):
     name: Optional[str] = None
@@ -160,6 +162,7 @@ class TenantUpdate(BaseModel):
     company_name: Optional[str] = None
     is_active: Optional[bool] = None
     plan_id: Optional[str] = None
+    agent_id: Optional[str] = None
     features_override: Optional[dict] = None  # Override plan features
     limits_override: Optional[dict] = None  # Override plan limits
     notes: Optional[str] = None
