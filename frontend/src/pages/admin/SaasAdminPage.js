@@ -857,6 +857,10 @@ export default function SaasAdminPage() {
               <Send className="h-4 w-4" />
               المزامنة
             </TabsTrigger>
+            <TabsTrigger value="databases" className="gap-2">
+              <Database className="h-4 w-4" />
+              قواعد البيانات
+            </TabsTrigger>
           </TabsList>
 
           {/* Tenants Tab */}
