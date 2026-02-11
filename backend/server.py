@@ -142,7 +142,9 @@ class UserResponse(BaseModel):
     role: str
     permissions: dict = {}
     tenant_id: Optional[str] = None
-    created_at: str
+    user_type: Optional[str] = None
+    company_name: Optional[str] = None
+    created_at: Optional[str] = None
 
 # ============ SAAS MODELS ============
 
