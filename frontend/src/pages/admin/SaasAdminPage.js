@@ -1200,6 +1200,11 @@ export default function SaasAdminPage() {
           <TabsContent value="finance" className="space-y-6">
             <FinanceReportsSection tenants={tenants} payments={payments} />
           </TabsContent>
+
+          {/* Sync Tab */}
+          <TabsContent value="sync" className="space-y-6">
+            <SyncManager tenants={tenants} />
+          </TabsContent>
         </Tabs>
 
         {/* Plan Dialog */}
