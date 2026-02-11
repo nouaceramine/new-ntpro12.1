@@ -9155,7 +9155,7 @@ async def get_tenant(tenant_id: str, admin: dict = Depends(get_super_admin)):
 
 @api_router.post("/saas/tenants", response_model=TenantResponse)
 async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_admin)):
-    """Create a new tenant (subscriber)"""
+    """Create a new tenant (subscriber) with their own database"""
     # Check if email already exists
     existing = await db.saas_tenants.find_one({"email": tenant.email})
     if existing:
@@ -9186,8 +9186,9 @@ async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_ad
         "email": tenant.email,
         "phone": tenant.phone or "",
         "company_name": tenant.company_name or "",
-        "hashed_password": hashed_password,
+        "password": hashed_password,
         "plan_id": tenant.plan_id,
+        "agent_id": tenant.agent_id if hasattr(tenant, 'agent_id') else None,
         "is_active": True,
         "is_trial": False,
         "trial_ends_at": None,
@@ -9198,17 +9199,19 @@ async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_ad
         "limits_override": {},
         "notes": "",
         "business_type": tenant.business_type or "retailer",
+        "database_name": f"tenant_{tenant_id.replace('-', '_')}",
         "created_at": now.isoformat()
     }
     
     await db.saas_tenants.insert_one(tenant_doc)
     
-    # Create tenant database and admin user
-    tenant_db = client[f"tenant_{tenant_id}"]
+    # Initialize tenant database with default data
+    tenant_db = await init_tenant_database(tenant_id)
     
     # Use provided role or default to admin
     user_role = tenant.role or "admin"
     
+    # Create admin user in tenant database
     admin_user = {
         "id": str(uuid.uuid4()),
         "email": tenant.email,
@@ -9221,12 +9224,20 @@ async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_ad
     }
     await tenant_db.users.insert_one(admin_user)
     
-    # Initialize settings
-    await tenant_db.system_settings.insert_one({
-        "type": "general",
-        "company_name": tenant.company_name or tenant.name,
-        "created_at": now.isoformat()
-    })
+    # Initialize company settings
+    await tenant_db.settings.update_one(
+        {"id": "company"},
+        {"$set": {
+            "id": "company",
+            "company_name": tenant.company_name or tenant.name,
+            "phone": tenant.phone or "",
+            "email": tenant.email,
+            "created_at": now.isoformat()
+        }},
+        upsert=True
+    )
+    
+    logger.info(f"Created tenant database: tenant_{tenant_id.replace('-', '_')}")
     
     tenant_doc["plan_name"] = plan.get("name_ar", "")
     tenant_doc["stats"] = {"products": 0, "users": 1, "sales": 0}
