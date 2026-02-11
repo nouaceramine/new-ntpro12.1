@@ -11037,6 +11037,215 @@ async def push_settings(data: SettingsPush, admin: dict = Depends(get_super_admi
     
     return {"message": f"Settings pushed to {updated_count} tenants", "updated_count": updated_count}
 
+# ============ REAL-TIME SYNC SYSTEM ============
+
+class SyncConfigCreate(BaseModel):
+    name: str
+    sync_types: List[str]  # receipt, notifications, loyalty, pos, products, families, theme
+    target: str = "all"  # all, active, selected
+    selected_tenants: List[str] = []
+    auto_sync: bool = False
+    locked: bool = False  # If true, tenants cannot modify
+
+class SyncAction(BaseModel):
+    sync_types: List[str]
+    target: str = "all"
+    selected_tenants: List[str] = []
+
+@api_router.get("/sync/configs")
+async def get_sync_configs(admin: dict = Depends(get_super_admin)):
+    """Get all sync configurations"""
+    configs = await db.sync_configs.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return configs
+
+@api_router.post("/sync/configs")
+async def create_sync_config(data: SyncConfigCreate, admin: dict = Depends(get_super_admin)):
+    """Create a new sync configuration"""
+    now = datetime.now(timezone.utc).isoformat()
+    config = {
+        "id": str(uuid.uuid4()),
+        "name": data.name,
+        "sync_types": data.sync_types,
+        "target": data.target,
+        "selected_tenants": data.selected_tenants,
+        "auto_sync": data.auto_sync,
+        "locked": data.locked,
+        "created_by": admin["id"],
+        "created_at": now,
+        "last_sync": None
+    }
+    await db.sync_configs.insert_one(config)
+    return config
+
+@api_router.delete("/sync/configs/{config_id}")
+async def delete_sync_config(config_id: str, admin: dict = Depends(get_super_admin)):
+    """Delete a sync configuration"""
+    result = await db.sync_configs.delete_one({"id": config_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Config not found")
+    return {"message": "Config deleted"}
+
+@api_router.post("/sync/execute")
+async def execute_sync(data: SyncAction, admin: dict = Depends(get_super_admin)):
+    """Execute sync to tenants"""
+    now = datetime.now(timezone.utc).isoformat()
+    sync_id = str(uuid.uuid4())
+    
+    # Get tenants to sync
+    if data.target == "selected" and data.selected_tenants:
+        tenants = await db.saas_tenants.find(
+            {"id": {"$in": data.selected_tenants}}, 
+            {"id": 1, "name": 1, "database_name": 1}
+        ).to_list(1000)
+    elif data.target == "active":
+        tenants = await db.saas_tenants.find(
+            {"status": "active"}, 
+            {"id": 1, "name": 1, "database_name": 1}
+        ).to_list(1000)
+    else:
+        tenants = await db.saas_tenants.find(
+            {}, {"id": 1, "name": 1, "database_name": 1}
+        ).to_list(1000)
+    
+    # Collect data to sync
+    sync_data = {}
+    sync_labels = {
+        "receipt": "إعدادات الإيصال",
+        "notifications": "إعدادات الإشعارات",
+        "loyalty": "إعدادات الولاء",
+        "pos": "إعدادات نقطة البيع",
+        "products": "المنتجات",
+        "families": "عائلات المنتجات",
+        "theme": "تصميم الواجهة"
+    }
+    
+    for sync_type in data.sync_types:
+        if sync_type == "receipt":
+            settings = await db.settings.find_one({"type": "receipt"}, {"_id": 0})
+            if settings: sync_data["receipt"] = settings
+        elif sync_type == "notifications":
+            settings = await db.notification_settings.find_one({}, {"_id": 0})
+            if settings: sync_data["notifications"] = settings
+        elif sync_type == "loyalty":
+            settings = await db.loyalty_settings.find_one({}, {"_id": 0})
+            if settings: sync_data["loyalty"] = settings
+        elif sync_type == "pos":
+            settings = await db.settings.find_one({"type": "pos"}, {"_id": 0})
+            if settings: sync_data["pos"] = settings
+        elif sync_type == "products":
+            products = await db.products.find({}, {"_id": 0}).to_list(10000)
+            sync_data["products"] = products
+        elif sync_type == "families":
+            families = await db.product_families.find({}, {"_id": 0}).to_list(1000)
+            sync_data["families"] = families
+        elif sync_type == "theme":
+            theme = await db.settings.find_one({"type": "theme"}, {"_id": 0})
+            if theme: sync_data["theme"] = theme
+    
+    # Execute sync
+    success_count = 0
+    failed_tenants = []
+    
+    for tenant in tenants:
+        try:
+            tenant_db = client[tenant["database_name"]]
+            
+            for key, value in sync_data.items():
+                if key == "receipt":
+                    await tenant_db.settings.update_one({"type": "receipt"}, {"$set": value}, upsert=True)
+                elif key == "notifications":
+                    await tenant_db.notification_settings.update_one({}, {"$set": value}, upsert=True)
+                elif key == "loyalty":
+                    await tenant_db.loyalty_settings.update_one({}, {"$set": value}, upsert=True)
+                elif key == "pos":
+                    await tenant_db.settings.update_one({"type": "pos"}, {"$set": value}, upsert=True)
+                elif key == "products":
+                    if value:
+                        await tenant_db.products.delete_many({})
+                        await tenant_db.products.insert_many(value)
+                elif key == "families":
+                    if value:
+                        await tenant_db.product_families.delete_many({})
+                        await tenant_db.product_families.insert_many(value)
+                elif key == "theme":
+                    await tenant_db.settings.update_one({"type": "theme"}, {"$set": value}, upsert=True)
+            
+            # Send notification to tenant
+            await tenant_db.notifications.insert_one({
+                "id": str(uuid.uuid4()),
+                "type": "system_update",
+                "title": "تحديث من الإدارة",
+                "message": f"تم تحديث: {', '.join([sync_labels.get(t, t) for t in data.sync_types])}",
+                "priority": "high",
+                "read": False,
+                "created_at": now
+            })
+            
+            success_count += 1
+        except Exception as e:
+            failed_tenants.append({"id": tenant["id"], "name": tenant["name"], "error": str(e)})
+    
+    # Log sync action
+    sync_log = {
+        "id": sync_id,
+        "sync_types": data.sync_types,
+        "target": data.target,
+        "total_tenants": len(tenants),
+        "success_count": success_count,
+        "failed_count": len(failed_tenants),
+        "failed_tenants": failed_tenants,
+        "admin_id": admin["id"],
+        "admin_name": admin.get("name", ""),
+        "created_at": now
+    }
+    await db.sync_logs.insert_one(sync_log)
+    
+    return {
+        "message": f"تم المزامنة بنجاح إلى {success_count} مشترك",
+        "sync_id": sync_id,
+        "success_count": success_count,
+        "failed_count": len(failed_tenants),
+        "failed_tenants": failed_tenants
+    }
+
+@api_router.get("/sync/logs")
+async def get_sync_logs(admin: dict = Depends(get_super_admin), limit: int = 50):
+    """Get sync history logs"""
+    logs = await db.sync_logs.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    return logs
+
+@api_router.get("/sync/available-types")
+async def get_available_sync_types(admin: dict = Depends(get_super_admin)):
+    """Get available sync types with counts"""
+    products_count = await db.products.count_documents({})
+    families_count = await db.product_families.count_documents({})
+    
+    return [
+        {"id": "receipt", "name": "إعدادات الإيصال", "name_fr": "Paramètres du reçu", "icon": "Receipt", "count": 1},
+        {"id": "notifications", "name": "إعدادات الإشعارات", "name_fr": "Paramètres des notifications", "icon": "Bell", "count": 1},
+        {"id": "loyalty", "name": "إعدادات الولاء", "name_fr": "Paramètres de fidélité", "icon": "Award", "count": 1},
+        {"id": "pos", "name": "إعدادات نقطة البيع", "name_fr": "Paramètres POS", "icon": "Store", "count": 1},
+        {"id": "products", "name": "المنتجات", "name_fr": "Produits", "icon": "Package", "count": products_count},
+        {"id": "families", "name": "عائلات المنتجات", "name_fr": "Familles de produits", "icon": "Folder", "count": families_count},
+        {"id": "theme", "name": "تصميم الواجهة", "name_fr": "Thème", "icon": "Palette", "count": 1}
+    ]
+
+@api_router.post("/sync/lock-settings")
+async def lock_tenant_settings(tenant_ids: List[str], lock: bool, admin: dict = Depends(get_super_admin)):
+    """Lock or unlock settings for specific tenants"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    for tenant_id in tenant_ids:
+        tenant = await db.saas_tenants.find_one({"id": tenant_id})
+        if tenant:
+            tenant_db = client[tenant["database_name"]]
+            await tenant_db.settings.update_one(
+                {"type": "admin_lock"},
+                {"$set": {"locked": lock, "updated_at": now}},
+                upsert=True
+            )
+    
+    return {"message": f"تم {'قفل' if lock else 'فتح'} الإعدادات لـ {len(tenant_ids)} مشترك"}
 
 
 # Include router and middleware
