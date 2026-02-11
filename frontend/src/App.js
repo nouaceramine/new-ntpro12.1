@@ -62,6 +62,8 @@ import EmployeeAlertsPage from "./pages/EmployeeAlertsPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import PermissionsPage from "./pages/PermissionsPage";
 import SystemUpdatesPage from "./pages/SystemUpdatesPage";
+import AgentLoginPage from "./pages/AgentLoginPage";
+import AgentDashboardPage from "./pages/AgentDashboardPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
