@@ -418,6 +418,24 @@ export default function SaasAdminPage() {
     amount: 0, payment_method: 'manual', subscription_type: 'monthly', notes: '', transaction_id: ''
   });
 
+  // Agents State
+  const [agents, setAgents] = useState([]);
+  const [agentDialogOpen, setAgentDialogOpen] = useState(false);
+  const [agentTransactionsDialogOpen, setAgentTransactionsDialogOpen] = useState(false);
+  const [editingAgent, setEditingAgent] = useState(null);
+  const [selectedAgent, setSelectedAgent] = useState(null);
+  const [agentTransactions, setAgentTransactions] = useState([]);
+  const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
+  
+  const [agentForm, setAgentForm] = useState({
+    name: '', email: '', password: '', phone: '', company_name: '', address: '',
+    commission_percent: 10, commission_fixed: 0, credit_limit: 100000, notes: ''
+  });
+  
+  const [paymentForm, setPaymentForm] = useState({
+    amount: 0, transaction_type: 'payment', description: '', notes: ''
+  });
+
   useEffect(() => {
     fetchData();
   }, []);
