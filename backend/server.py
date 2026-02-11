@@ -9214,6 +9214,433 @@ async def get_saas_stats(admin: dict = Depends(get_super_admin)):
         "plans_distribution": plans_dist
     }
 
+# ============ SAAS ADMIN - AGENTS/RESELLERS ============
+
+@api_router.get("/saas/agents", response_model=List[AgentResponse])
+async def get_agents(admin: dict = Depends(get_super_admin)):
+    """Get all agents/resellers"""
+    agents = await db.saas_agents.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    for agent in agents:
+        # Count tenants for this agent
+        tenants_count = await db.saas_tenants.count_documents({"agent_id": agent["id"]})
+        agent["tenants_count"] = tenants_count
+        
+        # Set defaults if missing
+        if "current_balance" not in agent:
+            agent["current_balance"] = 0.0
+        if "total_earnings" not in agent:
+            agent["total_earnings"] = 0.0
+    
+    return [AgentResponse(**a) for a in agents]
+
+@api_router.get("/saas/agents/{agent_id}", response_model=AgentResponse)
+async def get_agent(agent_id: str, admin: dict = Depends(get_super_admin)):
+    """Get a specific agent"""
+    agent = await db.saas_agents.find_one({"id": agent_id}, {"_id": 0})
+    if not agent:
+        raise HTTPException(status_code=404, detail="الوكيل غير موجود")
+    
+    tenants_count = await db.saas_tenants.count_documents({"agent_id": agent_id})
+    agent["tenants_count"] = tenants_count
+    
+    return AgentResponse(**agent)
+
+@api_router.post("/saas/agents", response_model=AgentResponse)
+async def create_agent(agent: AgentCreate, admin: dict = Depends(get_super_admin)):
+    """Create a new agent/reseller"""
+    # Check if email already exists
+    existing = await db.saas_agents.find_one({"email": agent.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="البريد الإلكتروني مستخدم بالفعل")
+    
+    now = datetime.now(timezone.utc)
+    agent_id = str(uuid.uuid4())
+    
+    agent_data = {
+        "id": agent_id,
+        "name": agent.name,
+        "email": agent.email,
+        "password": pwd_context.hash(agent.password),
+        "phone": agent.phone,
+        "company_name": agent.company_name or "",
+        "address": agent.address or "",
+        "commission_percent": agent.commission_percent,
+        "commission_fixed": agent.commission_fixed,
+        "credit_limit": agent.credit_limit,
+        "current_balance": 0.0,
+        "total_earnings": 0.0,
+        "is_active": True,
+        "notes": agent.notes or "",
+        "created_at": now.isoformat()
+    }
+    
+    await db.saas_agents.insert_one({**agent_data, "_id": agent_id})
+    
+    agent_data["tenants_count"] = 0
+    return AgentResponse(**agent_data)
+
+@api_router.put("/saas/agents/{agent_id}", response_model=AgentResponse)
+async def update_agent(agent_id: str, agent: AgentUpdate, admin: dict = Depends(get_super_admin)):
+    """Update an agent"""
+    existing = await db.saas_agents.find_one({"id": agent_id}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="الوكيل غير موجود")
+    
+    update_data = {k: v for k, v in agent.model_dump().items() if v is not None}
+    if update_data:
+        await db.saas_agents.update_one({"id": agent_id}, {"$set": update_data})
+    
+    updated = await db.saas_agents.find_one({"id": agent_id}, {"_id": 0})
+    tenants_count = await db.saas_tenants.count_documents({"agent_id": agent_id})
+    updated["tenants_count"] = tenants_count
+    
+    return AgentResponse(**updated)
+
+@api_router.delete("/saas/agents/{agent_id}")
+async def delete_agent(agent_id: str, admin: dict = Depends(get_super_admin)):
+    """Delete an agent"""
+    existing = await db.saas_agents.find_one({"id": agent_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="الوكيل غير موجود")
+    
+    # Check if agent has tenants
+    tenants_count = await db.saas_tenants.count_documents({"agent_id": agent_id})
+    if tenants_count > 0:
+        raise HTTPException(status_code=400, detail=f"لا يمكن حذف الوكيل لأنه يملك {tenants_count} مشترك")
+    
+    await db.saas_agents.delete_one({"id": agent_id})
+    return {"success": True, "message": "تم حذف الوكيل بنجاح"}
+
+# Agent Transactions (Payments & Balance)
+@api_router.get("/saas/agents/{agent_id}/transactions")
+async def get_agent_transactions(agent_id: str, admin: dict = Depends(get_super_admin)):
+    """Get all transactions for an agent"""
+    transactions = await db.saas_agent_transactions.find(
+        {"agent_id": agent_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(500)
+    return transactions
+
+@api_router.post("/saas/agents/{agent_id}/transactions", response_model=AgentTransactionResponse)
+async def create_agent_transaction(agent_id: str, transaction: AgentTransaction, admin: dict = Depends(get_super_admin)):
+    """Create a transaction for an agent (payment, refund, etc.)"""
+    agent = await db.saas_agents.find_one({"id": agent_id}, {"_id": 0})
+    if not agent:
+        raise HTTPException(status_code=404, detail="الوكيل غير موجود")
+    
+    now = datetime.now(timezone.utc)
+    current_balance = agent.get("current_balance", 0.0)
+    
+    # Calculate new balance
+    if transaction.transaction_type in ["payment", "commission"]:
+        new_balance = current_balance + transaction.amount
+    elif transaction.transaction_type in ["subscription_sale", "refund"]:
+        new_balance = current_balance - transaction.amount
+    else:
+        new_balance = current_balance + transaction.amount
+    
+    transaction_data = {
+        "id": str(uuid.uuid4()),
+        "agent_id": agent_id,
+        "agent_name": agent.get("name", ""),
+        "amount": transaction.amount,
+        "transaction_type": transaction.transaction_type,
+        "description": transaction.description,
+        "reference_id": transaction.reference_id or "",
+        "balance_after": new_balance,
+        "notes": transaction.notes or "",
+        "created_by": admin.get("id", ""),
+        "created_at": now.isoformat()
+    }
+    
+    await db.saas_agent_transactions.insert_one({**transaction_data, "_id": transaction_data["id"]})
+    
+    # Update agent balance
+    update_fields = {"current_balance": new_balance}
+    if transaction.transaction_type == "commission":
+        total_earnings = agent.get("total_earnings", 0.0) + transaction.amount
+        update_fields["total_earnings"] = total_earnings
+    
+    await db.saas_agents.update_one({"id": agent_id}, {"$set": update_fields})
+    
+    return AgentTransactionResponse(**transaction_data)
+
+# Agent's Tenants
+@api_router.get("/saas/agents/{agent_id}/tenants")
+async def get_agent_tenants(agent_id: str, admin: dict = Depends(get_super_admin)):
+    """Get all tenants for a specific agent"""
+    tenants = await db.saas_tenants.find({"agent_id": agent_id}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    for tenant in tenants:
+        plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0, "name_ar": 1})
+        tenant["plan_name"] = plan.get("name_ar", "") if plan else ""
+    
+    return tenants
+
+# Agent Login
+@api_router.post("/saas/agent-login")
+async def agent_login(login: UserLogin):
+    """Agent login endpoint"""
+    agent = await db.saas_agents.find_one({"email": login.email}, {"_id": 0})
+    if not agent:
+        raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
+    
+    if not pwd_context.verify(login.password, agent["password"]):
+        raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
+    
+    if not agent.get("is_active", True):
+        raise HTTPException(status_code=403, detail="الحساب معطل")
+    
+    # Create token
+    token_data = {
+        "sub": agent["id"],
+        "email": agent["email"],
+        "role": "agent",
+        "type": "agent"
+    }
+    access_token = create_access_token(token_data)
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "agent": {
+            "id": agent["id"],
+            "name": agent["name"],
+            "email": agent["email"],
+            "company_name": agent.get("company_name", ""),
+            "current_balance": agent.get("current_balance", 0.0),
+            "credit_limit": agent.get("credit_limit", 0.0)
+        }
+    }
+
+# Agent Dashboard (for agent's own view)
+async def get_current_agent(token: str = Depends(oauth2_scheme)):
+    """Get current agent from token"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        if payload.get("type") != "agent":
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        agent = await db.saas_agents.find_one({"id": payload.get("sub")}, {"_id": 0})
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        
+        return agent
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+@api_router.get("/agent/dashboard")
+async def get_agent_dashboard(agent: dict = Depends(get_current_agent)):
+    """Get agent's own dashboard data"""
+    agent_id = agent["id"]
+    
+    # Get agent's tenants
+    tenants = await db.saas_tenants.find({"agent_id": agent_id}, {"_id": 0}).to_list(1000)
+    
+    active_tenants = sum(1 for t in tenants if t.get("is_active", False))
+    trial_tenants = sum(1 for t in tenants if t.get("is_trial", False))
+    
+    # Calculate total subscription value
+    total_value = 0
+    for tenant in tenants:
+        plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0})
+        if plan:
+            if tenant.get("subscription_type") == "monthly":
+                total_value += plan.get("price_monthly", 0)
+            elif tenant.get("subscription_type") == "6months":
+                total_value += plan.get("price_6months", 0)
+            else:
+                total_value += plan.get("price_yearly", 0)
+    
+    # Get recent transactions
+    transactions = await db.saas_agent_transactions.find(
+        {"agent_id": agent_id}, {"_id": 0}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    return {
+        "agent": {
+            "id": agent["id"],
+            "name": agent["name"],
+            "email": agent["email"],
+            "current_balance": agent.get("current_balance", 0.0),
+            "credit_limit": agent.get("credit_limit", 0.0),
+            "total_earnings": agent.get("total_earnings", 0.0),
+            "commission_percent": agent.get("commission_percent", 0.0),
+            "commission_fixed": agent.get("commission_fixed", 0.0)
+        },
+        "stats": {
+            "total_tenants": len(tenants),
+            "active_tenants": active_tenants,
+            "trial_tenants": trial_tenants,
+            "total_subscription_value": total_value
+        },
+        "recent_transactions": transactions,
+        "tenants": tenants[:10]  # Last 10 tenants
+    }
+
+@api_router.get("/agent/tenants")
+async def get_my_tenants(agent: dict = Depends(get_current_agent)):
+    """Get agent's own tenants"""
+    tenants = await db.saas_tenants.find({"agent_id": agent["id"]}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    for tenant in tenants:
+        plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0, "name_ar": 1})
+        tenant["plan_name"] = plan.get("name_ar", "") if plan else ""
+    
+    return tenants
+
+@api_router.post("/agent/tenants")
+async def agent_create_tenant(tenant: TenantCreate, agent: dict = Depends(get_current_agent)):
+    """Agent creates a new tenant (with commission calculation)"""
+    # Check if email already exists
+    existing = await db.saas_tenants.find_one({"email": tenant.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="البريد الإلكتروني مستخدم بالفعل")
+    
+    # Get plan
+    plan = await db.saas_plans.find_one({"id": tenant.plan_id}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="الخطة غير موجودة")
+    
+    # Calculate subscription price
+    if tenant.subscription_type == "monthly":
+        price = plan.get("price_monthly", 0)
+    elif tenant.subscription_type == "6months":
+        price = plan.get("price_6months", 0)
+    else:
+        price = plan.get("price_yearly", 0)
+    
+    # Check agent credit limit
+    agent_balance = agent.get("current_balance", 0.0)
+    credit_limit = agent.get("credit_limit", 0.0)
+    if (agent_balance - price) < -credit_limit:
+        raise HTTPException(status_code=400, detail="تجاوز حد الدين المسموح")
+    
+    # Create tenant
+    now = datetime.now(timezone.utc)
+    tenant_id = str(uuid.uuid4())
+    
+    # Calculate subscription period
+    if tenant.subscription_type == "monthly":
+        end_date = now + timedelta(days=30)
+    elif tenant.subscription_type == "6months":
+        end_date = now + timedelta(days=180)
+    else:
+        end_date = now + timedelta(days=365)
+    
+    tenant_data = {
+        "id": tenant_id,
+        "name": tenant.name,
+        "email": tenant.email,
+        "password": pwd_context.hash(tenant.password),
+        "phone": tenant.phone,
+        "company_name": tenant.company_name,
+        "plan_id": tenant.plan_id,
+        "agent_id": agent["id"],  # Link to agent
+        "is_active": True,
+        "is_trial": False,
+        "subscription_type": tenant.subscription_type,
+        "subscription_starts_at": now.isoformat(),
+        "subscription_ends_at": end_date.isoformat(),
+        "features_override": {},
+        "limits_override": {},
+        "notes": tenant.notes or "",
+        "business_type": tenant.business_type or "retailer",
+        "created_at": now.isoformat()
+    }
+    
+    await db.saas_tenants.insert_one({**tenant_data, "_id": tenant_id})
+    
+    # Deduct from agent balance (subscription sale)
+    new_balance = agent_balance - price
+    await db.saas_agents.update_one({"id": agent["id"]}, {"$set": {"current_balance": new_balance}})
+    
+    # Record transaction
+    await db.saas_agent_transactions.insert_one({
+        "_id": str(uuid.uuid4()),
+        "id": str(uuid.uuid4()),
+        "agent_id": agent["id"],
+        "agent_name": agent["name"],
+        "amount": price,
+        "transaction_type": "subscription_sale",
+        "description": f"اشتراك جديد: {tenant.name} - {plan.get('name_ar', '')}",
+        "reference_id": tenant_id,
+        "balance_after": new_balance,
+        "notes": "",
+        "created_by": agent["id"],
+        "created_at": now.isoformat()
+    })
+    
+    # Calculate and add commission
+    commission = (price * agent.get("commission_percent", 0) / 100) + agent.get("commission_fixed", 0)
+    if commission > 0:
+        final_balance = new_balance + commission
+        total_earnings = agent.get("total_earnings", 0.0) + commission
+        
+        await db.saas_agents.update_one({"id": agent["id"]}, {
+            "$set": {"current_balance": final_balance, "total_earnings": total_earnings}
+        })
+        
+        await db.saas_agent_transactions.insert_one({
+            "_id": str(uuid.uuid4()),
+            "id": str(uuid.uuid4()),
+            "agent_id": agent["id"],
+            "agent_name": agent["name"],
+            "amount": commission,
+            "transaction_type": "commission",
+            "description": f"عمولة اشتراك: {tenant.name}",
+            "reference_id": tenant_id,
+            "balance_after": final_balance,
+            "notes": f"نسبة {agent.get('commission_percent', 0)}% + ثابت {agent.get('commission_fixed', 0)}",
+            "created_by": "system",
+            "created_at": now.isoformat()
+        })
+    
+    tenant_data["plan_name"] = plan.get("name_ar", "")
+    return tenant_data
+
+@api_router.get("/agent/transactions")
+async def get_my_transactions(agent: dict = Depends(get_current_agent)):
+    """Get agent's own transactions"""
+    transactions = await db.saas_agent_transactions.find(
+        {"agent_id": agent["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(500)
+    return transactions
+
+# SaaS Stats with Agents
+@api_router.get("/saas/stats-extended")
+async def get_saas_stats_extended(admin: dict = Depends(get_super_admin)):
+    """Get extended SaaS statistics including agents"""
+    # Basic stats
+    total_tenants = await db.saas_tenants.count_documents({})
+    active_tenants = await db.saas_tenants.count_documents({"is_active": True})
+    trial_tenants = await db.saas_tenants.count_documents({"is_trial": True})
+    
+    # Agent stats
+    total_agents = await db.saas_agents.count_documents({})
+    active_agents = await db.saas_agents.count_documents({"is_active": True})
+    
+    # Financial stats
+    agents = await db.saas_agents.find({}, {"_id": 0, "current_balance": 1}).to_list(1000)
+    total_agent_debt = sum(abs(a.get("current_balance", 0)) for a in agents if a.get("current_balance", 0) < 0)
+    total_agent_credit = sum(a.get("current_balance", 0) for a in agents if a.get("current_balance", 0) > 0)
+    
+    return {
+        "tenants": {
+            "total": total_tenants,
+            "active": active_tenants,
+            "trial": trial_tenants
+        },
+        "agents": {
+            "total": total_agents,
+            "active": active_agents
+        },
+        "financials": {
+            "total_agent_debt": total_agent_debt,
+            "total_agent_credit": total_agent_credit
+        }
+    }
+
 # ============ TENANT REGISTRATION (Public) ============
 
 @api_router.post("/saas/register")
