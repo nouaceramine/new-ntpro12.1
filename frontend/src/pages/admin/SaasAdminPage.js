@@ -525,6 +525,97 @@ export default function SaasAdminPage() {
     }
   };
 
+  // Agent Functions
+  const openAgentDialog = (agent = null) => {
+    if (agent) {
+      setEditingAgent(agent);
+      setAgentForm({
+        name: agent.name, email: agent.email, password: '', phone: agent.phone,
+        company_name: agent.company_name || '', address: agent.address || '',
+        commission_percent: agent.commission_percent || 10,
+        commission_fixed: agent.commission_fixed || 0,
+        credit_limit: agent.credit_limit || 100000,
+        notes: agent.notes || ''
+      });
+    } else {
+      setEditingAgent(null);
+      setAgentForm({
+        name: '', email: '', password: '', phone: '', company_name: '', address: '',
+        commission_percent: 10, commission_fixed: 0, credit_limit: 100000, notes: ''
+      });
+    }
+    setAgentDialogOpen(true);
+  };
+
+  const saveAgent = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      if (editingAgent) {
+        const updateData = { ...agentForm };
+        if (!updateData.password) delete updateData.password;
+        await axios.put(`${API}/saas/agents/${editingAgent.id}`, updateData, { headers });
+        toast.success('تم تحديث الوكيل بنجاح');
+      } else {
+        await axios.post(`${API}/saas/agents`, agentForm, { headers });
+        toast.success('تم إنشاء الوكيل بنجاح');
+      }
+      setAgentDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'حدث خطأ');
+    }
+  };
+
+  const deleteAgent = async (agentId) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا الوكيل؟')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/saas/agents/${agentId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('تم حذف الوكيل');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'حدث خطأ');
+    }
+  };
+
+  const openAgentTransactions = async (agent) => {
+    setSelectedAgent(agent);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/saas/agents/${agent.id}/transactions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAgentTransactions(response.data);
+      setAgentTransactionsDialogOpen(true);
+    } catch (error) {
+      toast.error('خطأ في تحميل المعاملات');
+    }
+  };
+
+  const openAddPayment = (agent) => {
+    setSelectedAgent(agent);
+    setPaymentForm({ amount: 0, transaction_type: 'payment', description: 'دفعة نقدية', notes: '' });
+    setAddPaymentDialogOpen(true);
+  };
+
+  const saveAgentPayment = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/saas/agents/${selectedAgent.id}/transactions`, paymentForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('تم تسجيل الدفعة بنجاح');
+      setAddPaymentDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'حدث خطأ');
+    }
+  };
+
   // Tenant Functions
   const openTenantDialog = (tenant = null) => {
     if (tenant) {
