@@ -600,74 +600,28 @@ export default function TenantDashboardPage() {
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats - Optimized */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">إجمالي المنتجات</p>
-                  <p className="text-2xl font-bold">{stats.total_products}</p>
+          {[
+            { label: 'إجمالي المنتجات', value: stats.total_products, icon: Package, color: 'text-blue-500' },
+            { label: 'المبيعات', value: stats.total_sales, icon: ShoppingBag, color: 'text-green-500' },
+            { label: 'الزبائن', value: stats.total_customers, icon: Users, color: 'text-purple-500' },
+            { label: 'مخزون منخفض', value: stats.low_stock, icon: AlertTriangle, color: 'text-amber-500' },
+            { label: 'إيراد الشهر', value: formatCurrency(stats.monthly_revenue), icon: TrendingUp, color: 'text-green-500' },
+            { label: 'إجمالي الإيراد', value: formatCurrency(stats.total_revenue), icon: DollarSign, color: 'text-primary' }
+          ].map((stat, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                  </div>
+                  <stat.icon className={`h-8 w-8 ${stat.color}`} />
                 </div>
-                <Package className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">المبيعات</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.total_sales}</p>
-                </div>
-                <ShoppingBag className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">الزبائن</p>
-                  <p className="text-2xl font-bold text-purple-600">{stats.total_customers}</p>
-                </div>
-                <Users className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">مخزون منخفض</p>
-                  <p className="text-2xl font-bold text-amber-600">{stats.low_stock}</p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-amber-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">إيراد الشهر</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats.monthly_revenue)}</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">إجمالي الإيراد</p>
-                  <p className="text-2xl font-bold">{formatCurrency(stats.total_revenue)}</p>
-                </div>
-                <DollarSign className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <Tabs defaultValue="products" className="space-y-6">
