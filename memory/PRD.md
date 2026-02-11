@@ -5,6 +5,47 @@
 
 ---
 
+
+## التحديثات الأخيرة (2026-02-11) - نظام تسجيل الدخول الموحد
+
+### 40. نظام تسجيل الدخول الموحد (Unified Login) ✅ مكتمل
+تم إنشاء صفحة تسجيل دخول موحدة لجميع المستخدمين:
+
+**المسار:** `/portal`
+
+**الميزات:**
+- صفحة تسجيل دخول واحدة لجميع أنواع المستخدمين
+- الكشف التلقائي عن نوع المستخدم (مدير، وكيل، مشترك)
+- التوجيه التلقائي للوحة التحكم المناسبة:
+  - **المدير (Admin/Super Admin):** `/` - لوحة التحكم الرئيسية
+  - **الوكيل (Agent):** `/agent/dashboard` - لوحة تحكم الوكيل
+  - **المشترك (Tenant):** `/tenant/dashboard` - لوحة تحكم المشترك
+
+**الملفات المُنشأة/المُعدلة:**
+- `frontend/src/pages/UnifiedLoginPage.js` - صفحة تسجيل الدخول الموحد
+- `frontend/src/pages/TenantDashboardPage.js` - لوحة تحكم المشترك
+- `frontend/src/App.js` - إضافة المسارات الجديدة
+- `backend/server.py` - endpoint `/api/auth/unified-login`
+
+**API الجديد:**
+```
+POST /api/auth/unified-login
+Request: { "email": "string", "password": "string" }
+Response: {
+  "access_token": "string",
+  "user_type": "admin" | "agent" | "tenant",
+  "redirect_to": "/path",
+  "user": { ... }
+}
+```
+
+**بيانات الاختبار:**
+- **المدير العام:** super@ntcommerce.com / password
+- **الوكيل:** agent@test.com / password
+- **المشترك:** ahmed@store.com / password
+
+---
+
 ## التحديثات الأخيرة (2026-02-10) - الجلسة الحالية
 
 ### 37. التحميل الكسول للصور (Lazy Loading) ✅ جديد
