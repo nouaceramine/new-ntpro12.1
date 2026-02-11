@@ -1210,6 +1210,11 @@ export default function SaasAdminPage() {
           <TabsContent value="sync" className="space-y-6">
             <SyncManager tenants={tenants} />
           </TabsContent>
+
+          {/* Databases Tab */}
+          <TabsContent value="databases" className="space-y-6">
+            <DatabaseManager tenants={tenants} agents={agents} />
+          </TabsContent>
         </Tabs>
 
         {/* Plan Dialog */}
