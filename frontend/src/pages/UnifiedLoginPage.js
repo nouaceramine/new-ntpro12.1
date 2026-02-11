@@ -40,10 +40,16 @@ export default function UnifiedLoginPage() {
       } else if (user_type === 'agent') {
         localStorage.setItem('agentToken', access_token);
         localStorage.setItem('agentData', JSON.stringify(user));
+        // Also set token for Layout compatibility
+        localStorage.setItem('token', access_token);
+        localStorage.setItem('user', JSON.stringify({ ...user, role: 'agent' }));
         setLoginSuccess({ type: 'agent', name: user.name, redirect: redirect_to });
       } else if (user_type === 'tenant') {
         localStorage.setItem('tenantToken', access_token);
         localStorage.setItem('tenantData', JSON.stringify(user));
+        // Also set token for Layout compatibility
+        localStorage.setItem('token', access_token);
+        localStorage.setItem('user', JSON.stringify({ ...user, role: 'admin', user_type: 'tenant' }));
         setLoginSuccess({ type: 'tenant', name: user.name, redirect: redirect_to });
       }
       
