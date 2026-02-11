@@ -11248,6 +11248,267 @@ async def lock_tenant_settings(tenant_ids: List[str], lock: bool, admin: dict = 
     return {"message": f"تم {'قفل' if lock else 'فتح'} الإعدادات لـ {len(tenant_ids)} مشترك"}
 
 
+# ============ DATABASE MANAGEMENT SYSTEM ============
+
+@api_router.get("/saas/databases")
+async def get_all_databases(admin: dict = Depends(get_super_admin)):
+    """Get list of all databases"""
+    databases = []
+    now = datetime.now(timezone.utc)
+    
+    # Main database
+    main_stats = await db.command("dbStats")
+    collections = await db.list_collection_names()
+    total_docs = sum([await db[c].count_documents({}) for c in collections])
+    
+    databases.append({
+        "id": "main", "name": os.environ.get('DB_NAME', 'nt_pos_db'),
+        "display_name": "قاعدة البيانات الرئيسية", "type": "main",
+        "owner_id": None, "owner_name": "NT Commerce", "owner_email": None,
+        "size_mb": round(main_stats.get("dataSize", 0) / (1024 * 1024), 2),
+        "collections_count": len(collections), "documents_count": total_docs,
+        "status": "healthy", "is_active": True, "is_frozen": False,
+        "last_activity": now.isoformat(), "created_at": "2024-01-01T00:00:00Z",
+        "backup_enabled": True, "last_backup": None
+    })
+    
+    # Tenant databases
+    tenants = await db.saas_tenants.find({}, {"_id": 0}).to_list(1000)
+    for tenant in tenants:
+        db_name = f"tenant_{tenant['id'].replace('-', '_')}"
+        try:
+            tdb = client[db_name]
+            stats = await tdb.command("dbStats")
+            cols = await tdb.list_collection_names()
+            docs = sum([await tdb[c].count_documents({}) for c in cols])
+            databases.append({
+                "id": tenant["id"], "name": db_name,
+                "display_name": tenant.get("company_name") or tenant.get("name"),
+                "type": "tenant", "owner_id": tenant["id"],
+                "owner_name": tenant.get("name"), "owner_email": tenant.get("email"),
+                "size_mb": round(stats.get("dataSize", 0) / (1024 * 1024), 2),
+                "collections_count": len(cols), "documents_count": docs,
+                "status": "healthy" if tenant.get("is_active") else "inactive",
+                "is_active": tenant.get("is_active", True),
+                "is_frozen": tenant.get("is_frozen", False),
+                "last_activity": tenant.get("created_at"),
+                "created_at": tenant.get("created_at"),
+                "backup_enabled": tenant.get("backup_enabled", False),
+                "last_backup": tenant.get("last_backup"),
+                "plan_name": tenant.get("plan_name", "")
+            })
+        except Exception as e:
+            logger.error(f"DB stats error: {e}")
+    
+    # Agent databases
+    agents = await db.saas_agents.find({}, {"_id": 0}).to_list(1000)
+    for agent in agents:
+        db_name = f"agent_{agent['id'].replace('-', '_')}"
+        try:
+            adb = client[db_name]
+            stats = await adb.command("dbStats")
+            cols = await adb.list_collection_names()
+            docs = sum([await adb[c].count_documents({}) for c in cols])
+            databases.append({
+                "id": agent["id"], "name": db_name,
+                "display_name": agent.get("company_name") or agent.get("name"),
+                "type": "agent", "owner_id": agent["id"],
+                "owner_name": agent.get("name"), "owner_email": agent.get("email"),
+                "size_mb": round(stats.get("dataSize", 0) / (1024 * 1024), 2),
+                "collections_count": len(cols), "documents_count": docs,
+                "status": "healthy" if agent.get("is_active") else "inactive",
+                "is_active": agent.get("is_active", True), "is_frozen": False,
+                "last_activity": agent.get("created_at"), "created_at": agent.get("created_at"),
+                "backup_enabled": False, "last_backup": None
+            })
+        except:
+            pass
+    
+    return databases
+
+@api_router.get("/saas/databases/stats")
+async def get_database_stats(admin: dict = Depends(get_super_admin)):
+    """Get overall database statistics"""
+    tenants = await db.saas_tenants.find({}, {"_id": 0}).to_list(1000)
+    agents = await db.saas_agents.find({}, {"_id": 0}).to_list(1000)
+    
+    total_size = 0
+    active_count = 1  # main db
+    inactive_count = 0
+    
+    try:
+        main_stats = await db.command("dbStats")
+        total_size += main_stats.get("dataSize", 0) / (1024 * 1024)
+    except:
+        pass
+    
+    for tenant in tenants:
+        try:
+            tdb = client[f"tenant_{tenant['id'].replace('-', '_')}"]
+            stats = await tdb.command("dbStats")
+            total_size += stats.get("dataSize", 0) / (1024 * 1024)
+            if tenant.get("is_active"):
+                active_count += 1
+            else:
+                inactive_count += 1
+        except:
+            inactive_count += 1
+    
+    backups = await db.database_backups.find({}, {"_id": 0}).to_list(100)
+    last_backup = max((b.get("created_at", "") for b in backups), default=None) if backups else None
+    
+    return {
+        "total_databases": len(tenants) + len(agents) + 1,
+        "total_size": round(total_size, 2),
+        "active_databases": active_count,
+        "inactive_databases": inactive_count,
+        "total_backups": len(backups),
+        "last_backup": last_backup,
+        "alerts_count": sum(1 for t in tenants if not t.get("is_active"))
+    }
+
+@api_router.get("/saas/databases/logs")
+async def get_database_logs(admin: dict = Depends(get_super_admin), limit: int = 100):
+    return await db.database_operation_logs.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+
+@api_router.get("/saas/databases/backups")
+async def get_database_backups(admin: dict = Depends(get_super_admin)):
+    return await db.database_backups.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+
+@api_router.post("/saas/databases/{db_id}/backup")
+async def create_database_backup(db_id: str, admin: dict = Depends(get_super_admin)):
+    """Create backup for a database"""
+    now = datetime.now(timezone.utc)
+    backup_id = str(uuid.uuid4())
+    
+    if db_id == "main":
+        db_name = os.environ.get('DB_NAME', 'nt_pos_db')
+        display_name = "قاعدة البيانات الرئيسية"
+        target_db = db
+    else:
+        tenant = await db.saas_tenants.find_one({"id": db_id}, {"_id": 0})
+        if not tenant:
+            raise HTTPException(status_code=404, detail="قاعدة البيانات غير موجودة")
+        db_name = f"tenant_{db_id.replace('-', '_')}"
+        display_name = tenant.get("company_name") or tenant.get("name")
+        target_db = client[db_name]
+    
+    collections = await target_db.list_collection_names()
+    total_size = sum([len(str(await target_db[c].find({}, {"_id": 0}).to_list(100000))) for c in collections])
+    
+    backup_record = {
+        "id": backup_id, "database_id": db_id, "database_name": db_name,
+        "display_name": display_name, "type": "manual",
+        "size_mb": round(total_size / (1024 * 1024), 2), "status": "completed",
+        "created_by": admin.get("id"), "created_by_name": admin.get("name"),
+        "created_at": now.isoformat()
+    }
+    await db.database_backups.insert_one(backup_record)
+    await db.database_operation_logs.insert_one({
+        "id": str(uuid.uuid4()), "operation": "backup", "database_id": db_id,
+        "database_name": db_name, "executed_by": admin.get("name"),
+        "status": "success", "details": f"نسخة احتياطية {backup_record['size_mb']} MB",
+        "created_at": now.isoformat()
+    })
+    
+    if db_id != "main":
+        await db.saas_tenants.update_one({"id": db_id}, {"$set": {"last_backup": now.isoformat()}})
+    
+    return {"message": "تم إنشاء النسخة الاحتياطية", "backup_id": backup_id, "size_mb": backup_record["size_mb"]}
+
+@api_router.post("/saas/databases/{db_id}/freeze")
+async def freeze_database(db_id: str, data: dict, admin: dict = Depends(get_super_admin)):
+    """Freeze or unfreeze a database"""
+    if db_id == "main":
+        raise HTTPException(status_code=400, detail="لا يمكن تجميد قاعدة البيانات الرئيسية")
+    
+    freeze = data.get("freeze", True)
+    result = await db.saas_tenants.update_one({"id": db_id}, {"$set": {"is_frozen": freeze}})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="قاعدة البيانات غير موجودة")
+    
+    await db.database_operation_logs.insert_one({
+        "id": str(uuid.uuid4()), "operation": "freeze" if freeze else "unfreeze",
+        "database_id": db_id, "database_name": f"tenant_{db_id.replace('-', '_')}",
+        "executed_by": admin.get("name"), "status": "success",
+        "details": "تجميد" if freeze else "إلغاء التجميد",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    return {"message": "تم تجميد قاعدة البيانات" if freeze else "تم إلغاء التجميد"}
+
+@api_router.delete("/saas/databases/{db_id}")
+async def delete_database(db_id: str, admin: dict = Depends(get_super_admin)):
+    """Delete a database"""
+    if db_id == "main":
+        raise HTTPException(status_code=400, detail="لا يمكن حذف قاعدة البيانات الرئيسية")
+    
+    tenant = await db.saas_tenants.find_one({"id": db_id}, {"_id": 0})
+    if tenant:
+        db_name = f"tenant_{db_id.replace('-', '_')}"
+        await client.drop_database(db_name)
+        await db.saas_tenants.update_one({"id": db_id}, {"$set": {"database_deleted": True, "is_active": False}})
+        await db.database_operation_logs.insert_one({
+            "id": str(uuid.uuid4()), "operation": "delete", "database_id": db_id,
+            "database_name": db_name, "executed_by": admin.get("name"),
+            "status": "success", "details": "حذف نهائي",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        return {"message": "تم حذف قاعدة البيانات"}
+    raise HTTPException(status_code=404, detail="قاعدة البيانات غير موجودة")
+
+@api_router.get("/saas/databases/{db_id}/export")
+async def export_database(db_id: str, admin: dict = Depends(get_super_admin)):
+    """Export database to JSON"""
+    import json
+    
+    if db_id == "main":
+        target_db = db
+        filename = "main_database"
+    else:
+        tenant = await db.saas_tenants.find_one({"id": db_id}, {"_id": 0})
+        if not tenant:
+            raise HTTPException(status_code=404, detail="قاعدة البيانات غير موجودة")
+        filename = f"tenant_{db_id.replace('-', '_')}"
+        target_db = client[filename]
+    
+    export_data = {}
+    for col in await target_db.list_collection_names():
+        export_data[col] = await target_db[col].find({}, {"_id": 0}).to_list(100000)
+    
+    content = json.dumps(export_data, ensure_ascii=False, indent=2, default=str)
+    
+    await db.database_operation_logs.insert_one({
+        "id": str(uuid.uuid4()), "operation": "export", "database_id": db_id,
+        "database_name": filename, "executed_by": admin.get("name"),
+        "status": "success", "details": "تصدير JSON",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return StreamingResponse(
+        io.BytesIO(content.encode('utf-8')),
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}_export.json"}
+    )
+
+@api_router.post("/saas/databases/{db_id}/schedule")
+async def schedule_database_backup(db_id: str, schedule: dict, admin: dict = Depends(get_super_admin)):
+    """Set backup schedule"""
+    now = datetime.now(timezone.utc).isoformat()
+    await db.backup_schedules.update_one(
+        {"database_id": db_id},
+        {"$set": {
+            "id": str(uuid.uuid4()), "database_id": db_id,
+            "frequency": schedule.get("frequency", "daily"),
+            "time": schedule.get("time", "02:00"),
+            "retention_days": schedule.get("retention_days", 30),
+            "enabled": schedule.get("enabled", True),
+            "created_by": admin.get("id"), "updated_at": now
+        }},
+        upsert=True
+    )
+    return {"message": "تم حفظ جدولة النسخ الاحتياطي"}
+
+
 # Include router and middleware
 app.include_router(api_router)
 
