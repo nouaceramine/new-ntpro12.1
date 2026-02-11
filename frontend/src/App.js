@@ -121,27 +121,18 @@ function AppRoutes() {
       {/* Landing & SaaS Public Routes */}
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/register" element={<SaasRegisterPage />} />
-      <Route path="/tenant-login" element={<TenantLoginPage />} />
       
-      {/* Agent Routes */}
-      <Route path="/agent-login" element={<AgentLoginPage />} />
+      {/* Unified Login - Single Entry Point for ALL users */}
+      <Route path="/portal" element={<UnifiedLoginPage />} />
+      <Route path="/login" element={<Navigate to="/portal" replace />} />
+      <Route path="/tenant-login" element={<Navigate to="/portal" replace />} />
+      <Route path="/agent-login" element={<Navigate to="/portal" replace />} />
+      
+      {/* Agent Dashboard */}
       <Route path="/agent/dashboard" element={<AgentDashboardPage />} />
 
-      {/* Tenant Routes */}
+      {/* Tenant Dashboard */}
       <Route path="/tenant/dashboard" element={<TenantDashboardPage />} />
-
-      {/* Admin Login */}
-      {/* Unified Login - Main Entry Point */}
-      <Route path="/portal" element={<UnifiedLoginPage />} />
-      
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <LoginPage />
-          </PublicRoute>
-        }
-      />
 
       {/* SaaS Admin Dashboard */}
       <Route
