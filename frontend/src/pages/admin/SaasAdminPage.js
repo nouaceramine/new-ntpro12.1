@@ -39,8 +39,10 @@ import {
   Settings, Plus, Edit, Trash2, Check, X, Clock,
   AlertTriangle, DollarSign, Search, MoreHorizontal,
   Star, Eye, EyeOff, Ban, RefreshCw, Calendar, Store, Truck, ShoppingBag,
-  Banknote, Wallet, PiggyBank, Receipt, Calculator, FileText, ArrowUpRight, ArrowDownRight
+  Banknote, Wallet, PiggyBank, Receipt, Calculator, FileText, ArrowUpRight, ArrowDownRight,
+  Send
 } from 'lucide-react';
+import { SyncManager } from '../../components/SyncManager';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
