@@ -177,6 +177,8 @@ class TenantResponse(BaseModel):
     company_name: str
     plan_id: str
     plan_name: Optional[str] = ""
+    agent_id: Optional[str] = None
+    agent_name: Optional[str] = ""
     is_active: bool
     is_trial: bool
     trial_ends_at: Optional[str] = None
