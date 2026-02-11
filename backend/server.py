@@ -9988,14 +9988,15 @@ async def register_tenant(tenant: TenantCreate):
 
 @api_router.post("/saas/tenant-login")
 async def tenant_login(login: UserLogin):
-    """Login for tenants"""
+    """Login for tenants - uses tenant-specific database"""
     # Find tenant by email
     tenant = await db.saas_tenants.find_one({"email": login.email})
     if not tenant:
         raise HTTPException(status_code=401, detail="بريد إلكتروني أو كلمة مرور غير صحيحة")
     
-    # Verify password
-    if not bcrypt.checkpw(login.password.encode('utf-8'), tenant["hashed_password"].encode('utf-8')):
+    # Verify password - check both field names for compatibility
+    password_hash = tenant.get("password") or tenant.get("hashed_password")
+    if not password_hash or not bcrypt.checkpw(login.password.encode('utf-8'), password_hash.encode('utf-8')):
         raise HTTPException(status_code=401, detail="بريد إلكتروني أو كلمة مرور غير صحيحة")
     
     # Check if active
@@ -10008,16 +10009,25 @@ async def tenant_login(login: UserLogin):
     if ends_at < now:
         raise HTTPException(status_code=403, detail="انتهت صلاحية الاشتراك. يرجى تجديد الاشتراك.")
     
-    # Get admin user from tenant DB
-    tenant_db = client[f"tenant_{tenant['id']}"]
-    user = await tenant_db.users.find_one({"email": login.email, "role": "admin"}, {"_id": 0})
+    # Get admin user from tenant DB using proper function
+    tenant_db = get_tenant_db(tenant['id'])
+    user = await tenant_db.users.find_one({"email": login.email}, {"_id": 0, "hashed_password": 0})
     
     if not user:
-        raise HTTPException(status_code=401, detail="خطأ في الحساب")
+        # Create user from tenant info if not exists
+        user = {
+            "id": tenant["id"],
+            "name": tenant["name"],
+            "email": tenant["email"],
+            "role": "admin"
+        }
     
-    # Generate token
+    # Generate token with tenant type
     token = jwt.encode({
         "sub": user["id"],
+        "email": user["email"],
+        "role": user.get("role", "admin"),
+        "type": "tenant",
         "tenant_id": tenant["id"],
         "exp": datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     }, SECRET_KEY, algorithm=ALGORITHM)
@@ -10034,11 +10044,12 @@ async def tenant_login(login: UserLogin):
             "id": user["id"],
             "name": user["name"],
             "email": user["email"],
-            "role": user["role"],
+            "role": user.get("role", "admin"),
             "tenant_id": tenant["id"],
             "company_name": tenant.get("company_name", ""),
             "is_trial": tenant.get("is_trial", False),
             "subscription_ends_at": tenant.get("subscription_ends_at"),
+            "database_name": f"tenant_{tenant['id'].replace('-', '_')}",
             "features": features,
             "limits": limits
         }
