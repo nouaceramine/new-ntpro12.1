@@ -1535,3 +1535,44 @@ POST /api/upload/image - رفع صورة للمنتج
 - Frontend: 100% نجاح (جميع التدفقات تعمل)
 - Test Report: `/app/test_reports/iteration_29.json`
 
+
+---
+
+## التحديثات الأخيرة (2026-02-11) - إصلاح مشكلة لوحة تحكم المستأجر
+
+### إصلاح مشكلة إعادة التوجيه في Tenant Dashboard ✅
+
+#### المشكلة:
+عند تسجيل دخول المستأجر والنقر على أي tab في لوحة التحكم، يتم إعادة التوجيه لصفحة تسجيل الدخول.
+
+#### السبب:
+1. **مشكلة في `/api/auth/me`**: كان يفشل عند إرجاع بيانات المستأجر لأن `UserResponse` model كان يتطلب `created_at` وهذا الحقل لم يكن موجوداً
+2. **مشكلة في تخزين Token**: `UnifiedLoginPage` كان يخزن token المستأجر في `tenantToken` فقط، بينما `AuthContext` و `Layout` يقرآن من `token`
+3. **مشكلة في عرض المنتجات**: الجدول كان يستخدم أسماء حقول خاطئة (`name` بدلاً من `name_en`, `price` بدلاً من `retail_price`, `stock` بدلاً من `quantity`)
+
+#### الإصلاحات:
+1. **Backend - `server.py`:**
+   - تحديث `UserResponse` model لجعل `created_at` اختياري وإضافة `user_type` و `company_name`
+   - تحديث `get_current_user` لإضافة `created_at` و `company_name` من سجل `saas_tenants`
+
+2. **Frontend - `UnifiedLoginPage.js`:**
+   - تخزين token المستأجر في كل من `tenantToken` و `token` للتوافق مع `AuthContext`
+   - تخزين بيانات المستخدم في `user` أيضاً
+
+3. **Frontend - `TenantDashboardPage.js`:**
+   - تصحيح عرض المنتجات لاستخدام `name_ar || name_en`, `retail_price`, `quantity`
+   - تصحيح فلترة البحث لتشمل `name_ar` و `name_en`
+   - تصحيح حساب المخزون المنخفض
+
+#### الملفات المُعدلة:
+- `backend/server.py` (Lines 137-148, 1242-1258)
+- `frontend/src/pages/UnifiedLoginPage.js` (Lines 44-52)
+- `frontend/src/pages/TenantDashboardPage.js` (Lines 339, 553-565, 733-761)
+
+#### نتائج الاختبار:
+- Backend: 100% نجاح
+- Frontend: 100% نجاح
+- جميع tabs تعمل بدون redirect
+- Test Report: `/app/test_reports/iteration_36.json`
+
+---
