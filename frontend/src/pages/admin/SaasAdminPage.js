@@ -445,17 +445,19 @@ export default function SaasAdminPage() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
       
-      const [statsRes, tenantsRes, plansRes, paymentsRes] = await Promise.all([
+      const [statsRes, tenantsRes, plansRes, paymentsRes, agentsRes] = await Promise.all([
         axios.get(`${API}/saas/stats`, { headers }),
         axios.get(`${API}/saas/tenants`, { headers }),
         axios.get(`${API}/saas/plans?include_inactive=true`, { headers }),
-        axios.get(`${API}/saas/payments`, { headers })
+        axios.get(`${API}/saas/payments`, { headers }),
+        axios.get(`${API}/saas/agents`, { headers })
       ]);
       
       setStats(statsRes.data);
       setTenants(tenantsRes.data);
       setPlans(plansRes.data);
       setPayments(paymentsRes.data);
+      setAgents(agentsRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error('خطأ في تحميل البيانات');
