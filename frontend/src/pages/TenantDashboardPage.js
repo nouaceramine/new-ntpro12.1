@@ -550,9 +550,12 @@ export default function TenantDashboardPage() {
     }
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => {
+    const productName = p.name_ar || p.name_en || p.name || '';
+    return productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           (p.barcode || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+           (p.article_code || '').toLowerCase().includes(searchQuery.toLowerCase());
+  });
   
   const filteredCustomers = customers.filter(c => 
     c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
