@@ -969,6 +969,115 @@ export default function SaasAdminPage() {
             </Card>
           </TabsContent>
 
+          {/* Agents Tab */}
+          <TabsContent value="agents" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground">
+                  إجمالي الوكلاء: <span className="font-bold text-foreground">{agents.length}</span>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  إجمالي الدين: <span className="font-bold text-red-500">
+                    {agents.reduce((sum, a) => sum + (a.current_balance < 0 ? Math.abs(a.current_balance) : 0), 0).toLocaleString()} دج
+                  </span>
+                </div>
+              </div>
+              <Button onClick={() => openAgentDialog()}>
+                <Plus className="h-4 w-4 me-2" />
+                إضافة وكيل
+              </Button>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>الوكيل</TableHead>
+                      <TableHead>البريد / الهاتف</TableHead>
+                      <TableHead>المشتركين</TableHead>
+                      <TableHead>العمولة</TableHead>
+                      <TableHead>الرصيد</TableHead>
+                      <TableHead>حد الدين</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead className="text-center">الإجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {agents.map(agent => (
+                      <TableRow key={agent.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                              <Truck className="h-4 w-4 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{agent.name}</p>
+                              <p className="text-xs text-muted-foreground">{agent.company_name}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <p>{agent.email}</p>
+                            <p className="text-muted-foreground">{agent.phone}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{agent.tenants_count || 0}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <p>{agent.commission_percent}%</p>
+                            {agent.commission_fixed > 0 && (
+                              <p className="text-muted-foreground">+ {agent.commission_fixed} دج</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`font-bold ${agent.current_balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                            {agent.current_balance?.toLocaleString()} دج
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-muted-foreground">{agent.credit_limit?.toLocaleString()} دج</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={agent.is_active ? "default" : "secondary"}>
+                            {agent.is_active ? 'نشط' : 'معطل'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => openAddPayment(agent)} title="إضافة دفعة">
+                              <DollarSign className="h-4 w-4 text-green-500" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => openAgentTransactions(agent)} title="المعاملات">
+                              <FileText className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => openAgentDialog(agent)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="text-destructive" onClick={() => deleteAgent(agent.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {agents.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          لا يوجد وكلاء حالياً
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Plans Tab */}
           <TabsContent value="plans" className="space-y-4">
             <div className="flex justify-end">
