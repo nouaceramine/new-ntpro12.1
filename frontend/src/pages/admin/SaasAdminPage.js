@@ -1441,6 +1441,148 @@ export default function SaasAdminPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Agent Dialog */}
+        <Dialog open={agentDialogOpen} onOpenChange={setAgentDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{editingAgent ? 'تعديل الوكيل' : 'إضافة وكيل جديد'}</DialogTitle>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-3 py-2">
+              <div className="space-y-1">
+                <Label className="text-xs">الاسم *</Label>
+                <Input className="h-8 text-sm" value={agentForm.name} onChange={e => setAgentForm({...agentForm, name: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">البريد الإلكتروني *</Label>
+                <Input className="h-8 text-sm" type="email" value={agentForm.email} onChange={e => setAgentForm({...agentForm, email: e.target.value})} disabled={!!editingAgent} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">الهاتف</Label>
+                <Input className="h-8 text-sm" value={agentForm.phone} onChange={e => setAgentForm({...agentForm, phone: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">اسم الشركة</Label>
+                <Input className="h-8 text-sm" value={agentForm.company_name} onChange={e => setAgentForm({...agentForm, company_name: e.target.value})} />
+              </div>
+              <div className="col-span-2 space-y-1">
+                <Label className="text-xs">العنوان</Label>
+                <Input className="h-8 text-sm" value={agentForm.address} onChange={e => setAgentForm({...agentForm, address: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">كلمة المرور {editingAgent ? '(اتركها فارغة للإبقاء)' : '*'}</Label>
+                <Input className="h-8 text-sm" type="password" value={agentForm.password} onChange={e => setAgentForm({...agentForm, password: e.target.value})} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">نسبة العمولة (%)</Label>
+                <Input className="h-8 text-sm" type="number" value={agentForm.commission_percent} onChange={e => setAgentForm({...agentForm, commission_percent: parseFloat(e.target.value) || 0})} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">عمولة ثابتة (دج)</Label>
+                <Input className="h-8 text-sm" type="number" value={agentForm.commission_fixed} onChange={e => setAgentForm({...agentForm, commission_fixed: parseFloat(e.target.value) || 0})} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">حد الدين (دج)</Label>
+                <Input className="h-8 text-sm" type="number" value={agentForm.credit_limit} onChange={e => setAgentForm({...agentForm, credit_limit: parseFloat(e.target.value) || 0})} />
+              </div>
+              <div className="col-span-2 space-y-1">
+                <Label className="text-xs">ملاحظات</Label>
+                <Textarea className="text-sm" rows={2} value={agentForm.notes} onChange={e => setAgentForm({...agentForm, notes: e.target.value})} />
+              </div>
+            </div>
+            <DialogFooter className="pt-2">
+              <Button variant="outline" size="sm" onClick={() => setAgentDialogOpen(false)}>إلغاء</Button>
+              <Button size="sm" onClick={saveAgent}>حفظ</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Agent Transactions Dialog */}
+        <Dialog open={agentTransactionsDialogOpen} onOpenChange={setAgentTransactionsDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>معاملات الوكيل: {selectedAgent?.name}</DialogTitle>
+              <DialogDescription>
+                الرصيد الحالي: <span className={`font-bold ${selectedAgent?.current_balance < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                  {selectedAgent?.current_balance?.toLocaleString()} دج
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>التاريخ</TableHead>
+                  <TableHead>النوع</TableHead>
+                  <TableHead>الوصف</TableHead>
+                  <TableHead>المبلغ</TableHead>
+                  <TableHead>الرصيد بعد</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {agentTransactions.map(tx => (
+                  <TableRow key={tx.id}>
+                    <TableCell className="text-sm">{new Date(tx.created_at).toLocaleDateString('ar-DZ')}</TableCell>
+                    <TableCell>
+                      <Badge variant={tx.transaction_type === 'payment' ? 'default' : tx.transaction_type === 'commission' ? 'secondary' : 'outline'}>
+                        {tx.transaction_type === 'payment' ? 'دفعة' : tx.transaction_type === 'commission' ? 'عمولة' : tx.transaction_type === 'subscription_sale' ? 'بيع' : tx.transaction_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">{tx.description}</TableCell>
+                    <TableCell className={`font-medium ${tx.transaction_type === 'subscription_sale' ? 'text-red-500' : 'text-green-500'}`}>
+                      {tx.transaction_type === 'subscription_sale' ? '-' : '+'}{tx.amount?.toLocaleString()} دج
+                    </TableCell>
+                    <TableCell className="font-medium">{tx.balance_after?.toLocaleString()} دج</TableCell>
+                  </TableRow>
+                ))}
+                {agentTransactions.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">لا توجد معاملات</TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Payment Dialog */}
+        <Dialog open={addPaymentDialogOpen} onOpenChange={setAddPaymentDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>إضافة دفعة للوكيل</DialogTitle>
+              <DialogDescription>{selectedAgent?.name} - الرصيد الحالي: {selectedAgent?.current_balance?.toLocaleString()} دج</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>نوع المعاملة</Label>
+                <Select value={paymentForm.transaction_type} onValueChange={v => setPaymentForm({...paymentForm, transaction_type: v})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="payment">دفعة نقدية (إضافة للرصيد)</SelectItem>
+                    <SelectItem value="refund">استرداد (خصم من الرصيد)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>المبلغ (دج)</Label>
+                <Input type="number" value={paymentForm.amount} onChange={e => setPaymentForm({...paymentForm, amount: parseFloat(e.target.value) || 0})} />
+              </div>
+              <div className="space-y-2">
+                <Label>الوصف</Label>
+                <Input value={paymentForm.description} onChange={e => setPaymentForm({...paymentForm, description: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>ملاحظات</Label>
+                <Textarea value={paymentForm.notes} onChange={e => setPaymentForm({...paymentForm, notes: e.target.value})} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setAddPaymentDialogOpen(false)}>إلغاء</Button>
+              <Button onClick={saveAgentPayment}>تسجيل الدفعة</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
