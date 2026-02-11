@@ -9420,8 +9420,12 @@ async def agent_login(login: UserLogin):
     }
 
 # Agent Dashboard (for agent's own view)
-async def get_current_agent(token: str = Depends(oauth2_scheme)):
+async def get_current_agent(authorization: str = Header(None)):
     """Get current agent from token"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing token")
+    
+    token = authorization.replace("Bearer ", "")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         if payload.get("type") != "agent":
@@ -9432,7 +9436,7 @@ async def get_current_agent(token: str = Depends(oauth2_scheme)):
             raise HTTPException(status_code=404, detail="Agent not found")
         
         return agent
-    except JWTError:
+    except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 @api_router.get("/agent/dashboard")
