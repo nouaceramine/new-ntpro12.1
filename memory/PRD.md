@@ -1,10 +1,35 @@
-# NT - نظام نقاط البيع
+# NT Commerce - نظام نقاط البيع SaaS
 
 ## الوصف
-نظام POS متكامل لإدارة المخزون والمبيعات والمشتريات باللغتين العربية والفرنسية
+نظام POS متكامل لإدارة المخزون والمبيعات والمشتريات باللغتين العربية والفرنسية، مع نظام SaaS للوكلاء والمشتركين.
 
 ---
 
+## الهيكلة التنظيمية
+
+```
+سوبر أدمين (Super Admin) - NT Commerce
+    └── الوكيل (Agent) - موزع/ريسيلر
+            └── المشترك (Tenant) - صاحب متجر
+                    └── موظفي المشترك (مدير، بائع، محاسب...)
+```
+
+### صفحة الدخول الموحدة: `/portal`
+
+| النوع | البريد | كلمة المرور | التوجيه |
+|-------|--------|-------------|---------|
+| سوبر أدمين | super@ntcommerce.com | password | / → /saas-admin |
+| وكيل | agent@test.com | password | /agent/dashboard |
+| مشترك | ahmed@store.com | password | /tenant/dashboard → / |
+| مدير | admin@test.com | password | / |
+| مشرف | manager@test.com | password | / |
+| بائع | seller@test.com | password | / |
+| محاسب | accountant@test.com | password | / |
+| مدير مخزون | inventory@test.com | password | / |
+
+📌 للتفاصيل الكاملة انظر: `/app/memory/SYSTEM_STRUCTURE.md`
+
+---
 
 ## التحديثات الأخيرة (2026-02-11) - نظام تسجيل الدخول الموحد
 
