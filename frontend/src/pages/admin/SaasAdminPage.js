@@ -852,6 +852,10 @@ export default function SaasAdminPage() {
               <TrendingUp className="h-4 w-4" />
               التقارير المالية
             </TabsTrigger>
+            <TabsTrigger value="sync" className="gap-2">
+              <Send className="h-4 w-4" />
+              المزامنة
+            </TabsTrigger>
           </TabsList>
 
           {/* Tenants Tab */}
