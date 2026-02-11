@@ -127,6 +127,9 @@ function AppRoutes() {
       <Route path="/agent/dashboard" element={<AgentDashboardPage />} />
 
       {/* Admin Login */}
+      {/* Unified Login - Main Entry Point */}
+      <Route path="/portal" element={<UnifiedLoginPage />} />
+      
       <Route
         path="/login"
         element={
