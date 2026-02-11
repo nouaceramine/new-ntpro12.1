@@ -9390,7 +9390,8 @@ async def agent_login(login: UserLogin):
     if not agent:
         raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
     
-    if not pwd_context.verify(login.password, agent["password"]):
+    stored_password = agent.get("password", "")
+    if not bcrypt.checkpw(login.password.encode('utf-8'), stored_password.encode('utf-8')):
         raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
     
     if not agent.get("is_active", True):
