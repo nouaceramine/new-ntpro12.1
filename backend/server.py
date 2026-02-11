@@ -1227,12 +1227,86 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
+        user_type = payload.get("type")  # admin, agent, tenant
+        tenant_id = payload.get("tenant_id")
+        
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
-        user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+        
+        # For tenant users, get from tenant database
+        if user_type == "tenant" and tenant_id:
+            tenant_db = get_tenant_db(tenant_id)
+            user = await tenant_db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
+            if user is None:
+                # Check main tenant record
+                tenant = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0, "password": 0})
+                if tenant:
+                    user = {
+                        "id": tenant["id"],
+                        "email": tenant["email"],
+                        "name": tenant["name"],
+                        "role": "admin",
+                        "tenant_id": tenant_id,
+                        "user_type": "tenant"
+                    }
+                else:
+                    raise HTTPException(status_code=401, detail="User not found")
+            else:
+                user["tenant_id"] = tenant_id
+                user["user_type"] = "tenant"
+        else:
+            # For admin users, get from main database
+            user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
+            if user is None:
+                raise HTTPException(status_code=401, detail="User not found")
+            user["user_type"] = user_type or "admin"
+            if tenant_id:
+                user["tenant_id"] = tenant_id
+        
+        return user
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+async def get_tenant_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Get current user and their tenant database"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        user_type = payload.get("type")
+        tenant_id = payload.get("tenant_id")
+        
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        # Get the appropriate database
+        if user_type == "tenant" and tenant_id:
+            tenant_db = get_tenant_db(tenant_id)
+        else:
+            tenant_db = db  # Use main database for admin users
+            tenant_id = None
+        
+        # Get user info
+        user = await tenant_db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
+        if user is None and tenant_id:
+            # For tenant owner, create entry from saas_tenants
+            tenant = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0, "password": 0})
+            if tenant:
+                user = {
+                    "id": tenant["id"],
+                    "email": tenant["email"],
+                    "name": tenant["name"],
+                    "role": "admin"
+                }
+        
+        if user is None:
+            user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
+        
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
-        return user
+        
+        return {"user": user, "db": tenant_db, "tenant_id": tenant_id}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
