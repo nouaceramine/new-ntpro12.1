@@ -336,7 +336,7 @@ export default function TenantDashboardPage() {
       setSales(salesData);
       setExpenses(expensesData);
       
-      const lowStock = productsData.filter(p => p.stock <= (p.min_stock || 10)).length;
+      const lowStock = productsData.filter(p => (p.quantity || p.stock || 0) <= (p.low_stock_threshold || p.min_stock || 10)).length;
       const totalRevenue = salesData.reduce((sum, s) => sum + (s.total || 0), 0);
       
       const now = new Date();
