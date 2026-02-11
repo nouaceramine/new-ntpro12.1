@@ -65,6 +65,7 @@ import SystemUpdatesPage from "./pages/SystemUpdatesPage";
 import AgentLoginPage from "./pages/AgentLoginPage";
 import AgentDashboardPage from "./pages/AgentDashboardPage";
 import UnifiedLoginPage from "./pages/UnifiedLoginPage";
+import TenantDashboardPage from "./pages/TenantDashboardPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
