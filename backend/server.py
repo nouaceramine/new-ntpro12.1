@@ -187,6 +187,71 @@ class TenantResponse(BaseModel):
     business_type: Optional[str] = "retailer"
     created_at: str
 
+# ============ AGENT/RESELLER MODELS ============
+
+class AgentCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    phone: str
+    company_name: Optional[str] = ""
+    address: Optional[str] = ""
+    commission_percent: float = 10.0  # نسبة العمولة المئوية
+    commission_fixed: float = 0.0  # عمولة ثابتة لكل اشتراك
+    credit_limit: float = 100000.0  # حد الدين المسموح
+    notes: Optional[str] = ""
+
+class AgentUpdate(BaseModel):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    company_name: Optional[str] = None
+    address: Optional[str] = None
+    commission_percent: Optional[float] = None
+    commission_fixed: Optional[float] = None
+    credit_limit: Optional[float] = None
+    is_active: Optional[bool] = None
+    notes: Optional[str] = None
+
+class AgentResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    email: str
+    phone: str
+    company_name: str
+    address: str
+    commission_percent: float
+    commission_fixed: float
+    credit_limit: float
+    current_balance: float  # الرصيد الحالي (سالب = دين)
+    total_earnings: float  # إجمالي العمولات
+    is_active: bool
+    tenants_count: Optional[int] = 0
+    notes: str
+    created_at: str
+
+class AgentTransaction(BaseModel):
+    agent_id: str
+    amount: float
+    transaction_type: str  # payment, commission, subscription_sale, refund
+    description: str
+    reference_id: Optional[str] = ""  # مرجع (مثل tenant_id)
+    notes: Optional[str] = ""
+
+class AgentTransactionResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    agent_id: str
+    agent_name: Optional[str] = ""
+    amount: float
+    transaction_type: str
+    description: str
+    reference_id: str
+    balance_after: float
+    notes: str
+    created_by: str
+    created_at: str
+
 class SubscriptionPayment(BaseModel):
     tenant_id: str
     amount: float
