@@ -377,14 +377,6 @@ export const Layout = ({ children }) => {
         { path: '/settings/sidebar', icon: LayoutDashboard, label: language === 'ar' ? 'ترتيب القائمة' : 'Ordre menu' },
       ]
     }] : []),
-    ...(isAdmin ? [{
-      id: 'admin',
-      title: language === 'ar' ? 'النظام' : 'Système',
-      icon: Shield,
-      items: [
-        { path: '/features', icon: LayoutDashboard, label: language === 'ar' ? 'مميزات البرنامج' : 'Fonctionnalités' },
-      ]
-    }] : []),
     ...(user?.role === 'super_admin' ? [{
       id: 'saas',
       title: 'NT Commerce',
