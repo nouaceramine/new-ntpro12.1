@@ -64,6 +64,7 @@ import PermissionsPage from "./pages/PermissionsPage";
 import SystemUpdatesPage from "./pages/SystemUpdatesPage";
 import AgentLoginPage from "./pages/AgentLoginPage";
 import AgentDashboardPage from "./pages/AgentDashboardPage";
+import UnifiedLoginPage from "./pages/UnifiedLoginPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
