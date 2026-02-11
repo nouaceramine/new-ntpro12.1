@@ -9266,7 +9266,7 @@ async def create_agent(agent: AgentCreate, admin: dict = Depends(get_super_admin
         "id": agent_id,
         "name": agent.name,
         "email": agent.email,
-        "password": pwd_context.hash(agent.password),
+        "password": hash_password(agent.password),
         "phone": agent.phone,
         "company_name": agent.company_name or "",
         "address": agent.address or "",
