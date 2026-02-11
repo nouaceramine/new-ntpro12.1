@@ -1249,13 +1249,17 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
                         "name": tenant["name"],
                         "role": "admin",
                         "tenant_id": tenant_id,
-                        "user_type": "tenant"
+                        "user_type": "tenant",
+                        "company_name": tenant.get("company_name", ""),
+                        "created_at": tenant.get("created_at", datetime.now(timezone.utc).isoformat())
                     }
                 else:
                     raise HTTPException(status_code=401, detail="User not found")
             else:
                 user["tenant_id"] = tenant_id
                 user["user_type"] = "tenant"
+                if not user.get("created_at"):
+                    user["created_at"] = datetime.now(timezone.utc).isoformat()
         else:
             # For admin users, get from main database
             user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
