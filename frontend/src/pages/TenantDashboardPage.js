@@ -734,19 +734,19 @@ export default function TenantDashboardPage() {
                       <TableRow key={product.id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{product.name}</p>
-                            {product.barcode && (
-                              <p className="text-xs text-muted-foreground">{product.barcode}</p>
+                            <p className="font-medium">{product.name_ar || product.name_en || product.name}</p>
+                            {(product.barcode || product.article_code) && (
+                              <p className="text-xs text-muted-foreground">{product.barcode || product.article_code}</p>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{formatCurrency(product.price)}</TableCell>
+                        <TableCell>{formatCurrency(product.retail_price || product.price || 0)}</TableCell>
                         <TableCell>
-                          <Badge variant={product.stock <= (product.min_stock || 10) ? "destructive" : "default"}>
-                            {product.stock}
+                          <Badge variant={(product.quantity || product.stock || 0) <= (product.low_stock_threshold || product.min_stock || 10) ? "destructive" : "default"}>
+                            {product.quantity || product.stock || 0}
                           </Badge>
                         </TableCell>
-                        <TableCell>{product.category || '-'}</TableCell>
+                        <TableCell>{product.family_name || product.category || '-'}</TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
                             <Button size="sm" variant="ghost" onClick={() => openProductDialog(product)}>
