@@ -120,6 +120,10 @@ function AppRoutes() {
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/register" element={<SaasRegisterPage />} />
       <Route path="/tenant-login" element={<TenantLoginPage />} />
+      
+      {/* Agent Routes */}
+      <Route path="/agent-login" element={<AgentLoginPage />} />
+      <Route path="/agent/dashboard" element={<AgentDashboardPage />} />
 
       {/* Admin Login */}
       <Route
