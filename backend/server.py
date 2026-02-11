@@ -9542,7 +9542,7 @@ async def agent_create_tenant(tenant: TenantCreate, agent: dict = Depends(get_cu
         "id": tenant_id,
         "name": tenant.name,
         "email": tenant.email,
-        "password": pwd_context.hash(tenant.password),
+        "password": hash_password(tenant.password),
         "phone": tenant.phone,
         "company_name": tenant.company_name,
         "plan_id": tenant.plan_id,
