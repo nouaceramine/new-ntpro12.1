@@ -1265,6 +1265,123 @@ async def login(credentials: UserLogin):
         user=UserResponse(id=user["id"], email=user["email"], name=user["name"], role=user["role"], permissions=user.get("permissions", {}), created_at=user["created_at"])
     )
 
+# Unified Login - Auto-detect user type
+class UnifiedLoginResponse(BaseModel):
+    access_token: str
+    user_type: str  # admin, agent, tenant
+    redirect_to: str
+    user: dict
+
+@api_router.post("/auth/unified-login")
+async def unified_login(credentials: UserLogin):
+    """
+    Unified login endpoint that auto-detects user type:
+    1. Check if user is an admin/employee
+    2. Check if user is an agent
+    3. Check if user is a tenant
+    """
+    email = credentials.email
+    password = credentials.password
+    
+    # 1. Check Admin/Employee users first
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if user:
+        stored_password = user.get("hashed_password") or user.get("password")
+        if stored_password and verify_password(password, stored_password):
+            access_token = create_access_token({"sub": user["id"], "role": user["role"]})
+            return {
+                "access_token": access_token,
+                "user_type": "admin",
+                "redirect_to": "/",
+                "user": {
+                    "id": user["id"],
+                    "email": user["email"],
+                    "name": user["name"],
+                    "role": user["role"],
+                    "permissions": user.get("permissions", {})
+                }
+            }
+    
+    # 2. Check Agents
+    agent = await db.saas_agents.find_one({"email": email}, {"_id": 0})
+    if agent:
+        stored_password = agent.get("password", "")
+        try:
+            if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                if not agent.get("is_active", True):
+                    raise HTTPException(status_code=403, detail="الحساب معطل")
+                
+                token_data = {
+                    "sub": agent["id"],
+                    "email": agent["email"],
+                    "role": "agent",
+                    "type": "agent"
+                }
+                access_token = create_access_token(token_data)
+                return {
+                    "access_token": access_token,
+                    "user_type": "agent",
+                    "redirect_to": "/agent/dashboard",
+                    "user": {
+                        "id": agent["id"],
+                        "email": agent["email"],
+                        "name": agent["name"],
+                        "company_name": agent.get("company_name", ""),
+                        "current_balance": agent.get("current_balance", 0),
+                        "credit_limit": agent.get("credit_limit", 0)
+                    }
+                }
+        except Exception:
+            pass
+    
+    # 3. Check Tenants
+    tenant = await db.saas_tenants.find_one({"email": email}, {"_id": 0})
+    if tenant:
+        stored_password = tenant.get("password", "")
+        try:
+            if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                if not tenant.get("is_active", True):
+                    raise HTTPException(status_code=403, detail="الحساب معطل")
+                
+                # Check subscription
+                if tenant.get("subscription_ends_at"):
+                    end_date = datetime.fromisoformat(tenant["subscription_ends_at"].replace("Z", "+00:00"))
+                    if end_date < datetime.now(timezone.utc) and not tenant.get("is_trial"):
+                        raise HTTPException(status_code=403, detail="انتهت صلاحية الاشتراك")
+                
+                token_data = {
+                    "sub": tenant["id"],
+                    "email": tenant["email"],
+                    "role": "tenant_admin",
+                    "type": "tenant",
+                    "tenant_id": tenant["id"]
+                }
+                access_token = create_access_token(token_data)
+                
+                # Get plan info
+                plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0, "name_ar": 1})
+                
+                return {
+                    "access_token": access_token,
+                    "user_type": "tenant",
+                    "redirect_to": "/tenant/dashboard",
+                    "user": {
+                        "id": tenant["id"],
+                        "email": tenant["email"],
+                        "name": tenant["name"],
+                        "company_name": tenant.get("company_name", ""),
+                        "plan_name": plan.get("name_ar", "") if plan else "",
+                        "subscription_ends_at": tenant.get("subscription_ends_at")
+                    }
+                }
+        except HTTPException:
+            raise
+        except Exception:
+            pass
+    
+    # No user found
+    raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
+
 @api_router.get("/auth/me", response_model=UserResponse)
 async def get_me(current_user: dict = Depends(get_current_user)):
     return UserResponse(**current_user)
