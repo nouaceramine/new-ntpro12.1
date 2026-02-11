@@ -1494,7 +1494,8 @@ async def unified_login(credentials: UserLogin):
                         "name": tenant["name"],
                         "company_name": tenant.get("company_name", ""),
                         "plan_name": plan.get("name_ar", "") if plan else "",
-                        "subscription_ends_at": tenant.get("subscription_ends_at")
+                        "subscription_ends_at": tenant.get("subscription_ends_at"),
+                        "database_name": f"tenant_{tenant['id'].replace('-', '_')}"
                     }
                 }
         except HTTPException:
