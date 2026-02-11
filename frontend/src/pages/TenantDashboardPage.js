@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Layout } from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -34,117 +35,271 @@ import {
 import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
 import { 
-  Store, Users, Package, ShoppingCart, LogOut, 
-  Calendar, TrendingUp, Settings, Plus, BarChart3,
-  Search, Edit, Trash2, Eye, DollarSign, CreditCard,
-  Truck, UserPlus, AlertTriangle, Check, X, RefreshCw,
-  Wallet, Calculator, FileText, ArrowUpRight, ArrowDownRight,
-  Building, Phone, Mail, MapPin, Clock, Shield
+  Users, Building, CreditCard, TrendingUp, Package, 
+  Settings, Plus, Edit, Trash2, Check, X, Clock,
+  AlertTriangle, DollarSign, Search, MoreHorizontal,
+  Star, Eye, EyeOff, Ban, RefreshCw, Calendar, Store, Truck, ShoppingBag,
+  Banknote, Wallet, PiggyBank, Receipt, Calculator, FileText, ArrowUpRight, ArrowDownRight,
+  LogOut, UserPlus, BarChart3
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-// Stats Card Component
-const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
-  <Card className={`bg-gradient-to-br ${color} text-white`}>
-    <CardContent className="p-4">
+// Finance Reports Component for Tenant
+const FinanceReportsSection = ({ sales, expenses }) => {
+  const [financeData, setFinanceData] = useState({
+    total_revenue: 0,
+    monthly_revenue: 0,
+    yearly_revenue: 0,
+    total_expenses: 0,
+    net_profit: 0,
+    payment_methods: {
+      cash: { count: 0, amount: 0 },
+      card: { count: 0, amount: 0 },
+      credit: { count: 0, amount: 0 }
+    }
+  });
+  const [dateRange, setDateRange] = useState('all');
+
+  useEffect(() => {
+    calculateFromLocalData();
+  }, [sales, expenses, dateRange]);
+
+  const calculateFromLocalData = () => {
+    const now = new Date();
+    const thisMonth = now.getMonth();
+    const thisYear = now.getFullYear();
+
+    let total = 0, monthly = 0, yearly = 0;
+    const methods = {
+      cash: { count: 0, amount: 0 },
+      card: { count: 0, amount: 0 },
+      credit: { count: 0, amount: 0 }
+    };
+
+    (sales || []).forEach(sale => {
+      const saleDate = new Date(sale.created_at);
+      const amount = sale.total || 0;
+      total += amount;
+      
+      if (saleDate.getFullYear() === thisYear) {
+        yearly += amount;
+        if (saleDate.getMonth() === thisMonth) {
+          monthly += amount;
+        }
+      }
+
+      const method = sale.payment_method || 'cash';
+      if (methods[method]) {
+        methods[method].count++;
+        methods[method].amount += amount;
+      }
+    });
+
+    const totalExpenses = (expenses || []).reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    setFinanceData({
+      total_revenue: total,
+      monthly_revenue: monthly,
+      yearly_revenue: yearly,
+      total_expenses: totalExpenses,
+      net_profit: total - totalExpenses,
+      payment_methods: methods
+    });
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('ar-DZ').format(amount || 0) + ' دج';
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Date Range Filter */}
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm opacity-80">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
-          {subtitle && <p className="text-xs opacity-70 mt-1">{subtitle}</p>}
-        </div>
-        <Icon className="h-8 w-8 opacity-80" />
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
+          التقارير المالية الشاملة
+        </h3>
+        <Select value={dateRange} onValueChange={setDateRange}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">كل الوقت</SelectItem>
+            <SelectItem value="today">اليوم</SelectItem>
+            <SelectItem value="week">هذا الأسبوع</SelectItem>
+            <SelectItem value="month">هذا الشهر</SelectItem>
+            <SelectItem value="year">هذه السنة</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-    </CardContent>
-  </Card>
-);
+
+      {/* Revenue Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-80">إجمالي الإيرادات</p>
+                <p className="text-xl font-bold">{formatCurrency(financeData.total_revenue)}</p>
+              </div>
+              <DollarSign className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-80">إيراد الشهر</p>
+                <p className="text-xl font-bold">{formatCurrency(financeData.monthly_revenue)}</p>
+              </div>
+              <Calendar className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-80">إيراد السنة</p>
+                <p className="text-xl font-bold">{formatCurrency(financeData.yearly_revenue)}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-red-500 to-red-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-80">إجمالي المصاريف</p>
+                <p className="text-xl font-bold">{formatCurrency(financeData.total_expenses)}</p>
+              </div>
+              <Receipt className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-80">صافي الربح</p>
+                <p className="text-xl font-bold">{formatCurrency(financeData.net_profit)}</p>
+              </div>
+              <Calculator className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-80">عدد المبيعات</p>
+                <p className="text-xl font-bold">{sales?.length || 0}</p>
+              </div>
+              <ShoppingBag className="h-8 w-8 opacity-80" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Payment Methods */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            توزيع المبيعات حسب طريقة الدفع
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <Banknote className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">نقدي</p>
+                  <p className="text-lg font-bold text-green-600">{formatCurrency(financeData.payment_methods.cash.amount)}</p>
+                  <p className="text-xs text-muted-foreground">{financeData.payment_methods.cash.count} عملية</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-blue-50 border border-blue-200">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">بطاقة</p>
+                  <p className="text-lg font-bold text-blue-600">{formatCurrency(financeData.payment_methods.card.amount)}</p>
+                  <p className="text-xs text-muted-foreground">{financeData.payment_methods.card.count} عملية</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 rounded-lg bg-orange-50 border border-orange-200">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
+                  <Wallet className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">آجل</p>
+                  <p className="text-lg font-bold text-orange-600">{formatCurrency(financeData.payment_methods.credit.amount)}</p>
+                  <p className="text-xs text-muted-foreground">{financeData.payment_methods.credit.count} عملية</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 export default function TenantDashboardPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   
   // Data states
   const [stats, setStats] = useState({
-    products: 0,
-    sales: 0,
-    customers: 0,
-    lowStock: 0,
-    suppliers: 0,
-    employees: 0,
-    totalRevenue: 0,
-    monthlyRevenue: 0
+    total_products: 0,
+    total_sales: 0,
+    total_customers: 0,
+    low_stock: 0,
+    total_suppliers: 0,
+    total_employees: 0,
+    monthly_revenue: 0,
+    total_revenue: 0
   });
+  
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [sales, setSales] = useState([]);
-  const [settings, setSettings] = useState({});
+  const [expenses, setExpenses] = useState([]);
   
   // Dialog states
-  const [showProductDialog, setShowProductDialog] = useState(false);
-  const [showCustomerDialog, setShowCustomerDialog] = useState(false);
-  const [showSupplierDialog, setShowSupplierDialog] = useState(false);
-  const [showEmployeeDialog, setShowEmployeeDialog] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [employeeDialogOpen, setEmployeeDialogOpen] = useState(false);
   
-  const tenantData = JSON.parse(localStorage.getItem('tenantData') || '{}');
-  const token = localStorage.getItem('tenantToken') || localStorage.getItem('token');
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [editingSupplier, setEditingSupplier] = useState(null);
+  const [editingEmployee, setEditingEmployee] = useState(null);
+  
+  // Form states
+  const [productForm, setProductForm] = useState({ name: '', price: 0, stock: 0, category: '' });
+  const [customerForm, setCustomerForm] = useState({ name: '', phone: '', email: '' });
+  const [supplierForm, setSupplierForm] = useState({ name: '', phone: '', email: '' });
+  const [employeeForm, setEmployeeForm] = useState({ name: '', email: '', password: '', role: 'seller' });
 
-  const fetchData = useCallback(async () => {
-    try {
-      const headers = { Authorization: `Bearer ${token}` };
-      
-      // Fetch all data in parallel
-      const [productsRes, customersRes, suppliersRes, employeesRes, salesRes, settingsRes] = await Promise.allSettled([
-        axios.get(`${API}/products?limit=100`, { headers }),
-        axios.get(`${API}/customers?limit=100`, { headers }),
-        axios.get(`${API}/suppliers?limit=100`, { headers }),
-        axios.get(`${API}/employees?limit=100`, { headers }),
-        axios.get(`${API}/sales?limit=50`, { headers }),
-        axios.get(`${API}/system-settings`, { headers })
-      ]);
-      
-      const productsData = productsRes.status === 'fulfilled' ? productsRes.value.data.products || productsRes.value.data || [] : [];
-      const customersData = customersRes.status === 'fulfilled' ? customersRes.value.data.customers || customersRes.value.data || [] : [];
-      const suppliersData = suppliersRes.status === 'fulfilled' ? suppliersRes.value.data.suppliers || suppliersRes.value.data || [] : [];
-      const employeesData = employeesRes.status === 'fulfilled' ? employeesRes.value.data.employees || employeesRes.value.data || [] : [];
-      const salesData = salesRes.status === 'fulfilled' ? salesRes.value.data.sales || salesRes.value.data || [] : [];
-      
-      setProducts(productsData);
-      setCustomers(customersData);
-      setSuppliers(suppliersData);
-      setEmployees(employeesData);
-      setSales(salesData);
-      
-      if (settingsRes.status === 'fulfilled') {
-        setSettings(settingsRes.value.data);
-      }
-      
-      // Calculate stats
-      const lowStockCount = productsData.filter(p => p.stock <= (p.min_stock || 10)).length;
-      const totalRevenue = salesData.reduce((sum, s) => sum + (s.total || 0), 0);
-      
-      setStats({
-        products: productsData.length,
-        sales: salesData.length,
-        customers: customersData.length,
-        lowStock: lowStockCount,
-        suppliers: suppliersData.length,
-        employees: employeesData.length,
-        totalRevenue,
-        monthlyRevenue: totalRevenue
-      });
-      
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  const tenantData = JSON.parse(localStorage.getItem('tenantData') || localStorage.getItem('user') || '{}');
+  const token = localStorage.getItem('tenantToken') || localStorage.getItem('token');
 
   useEffect(() => {
     if (!token) {
@@ -152,7 +307,60 @@ export default function TenantDashboardPage() {
       return;
     }
     fetchData();
-  }, [token, navigate, fetchData]);
+  }, [token, navigate]);
+
+  const fetchData = async () => {
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const [productsRes, customersRes, suppliersRes, employeesRes, salesRes, expensesRes] = await Promise.allSettled([
+        axios.get(`${API}/products?limit=200`, { headers }),
+        axios.get(`${API}/customers?limit=200`, { headers }),
+        axios.get(`${API}/suppliers?limit=200`, { headers }),
+        axios.get(`${API}/employees?limit=200`, { headers }),
+        axios.get(`${API}/sales?limit=100`, { headers }),
+        axios.get(`${API}/expenses?limit=100`, { headers })
+      ]);
+      
+      const productsData = productsRes.status === 'fulfilled' ? (productsRes.value.data.products || productsRes.value.data || []) : [];
+      const customersData = customersRes.status === 'fulfilled' ? (customersRes.value.data.customers || customersRes.value.data || []) : [];
+      const suppliersData = suppliersRes.status === 'fulfilled' ? (suppliersRes.value.data.suppliers || suppliersRes.value.data || []) : [];
+      const employeesData = employeesRes.status === 'fulfilled' ? (employeesRes.value.data.employees || employeesRes.value.data || []) : [];
+      const salesData = salesRes.status === 'fulfilled' ? (salesRes.value.data.sales || salesRes.value.data || []) : [];
+      const expensesData = expensesRes.status === 'fulfilled' ? (expensesRes.value.data.expenses || expensesRes.value.data || []) : [];
+      
+      setProducts(productsData);
+      setCustomers(customersData);
+      setSuppliers(suppliersData);
+      setEmployees(employeesData);
+      setSales(salesData);
+      setExpenses(expensesData);
+      
+      const lowStock = productsData.filter(p => p.stock <= (p.min_stock || 10)).length;
+      const totalRevenue = salesData.reduce((sum, s) => sum + (s.total || 0), 0);
+      
+      const now = new Date();
+      const monthlyRevenue = salesData
+        .filter(s => new Date(s.created_at).getMonth() === now.getMonth())
+        .reduce((sum, s) => sum + (s.total || 0), 0);
+      
+      setStats({
+        total_products: productsData.length,
+        total_sales: salesData.length,
+        total_customers: customersData.length,
+        low_stock: lowStock,
+        total_suppliers: suppliersData.length,
+        total_employees: employeesData.length,
+        monthly_revenue: monthlyRevenue,
+        total_revenue: totalRevenue
+      });
+      
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('tenantToken');
@@ -167,313 +375,350 @@ export default function TenantDashboardPage() {
     const tenantToken = localStorage.getItem('tenantToken');
     if (tenantToken) {
       localStorage.setItem('token', tenantToken);
-      localStorage.setItem('user', JSON.stringify({
-        ...tenantData,
-        role: 'admin'
-      }));
+      localStorage.setItem('user', JSON.stringify({ ...tenantData, role: 'admin' }));
     }
     navigate('/');
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('ar-DZ', { 
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2 
-    }).format(amount || 0) + ' دج';
+    return new Intl.NumberFormat('ar-DZ').format(amount || 0) + ' دج';
   };
+
+  // Product CRUD
+  const openProductDialog = (product = null) => {
+    if (product) {
+      setEditingProduct(product);
+      setProductForm({ name: product.name, price: product.price, stock: product.stock, category: product.category || '' });
+    } else {
+      setEditingProduct(null);
+      setProductForm({ name: '', price: 0, stock: 0, category: '' });
+    }
+    setProductDialogOpen(true);
+  };
+
+  const saveProduct = async () => {
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      if (editingProduct) {
+        await axios.put(`${API}/products/${editingProduct.id}`, productForm, { headers });
+        toast.success('تم تحديث المنتج');
+      } else {
+        await axios.post(`${API}/products`, productForm, { headers });
+        toast.success('تم إضافة المنتج');
+      }
+      setProductDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
+  };
+
+  const deleteProduct = async (id) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.delete(`${API}/products/${id}`, { headers });
+      toast.success('تم حذف المنتج');
+      fetchData();
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
+  };
+
+  // Customer CRUD
+  const openCustomerDialog = (customer = null) => {
+    if (customer) {
+      setEditingCustomer(customer);
+      setCustomerForm({ name: customer.name, phone: customer.phone || '', email: customer.email || '' });
+    } else {
+      setEditingCustomer(null);
+      setCustomerForm({ name: '', phone: '', email: '' });
+    }
+    setCustomerDialogOpen(true);
+  };
+
+  const saveCustomer = async () => {
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      if (editingCustomer) {
+        await axios.put(`${API}/customers/${editingCustomer.id}`, customerForm, { headers });
+        toast.success('تم تحديث الزبون');
+      } else {
+        await axios.post(`${API}/customers`, customerForm, { headers });
+        toast.success('تم إضافة الزبون');
+      }
+      setCustomerDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
+  };
+
+  const deleteCustomer = async (id) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الزبون؟')) return;
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.delete(`${API}/customers/${id}`, { headers });
+      toast.success('تم حذف الزبون');
+      fetchData();
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
+  };
+
+  // Supplier CRUD
+  const openSupplierDialog = (supplier = null) => {
+    if (supplier) {
+      setEditingSupplier(supplier);
+      setSupplierForm({ name: supplier.name, phone: supplier.phone || '', email: supplier.email || '' });
+    } else {
+      setEditingSupplier(null);
+      setSupplierForm({ name: '', phone: '', email: '' });
+    }
+    setSupplierDialogOpen(true);
+  };
+
+  const saveSupplier = async () => {
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      if (editingSupplier) {
+        await axios.put(`${API}/suppliers/${editingSupplier.id}`, supplierForm, { headers });
+        toast.success('تم تحديث المورد');
+      } else {
+        await axios.post(`${API}/suppliers`, supplierForm, { headers });
+        toast.success('تم إضافة المورد');
+      }
+      setSupplierDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
+  };
+
+  const deleteSupplier = async (id) => {
+    if (!confirm('هل أنت متأكد من حذف هذا المورد؟')) return;
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.delete(`${API}/suppliers/${id}`, { headers });
+      toast.success('تم حذف المورد');
+      fetchData();
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
+  };
+
+  // Employee CRUD
+  const openEmployeeDialog = (employee = null) => {
+    if (employee) {
+      setEditingEmployee(employee);
+      setEmployeeForm({ name: employee.name, email: employee.email, password: '', role: employee.role || 'seller' });
+    } else {
+      setEditingEmployee(null);
+      setEmployeeForm({ name: '', email: '', password: '', role: 'seller' });
+    }
+    setEmployeeDialogOpen(true);
+  };
+
+  const saveEmployee = async () => {
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      if (editingEmployee) {
+        const data = { ...employeeForm };
+        if (!data.password) delete data.password;
+        await axios.put(`${API}/employees/${editingEmployee.id}`, data, { headers });
+        toast.success('تم تحديث الموظف');
+      } else {
+        await axios.post(`${API}/employees`, employeeForm, { headers });
+        toast.success('تم إضافة الموظف');
+      }
+      setEmployeeDialogOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
+  };
+
+  const deleteEmployee = async (id) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الموظف؟')) return;
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.delete(`${API}/employees/${id}`, { headers });
+      toast.success('تم حذف الموظف');
+      fetchData();
+    } catch (error) {
+      toast.error('حدث خطأ');
+    }
+  };
+
+  const filteredProducts = products.filter(p => 
+    p.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const filteredCustomers = customers.filter(c => 
+    c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    c.phone?.includes(searchQuery)
+  );
+  
+  const filteredSuppliers = suppliers.filter(s => 
+    s.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">جاري تحميل البيانات...</p>
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="spinner" />
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
-      {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-600 to-emerald-700 flex items-center justify-center">
-              <Store className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg">NT Commerce</h1>
-              <p className="text-xs text-muted-foreground">لوحة تحكم المشترك</p>
-            </div>
+    <Layout>
+      <div className="space-y-6 animate-fade-in" data-testid="tenant-dashboard-page">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              <Store className="h-8 w-8 text-primary" />
+              لوحة تحكم {tenantData.company_name || tenantData.name || 'المتجر'}
+            </h1>
+            <p className="text-muted-foreground mt-1">إدارة المنتجات والمبيعات والزبائن والموردين</p>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <Button variant="default" size="sm" onClick={goToMainApp} className="gap-2 bg-green-600 hover:bg-green-700">
-              <ShoppingCart className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <Button onClick={goToMainApp} className="gap-2">
+              <ShoppingBag className="h-4 w-4" />
               نقطة البيع
             </Button>
-            <div className="text-left hidden md:block">
-              <p className="font-medium text-sm">{tenantData.name}</p>
-              <p className="text-xs text-muted-foreground">{tenantData.company_name}</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
               <LogOut className="h-4 w-4" />
               خروج
             </Button>
           </div>
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Welcome Card */}
-        <Card className="bg-gradient-to-br from-green-600 to-emerald-700 text-white">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-green-100 mb-1">مرحباً بك</p>
-                <h2 className="text-2xl font-bold mb-2">{tenantData.name}</h2>
-                <p className="text-green-100 text-sm">{tenantData.company_name}</p>
-                
-                <div className="flex items-center gap-4 mt-4">
-                  <Badge className="bg-white/20 hover:bg-white/30">
-                    {tenantData.plan_name || 'الخطة المبدئية'}
-                  </Badge>
-                  {tenantData.subscription_ends_at && (
-                    <div className="flex items-center gap-1 text-sm text-green-100">
-                      <Calendar className="h-4 w-4" />
-                      ينتهي: {new Date(tenantData.subscription_ends_at).toLocaleDateString('ar-DZ')}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="h-16 w-16 rounded-full bg-white/20 flex items-center justify-center">
-                <Store className="h-8 w-8" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Grid */}
+        {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <StatCard 
-            title="المنتجات" 
-            value={stats.products} 
-            icon={Package} 
-            color="from-blue-500 to-blue-600"
-          />
-          <StatCard 
-            title="المبيعات" 
-            value={stats.sales} 
-            icon={ShoppingCart} 
-            color="from-green-500 to-green-600"
-          />
-          <StatCard 
-            title="الزبائن" 
-            value={stats.customers} 
-            icon={Users} 
-            color="from-purple-500 to-purple-600"
-          />
-          <StatCard 
-            title="مخزون منخفض" 
-            value={stats.lowStock} 
-            icon={AlertTriangle} 
-            color="from-red-500 to-red-600"
-          />
-          <StatCard 
-            title="الموردين" 
-            value={stats.suppliers} 
-            icon={Truck} 
-            color="from-orange-500 to-orange-600"
-          />
-          <StatCard 
-            title="الموظفين" 
-            value={stats.employees} 
-            icon={UserPlus} 
-            color="from-teal-500 to-teal-600"
-          />
-        </div>
-
-        {/* Revenue Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
-            <CardContent className="p-6">
+          <Card>
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-emerald-100 text-sm">إجمالي الإيرادات</p>
-                  <p className="text-3xl font-bold mt-1">{formatCurrency(stats.totalRevenue)}</p>
+                  <p className="text-xs text-muted-foreground">إجمالي المنتجات</p>
+                  <p className="text-2xl font-bold">{stats.total_products}</p>
                 </div>
-                <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center">
-                  <DollarSign className="h-7 w-7" />
-                </div>
+                <Package className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
-          
-          <Card className="bg-gradient-to-br from-amber-500 to-amber-600 text-white">
-            <CardContent className="p-6">
+          <Card>
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-amber-100 text-sm">إيرادات هذا الشهر</p>
-                  <p className="text-3xl font-bold mt-1">{formatCurrency(stats.monthlyRevenue)}</p>
+                  <p className="text-xs text-muted-foreground">المبيعات</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.total_sales}</p>
                 </div>
-                <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center">
-                  <TrendingUp className="h-7 w-7" />
+                <ShoppingBag className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">الزبائن</p>
+                  <p className="text-2xl font-bold text-purple-600">{stats.total_customers}</p>
                 </div>
+                <Users className="h-8 w-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">مخزون منخفض</p>
+                  <p className="text-2xl font-bold text-amber-600">{stats.low_stock}</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-amber-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">إيراد الشهر</p>
+                  <p className="text-2xl font-bold">{formatCurrency(stats.monthly_revenue)}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">إجمالي الإيراد</p>
+                  <p className="text-2xl font-bold">{formatCurrency(stats.total_revenue)}</p>
+                </div>
+                <DollarSign className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid grid-cols-4 lg:grid-cols-7 gap-2 h-auto p-1">
-            <TabsTrigger value="overview" className="gap-2 py-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">نظرة عامة</span>
-            </TabsTrigger>
-            <TabsTrigger value="products" className="gap-2 py-2">
+        <Tabs defaultValue="products" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="products" className="gap-2">
               <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">المنتجات</span>
+              المنتجات
             </TabsTrigger>
-            <TabsTrigger value="sales" className="gap-2 py-2">
-              <ShoppingCart className="h-4 w-4" />
-              <span className="hidden sm:inline">المبيعات</span>
+            <TabsTrigger value="sales" className="gap-2">
+              <ShoppingBag className="h-4 w-4" />
+              المبيعات
             </TabsTrigger>
-            <TabsTrigger value="customers" className="gap-2 py-2">
+            <TabsTrigger value="customers" className="gap-2">
               <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">الزبائن</span>
+              الزبائن
             </TabsTrigger>
-            <TabsTrigger value="suppliers" className="gap-2 py-2">
+            <TabsTrigger value="suppliers" className="gap-2">
               <Truck className="h-4 w-4" />
-              <span className="hidden sm:inline">الموردين</span>
+              الموردين
             </TabsTrigger>
-            <TabsTrigger value="employees" className="gap-2 py-2">
+            <TabsTrigger value="employees" className="gap-2">
               <UserPlus className="h-4 w-4" />
-              <span className="hidden sm:inline">الموظفين</span>
+              الموظفين
             </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-2 py-2">
+            <TabsTrigger value="finance" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              التقارير المالية
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
               <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">الإعدادات</span>
+              الإعدادات
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Recent Sales */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5 text-green-600" />
-                    آخر المبيعات
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {sales.length > 0 ? (
-                    <div className="space-y-3">
-                      {sales.slice(0, 5).map((sale, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                          <div>
-                            <p className="font-medium text-sm">فاتورة #{sale.invoice_number || sale.id?.slice(-6)}</p>
-                            <p className="text-xs text-muted-foreground">{sale.customer_name || 'عميل نقدي'}</p>
-                          </div>
-                          <div className="text-left">
-                            <p className="font-bold text-green-600">{formatCurrency(sale.total)}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(sale.created_at).toLocaleDateString('ar-DZ')}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-8">لا توجد مبيعات بعد</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Low Stock Products */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                    منتجات المخزون المنخفض
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {products.filter(p => p.stock <= (p.min_stock || 10)).length > 0 ? (
-                    <div className="space-y-3">
-                      {products.filter(p => p.stock <= (p.min_stock || 10)).slice(0, 5).map((product, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-red-50">
-                          <div>
-                            <p className="font-medium text-sm">{product.name}</p>
-                            <p className="text-xs text-muted-foreground">{product.category || 'بدون تصنيف'}</p>
-                          </div>
-                          <Badge variant="destructive">{product.stock} قطعة</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-8">لا توجد منتجات بمخزون منخفض</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>إجراءات سريعة</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={goToMainApp}>
-                    <ShoppingCart className="h-6 w-6 text-green-600" />
-                    <span>بيع جديد</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => setActiveTab('products')}>
-                    <Plus className="h-6 w-6 text-blue-600" />
-                    <span>إضافة منتج</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => setActiveTab('customers')}>
-                    <UserPlus className="h-6 w-6 text-purple-600" />
-                    <span>إضافة زبون</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={goToMainApp}>
-                    <BarChart3 className="h-6 w-6 text-orange-600" />
-                    <span>التقارير</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           {/* Products Tab */}
           <TabsContent value="products" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="relative w-64">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="بحث..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-9"
+                />
+              </div>
+              <Button onClick={() => openProductDialog()}>
+                <Plus className="h-4 w-4 me-2" />
+                إضافة منتج
+              </Button>
+            </div>
+
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  إدارة المنتجات ({products.length})
-                </CardTitle>
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="بحث..." 
-                      className="pr-9 w-48"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                  </div>
-                  <Button onClick={goToMainApp} className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    إضافة منتج
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -481,16 +726,20 @@ export default function TenantDashboardPage() {
                       <TableHead>السعر</TableHead>
                       <TableHead>المخزون</TableHead>
                       <TableHead>التصنيف</TableHead>
-                      <TableHead>الحالة</TableHead>
+                      <TableHead className="text-center">الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {products
-                      .filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase()))
-                      .slice(0, 10)
-                      .map((product) => (
+                    {filteredProducts.slice(0, 20).map(product => (
                       <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{product.name}</p>
+                            {product.barcode && (
+                              <p className="text-xs text-muted-foreground">{product.barcode}</p>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{formatCurrency(product.price)}</TableCell>
                         <TableCell>
                           <Badge variant={product.stock <= (product.min_stock || 10) ? "destructive" : "default"}>
@@ -498,17 +747,22 @@ export default function TenantDashboardPage() {
                           </Badge>
                         </TableCell>
                         <TableCell>{product.category || '-'}</TableCell>
-                        <TableCell>
-                          <Badge variant={product.is_active !== false ? "default" : "secondary"}>
-                            {product.is_active !== false ? 'نشط' : 'معطل'}
-                          </Badge>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => openProductDialog(product)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-red-600" onClick={() => deleteProduct(product.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
                 {products.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">لا توجد منتجات. أضف منتجك الأول!</p>
+                  <p className="text-center text-muted-foreground py-8">لا توجد منتجات</p>
                 )}
               </CardContent>
             </Card>
@@ -516,18 +770,16 @@ export default function TenantDashboardPage() {
 
           {/* Sales Tab */}
           <TabsContent value="sales" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">سجل المبيعات ({sales.length})</h3>
+              <Button onClick={goToMainApp}>
+                <Plus className="h-4 w-4 me-2" />
+                بيع جديد
+              </Button>
+            </div>
+
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5" />
-                  سجل المبيعات ({sales.length})
-                </CardTitle>
-                <Button onClick={goToMainApp} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  بيع جديد
-                </Button>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -539,7 +791,7 @@ export default function TenantDashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sales.slice(0, 10).map((sale) => (
+                    {sales.slice(0, 20).map(sale => (
                       <TableRow key={sale.id}>
                         <TableCell className="font-medium">#{sale.invoice_number || sale.id?.slice(-6)}</TableCell>
                         <TableCell>{sale.customer_name || 'عميل نقدي'}</TableCell>
@@ -553,7 +805,7 @@ export default function TenantDashboardPage() {
                   </TableBody>
                 </Table>
                 {sales.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">لا توجد مبيعات بعد</p>
+                  <p className="text-center text-muted-foreground py-8">لا توجد مبيعات</p>
                 )}
               </CardContent>
             </Card>
@@ -561,44 +813,61 @@ export default function TenantDashboardPage() {
 
           {/* Customers Tab */}
           <TabsContent value="customers" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="relative w-64">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="بحث..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-9"
+                />
+              </div>
+              <Button onClick={() => openCustomerDialog()}>
+                <Plus className="h-4 w-4 me-2" />
+                إضافة زبون
+              </Button>
+            </div>
+
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  إدارة الزبائن ({customers.length})
-                </CardTitle>
-                <Button onClick={goToMainApp} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  إضافة زبون
-                </Button>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>الاسم</TableHead>
                       <TableHead>الهاتف</TableHead>
+                      <TableHead>البريد</TableHead>
                       <TableHead>الرصيد</TableHead>
-                      <TableHead>إجمالي المشتريات</TableHead>
+                      <TableHead className="text-center">الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {customers.slice(0, 10).map((customer) => (
+                    {filteredCustomers.slice(0, 20).map(customer => (
                       <TableRow key={customer.id}>
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>{customer.phone || '-'}</TableCell>
+                        <TableCell>{customer.email || '-'}</TableCell>
                         <TableCell>
                           <Badge variant={customer.balance > 0 ? "destructive" : "default"}>
                             {formatCurrency(customer.balance || 0)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{formatCurrency(customer.total_purchases || 0)}</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => openCustomerDialog(customer)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-red-600" onClick={() => deleteCustomer(customer.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
                 {customers.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">لا يوجد زبائن بعد</p>
+                  <p className="text-center text-muted-foreground py-8">لا يوجد زبائن</p>
                 )}
               </CardContent>
             </Card>
@@ -606,44 +875,61 @@ export default function TenantDashboardPage() {
 
           {/* Suppliers Tab */}
           <TabsContent value="suppliers" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="relative w-64">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="بحث..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-9"
+                />
+              </div>
+              <Button onClick={() => openSupplierDialog()}>
+                <Plus className="h-4 w-4 me-2" />
+                إضافة مورد
+              </Button>
+            </div>
+
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Truck className="h-5 w-5" />
-                  إدارة الموردين ({suppliers.length})
-                </CardTitle>
-                <Button onClick={goToMainApp} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  إضافة مورد
-                </Button>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>الاسم</TableHead>
                       <TableHead>الهاتف</TableHead>
+                      <TableHead>البريد</TableHead>
                       <TableHead>الرصيد المستحق</TableHead>
-                      <TableHead>إجمالي المشتريات</TableHead>
+                      <TableHead className="text-center">الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {suppliers.slice(0, 10).map((supplier) => (
+                    {filteredSuppliers.slice(0, 20).map(supplier => (
                       <TableRow key={supplier.id}>
                         <TableCell className="font-medium">{supplier.name}</TableCell>
                         <TableCell>{supplier.phone || '-'}</TableCell>
+                        <TableCell>{supplier.email || '-'}</TableCell>
                         <TableCell>
                           <Badge variant={supplier.balance > 0 ? "destructive" : "default"}>
                             {formatCurrency(supplier.balance || 0)}
                           </Badge>
                         </TableCell>
-                        <TableCell>{formatCurrency(supplier.total_purchases || 0)}</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => openSupplierDialog(supplier)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-red-600" onClick={() => deleteSupplier(supplier.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
                 {suppliers.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">لا يوجد موردين بعد</p>
+                  <p className="text-center text-muted-foreground py-8">لا يوجد موردين</p>
                 )}
               </CardContent>
             </Card>
@@ -651,18 +937,16 @@ export default function TenantDashboardPage() {
 
           {/* Employees Tab */}
           <TabsContent value="employees" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">الموظفين ({employees.length})</h3>
+              <Button onClick={() => openEmployeeDialog()}>
+                <Plus className="h-4 w-4 me-2" />
+                إضافة موظف
+              </Button>
+            </div>
+
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <UserPlus className="h-5 w-5" />
-                  إدارة الموظفين ({employees.length})
-                </CardTitle>
-                <Button onClick={goToMainApp} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  إضافة موظف
-                </Button>
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -670,10 +954,11 @@ export default function TenantDashboardPage() {
                       <TableHead>البريد</TableHead>
                       <TableHead>الدور</TableHead>
                       <TableHead>الحالة</TableHead>
+                      <TableHead className="text-center">الإجراءات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {employees.slice(0, 10).map((employee) => (
+                    {employees.map(employee => (
                       <TableRow key={employee.id}>
                         <TableCell className="font-medium">{employee.name}</TableCell>
                         <TableCell>{employee.email}</TableCell>
@@ -681,7 +966,8 @@ export default function TenantDashboardPage() {
                           <Badge variant="outline">
                             {employee.role === 'admin' ? 'مدير' : 
                              employee.role === 'seller' ? 'بائع' : 
-                             employee.role === 'manager' ? 'مشرف' : employee.role}
+                             employee.role === 'manager' ? 'مشرف' : 
+                             employee.role === 'accountant' ? 'محاسب' : employee.role}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -689,21 +975,35 @@ export default function TenantDashboardPage() {
                             {employee.is_active !== false ? 'نشط' : 'معطل'}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => openEmployeeDialog(employee)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="text-red-600" onClick={() => deleteEmployee(employee.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
                 {employees.length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">لا يوجد موظفين بعد</p>
+                  <p className="text-center text-muted-foreground py-8">لا يوجد موظفين</p>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* Finance Tab */}
+          <TabsContent value="finance" className="space-y-6">
+            <FinanceReportsSection sales={sales} expenses={expenses} />
+          </TabsContent>
+
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Subscription Info */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -737,59 +1037,163 @@ export default function TenantDashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Account Info */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Building className="h-5 w-5" />
-                    معلومات الحساب
+                    معلومات المتجر
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">البريد الإلكتروني</p>
-                        <p className="font-medium">{tenantData.email}</p>
-                      </div>
+                    <div className="p-4 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">اسم المتجر</p>
+                      <p className="font-semibold">{tenantData.company_name || tenantData.name}</p>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
-                      <Store className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">اسم المتجر</p>
-                        <p className="font-medium">{tenantData.company_name || tenantData.name}</p>
-                      </div>
+                    <div className="p-4 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
+                      <p className="font-semibold">{tenantData.email}</p>
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted">
-                      <Shield className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">معرف المشترك</p>
-                        <p className="font-medium text-xs">{tenantData.id || tenantData.tenant_id}</p>
-                      </div>
+                    <div className="p-4 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">معرف المشترك</p>
+                      <p className="font-semibold text-xs">{tenantData.id || tenantData.tenant_id}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
-
-            {/* Go to Full Settings */}
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Settings className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-semibold mb-2">إعدادات متقدمة</h3>
-                <p className="text-muted-foreground text-sm mb-4">
-                  للوصول لجميع الإعدادات المتقدمة، انتقل للنظام الرئيسي
-                </p>
-                <Button onClick={goToMainApp} className="gap-2">
-                  <Settings className="h-4 w-4" />
-                  فتح الإعدادات
-                </Button>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
-      </main>
-    </div>
+
+        {/* Product Dialog */}
+        <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>اسم المنتج</Label>
+                <Input value={productForm.name} onChange={e => setProductForm({...productForm, name: e.target.value})} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>السعر</Label>
+                  <Input type="number" value={productForm.price} onChange={e => setProductForm({...productForm, price: parseFloat(e.target.value) || 0})} />
+                </div>
+                <div className="space-y-2">
+                  <Label>المخزون</Label>
+                  <Input type="number" value={productForm.stock} onChange={e => setProductForm({...productForm, stock: parseInt(e.target.value) || 0})} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>التصنيف</Label>
+                <Input value={productForm.category} onChange={e => setProductForm({...productForm, category: e.target.value})} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setProductDialogOpen(false)}>إلغاء</Button>
+              <Button onClick={saveProduct}>{editingProduct ? 'حفظ التعديلات' : 'إضافة'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Customer Dialog */}
+        <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingCustomer ? 'تعديل الزبون' : 'إضافة زبون جديد'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>الاسم</Label>
+                <Input value={customerForm.name} onChange={e => setCustomerForm({...customerForm, name: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>الهاتف</Label>
+                <Input value={customerForm.phone} onChange={e => setCustomerForm({...customerForm, phone: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>البريد الإلكتروني</Label>
+                <Input value={customerForm.email} onChange={e => setCustomerForm({...customerForm, email: e.target.value})} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCustomerDialogOpen(false)}>إلغاء</Button>
+              <Button onClick={saveCustomer}>{editingCustomer ? 'حفظ التعديلات' : 'إضافة'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Supplier Dialog */}
+        <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingSupplier ? 'تعديل المورد' : 'إضافة مورد جديد'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>الاسم</Label>
+                <Input value={supplierForm.name} onChange={e => setSupplierForm({...supplierForm, name: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>الهاتف</Label>
+                <Input value={supplierForm.phone} onChange={e => setSupplierForm({...supplierForm, phone: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>البريد الإلكتروني</Label>
+                <Input value={supplierForm.email} onChange={e => setSupplierForm({...supplierForm, email: e.target.value})} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSupplierDialogOpen(false)}>إلغاء</Button>
+              <Button onClick={saveSupplier}>{editingSupplier ? 'حفظ التعديلات' : 'إضافة'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Employee Dialog */}
+        <Dialog open={employeeDialogOpen} onOpenChange={setEmployeeDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingEmployee ? 'تعديل الموظف' : 'إضافة موظف جديد'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>الاسم</Label>
+                <Input value={employeeForm.name} onChange={e => setEmployeeForm({...employeeForm, name: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>البريد الإلكتروني</Label>
+                <Input value={employeeForm.email} onChange={e => setEmployeeForm({...employeeForm, email: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>{editingEmployee ? 'كلمة المرور الجديدة (اتركها فارغة للإبقاء)' : 'كلمة المرور'}</Label>
+                <Input type="password" value={employeeForm.password} onChange={e => setEmployeeForm({...employeeForm, password: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label>الدور</Label>
+                <Select value={employeeForm.role} onValueChange={v => setEmployeeForm({...employeeForm, role: v})}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">مدير</SelectItem>
+                    <SelectItem value="manager">مشرف</SelectItem>
+                    <SelectItem value="seller">بائع</SelectItem>
+                    <SelectItem value="accountant">محاسب</SelectItem>
+                    <SelectItem value="inventory_manager">مدير مخزون</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEmployeeDialogOpen(false)}>إلغاء</Button>
+              <Button onClick={saveEmployee}>{editingEmployee ? 'حفظ التعديلات' : 'إضافة'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </Layout>
   );
 }
