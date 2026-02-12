@@ -40,8 +40,9 @@ import {
   AlertTriangle, DollarSign, Search, MoreHorizontal,
   Star, Eye, EyeOff, Ban, RefreshCw, Calendar, Store, Truck, ShoppingBag,
   Banknote, Wallet, PiggyBank, Receipt, Calculator, FileText, ArrowUpRight, ArrowDownRight,
-  LogOut, UserPlus, BarChart3
+  LogOut, UserPlus, BarChart3, Database, HardDrive, Download, Activity, Archive
 } from 'lucide-react';
+import { Progress } from '../components/ui/progress';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
