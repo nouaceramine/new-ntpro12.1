@@ -373,8 +373,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             tenant_db = get_tenant_db(tenant_id)
             user = await tenant_db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
             if user is None:
-                # Check main tenant record
-                tenant = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0, "password": 0})
+                # Check main tenant record (always in main_db)
+                tenant = await main_db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0, "password": 0})
                 if tenant:
                     user = {
                         "id": tenant["id"],
