@@ -1,0 +1,96 @@
+{
+  "summary": "Testing iteration 40: Three new SaaS features verified - Impersonation API (6 tests), Agent Name in tenants (1 test), Monitoring Alerts (5 tests), Data Isolation (1 test), RBAC (1 test). All 14 tests passed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration40_features.py",
+    "/app/test_reports/pytest/pytest_iteration40_features.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Impersonation endpoint correctly restricted to super_admin via get_super_admin dependency",
+    "Impersonation token correctly includes tenant_id in JWT claims enabling proper DB routing",
+    "Data isolation preserved: impersonated Tenant A cannot see Tenant B's data",
+    "agent_name field correctly populated from saas_agents collection lookup",
+    "Monitoring alerts correctly identify expired (critical) and expiring_soon (warning) subscriptions",
+    "Alerts properly sorted by severity (critical first, then warning, then info)"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration40_features.py"
+  ],
+  "success_rate": {
+    "backend": "100%",
+    "frontend": "N/A (backend only testing requested)"
+  },
+  "test_credentials": {
+    "super_admin": {"email": "super@ntcommerce.com", "password": "password"},
+    "tenant_a": {"email": "tenanta@test.com", "password": "password123"},
+    "tenant_b": {"email": "tenantb@test.com", "password": "password123"}
+  },
+  "seed_data_creation": "Test products created and cleaned up during isolation tests",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 3 new features verified: 1) Impersonation API at POST /api/saas/impersonate/{tenant_id} returns valid JWT that can access tenant products, 2) agent_name field present in GET /api/saas/tenants response, 3) Monitoring alerts at GET /api/saas/monitoring returns alerts for expired (critical) and expiring (warning) subscriptions. Current alerts: amir (expired, -3 days), farid (expiring, 2 days).",
+  "verified_features": {
+    "impersonation_api": {
+      "status": "PASS",
+      "endpoint": "POST /api/saas/impersonate/{tenant_id}",
+      "tests_passed": 6,
+      "notes": "Returns valid JWT token, only accessible by super_admin, 404 for non-existent tenant"
+    },
+    "impersonation_data_isolation": {
+      "status": "PASS",
+      "notes": "Impersonated token for Tenant A cannot access Tenant B's data"
+    },
+    "impersonation_token_products_access": {
+      "status": "PASS",
+      "notes": "Token from impersonation can list products (status 200)"
+    },
+    "non_super_admin_blocked_from_impersonation": {
+      "status": "PASS",
+      "notes": "Tenant users get 403 when calling impersonation endpoint"
+    },
+    "agent_name_in_tenants": {
+      "status": "PASS",
+      "endpoint": "GET /api/saas/tenants",
+      "tests_passed": 1,
+      "notes": "agent_name field present for all tenants, populated from saas_agents collection"
+    },
+    "monitoring_alerts": {
+      "status": "PASS",
+      "endpoint": "GET /api/saas/monitoring",
+      "tests_passed": 5,
+      "notes": "Returns alerts array with correct structure, severity (critical/warning/info), and sorted by severity"
+    },
+    "expired_subscription_alert": {
+      "status": "PASS",
+      "notes": "amir@amir has expired subscription (-3 days) with critical severity"
+    },
+    "expiring_subscription_alert": {
+      "status": "PASS",
+      "notes": "farid@farid has expiring subscription (2 days) with warning severity"
+    },
+    "data_isolation": {
+      "status": "PASS",
+      "notes": "Tenant A products not visible to Tenant B"
+    },
+    "rbac_super_admin_blocked": {
+      "status": "PASS",
+      "endpoint": "GET /api/products",
+      "notes": "Super Admin correctly gets 403 on tenant-specific routes"
+    }
+  },
+  "tested_apis_summary": {
+    "total_tests": 14,
+    "passed": 14,
+    "failed": 0,
+    "skipped": 0
+  }
+}
