@@ -109,7 +109,7 @@ const ProtectedRoute = ({ children, adminOnly = false, tenantOnly = false }) => 
 
 // Public Route Component (redirect if authenticated)
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, isSuperAdmin, isTenant, isAgent, user } = useAuth();
 
   if (loading) {
     return (
@@ -120,6 +120,17 @@ const PublicRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
+    // Redirect based on user type
+    if (isSuperAdmin) {
+      return <Navigate to="/saas-admin" replace />;
+    }
+    if (isAgent) {
+      return <Navigate to="/agent/dashboard" replace />;
+    }
+    if (isTenant) {
+      return <Navigate to="/" replace />;
+    }
+    // Default redirect
     return <Navigate to="/" replace />;
   }
 
