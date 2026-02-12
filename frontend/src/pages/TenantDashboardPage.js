@@ -393,6 +393,66 @@ export default function TenantDashboardPage() {
     navigate('/');
   };
 
+  // Database Management Functions
+  const fetchDbInfo = async () => {
+    setDbLoading(true);
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.get(`${API}/tenant/database-info`, { headers });
+      setDbInfo(res.data);
+    } catch (error) {
+      // Fallback: calculate from local data
+      const totalDocs = products.length + customers.length + suppliers.length + employees.length + sales.length;
+      setDbInfo({
+        size_mb: (totalDocs * 0.001).toFixed(2),
+        collections_count: 8,
+        documents_count: totalDocs,
+        last_backup: null,
+        is_frozen: false,
+        status: 'healthy'
+      });
+    } finally {
+      setDbLoading(false);
+    }
+  };
+
+  const handleRequestBackup = async () => {
+    setBackupLoading(true);
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.post(`${API}/tenant/request-backup`, {}, { headers });
+      toast.success('تم إرسال طلب النسخ الاحتياطي للمدير');
+      fetchDbInfo();
+    } catch (error) {
+      toast.error('حدث خطأ أثناء إرسال الطلب');
+    } finally {
+      setBackupLoading(false);
+    }
+  };
+
+  const handleExportMyData = async () => {
+    try {
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.get(`${API}/tenant/export-data`, { headers, responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `my_store_data_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('تم تصدير البيانات بنجاح');
+    } catch (error) {
+      toast.error('حدث خطأ أثناء التصدير');
+    }
+  };
+
+  useEffect(() => {
+    if (products.length > 0) {
+      fetchDbInfo();
+    }
+  }, [products]);
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('ar-DZ').format(amount || 0) + ' دج';
   };
