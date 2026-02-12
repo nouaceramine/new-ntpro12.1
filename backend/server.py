@@ -773,7 +773,7 @@ async def update_user_password(user_id: str, password_data: PasswordUpdate, admi
 # ============ PRODUCT ROUTES ============
 
 @api_router.post("/products", response_model=ProductResponse)
-async def create_product(product: ProductCreate, admin: dict = Depends(get_admin_user)):
+async def create_product(product: ProductCreate, admin: dict = Depends(get_tenant_admin)):
     product_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -1164,7 +1164,7 @@ async def get_product(product_id: str):
     return ProductResponse(**product)
 
 @api_router.put("/products/{product_id}", response_model=ProductResponse)
-async def update_product(product_id: str, updates: ProductUpdate, admin: dict = Depends(get_admin_user)):
+async def update_product(product_id: str, updates: ProductUpdate, admin: dict = Depends(get_tenant_admin)):
     product = await db.products.find_one({"id": product_id})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -1227,14 +1227,14 @@ async def update_product(product_id: str, updates: ProductUpdate, admin: dict = 
     return ProductResponse(**updated)
 
 @api_router.delete("/products/{product_id}")
-async def delete_product(product_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_product(product_id: str, admin: dict = Depends(get_tenant_admin)):
     result = await db.products.delete_one({"id": product_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Product not found")
     return {"message": "Product deleted successfully"}
 
 @api_router.get("/products/alerts/low-stock", response_model=List[ProductResponse])
-async def get_low_stock_products(admin: dict = Depends(get_admin_user)):
+async def get_low_stock_products(admin: dict = Depends(get_tenant_admin)):
     pipeline = [
         {"$match": {"$expr": {"$lt": ["$quantity", {"$ifNull": ["$low_stock_threshold", 10]}]}}},
         {"$project": {"_id": 0}}
@@ -1245,7 +1245,7 @@ async def get_low_stock_products(admin: dict = Depends(get_admin_user)):
 # ============ PRICE HISTORY ROUTES ============
 
 @api_router.get("/products/{product_id}/price-history", response_model=List[PriceHistoryResponse])
-async def get_product_price_history(product_id: str, user: dict = Depends(get_current_user)):
+async def get_product_price_history(product_id: str, user: dict = Depends(require_tenant)):
     """Get price change history for a specific product"""
     history = await db.price_history.find(
         {"product_id": product_id},
@@ -1254,7 +1254,7 @@ async def get_product_price_history(product_id: str, user: dict = Depends(get_cu
     return [PriceHistoryResponse(**h) for h in history]
 
 @api_router.get("/products/{product_id}/purchase-history")
-async def get_product_purchase_history(product_id: str, user: dict = Depends(get_current_user)):
+async def get_product_purchase_history(product_id: str, user: dict = Depends(require_tenant)):
     """Get purchase history for a specific product (from suppliers)"""
     # Get purchases containing this product
     purchases = await db.purchases.find(
@@ -1291,7 +1291,7 @@ async def get_product_purchase_history(product_id: str, user: dict = Depends(get
     return result
 
 @api_router.get("/products/{product_id}/sales-history")
-async def get_product_sales_history(product_id: str, user: dict = Depends(get_current_user)):
+async def get_product_sales_history(product_id: str, user: dict = Depends(require_tenant)):
     """Get sales history for a specific product"""
     # Get sales containing this product
     sales = await db.sales.find(
@@ -1331,7 +1331,7 @@ async def get_product_sales_history(product_id: str, user: dict = Depends(get_cu
 async def get_all_price_history(
     limit: int = 50,
     price_type: Optional[str] = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get all price change history"""
     query = {}
@@ -1380,7 +1380,7 @@ async def log_price_change(
 # ============ CUSTOMER ROUTES ============
 
 @api_router.post("/customers", response_model=CustomerResponse)
-async def create_customer(customer: CustomerCreate, user: dict = Depends(get_current_user)):
+async def create_customer(customer: CustomerCreate, user: dict = Depends(require_tenant)):
     customer_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -1403,7 +1403,7 @@ async def create_customer(customer: CustomerCreate, user: dict = Depends(get_cur
     return CustomerResponse(**customer_doc)
 
 @api_router.get("/customers", response_model=List[CustomerResponse])
-async def get_customers(search: Optional[str] = None, family_id: Optional[str] = None, user: dict = Depends(get_current_user)):
+async def get_customers(search: Optional[str] = None, family_id: Optional[str] = None, user: dict = Depends(require_tenant)):
     query = {}
     if search:
         query["$or"] = [
@@ -1444,7 +1444,7 @@ async def get_customers_paginated(
     family_id: Optional[str] = None,
     page: int = 1,
     page_size: int = 20,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get customers with pagination support"""
     query = {}
@@ -1486,7 +1486,7 @@ async def get_customers_paginated(
     )
 
 @api_router.get("/customers/{customer_id}", response_model=CustomerResponse)
-async def get_customer(customer_id: str, user: dict = Depends(get_current_user)):
+async def get_customer(customer_id: str, user: dict = Depends(require_tenant)):
     customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -1503,7 +1503,7 @@ async def get_customer(customer_id: str, user: dict = Depends(get_current_user))
     return CustomerResponse(**customer)
 
 @api_router.put("/customers/{customer_id}", response_model=CustomerResponse)
-async def update_customer(customer_id: str, updates: CustomerUpdate, user: dict = Depends(get_current_user)):
+async def update_customer(customer_id: str, updates: CustomerUpdate, user: dict = Depends(require_tenant)):
     customer = await db.customers.find_one({"id": customer_id})
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -1530,7 +1530,7 @@ async def update_customer(customer_id: str, updates: CustomerUpdate, user: dict 
     return CustomerResponse(**updated)
 
 @api_router.delete("/customers/{customer_id}")
-async def delete_customer(customer_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_customer(customer_id: str, admin: dict = Depends(get_tenant_admin)):
     result = await db.customers.delete_one({"id": customer_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -1553,13 +1553,13 @@ class BlacklistResponse(BaseModel):
     created_at: str
 
 @api_router.get("/blacklist")
-async def get_blacklist(user: dict = Depends(get_current_user)):
+async def get_blacklist(user: dict = Depends(require_tenant)):
     """Get all blacklisted phone numbers"""
     blacklist = await db.customer_blacklist.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return blacklist
 
 @api_router.post("/blacklist")
-async def add_to_blacklist(entry: BlacklistEntry, user: dict = Depends(get_current_user)):
+async def add_to_blacklist(entry: BlacklistEntry, user: dict = Depends(require_tenant)):
     """Add phone to blacklist"""
     # Check if already blacklisted
     existing = await db.customer_blacklist.find_one({"phone": entry.phone})
@@ -1586,7 +1586,7 @@ async def add_to_blacklist(entry: BlacklistEntry, user: dict = Depends(get_curre
     return BlacklistResponse(**blacklist_doc)
 
 @api_router.delete("/blacklist/{entry_id}")
-async def remove_from_blacklist(entry_id: str, user: dict = Depends(get_current_user)):
+async def remove_from_blacklist(entry_id: str, user: dict = Depends(require_tenant)):
     """Remove phone from blacklist"""
     entry = await db.customer_blacklist.find_one({"id": entry_id})
     if not entry:
@@ -1602,7 +1602,7 @@ async def remove_from_blacklist(entry_id: str, user: dict = Depends(get_current_
     return {"message": "تم إزالة الرقم من القائمة السوداء"}
 
 @api_router.get("/blacklist/check/{phone}")
-async def check_blacklist(phone: str, user: dict = Depends(get_current_user)):
+async def check_blacklist(phone: str, user: dict = Depends(require_tenant)):
     """Check if a phone is blacklisted"""
     entry = await db.customer_blacklist.find_one({"phone": phone}, {"_id": 0})
     return {"is_blacklisted": entry is not None, "entry": entry}
@@ -1615,7 +1615,7 @@ class DebtReminderSettings(BaseModel):
     min_debt_amount: float = 1000  # Minimum debt to trigger reminder
 
 @api_router.get("/debt-reminders/settings")
-async def get_debt_reminder_settings(user: dict = Depends(get_current_user)):
+async def get_debt_reminder_settings(user: dict = Depends(require_tenant)):
     """Get debt reminder settings"""
     settings = await db.system_settings.find_one({"type": "debt_reminders"}, {"_id": 0})
     if not settings:
@@ -1623,7 +1623,7 @@ async def get_debt_reminder_settings(user: dict = Depends(get_current_user)):
     return settings
 
 @api_router.put("/debt-reminders/settings")
-async def update_debt_reminder_settings(settings: DebtReminderSettings, user: dict = Depends(get_current_user)):
+async def update_debt_reminder_settings(settings: DebtReminderSettings, user: dict = Depends(require_tenant)):
     """Update debt reminder settings"""
     await db.system_settings.update_one(
         {"type": "debt_reminders"},
@@ -1633,7 +1633,7 @@ async def update_debt_reminder_settings(settings: DebtReminderSettings, user: di
     return {"success": True, "message": "تم حفظ إعدادات التذكير"}
 
 @api_router.get("/debt-reminders/pending")
-async def get_pending_debt_reminders(user: dict = Depends(get_current_user)):
+async def get_pending_debt_reminders(user: dict = Depends(require_tenant)):
     """Get customers with pending debt reminders"""
     settings = await db.system_settings.find_one({"type": "debt_reminders"})
     if not settings or not settings.get("enabled", True):
@@ -1689,7 +1689,7 @@ async def get_pending_debt_reminders(user: dict = Depends(get_current_user)):
     return reminders
 
 @api_router.post("/debt-reminders/dismiss/{customer_id}")
-async def dismiss_debt_reminder(customer_id: str, days: int = 7, user: dict = Depends(get_current_user)):
+async def dismiss_debt_reminder(customer_id: str, days: int = 7, user: dict = Depends(require_tenant)):
     """Dismiss a debt reminder for a period"""
     await db.debt_reminder_dismissals.update_one(
         {"customer_id": customer_id},
@@ -1705,7 +1705,7 @@ async def dismiss_debt_reminder(customer_id: str, days: int = 7, user: dict = De
 # ============ NOTIFICATIONS ============
 
 @api_router.get("/notifications")
-async def get_notifications(user: dict = Depends(get_current_user)):
+async def get_notifications(user: dict = Depends(require_tenant)):
     """Get all notifications for current user"""
     notifications = await db.notifications.find(
         {"$or": [{"user_id": user["id"]}, {"user_id": None}]},
@@ -1719,7 +1719,7 @@ async def create_notification(
     message: str,
     notification_type: str = "info",
     user_id: Optional[str] = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Create a notification"""
     notification_doc = {
@@ -1736,7 +1736,7 @@ async def create_notification(
     return notification_doc
 
 @api_router.put("/notifications/{notification_id}/read")
-async def mark_notification_read(notification_id: str, user: dict = Depends(get_current_user)):
+async def mark_notification_read(notification_id: str, user: dict = Depends(require_tenant)):
     """Mark notification as read"""
     await db.notifications.update_one(
         {"id": notification_id},
@@ -1745,13 +1745,13 @@ async def mark_notification_read(notification_id: str, user: dict = Depends(get_
     return {"message": "تم تحديد الإشعار كمقروء"}
 
 @api_router.delete("/notifications/{notification_id}")
-async def delete_notification(notification_id: str, user: dict = Depends(get_current_user)):
+async def delete_notification(notification_id: str, user: dict = Depends(require_tenant)):
     """Delete a notification"""
     await db.notifications.delete_one({"id": notification_id})
     return {"message": "تم حذف الإشعار"}
 
 @api_router.get("/notifications/unread-count")
-async def get_unread_notification_count(user: dict = Depends(get_current_user)):
+async def get_unread_notification_count(user: dict = Depends(require_tenant)):
     """Get count of unread notifications"""
     count = await db.notifications.count_documents({
         "$or": [{"user_id": user["id"]}, {"user_id": None}],
@@ -1762,7 +1762,7 @@ async def get_unread_notification_count(user: dict = Depends(get_current_user)):
 # ============ WAREHOUSE ROUTES ============
 
 @api_router.post("/warehouses", response_model=WarehouseResponse)
-async def create_warehouse(warehouse: WarehouseCreate, admin: dict = Depends(get_admin_user)):
+async def create_warehouse(warehouse: WarehouseCreate, admin: dict = Depends(get_tenant_admin)):
     warehouse_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -1781,12 +1781,12 @@ async def create_warehouse(warehouse: WarehouseCreate, admin: dict = Depends(get
     return WarehouseResponse(**warehouse_doc)
 
 @api_router.get("/warehouses", response_model=List[WarehouseResponse])
-async def get_warehouses(user: dict = Depends(get_current_user)):
+async def get_warehouses(user: dict = Depends(require_tenant)):
     warehouses = await db.warehouses.find({}, {"_id": 0}).to_list(100)
     return [WarehouseResponse(**w) for w in warehouses]
 
 @api_router.put("/warehouses/{warehouse_id}", response_model=WarehouseResponse)
-async def update_warehouse(warehouse_id: str, updates: WarehouseUpdate, admin: dict = Depends(get_admin_user)):
+async def update_warehouse(warehouse_id: str, updates: WarehouseUpdate, admin: dict = Depends(get_tenant_admin)):
     warehouse = await db.warehouses.find_one({"id": warehouse_id})
     if not warehouse:
         raise HTTPException(status_code=404, detail="Warehouse not found")
@@ -1804,7 +1804,7 @@ async def update_warehouse(warehouse_id: str, updates: WarehouseUpdate, admin: d
     return WarehouseResponse(**updated)
 
 @api_router.delete("/warehouses/{warehouse_id}")
-async def delete_warehouse(warehouse_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_warehouse(warehouse_id: str, admin: dict = Depends(get_tenant_admin)):
     warehouse = await db.warehouses.find_one({"id": warehouse_id})
     if not warehouse:
         raise HTTPException(status_code=404, detail="Warehouse not found")
@@ -1817,7 +1817,7 @@ async def delete_warehouse(warehouse_id: str, admin: dict = Depends(get_admin_us
 # ============ STOCK TRANSFER ROUTES ============
 
 @api_router.post("/stock-transfers")
-async def create_stock_transfer(transfer: StockTransferCreate, admin: dict = Depends(get_admin_user)):
+async def create_stock_transfer(transfer: StockTransferCreate, admin: dict = Depends(get_tenant_admin)):
     # Validate warehouses
     from_wh = await db.warehouses.find_one({"id": transfer.from_warehouse})
     to_wh = await db.warehouses.find_one({"id": transfer.to_warehouse})
@@ -1856,14 +1856,14 @@ async def create_stock_transfer(transfer: StockTransferCreate, admin: dict = Dep
     return transfer_doc
 
 @api_router.get("/stock-transfers")
-async def get_stock_transfers(user: dict = Depends(get_current_user)):
+async def get_stock_transfers(user: dict = Depends(require_tenant)):
     transfers = await db.stock_transfers.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return transfers
 
 # ============ INVENTORY SESSION ROUTES ============
 
 @api_router.post("/inventory-sessions")
-async def create_inventory_session(session: InventorySessionCreate, admin: dict = Depends(get_admin_user)):
+async def create_inventory_session(session: InventorySessionCreate, admin: dict = Depends(get_tenant_admin)):
     # Check for existing active session
     existing = await db.inventory_sessions.find_one({"status": "active"})
     if existing:
@@ -1887,12 +1887,12 @@ async def create_inventory_session(session: InventorySessionCreate, admin: dict 
     return session_doc
 
 @api_router.get("/inventory-sessions")
-async def get_inventory_sessions(user: dict = Depends(get_current_user)):
+async def get_inventory_sessions(user: dict = Depends(require_tenant)):
     sessions = await db.inventory_sessions.find({}, {"_id": 0}).sort("started_at", -1).to_list(100)
     return sessions
 
 @api_router.put("/inventory-sessions/{session_id}")
-async def update_inventory_session(session_id: str, updates: InventorySessionUpdate, admin: dict = Depends(get_admin_user)):
+async def update_inventory_session(session_id: str, updates: InventorySessionUpdate, admin: dict = Depends(get_tenant_admin)):
     session = await db.inventory_sessions.find_one({"id": session_id})
     if not session:
         raise HTTPException(status_code=404, detail="Inventory session not found")
@@ -1905,7 +1905,7 @@ async def update_inventory_session(session_id: str, updates: InventorySessionUpd
     return updated
 
 @api_router.delete("/inventory-sessions/{session_id}")
-async def delete_inventory_session(session_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_inventory_session(session_id: str, admin: dict = Depends(get_tenant_admin)):
     result = await db.inventory_sessions.delete_one({"id": session_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Inventory session not found")
@@ -1914,7 +1914,7 @@ async def delete_inventory_session(session_id: str, admin: dict = Depends(get_ad
 # ============ SUPPLIER ROUTES ============
 
 @api_router.post("/suppliers", response_model=SupplierResponse)
-async def create_supplier(supplier: SupplierCreate, admin: dict = Depends(get_admin_user)):
+async def create_supplier(supplier: SupplierCreate, admin: dict = Depends(get_tenant_admin)):
     supplier_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -1937,7 +1937,7 @@ async def create_supplier(supplier: SupplierCreate, admin: dict = Depends(get_ad
     return SupplierResponse(**supplier_doc)
 
 @api_router.get("/suppliers", response_model=List[SupplierResponse])
-async def get_suppliers(search: Optional[str] = None, family_id: Optional[str] = None, admin: dict = Depends(get_admin_user)):
+async def get_suppliers(search: Optional[str] = None, family_id: Optional[str] = None, admin: dict = Depends(get_tenant_admin)):
     query = {}
     if search:
         query["$or"] = [
@@ -1965,7 +1965,7 @@ async def get_suppliers(search: Optional[str] = None, family_id: Optional[str] =
     return [SupplierResponse(**s) for s in suppliers]
 
 @api_router.get("/suppliers/{supplier_id}", response_model=SupplierResponse)
-async def get_supplier(supplier_id: str, admin: dict = Depends(get_admin_user)):
+async def get_supplier(supplier_id: str, admin: dict = Depends(get_tenant_admin)):
     supplier = await db.suppliers.find_one({"id": supplier_id}, {"_id": 0})
     if not supplier:
         raise HTTPException(status_code=404, detail="Supplier not found")
@@ -1982,7 +1982,7 @@ async def get_supplier(supplier_id: str, admin: dict = Depends(get_admin_user)):
     return SupplierResponse(**supplier)
 
 @api_router.put("/suppliers/{supplier_id}", response_model=SupplierResponse)
-async def update_supplier(supplier_id: str, updates: SupplierUpdate, admin: dict = Depends(get_admin_user)):
+async def update_supplier(supplier_id: str, updates: SupplierUpdate, admin: dict = Depends(get_tenant_admin)):
     supplier = await db.suppliers.find_one({"id": supplier_id})
     if not supplier:
         raise HTTPException(status_code=404, detail="Supplier not found")
@@ -2009,7 +2009,7 @@ async def update_supplier(supplier_id: str, updates: SupplierUpdate, admin: dict
     return SupplierResponse(**updated)
 
 @api_router.delete("/suppliers/{supplier_id}")
-async def delete_supplier(supplier_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_supplier(supplier_id: str, admin: dict = Depends(get_tenant_admin)):
     result = await db.suppliers.delete_one({"id": supplier_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Supplier not found")
@@ -2023,7 +2023,7 @@ class SupplierAdvancePayment(BaseModel):
     notes: str = ""
 
 @api_router.post("/suppliers/{supplier_id}/advance-payment")
-async def add_supplier_advance_payment(supplier_id: str, payment: SupplierAdvancePayment, user: dict = Depends(get_current_user)):
+async def add_supplier_advance_payment(supplier_id: str, payment: SupplierAdvancePayment, user: dict = Depends(require_tenant)):
     """Add advance payment to supplier"""
     supplier = await db.suppliers.find_one({"id": supplier_id})
     if not supplier:
@@ -2069,7 +2069,7 @@ async def add_supplier_advance_payment(supplier_id: str, payment: SupplierAdvanc
     return {"message": "Advance payment recorded", "new_advance_balance": new_advance}
 
 @api_router.get("/suppliers/{supplier_id}/advance-payments")
-async def get_supplier_advance_payments(supplier_id: str, user: dict = Depends(get_current_user)):
+async def get_supplier_advance_payments(supplier_id: str, user: dict = Depends(require_tenant)):
     """Get advance payment history for a supplier"""
     payments = await db.supplier_advance_payments.find(
         {"supplier_id": supplier_id}, {"_id": 0}
@@ -2084,7 +2084,7 @@ class SupplierDebtPayment(BaseModel):
     payment_method: str = "cash"
 
 @api_router.post("/supplier-debts/pay")
-async def pay_supplier_debt(payment: SupplierDebtPayment, user: dict = Depends(get_current_user)):
+async def pay_supplier_debt(payment: SupplierDebtPayment, user: dict = Depends(require_tenant)):
     """Pay supplier debt - applies payment to oldest unpaid purchases first"""
     
     # Get unpaid purchases for this supplier, ordered by date
@@ -2163,7 +2163,7 @@ async def pay_supplier_debt(payment: SupplierDebtPayment, user: dict = Depends(g
 # ============ SALES ROUTES ============
 
 @api_router.post("/sales", response_model=SaleResponse)
-async def create_sale(sale: SaleCreate, user: dict = Depends(get_current_user)):
+async def create_sale(sale: SaleCreate, user: dict = Depends(require_tenant)):
     sale_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     invoice_number = await generate_invoice_number("INV")
@@ -2272,7 +2272,7 @@ async def get_sales(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     customer_id: Optional[str] = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     query = {}
     if customer_id:
@@ -2303,7 +2303,7 @@ async def get_sales_paginated(
     customer_id: Optional[str] = None,
     page: int = 1,
     page_size: int = 20,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get sales with pagination support"""
     query = {}
@@ -2334,7 +2334,7 @@ async def get_sales_paginated(
     )
 
 @api_router.get("/sales/{sale_id}", response_model=SaleResponse)
-async def get_sale(sale_id: str, user: dict = Depends(get_current_user)):
+async def get_sale(sale_id: str, user: dict = Depends(require_tenant)):
     sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
     if not sale:
         raise HTTPException(status_code=404, detail="Sale not found")
@@ -2342,7 +2342,7 @@ async def get_sale(sale_id: str, user: dict = Depends(get_current_user)):
 
 # Sale return/refund
 @api_router.post("/sales/{sale_id}/return")
-async def return_sale(sale_id: str, user: dict = Depends(get_current_user)):
+async def return_sale(sale_id: str, user: dict = Depends(require_tenant)):
     sale = await db.sales.find_one({"id": sale_id})
     if not sale:
         raise HTTPException(status_code=404, detail="Sale not found")
@@ -2389,7 +2389,7 @@ async def return_sale(sale_id: str, user: dict = Depends(get_current_user)):
 # ============ PURCHASE ROUTES ============
 
 @api_router.post("/purchases", response_model=PurchaseResponse)
-async def create_purchase(purchase: PurchaseCreate, admin: dict = Depends(get_admin_user)):
+async def create_purchase(purchase: PurchaseCreate, admin: dict = Depends(get_tenant_admin)):
     purchase_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     invoice_number = await generate_invoice_number("PUR")
@@ -2462,7 +2462,7 @@ async def create_purchase(purchase: PurchaseCreate, admin: dict = Depends(get_ad
     return PurchaseResponse(**purchase_doc)
 
 @api_router.get("/purchases", response_model=List[PurchaseResponse])
-async def get_purchases(supplier_id: Optional[str] = None, admin: dict = Depends(get_admin_user)):
+async def get_purchases(supplier_id: Optional[str] = None, admin: dict = Depends(get_tenant_admin)):
     query = {}
     if supplier_id:
         query["supplier_id"] = supplier_id
@@ -2472,7 +2472,7 @@ async def get_purchases(supplier_id: Optional[str] = None, admin: dict = Depends
 # ============ CASH BOX ROUTES ============
 
 @api_router.get("/cash-boxes", response_model=List[CashBoxResponse])
-async def get_cash_boxes(admin: dict = Depends(get_admin_user)):
+async def get_cash_boxes(admin: dict = Depends(get_tenant_admin)):
     await init_cash_boxes()
     boxes = await db.cash_boxes.find({}, {"_id": 0}).to_list(100)
     return [CashBoxResponse(**b) for b in boxes]
@@ -2480,7 +2480,7 @@ async def get_cash_boxes(admin: dict = Depends(get_admin_user)):
 @api_router.post("/cash-boxes/transfer")
 async def transfer_between_boxes(
     from_box: str, to_box: str, amount: float,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_tenant_admin)
 ):
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Amount must be positive")
@@ -2536,7 +2536,7 @@ async def transfer_between_boxes(
 async def get_transactions(
     cash_box_id: Optional[str] = None,
     type: Optional[str] = None,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_tenant_admin)
 ):
     query = {}
     if cash_box_id:
@@ -2560,7 +2560,7 @@ async def get_transactions(
 # ============ NOTIFICATIONS ============
 
 @api_router.get("/notifications")
-async def get_notifications(user: dict = Depends(get_current_user)):
+async def get_notifications(user: dict = Depends(require_tenant)):
     # Get notifications for this user or global notifications (without user_id)
     notifications = await db.notifications.find(
         {
@@ -2574,7 +2574,7 @@ async def get_notifications(user: dict = Depends(get_current_user)):
     return notifications
 
 @api_router.put("/notifications/{notification_id}/read")
-async def mark_notification_read(notification_id: str, user: dict = Depends(get_current_user)):
+async def mark_notification_read(notification_id: str, user: dict = Depends(require_tenant)):
     await db.notifications.update_one(
         {"id": notification_id, "$or": [{"user_id": user["id"]}, {"user_id": {"$exists": False}}]},
         {"$set": {"read": True}}
@@ -2582,7 +2582,7 @@ async def mark_notification_read(notification_id: str, user: dict = Depends(get_
     return {"message": "Notification marked as read"}
 
 @api_router.put("/notifications/read-all")
-async def mark_all_notifications_read(user: dict = Depends(get_current_user)):
+async def mark_all_notifications_read(user: dict = Depends(require_tenant)):
     await db.notifications.update_many(
         {"read": False, "$or": [{"user_id": user["id"]}, {"user_id": {"$exists": False}}]},
         {"$set": {"read": True}}
@@ -2590,7 +2590,7 @@ async def mark_all_notifications_read(user: dict = Depends(get_current_user)):
     return {"message": "All notifications marked as read"}
 
 @api_router.post("/notifications/generate")
-async def generate_auto_notifications(user: dict = Depends(get_current_user)):
+async def generate_auto_notifications(user: dict = Depends(require_tenant)):
     """Generate automatic notifications for low stock and due debts"""
     notifications_created = []
     
@@ -2680,7 +2680,7 @@ async def generate_auto_notifications(user: dict = Depends(get_current_user)):
 # ============ STATS & REPORTS ============
 
 @api_router.get("/stats")
-async def get_stats(admin: dict = Depends(get_admin_user)):
+async def get_stats(admin: dict = Depends(get_tenant_admin)):
     await init_cash_boxes()
     
     total_products = await db.products.count_documents({})
@@ -2738,7 +2738,7 @@ async def get_stats(admin: dict = Depends(get_admin_user)):
     }
 
 @api_router.get("/dashboard/sales-stats")
-async def get_sales_stats(user: dict = Depends(get_current_user)):
+async def get_sales_stats(user: dict = Depends(require_tenant)):
     """Get sales statistics for today, month, and year"""
     now = datetime.now(timezone.utc)
     today = now.strftime("%Y-%m-%d")
@@ -2783,7 +2783,7 @@ async def get_sales_stats(user: dict = Depends(get_current_user)):
 
 
 @api_router.get("/dashboard/profit-stats")
-async def get_profit_stats(user: dict = Depends(get_current_user)):
+async def get_profit_stats(user: dict = Depends(require_tenant)):
     """Get monthly profit statistics (Revenue - Purchase Cost - Expenses)"""
     now = datetime.now(timezone.utc)
     month_start = now.strftime("%Y-%m-01")
@@ -2829,7 +2829,7 @@ async def get_profit_stats(user: dict = Depends(get_current_user)):
 
 
 @api_router.get("/analytics/sales-chart")
-async def get_sales_chart_data(period: str = "week", admin: dict = Depends(get_admin_user)):
+async def get_sales_chart_data(period: str = "week", admin: dict = Depends(get_tenant_admin)):
     """Get sales data for charts (daily for week/month, monthly for year)"""
     now = datetime.now(timezone.utc)
     
@@ -2880,7 +2880,7 @@ async def get_sales_chart_data(period: str = "week", admin: dict = Depends(get_a
     }
 
 @api_router.get("/analytics/top-products")
-async def get_top_products(limit: int = 10, period: str = "month", admin: dict = Depends(get_admin_user)):
+async def get_top_products(limit: int = 10, period: str = "month", admin: dict = Depends(get_tenant_admin)):
     """Get top selling products"""
     now = datetime.now(timezone.utc)
     
@@ -2912,7 +2912,7 @@ async def get_top_products(limit: int = 10, period: str = "month", admin: dict =
     }
 
 @api_router.get("/analytics/top-customers")
-async def get_top_customers(limit: int = 10, period: str = "month", admin: dict = Depends(get_admin_user)):
+async def get_top_customers(limit: int = 10, period: str = "month", admin: dict = Depends(get_tenant_admin)):
     """Get top customers by purchase amount"""
     now = datetime.now(timezone.utc)
     
@@ -2943,7 +2943,7 @@ async def get_top_customers(limit: int = 10, period: str = "month", admin: dict 
     }
 
 @api_router.get("/analytics/employee-performance")
-async def get_employee_performance(period: str = "month", admin: dict = Depends(get_admin_user)):
+async def get_employee_performance(period: str = "month", admin: dict = Depends(get_tenant_admin)):
     """Get sales performance by employee"""
     now = datetime.now(timezone.utc)
     
@@ -2980,7 +2980,7 @@ async def get_employee_performance(period: str = "month", admin: dict = Depends(
     }
 
 @api_router.get("/analytics/sales-prediction")
-async def get_sales_prediction(admin: dict = Depends(get_admin_user)):
+async def get_sales_prediction(admin: dict = Depends(get_tenant_admin)):
     """AI-powered sales prediction (MOCKED - simple moving average)"""
     now = datetime.now(timezone.utc)
     
@@ -3028,7 +3028,7 @@ async def get_sales_prediction(admin: dict = Depends(get_admin_user)):
     }
 
 @api_router.get("/analytics/restock-suggestions")
-async def get_restock_suggestions(admin: dict = Depends(get_admin_user)):
+async def get_restock_suggestions(admin: dict = Depends(get_tenant_admin)):
     """AI-powered restock suggestions based on sales velocity"""
     
     # Get products with low stock
@@ -3086,7 +3086,7 @@ async def get_restock_suggestions(admin: dict = Depends(get_admin_user)):
 # ============ CHARTS & ANALYTICS ============
 
 @api_router.get("/reports/sales-chart")
-async def get_sales_chart(days: int = 7, admin: dict = Depends(get_admin_user)):
+async def get_sales_chart(days: int = 7, admin: dict = Depends(get_tenant_admin)):
     """Get sales data for chart (last N days)"""
     start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
     
@@ -3105,7 +3105,7 @@ async def get_sales_chart(days: int = 7, admin: dict = Depends(get_admin_user)):
     return [{"date": r["_id"], "total": r["total_sales"], "count": r["count"]} for r in result]
 
 @api_router.get("/reports/top-products")
-async def get_top_products(limit: int = 10, admin: dict = Depends(get_admin_user)):
+async def get_top_products(limit: int = 10, admin: dict = Depends(get_tenant_admin)):
     """Get top selling products"""
     pipeline = [
         {"$match": {"status": {"$ne": "returned"}}},
@@ -3124,7 +3124,7 @@ async def get_top_products(limit: int = 10, admin: dict = Depends(get_admin_user
     return result
 
 @api_router.get("/reports/top-customers")
-async def get_top_customers(limit: int = 10, admin: dict = Depends(get_admin_user)):
+async def get_top_customers(limit: int = 10, admin: dict = Depends(get_tenant_admin)):
     """Get top customers by purchases"""
     customers = await db.customers.find(
         {}, {"_id": 0}
@@ -3132,7 +3132,7 @@ async def get_top_customers(limit: int = 10, admin: dict = Depends(get_admin_use
     return customers
 
 @api_router.get("/reports/profit")
-async def get_profit_report(days: int = 30, admin: dict = Depends(get_admin_user)):
+async def get_profit_report(days: int = 30, admin: dict = Depends(get_tenant_admin)):
     """Get profit report"""
     start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
     
@@ -3164,7 +3164,7 @@ async def get_profit_report(days: int = 30, admin: dict = Depends(get_admin_user
     }
 
 @api_router.get("/reports/profit-detailed")
-async def get_detailed_profit_report(days: int = 30, admin: dict = Depends(get_admin_user)):
+async def get_detailed_profit_report(days: int = 30, admin: dict = Depends(get_tenant_admin)):
     """Get detailed profit report with daily breakdown"""
     start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
     
@@ -3243,7 +3243,7 @@ async def get_detailed_profit_report(days: int = 30, admin: dict = Depends(get_a
 # ============ EMPLOYEE ROUTES ============
 
 @api_router.post("/employees", response_model=EmployeeResponse)
-async def create_employee(employee: EmployeeCreate, admin: dict = Depends(get_admin_user)):
+async def create_employee(employee: EmployeeCreate, admin: dict = Depends(get_tenant_admin)):
     employee_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -3264,19 +3264,19 @@ async def create_employee(employee: EmployeeCreate, admin: dict = Depends(get_ad
     return EmployeeResponse(**employee_doc)
 
 @api_router.get("/employees", response_model=List[EmployeeResponse])
-async def get_employees(admin: dict = Depends(get_admin_user)):
+async def get_employees(admin: dict = Depends(get_tenant_admin)):
     employees = await db.employees.find({}, {"_id": 0}).to_list(1000)
     return [EmployeeResponse(**e) for e in employees]
 
 @api_router.get("/employees/{employee_id}", response_model=EmployeeResponse)
-async def get_employee(employee_id: str, admin: dict = Depends(get_admin_user)):
+async def get_employee(employee_id: str, admin: dict = Depends(get_tenant_admin)):
     employee = await db.employees.find_one({"id": employee_id}, {"_id": 0})
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
     return EmployeeResponse(**employee)
 
 @api_router.put("/employees/{employee_id}", response_model=EmployeeResponse)
-async def update_employee(employee_id: str, updates: EmployeeUpdate, admin: dict = Depends(get_admin_user)):
+async def update_employee(employee_id: str, updates: EmployeeUpdate, admin: dict = Depends(get_tenant_admin)):
     employee = await db.employees.find_one({"id": employee_id})
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
@@ -3287,7 +3287,7 @@ async def update_employee(employee_id: str, updates: EmployeeUpdate, admin: dict
     return EmployeeResponse(**updated)
 
 @api_router.delete("/employees/{employee_id}")
-async def delete_employee(employee_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_employee(employee_id: str, admin: dict = Depends(get_tenant_admin)):
     result = await db.employees.delete_one({"id": employee_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Employee not found")
@@ -3300,7 +3300,7 @@ class EmployeeAccountCreate(BaseModel):
     role: str = "seller"
 
 @api_router.post("/employees/{employee_id}/create-account")
-async def create_employee_account(employee_id: str, account: EmployeeAccountCreate, admin: dict = Depends(get_admin_user)):
+async def create_employee_account(employee_id: str, account: EmployeeAccountCreate, admin: dict = Depends(get_tenant_admin)):
     """Create a user account for an employee"""
     employee = await db.employees.find_one({"id": employee_id}, {"_id": 0})
     if not employee:
@@ -3347,7 +3347,7 @@ async def create_employee_account(employee_id: str, account: EmployeeAccountCrea
     }
 
 @api_router.delete("/employees/{employee_id}/delete-account")
-async def delete_employee_account(employee_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_employee_account(employee_id: str, admin: dict = Depends(get_tenant_admin)):
     """Delete user account linked to employee"""
     employee = await db.employees.find_one({"id": employee_id}, {"_id": 0})
     if not employee:
@@ -3368,7 +3368,7 @@ async def delete_employee_account(employee_id: str, admin: dict = Depends(get_ad
     return {"success": True}
 
 @api_router.get("/employees/salary-report")
-async def get_salary_report(month: str = None, user: dict = Depends(get_current_user)):
+async def get_salary_report(month: str = None, user: dict = Depends(require_tenant)):
     """Get monthly salary report for all employees"""
     if not month:
         month = datetime.now(timezone.utc).strftime("%Y-%m")
@@ -3428,7 +3428,7 @@ async def get_salary_report(month: str = None, user: dict = Depends(get_current_
 
 # Attendance
 @api_router.post("/employees/attendance", response_model=AttendanceResponse)
-async def record_attendance(attendance: AttendanceCreate, admin: dict = Depends(get_admin_user)):
+async def record_attendance(attendance: AttendanceCreate, admin: dict = Depends(get_tenant_admin)):
     employee = await db.employees.find_one({"id": attendance.employee_id}, {"_id": 0, "name": 1})
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
@@ -3446,7 +3446,7 @@ async def record_attendance(attendance: AttendanceCreate, admin: dict = Depends(
     return AttendanceResponse(**attendance_doc)
 
 @api_router.get("/employees/{employee_id}/attendance")
-async def get_employee_attendance(employee_id: str, month: Optional[str] = None, admin: dict = Depends(get_admin_user)):
+async def get_employee_attendance(employee_id: str, month: Optional[str] = None, admin: dict = Depends(get_tenant_admin)):
     query = {"employee_id": employee_id}
     if month:
         query["date"] = {"$regex": f"^{month}"}
@@ -3455,7 +3455,7 @@ async def get_employee_attendance(employee_id: str, month: Optional[str] = None,
 
 # Advances (سلف)
 @api_router.post("/employees/advances", response_model=AdvanceResponse)
-async def create_advance(advance: AdvanceCreate, admin: dict = Depends(get_admin_user)):
+async def create_advance(advance: AdvanceCreate, admin: dict = Depends(get_tenant_admin)):
     employee = await db.employees.find_one({"id": advance.employee_id}, {"_id": 0, "name": 1})
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
@@ -3482,14 +3482,14 @@ async def create_advance(advance: AdvanceCreate, admin: dict = Depends(get_admin
     return AdvanceResponse(**advance_doc)
 
 @api_router.get("/employees/{employee_id}/advances")
-async def get_employee_advances(employee_id: str, admin: dict = Depends(get_admin_user)):
+async def get_employee_advances(employee_id: str, admin: dict = Depends(get_tenant_admin)):
     advances = await db.advances.find({"employee_id": employee_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return advances
 
 # ============ EMPLOYEE ALERTS ============
 
 @api_router.get("/employees/{employee_id}/alert-settings")
-async def get_employee_alert_settings(employee_id: str, user: dict = Depends(get_current_user)):
+async def get_employee_alert_settings(employee_id: str, user: dict = Depends(require_tenant)):
     """Get alert settings for an employee"""
     settings = await db.employee_alerts.find_one({"employee_id": employee_id}, {"_id": 0})
     if not settings:
@@ -3497,7 +3497,7 @@ async def get_employee_alert_settings(employee_id: str, user: dict = Depends(get
     return settings
 
 @api_router.put("/employees/{employee_id}/alert-settings")
-async def update_employee_alert_settings(employee_id: str, settings: EmployeeAlertSettings, admin: dict = Depends(get_admin_user)):
+async def update_employee_alert_settings(employee_id: str, settings: EmployeeAlertSettings, admin: dict = Depends(get_tenant_admin)):
     """Update alert settings for an employee"""
     await db.employee_alerts.update_one(
         {"employee_id": employee_id},
@@ -3507,7 +3507,7 @@ async def update_employee_alert_settings(employee_id: str, settings: EmployeeAle
     return {"success": True}
 
 @api_router.get("/employees/alerts/active")
-async def get_active_employee_alerts(admin: dict = Depends(get_admin_user)):
+async def get_active_employee_alerts(admin: dict = Depends(get_tenant_admin)):
     """Get all active alerts for employees approaching their limits"""
     alerts = []
     
@@ -3588,7 +3588,7 @@ async def get_active_employee_alerts(admin: dict = Depends(get_admin_user)):
 # ============ DEBT ROUTES ============
 
 @api_router.post("/debts", response_model=DebtResponse)
-async def create_debt(debt: DebtCreate, admin: dict = Depends(get_admin_user)):
+async def create_debt(debt: DebtCreate, admin: dict = Depends(get_tenant_admin)):
     # Get party name
     if debt.party_type == "customer":
         party = await db.customers.find_one({"id": debt.party_id}, {"_id": 0, "name": 1})
@@ -3625,7 +3625,7 @@ async def get_debts(
     type: Optional[str] = None,
     party_type: Optional[str] = None,
     status: Optional[str] = None,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_tenant_admin)
 ):
     query = {}
     if type:
@@ -3647,7 +3647,7 @@ async def get_debts(
     return [DebtResponse(**d) for d in debts]
 
 @api_router.post("/debts/{debt_id}/pay", response_model=DebtPaymentResponse)
-async def pay_debt(debt_id: str, payment: DebtPaymentCreate, admin: dict = Depends(get_admin_user)):
+async def pay_debt(debt_id: str, payment: DebtPaymentCreate, admin: dict = Depends(get_tenant_admin)):
     debt = await db.debts.find_one({"id": debt_id})
     if not debt:
         raise HTTPException(status_code=404, detail="Debt not found")
@@ -3706,14 +3706,14 @@ async def pay_debt(debt_id: str, payment: DebtPaymentCreate, admin: dict = Depen
     return DebtPaymentResponse(**payment_doc)
 
 @api_router.get("/debts/{debt_id}/payments")
-async def get_debt_payments(debt_id: str, admin: dict = Depends(get_admin_user)):
+async def get_debt_payments(debt_id: str, admin: dict = Depends(get_tenant_admin)):
     payments = await db.debt_payments.find({"debt_id": debt_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return payments
 
 # ============ EXCEL IMPORT/EXPORT ============
 
 @api_router.get("/products/export/excel")
-async def export_products_excel(admin: dict = Depends(get_admin_user)):
+async def export_products_excel(admin: dict = Depends(get_tenant_admin)):
     import pandas as pd
     
     products = await db.products.find({}, {"_id": 0}).to_list(10000)
@@ -3752,7 +3752,7 @@ async def export_products_excel(admin: dict = Depends(get_admin_user)):
 from fastapi import UploadFile, File
 
 @api_router.post("/products/import/excel")
-async def import_products_excel(file: UploadFile = File(...), admin: dict = Depends(get_admin_user)):
+async def import_products_excel(file: UploadFile = File(...), admin: dict = Depends(get_tenant_admin)):
     import pandas as pd
     
     if not file.filename.endswith(('.xlsx', '.xls')):
@@ -3819,7 +3819,7 @@ async def import_products_excel(file: UploadFile = File(...), admin: dict = Depe
 # ============ BACKUP ============
 
 @api_router.get("/backup/create")
-async def create_backup(admin: dict = Depends(get_admin_user)):
+async def create_backup(admin: dict = Depends(get_tenant_admin)):
     """Create a backup of all data"""
     import json
     
@@ -3854,7 +3854,7 @@ async def create_backup(admin: dict = Depends(get_admin_user)):
     )
 
 @api_router.post("/backup/restore")
-async def restore_backup(admin: dict = Depends(get_admin_user), file: UploadFile = File(...)):
+async def restore_backup(admin: dict = Depends(get_tenant_admin), file: UploadFile = File(...)):
     """Restore data from backup file"""
     import json
     
@@ -3889,7 +3889,7 @@ async def restore_backup(admin: dict = Depends(get_admin_user), file: UploadFile
         raise HTTPException(status_code=400, detail="Invalid JSON file")
 
 @api_router.post("/backup/save-to-server")
-async def save_backup_to_server(admin: dict = Depends(get_admin_user)):
+async def save_backup_to_server(admin: dict = Depends(get_tenant_admin)):
     """Save backup to server storage"""
     import json
     
@@ -3936,7 +3936,7 @@ async def save_backup_to_server(admin: dict = Depends(get_admin_user)):
     return {"success": True, "filename": filename}
 
 @api_router.get("/backup/list")
-async def list_backups(admin: dict = Depends(get_admin_user)):
+async def list_backups(admin: dict = Depends(get_tenant_admin)):
     """List available backups on server"""
     backups = await db.backups.find({}, {"_id": 0}).sort("created_at", -1).to_list(20)
     return backups
@@ -3949,7 +3949,7 @@ class AutoBackupSettings(BaseModel):
     keep_count: int = 10  # Number of backups to keep
 
 @api_router.get("/backup/auto-settings")
-async def get_auto_backup_settings(admin: dict = Depends(get_admin_user)):
+async def get_auto_backup_settings(admin: dict = Depends(get_tenant_admin)):
     """Get auto-backup settings"""
     settings = await db.settings.find_one({"type": "auto_backup"}, {"_id": 0})
     if not settings:
@@ -3957,7 +3957,7 @@ async def get_auto_backup_settings(admin: dict = Depends(get_admin_user)):
     return settings.get("settings", AutoBackupSettings().model_dump())
 
 @api_router.post("/backup/auto-settings")
-async def save_auto_backup_settings(settings: AutoBackupSettings, admin: dict = Depends(get_admin_user)):
+async def save_auto_backup_settings(settings: AutoBackupSettings, admin: dict = Depends(get_tenant_admin)):
     """Save auto-backup settings"""
     await db.settings.update_one(
         {"type": "auto_backup"},
@@ -3967,7 +3967,7 @@ async def save_auto_backup_settings(settings: AutoBackupSettings, admin: dict = 
     return {"success": True, "message": "Auto-backup settings saved"}
 
 @api_router.post("/backup/run-auto")
-async def run_auto_backup(admin: dict = Depends(get_admin_user)):
+async def run_auto_backup(admin: dict = Depends(get_tenant_admin)):
     """Manually trigger auto backup (for testing)"""
     now = datetime.now(timezone.utc)
     
@@ -4023,7 +4023,7 @@ class SelectiveDeleteRequest(BaseModel):
     confirm_code: str
 
 @api_router.post("/system/selective-delete")
-async def selective_delete(request: SelectiveDeleteRequest, admin: dict = Depends(get_admin_user)):
+async def selective_delete(request: SelectiveDeleteRequest, admin: dict = Depends(get_tenant_admin)):
     """Selectively delete specific data types"""
     if request.confirm_code != "DELETE-SELECTED":
         raise HTTPException(status_code=400, detail="Invalid confirmation code")
@@ -4081,7 +4081,7 @@ async def selective_delete(request: SelectiveDeleteRequest, admin: dict = Depend
 # ============ SIDEBAR ORDER SETTINGS ============
 
 @api_router.get("/settings/sidebar-order")
-async def get_sidebar_order(user: dict = Depends(get_current_user)):
+async def get_sidebar_order(user: dict = Depends(require_tenant)):
     """Get sidebar menu order for user"""
     settings = await db.user_settings.find_one({"user_id": user["id"]}, {"_id": 0})
     if settings and "sidebar_order" in settings:
@@ -4106,7 +4106,7 @@ class SidebarSection(BaseModel):
     items: List[SidebarMenuItem] = []
 
 @api_router.put("/settings/sidebar-order")
-async def update_sidebar_order(order: List[SidebarSection], user: dict = Depends(get_current_user)):
+async def update_sidebar_order(order: List[SidebarSection], user: dict = Depends(require_tenant)):
     """Update sidebar menu order for user"""
     # Convert to dict for storage
     order_data = [section.model_dump() for section in order]
@@ -4120,7 +4120,7 @@ async def update_sidebar_order(order: List[SidebarSection], user: dict = Depends
 # ============ NOTIFICATION MANAGEMENT ============
 
 @api_router.get("/notifications/settings")
-async def get_notification_settings(user: dict = Depends(get_current_user)):
+async def get_notification_settings(user: dict = Depends(require_tenant)):
     """Get notification settings"""
     settings = await db.notification_settings.find_one({"user_id": user["id"]}, {"_id": 0})
     if not settings:
@@ -4140,7 +4140,7 @@ async def get_notification_settings(user: dict = Depends(get_current_user)):
     return settings
 
 @api_router.put("/notifications/settings")
-async def update_notification_settings(settings: dict, user: dict = Depends(get_current_user)):
+async def update_notification_settings(settings: dict, user: dict = Depends(require_tenant)):
     """Update notification settings"""
     settings["user_id"] = user["id"]
     settings["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -4157,7 +4157,7 @@ async def get_all_notifications(
     skip: int = 0, 
     limit: int = 50,
     unread_only: bool = False,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get all notifications with pagination"""
     query = {}
@@ -4175,7 +4175,7 @@ async def get_all_notifications(
     }
 
 @api_router.put("/notifications/{notification_id}/read")
-async def mark_notification_read(notification_id: str, user: dict = Depends(get_current_user)):
+async def mark_notification_read(notification_id: str, user: dict = Depends(require_tenant)):
     """Mark a notification as read"""
     await db.notifications.update_one(
         {"id": notification_id},
@@ -4184,7 +4184,7 @@ async def mark_notification_read(notification_id: str, user: dict = Depends(get_
     return {"success": True}
 
 @api_router.put("/notifications/mark-all-read")
-async def mark_all_notifications_read(user: dict = Depends(get_current_user)):
+async def mark_all_notifications_read(user: dict = Depends(require_tenant)):
     """Mark all notifications as read"""
     await db.notifications.update_many(
         {"read": False},
@@ -4193,13 +4193,13 @@ async def mark_all_notifications_read(user: dict = Depends(get_current_user)):
     return {"success": True}
 
 @api_router.delete("/notifications/{notification_id}")
-async def delete_notification(notification_id: str, user: dict = Depends(get_current_user)):
+async def delete_notification(notification_id: str, user: dict = Depends(require_tenant)):
     """Delete a notification"""
     await db.notifications.delete_one({"id": notification_id})
     return {"success": True}
 
 @api_router.delete("/notifications/clear-all")
-async def clear_all_notifications(admin: dict = Depends(get_admin_user)):
+async def clear_all_notifications(admin: dict = Depends(get_tenant_admin)):
     """Clear all notifications"""
     result = await db.notifications.delete_many({})
     return {"success": True, "deleted_count": result.deleted_count}
@@ -4207,7 +4207,7 @@ async def clear_all_notifications(admin: dict = Depends(get_admin_user)):
 # ============ OCR ROUTE ============
 
 @api_router.post("/ocr/extract-models", response_model=OCRResponse)
-async def extract_models_from_image(request: OCRRequest, admin: dict = Depends(get_admin_user)):
+async def extract_models_from_image(request: OCRRequest, admin: dict = Depends(get_tenant_admin)):
     from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
     
     api_key = os.environ.get('EMERGENT_LLM_KEY')
@@ -4243,7 +4243,7 @@ async def extract_models_from_image(request: OCRRequest, admin: dict = Depends(g
 # ============ INVOICE PDF ============
 
 @api_router.get("/sales/{sale_id}/invoice-pdf")
-async def get_invoice_pdf(sale_id: str, user: dict = Depends(get_current_user)):
+async def get_invoice_pdf(sale_id: str, user: dict = Depends(require_tenant)):
     sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
     if not sale:
         raise HTTPException(status_code=404, detail="Sale not found")
@@ -4354,7 +4354,7 @@ async def get_invoice_pdf(sale_id: str, user: dict = Depends(get_current_user)):
 import secrets
 
 @api_router.post("/api-keys", response_model=ApiKeyResponse)
-async def create_api_key(api_key: ApiKeyCreate, admin: dict = Depends(get_admin_user)):
+async def create_api_key(api_key: ApiKeyCreate, admin: dict = Depends(get_tenant_admin)):
     key_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -4386,7 +4386,7 @@ async def create_api_key(api_key: ApiKeyCreate, admin: dict = Depends(get_admin_
     )
 
 @api_router.get("/api-keys", response_model=List[ApiKeyResponse])
-async def get_api_keys(admin: dict = Depends(get_admin_user)):
+async def get_api_keys(admin: dict = Depends(get_tenant_admin)):
     keys = await db.api_keys.find({}, {"_id": 0}).to_list(100)
     result = []
     for k in keys:
@@ -4398,14 +4398,14 @@ async def get_api_keys(admin: dict = Depends(get_admin_user)):
     return result
 
 @api_router.get("/api-keys/{key_id}")
-async def get_api_key(key_id: str, admin: dict = Depends(get_admin_user)):
+async def get_api_key(key_id: str, admin: dict = Depends(get_tenant_admin)):
     key = await db.api_keys.find_one({"id": key_id}, {"_id": 0})
     if not key:
         raise HTTPException(status_code=404, detail="API Key not found")
     return key
 
 @api_router.put("/api-keys/{key_id}/toggle")
-async def toggle_api_key(key_id: str, admin: dict = Depends(get_admin_user)):
+async def toggle_api_key(key_id: str, admin: dict = Depends(get_tenant_admin)):
     key = await db.api_keys.find_one({"id": key_id})
     if not key:
         raise HTTPException(status_code=404, detail="API Key not found")
@@ -4415,7 +4415,7 @@ async def toggle_api_key(key_id: str, admin: dict = Depends(get_admin_user)):
     return {"is_active": new_status}
 
 @api_router.delete("/api-keys/{key_id}")
-async def delete_api_key(key_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_api_key(key_id: str, admin: dict = Depends(get_tenant_admin)):
     result = await db.api_keys.delete_one({"id": key_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="API Key not found")
@@ -4424,12 +4424,12 @@ async def delete_api_key(key_id: str, admin: dict = Depends(get_admin_user)):
 # ============ RECHARGE / USSD ============
 
 @api_router.get("/recharge/config")
-async def get_recharge_config(user: dict = Depends(get_current_user)):
+async def get_recharge_config(user: dict = Depends(require_tenant)):
     """Get recharge operators configuration"""
     return RECHARGE_CONFIG
 
 @api_router.post("/recharge", response_model=RechargeResponse)
-async def create_recharge(recharge: RechargeCreate, user: dict = Depends(get_current_user)):
+async def create_recharge(recharge: RechargeCreate, user: dict = Depends(require_tenant)):
     """Record a recharge transaction"""
     recharge_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
@@ -4501,7 +4501,7 @@ async def get_recharges(
     operator: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get recharge history"""
     query = {}
@@ -4519,7 +4519,7 @@ async def get_recharges(
     return [RechargeResponse(**r) for r in recharges]
 
 @api_router.get("/recharge/stats")
-async def get_recharge_stats(days: int = 30, admin: dict = Depends(get_admin_user)):
+async def get_recharge_stats(days: int = 30, admin: dict = Depends(get_tenant_admin)):
     """Get recharge statistics"""
     start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
     
@@ -4656,7 +4656,7 @@ class CustomerDebtPayment(BaseModel):
     notes: Optional[str] = ""
 
 @api_router.get("/customers/{customer_id}/debt")
-async def get_customer_debt(customer_id: str, user: dict = Depends(get_current_user)):
+async def get_customer_debt(customer_id: str, user: dict = Depends(require_tenant)):
     """Get customer's total debt and debt history"""
     customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
     if not customer:
@@ -4684,7 +4684,7 @@ async def get_customer_debt(customer_id: str, user: dict = Depends(get_current_u
     }
 
 @api_router.post("/customers/{customer_id}/debt/pay")
-async def pay_customer_debt(customer_id: str, payment: CustomerDebtPayment, user: dict = Depends(get_current_user)):
+async def pay_customer_debt(customer_id: str, payment: CustomerDebtPayment, user: dict = Depends(require_tenant)):
     """Record a debt payment from customer"""
     customer = await db.customers.find_one({"id": customer_id})
     if not customer:
@@ -4773,7 +4773,7 @@ async def pay_customer_debt(customer_id: str, payment: CustomerDebtPayment, user
     }
 
 @api_router.get("/debts/summary")
-async def get_debts_summary(user: dict = Depends(get_current_user)):
+async def get_debts_summary(user: dict = Depends(require_tenant)):
     """Get summary of all customer debts"""
     pipeline = [
         {"$match": {"debt_amount": {"$gt": 0}}},
@@ -4808,7 +4808,7 @@ async def get_debts_summary(user: dict = Depends(get_current_user)):
     }
 
 @api_router.get("/debts/export")
-async def export_debts_to_excel(user: dict = Depends(get_current_user)):
+async def export_debts_to_excel(user: dict = Depends(require_tenant)):
     """Export all customer debts to Excel file"""
     from io import BytesIO
     import openpyxl
@@ -4913,7 +4913,7 @@ DEFAULT_SYSTEM_SETTINGS = {
 }
 
 @api_router.get("/system/settings")
-async def get_system_settings(user: dict = Depends(get_current_user)):
+async def get_system_settings(user: dict = Depends(require_tenant)):
     """Get system settings"""
     settings = await db.system_settings.find_one({"id": "global"}, {"_id": 0})
     if not settings:
@@ -4924,7 +4924,7 @@ async def get_system_settings(user: dict = Depends(get_current_user)):
     return settings
 
 @api_router.put("/system/settings")
-async def update_system_settings(settings: SystemSettingsUpdate, admin: dict = Depends(get_admin_user)):
+async def update_system_settings(settings: SystemSettingsUpdate, admin: dict = Depends(get_tenant_admin)):
     """Update system settings (admin only)"""
     update_data = settings.model_dump()
     
@@ -4953,7 +4953,7 @@ class SimBalanceUpdate(BaseModel):
     notes: Optional[str] = ""
 
 @api_router.get("/sim/slots")
-async def get_sim_slots(admin: dict = Depends(get_admin_user)):
+async def get_sim_slots(admin: dict = Depends(get_tenant_admin)):
     """Get all SIM slots with their balances"""
     slots = await db.sim_slots.find({}, {"_id": 0}).to_list(10)
     if not slots:
@@ -4968,7 +4968,7 @@ async def get_sim_slots(admin: dict = Depends(get_admin_user)):
     return slots
 
 @api_router.put("/sim/slots/{slot_id}")
-async def update_sim_slot(slot_id: int, slot_data: dict, admin: dict = Depends(get_admin_user)):
+async def update_sim_slot(slot_id: int, slot_data: dict, admin: dict = Depends(get_tenant_admin)):
     """Update SIM slot info"""
     now = datetime.now(timezone.utc).isoformat()
     update_data = {**slot_data, "last_updated": now}
@@ -4981,7 +4981,7 @@ async def update_sim_slot(slot_id: int, slot_data: dict, admin: dict = Depends(g
     return {"message": "تم تحديث الشريحة بنجاح"}
 
 @api_router.put("/sim/slots/{slot_id}/balance")
-async def update_sim_balance(slot_id: int, balance_data: SimBalanceUpdate, admin: dict = Depends(get_admin_user)):
+async def update_sim_balance(slot_id: int, balance_data: SimBalanceUpdate, admin: dict = Depends(get_tenant_admin)):
     """Update SIM slot balance"""
     now = datetime.now(timezone.utc).isoformat()
     
@@ -5010,7 +5010,7 @@ async def update_sim_balance(slot_id: int, balance_data: SimBalanceUpdate, admin
     return {"message": "تم تحديث الرصيد بنجاح"}
 
 @api_router.get("/sim/slots/{slot_id}/logs")
-async def get_sim_balance_logs(slot_id: int, admin: dict = Depends(get_admin_user)):
+async def get_sim_balance_logs(slot_id: int, admin: dict = Depends(get_tenant_admin)):
     """Get balance change history for a SIM slot"""
     logs = await db.sim_balance_logs.find({"slot_id": slot_id}, {"_id": 0}).sort("created_at", -1).to_list(50)
     return logs
@@ -5018,7 +5018,7 @@ async def get_sim_balance_logs(slot_id: int, admin: dict = Depends(get_admin_use
 # ============ AUTO RECHARGE BY OPERATOR ============
 
 @api_router.post("/recharge/auto")
-async def auto_recharge(phone: str, amount: float, user: dict = Depends(get_current_user)):
+async def auto_recharge(phone: str, amount: float, user: dict = Depends(require_tenant)):
     """Auto-select SIM slot based on phone number prefix"""
     
     # Clean phone number
@@ -5092,7 +5092,7 @@ class WooCommerceSettings(BaseModel):
     last_sync: str = ""
 
 @api_router.get("/woocommerce/settings")
-async def get_woocommerce_settings(admin: dict = Depends(get_admin_user)):
+async def get_woocommerce_settings(admin: dict = Depends(get_tenant_admin)):
     """Get WooCommerce integration settings"""
     settings = await db.woocommerce_settings.find_one({"id": "global"}, {"_id": 0})
     if not settings:
@@ -5111,7 +5111,7 @@ async def get_woocommerce_settings(admin: dict = Depends(get_admin_user)):
     return settings
 
 @api_router.put("/woocommerce/settings")
-async def update_woocommerce_settings(settings: WooCommerceSettings, admin: dict = Depends(get_admin_user)):
+async def update_woocommerce_settings(settings: WooCommerceSettings, admin: dict = Depends(get_tenant_admin)):
     """Update WooCommerce integration settings"""
     update_data = settings.model_dump()
     
@@ -5123,7 +5123,7 @@ async def update_woocommerce_settings(settings: WooCommerceSettings, admin: dict
     return {"message": "تم حفظ إعدادات WooCommerce"}
 
 @api_router.post("/woocommerce/test-connection")
-async def test_woocommerce_connection(admin: dict = Depends(get_admin_user)):
+async def test_woocommerce_connection(admin: dict = Depends(get_tenant_admin)):
     """Test WooCommerce connection (MOCKED)"""
     settings = await db.woocommerce_settings.find_one({"id": "global"}, {"_id": 0})
     
@@ -5142,7 +5142,7 @@ async def test_woocommerce_connection(admin: dict = Depends(get_admin_user)):
     }
 
 @api_router.post("/woocommerce/publish-product/{product_id}")
-async def publish_product_to_woocommerce(product_id: str, admin: dict = Depends(get_admin_user)):
+async def publish_product_to_woocommerce(product_id: str, admin: dict = Depends(get_tenant_admin)):
     """Publish a single product to WooCommerce (MOCKED)"""
     
     # Check WooCommerce settings
@@ -5179,7 +5179,7 @@ async def publish_product_to_woocommerce(product_id: str, admin: dict = Depends(
     }
 
 @api_router.post("/woocommerce/publish-products")
-async def publish_multiple_products_to_woocommerce(product_ids: List[str], admin: dict = Depends(get_admin_user)):
+async def publish_multiple_products_to_woocommerce(product_ids: List[str], admin: dict = Depends(get_tenant_admin)):
     """Publish multiple products to WooCommerce (MOCKED)"""
     
     # Check WooCommerce settings
@@ -5224,7 +5224,7 @@ async def publish_multiple_products_to_woocommerce(product_ids: List[str], admin
     }
 
 @api_router.delete("/woocommerce/unpublish-product/{product_id}")
-async def unpublish_product_from_woocommerce(product_id: str, admin: dict = Depends(get_admin_user)):
+async def unpublish_product_from_woocommerce(product_id: str, admin: dict = Depends(get_tenant_admin)):
     """Remove a product from WooCommerce (MOCKED)"""
     
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
@@ -5248,7 +5248,7 @@ async def unpublish_product_from_woocommerce(product_id: str, admin: dict = Depe
     }
 
 @api_router.post("/woocommerce/sync-inventory")
-async def sync_inventory_to_woocommerce(admin: dict = Depends(get_admin_user)):
+async def sync_inventory_to_woocommerce(admin: dict = Depends(get_tenant_admin)):
     """Sync all published products inventory to WooCommerce (MOCKED)"""
     
     # Get all products with woocommerce_id
@@ -5307,12 +5307,12 @@ class ShippingRateRequest(BaseModel):
     company_id: str = ""
 
 @api_router.get("/shipping/companies")
-async def get_shipping_companies(user: dict = Depends(get_current_user)):
+async def get_shipping_companies(user: dict = Depends(require_tenant)):
     """Get list of Algerian shipping companies"""
     return ALGERIAN_SHIPPING_COMPANIES
 
 @api_router.get("/shipping/settings")
-async def get_shipping_settings(admin: dict = Depends(get_admin_user)):
+async def get_shipping_settings(admin: dict = Depends(get_tenant_admin)):
     """Get shipping integration settings"""
     settings = await db.shipping_settings.find({}, {"_id": 0}).to_list(20)
     
@@ -5332,7 +5332,7 @@ async def get_shipping_settings(admin: dict = Depends(get_admin_user)):
     return settings
 
 @api_router.put("/shipping/settings/{company_id}")
-async def update_shipping_settings(company_id: str, settings: ShippingCompanySettings, admin: dict = Depends(get_admin_user)):
+async def update_shipping_settings(company_id: str, settings: ShippingCompanySettings, admin: dict = Depends(get_tenant_admin)):
     """Update shipping company settings"""
     await db.shipping_settings.update_one(
         {"company_id": company_id},
@@ -5342,7 +5342,7 @@ async def update_shipping_settings(company_id: str, settings: ShippingCompanySet
     return {"message": "تم حفظ إعدادات شركة الشحن"}
 
 @api_router.post("/shipping/calculate-rate")
-async def calculate_shipping_rate(request: ShippingRateRequest, user: dict = Depends(get_current_user)):
+async def calculate_shipping_rate(request: ShippingRateRequest, user: dict = Depends(require_tenant)):
     """Calculate shipping rate (MOCKED - returns estimated prices)"""
     
     # MOCKED shipping rates by wilaya distance
@@ -5379,7 +5379,7 @@ async def calculate_shipping_rate(request: ShippingRateRequest, user: dict = Dep
     return {"rates": sorted(rates, key=lambda x: x["price"])}
 
 @api_router.get("/shipping/wilayas")
-async def get_wilayas(user: dict = Depends(get_current_user)):
+async def get_wilayas(user: dict = Depends(require_tenant)):
     """Get list of Algerian wilayas"""
     wilayas = [
         {"code": "01", "name": "أدرار", "name_fr": "Adrar"},
@@ -5468,7 +5468,7 @@ async def get_branding_settings():
     return settings
 
 @api_router.put("/branding/settings")
-async def update_branding_settings(settings: LoginPageSettings, admin: dict = Depends(get_admin_user)):
+async def update_branding_settings(settings: LoginPageSettings, admin: dict = Depends(get_tenant_admin)):
     """Update login page branding settings"""
     update_data = settings.model_dump()
     
@@ -5496,7 +5496,7 @@ class LoyaltyTransaction(BaseModel):
     notes: Optional[str] = ""
 
 @api_router.get("/loyalty/settings")
-async def get_loyalty_settings(admin: dict = Depends(get_admin_user)):
+async def get_loyalty_settings(admin: dict = Depends(get_tenant_admin)):
     """Get loyalty program settings"""
     settings = await db.loyalty_settings.find_one({"id": "global"}, {"_id": 0})
     if not settings:
@@ -5512,7 +5512,7 @@ async def get_loyalty_settings(admin: dict = Depends(get_admin_user)):
     return settings
 
 @api_router.put("/loyalty/settings")
-async def update_loyalty_settings(settings: LoyaltySettings, admin: dict = Depends(get_admin_user)):
+async def update_loyalty_settings(settings: LoyaltySettings, admin: dict = Depends(get_tenant_admin)):
     """Update loyalty program settings"""
     await db.loyalty_settings.update_one(
         {"id": "global"},
@@ -5522,7 +5522,7 @@ async def update_loyalty_settings(settings: LoyaltySettings, admin: dict = Depen
     return {"message": "تم تحديث إعدادات برنامج الولاء"}
 
 @api_router.get("/loyalty/customer/{customer_id}")
-async def get_customer_loyalty(customer_id: str, user: dict = Depends(get_current_user)):
+async def get_customer_loyalty(customer_id: str, user: dict = Depends(require_tenant)):
     """Get customer loyalty points and history"""
     customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
     if not customer:
@@ -5549,7 +5549,7 @@ async def get_customer_loyalty(customer_id: str, user: dict = Depends(get_curren
     }
 
 @api_router.post("/loyalty/earn")
-async def earn_loyalty_points(transaction: LoyaltyTransaction, user: dict = Depends(get_current_user)):
+async def earn_loyalty_points(transaction: LoyaltyTransaction, user: dict = Depends(require_tenant)):
     """Add loyalty points from a sale"""
     customer = await db.customers.find_one({"id": transaction.customer_id})
     if not customer:
@@ -5581,7 +5581,7 @@ async def earn_loyalty_points(transaction: LoyaltyTransaction, user: dict = Depe
     return {"message": f"تم إضافة {transaction.points} نقطة", "new_balance": new_points}
 
 @api_router.post("/loyalty/redeem")
-async def redeem_loyalty_points(transaction: LoyaltyTransaction, user: dict = Depends(get_current_user)):
+async def redeem_loyalty_points(transaction: LoyaltyTransaction, user: dict = Depends(require_tenant)):
     """Redeem loyalty points"""
     customer = await db.customers.find_one({"id": transaction.customer_id})
     if not customer:
@@ -5640,13 +5640,13 @@ class SMSCampaign(BaseModel):
     scheduled_at: Optional[str] = None
 
 @api_router.get("/marketing/sms/campaigns")
-async def get_sms_campaigns(admin: dict = Depends(get_admin_user)):
+async def get_sms_campaigns(admin: dict = Depends(get_tenant_admin)):
     """Get all SMS campaigns"""
     campaigns = await db.sms_campaigns.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
     return campaigns
 
 @api_router.post("/marketing/sms/campaigns")
-async def create_sms_campaign(campaign: SMSCampaign, admin: dict = Depends(get_admin_user)):
+async def create_sms_campaign(campaign: SMSCampaign, admin: dict = Depends(get_tenant_admin)):
     """Create a new SMS campaign (MOCKED)"""
     now = datetime.now(timezone.utc).isoformat()
     
@@ -5703,7 +5703,7 @@ class InvoiceTemplate(BaseModel):
     show_qr: bool = False
 
 @api_router.get("/invoices/templates")
-async def get_invoice_templates(user: dict = Depends(get_current_user)):
+async def get_invoice_templates(user: dict = Depends(require_tenant)):
     """Get all invoice templates"""
     templates = await db.invoice_templates.find({}, {"_id": 0}).to_list(20)
     
@@ -5750,7 +5750,7 @@ async def get_invoice_templates(user: dict = Depends(get_current_user)):
     return templates
 
 @api_router.post("/invoices/generate/{sale_id}")
-async def generate_invoice(sale_id: str, template_id: str = "simple", user: dict = Depends(get_current_user)):
+async def generate_invoice(sale_id: str, template_id: str = "simple", user: dict = Depends(require_tenant)):
     """Generate invoice for a sale"""
     sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
     if not sale:
@@ -5804,7 +5804,7 @@ ALGERIAN_PAYMENT_GATEWAYS = [
 ]
 
 @api_router.get("/payments/gateways")
-async def get_payment_gateways(admin: dict = Depends(get_admin_user)):
+async def get_payment_gateways(admin: dict = Depends(get_tenant_admin)):
     """Get available payment gateways"""
     settings = await db.payment_gateways.find({}, {"_id": 0}).to_list(10)
     
@@ -5820,7 +5820,7 @@ async def get_payment_gateways(admin: dict = Depends(get_admin_user)):
     return result
 
 @api_router.put("/payments/gateways/{gateway_id}")
-async def update_payment_gateway(gateway_id: str, settings: PaymentGatewaySettings, admin: dict = Depends(get_admin_user)):
+async def update_payment_gateway(gateway_id: str, settings: PaymentGatewaySettings, admin: dict = Depends(get_tenant_admin)):
     """Update payment gateway settings"""
     await db.payment_gateways.update_one(
         {"gateway": gateway_id},
@@ -5873,7 +5873,7 @@ async def send_sms_mock(phone: str, message: str) -> dict:
     }
 
 @api_router.get("/sms/settings")
-async def get_sms_settings(admin: dict = Depends(get_admin_user)):
+async def get_sms_settings(admin: dict = Depends(get_tenant_admin)):
     """Get SMS reminder settings"""
     settings = await db.sms_settings.find_one({"id": "global"}, {"_id": 0})
     if not settings:
@@ -5884,7 +5884,7 @@ async def get_sms_settings(admin: dict = Depends(get_admin_user)):
     return settings
 
 @api_router.put("/sms/settings")
-async def update_sms_settings(settings: SMSSettingsUpdate, admin: dict = Depends(get_admin_user)):
+async def update_sms_settings(settings: SMSSettingsUpdate, admin: dict = Depends(get_tenant_admin)):
     """Update SMS reminder settings"""
     update_data = settings.model_dump()
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -5898,7 +5898,7 @@ async def update_sms_settings(settings: SMSSettingsUpdate, admin: dict = Depends
     return {"success": True, "message": "Settings updated"}
 
 @api_router.post("/sms/send-reminder")
-async def send_debt_reminder(request: SMSReminderRequest, user: dict = Depends(get_current_user)):
+async def send_debt_reminder(request: SMSReminderRequest, user: dict = Depends(require_tenant)):
     """Send SMS reminder to selected customers"""
     settings = await db.sms_settings.find_one({"id": "global"}, {"_id": 0})
     if not settings:
@@ -5972,7 +5972,7 @@ async def send_debt_reminder(request: SMSReminderRequest, user: dict = Depends(g
     }
 
 @api_router.post("/sms/send-bulk-reminder")
-async def send_bulk_debt_reminder(user: dict = Depends(get_current_user), min_debt: float = 0):
+async def send_bulk_debt_reminder(user: dict = Depends(require_tenant), min_debt: float = 0):
     """Send SMS reminder to all customers with debt"""
     settings = await db.sms_settings.find_one({"id": "global"}, {"_id": 0})
     if not settings:
@@ -6004,7 +6004,7 @@ async def send_bulk_debt_reminder(user: dict = Depends(get_current_user), min_de
 async def get_sms_logs(
     limit: int = 50,
     customer_id: Optional[str] = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get SMS sending history"""
     query = {}
@@ -6089,7 +6089,7 @@ async def get_role_permissions(role_name: str):
 # ============ FILE UPLOAD ============
 
 @api_router.post("/upload/image")
-async def upload_image(file: UploadFile = File(...), user: dict = Depends(get_current_user)):
+async def upload_image(file: UploadFile = File(...), user: dict = Depends(require_tenant)):
     """Upload an image file"""
     # Validate file type
     allowed_types = ["image/jpeg", "image/png", "image/webp", "image/gif"]
@@ -6123,7 +6123,7 @@ async def get_available_roles():
     }
 
 @api_router.get("/users/{user_id}/permissions")
-async def get_user_permissions(user_id: str, admin: dict = Depends(get_admin_user)):
+async def get_user_permissions(user_id: str, admin: dict = Depends(get_tenant_admin)):
     """Get permissions for a specific user"""
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
     if not user:
@@ -6139,7 +6139,7 @@ async def get_user_permissions(user_id: str, admin: dict = Depends(get_admin_use
     }
 
 @api_router.put("/users/{user_id}/permissions")
-async def update_user_permissions(user_id: str, permissions: dict, admin: dict = Depends(get_admin_user)):
+async def update_user_permissions(user_id: str, permissions: dict, admin: dict = Depends(get_tenant_admin)):
     """Update permissions for a specific user"""
     user = await db.users.find_one({"id": user_id})
     if not user:
@@ -6153,7 +6153,7 @@ async def update_user_permissions(user_id: str, permissions: dict, admin: dict =
     return {"success": True, "message": "Permissions updated"}
 
 @api_router.put("/users/{user_id}/reset-permissions")
-async def reset_user_permissions(user_id: str, admin: dict = Depends(get_admin_user)):
+async def reset_user_permissions(user_id: str, admin: dict = Depends(get_tenant_admin)):
     """Reset user permissions to role defaults"""
     user = await db.users.find_one({"id": user_id})
     if not user:
@@ -6169,7 +6169,7 @@ async def reset_user_permissions(user_id: str, admin: dict = Depends(get_admin_u
 # ============ FACTORY RESET ============
 
 @api_router.post("/system/factory-reset")
-async def factory_reset(confirm_code: str, admin: dict = Depends(get_admin_user)):
+async def factory_reset(confirm_code: str, admin: dict = Depends(get_tenant_admin)):
     """Factory reset - Delete all data except admin user"""
     # Verify confirmation code
     if confirm_code != "RESET-ALL-DATA":
@@ -6215,7 +6215,7 @@ async def factory_reset(confirm_code: str, admin: dict = Depends(get_admin_user)
     }
 
 @api_router.get("/system/stats")
-async def get_system_stats(admin: dict = Depends(get_admin_user)):
+async def get_system_stats(admin: dict = Depends(get_tenant_admin)):
     """Get system statistics for factory reset preview"""
     stats = {
         "products": await db.products.count_documents({}),
@@ -6240,7 +6240,7 @@ class BulkPriceUpdateRequest(BaseModel):
     round_to: int = 0  # Round to nearest (0 = no rounding, 10 = nearest 10, etc.)
 
 @api_router.post("/products/bulk-price-update")
-async def bulk_price_update(request: BulkPriceUpdateRequest, admin: dict = Depends(get_admin_user)):
+async def bulk_price_update(request: BulkPriceUpdateRequest, admin: dict = Depends(get_tenant_admin)):
     """Update prices for multiple products at once"""
     
     # Build query
@@ -6323,7 +6323,7 @@ async def preview_price_update(
     value: float,
     family_id: Optional[str] = None,
     round_to: int = 0,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_tenant_admin)
 ):
     """Preview price changes before applying"""
     query = {}
@@ -6375,7 +6375,7 @@ async def preview_price_update(
 # ============ PRODUCT FAMILIES ROUTES ============
 
 @api_router.post("/product-families", response_model=ProductFamilyResponse)
-async def create_product_family(family: ProductFamilyCreate, admin: dict = Depends(get_admin_user)):
+async def create_product_family(family: ProductFamilyCreate, admin: dict = Depends(get_tenant_admin)):
     family_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -6401,7 +6401,7 @@ async def create_product_family(family: ProductFamilyCreate, admin: dict = Depen
     return ProductFamilyResponse(**family_doc)
 
 @api_router.get("/product-families", response_model=List[ProductFamilyResponse])
-async def get_product_families(user: dict = Depends(get_current_user)):
+async def get_product_families(user: dict = Depends(require_tenant)):
     families = await db.product_families.find({}, {"_id": 0}).to_list(1000)
     
     # Update product counts
@@ -6412,7 +6412,7 @@ async def get_product_families(user: dict = Depends(get_current_user)):
     return [ProductFamilyResponse(**f) for f in families]
 
 @api_router.get("/product-families/{family_id}", response_model=ProductFamilyResponse)
-async def get_product_family(family_id: str, user: dict = Depends(get_current_user)):
+async def get_product_family(family_id: str, user: dict = Depends(require_tenant)):
     family = await db.product_families.find_one({"id": family_id}, {"_id": 0})
     if not family:
         raise HTTPException(status_code=404, detail="Product family not found")
@@ -6424,7 +6424,7 @@ async def get_product_family(family_id: str, user: dict = Depends(get_current_us
     return ProductFamilyResponse(**family)
 
 @api_router.put("/product-families/{family_id}", response_model=ProductFamilyResponse)
-async def update_product_family(family_id: str, updates: ProductFamilyUpdate, admin: dict = Depends(get_admin_user)):
+async def update_product_family(family_id: str, updates: ProductFamilyUpdate, admin: dict = Depends(get_tenant_admin)):
     family = await db.product_families.find_one({"id": family_id})
     if not family:
         raise HTTPException(status_code=404, detail="Product family not found")
@@ -6448,7 +6448,7 @@ async def update_product_family(family_id: str, updates: ProductFamilyUpdate, ad
     return ProductFamilyResponse(**updated)
 
 @api_router.delete("/product-families/{family_id}")
-async def delete_product_family(family_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_product_family(family_id: str, admin: dict = Depends(get_tenant_admin)):
     # Check if family has products
     product_count = await db.products.count_documents({"family_id": family_id})
     if product_count > 0:
@@ -6465,7 +6465,7 @@ async def delete_product_family(family_id: str, admin: dict = Depends(get_admin_
     return {"message": "Product family deleted successfully"}
 
 @api_router.get("/product-families/{family_id}/products", response_model=List[ProductResponse])
-async def get_family_products(family_id: str, user: dict = Depends(get_current_user)):
+async def get_family_products(family_id: str, user: dict = Depends(require_tenant)):
     """Get all products in a specific family"""
     products = await db.products.find({"family_id": family_id}, {"_id": 0}).to_list(1000)
     
@@ -6512,7 +6512,7 @@ class DailySessionResponse(BaseModel):
     created_by: str = ""
 
 @api_router.post("/daily-sessions", response_model=DailySessionResponse)
-async def create_daily_session(session: DailySessionCreate, user: dict = Depends(get_current_user)):
+async def create_daily_session(session: DailySessionCreate, user: dict = Depends(require_tenant)):
     """Start a new daily cash session for the current user"""
     
     # Check if this user already has an open session
@@ -6544,7 +6544,7 @@ async def create_daily_session(session: DailySessionCreate, user: dict = Depends
     return DailySessionResponse(**session_doc)
 
 @api_router.get("/daily-sessions", response_model=List[DailySessionResponse])
-async def get_daily_sessions(all_users: bool = False, user: dict = Depends(get_current_user)):
+async def get_daily_sessions(all_users: bool = False, user: dict = Depends(require_tenant)):
     """Get daily sessions - own sessions or all (admin only)"""
     query = {}
     
@@ -6564,7 +6564,7 @@ async def get_daily_sessions(all_users: bool = False, user: dict = Depends(get_c
     return [DailySessionResponse(**s) for s in sessions]
 
 @api_router.get("/daily-sessions/current")
-async def get_current_session(user: dict = Depends(get_current_user)):
+async def get_current_session(user: dict = Depends(require_tenant)):
     """Get the current open session for the logged-in user"""
     session = await db.daily_sessions.find_one({"user_id": user["id"], "status": "open"}, {"_id": 0})
     if not session:
@@ -6579,7 +6579,7 @@ async def get_current_session(user: dict = Depends(get_current_user)):
     return DailySessionResponse(**session)
 
 @api_router.get("/daily-sessions/summary")
-async def get_sessions_summary(days: int = 7, admin: dict = Depends(get_admin_user)):
+async def get_sessions_summary(days: int = 7, admin: dict = Depends(get_tenant_admin)):
     """Get summary report of all sessions (admin only)"""
     
     start_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
@@ -6637,7 +6637,7 @@ async def get_sessions_summary(days: int = 7, admin: dict = Depends(get_admin_us
     }
 
 @api_router.put("/daily-sessions/{session_id}/close", response_model=DailySessionResponse)
-async def close_daily_session(session_id: str, closing_data: DailySessionClose, user: dict = Depends(get_current_user)):
+async def close_daily_session(session_id: str, closing_data: DailySessionClose, user: dict = Depends(require_tenant)):
     """Close a daily cash session"""
     
     session = await db.daily_sessions.find_one({"id": session_id})
@@ -6762,7 +6762,7 @@ async def close_daily_session(session_id: str, closing_data: DailySessionClose, 
     return DailySessionResponse(**updated)
 
 @api_router.delete("/daily-sessions/{session_id}")
-async def delete_daily_session(session_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_daily_session(session_id: str, admin: dict = Depends(get_tenant_admin)):
     """Delete a daily session (admin only)"""
     
     session = await db.daily_sessions.find_one({"id": session_id})
@@ -6811,7 +6811,7 @@ class SupplierFamilyResponse(BaseModel):
 
 # Customer Families CRUD
 @api_router.post("/customer-families", response_model=CustomerFamilyResponse)
-async def create_customer_family(family: CustomerFamilyCreate, admin: dict = Depends(get_admin_user)):
+async def create_customer_family(family: CustomerFamilyCreate, admin: dict = Depends(get_tenant_admin)):
     family_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -6827,7 +6827,7 @@ async def create_customer_family(family: CustomerFamilyCreate, admin: dict = Dep
     return CustomerFamilyResponse(**family_doc)
 
 @api_router.get("/customer-families", response_model=List[CustomerFamilyResponse])
-async def get_customer_families(user: dict = Depends(get_current_user)):
+async def get_customer_families(user: dict = Depends(require_tenant)):
     families = await db.customer_families.find({}, {"_id": 0}).to_list(100)
     
     # Update customer counts
@@ -6838,7 +6838,7 @@ async def get_customer_families(user: dict = Depends(get_current_user)):
     return [CustomerFamilyResponse(**f) for f in families]
 
 @api_router.get("/customer-families/{family_id}", response_model=CustomerFamilyResponse)
-async def get_customer_family(family_id: str, user: dict = Depends(get_current_user)):
+async def get_customer_family(family_id: str, user: dict = Depends(require_tenant)):
     family = await db.customer_families.find_one({"id": family_id}, {"_id": 0})
     if not family:
         raise HTTPException(status_code=404, detail="عائلة الزبائن غير موجودة")
@@ -6849,7 +6849,7 @@ async def get_customer_family(family_id: str, user: dict = Depends(get_current_u
     return CustomerFamilyResponse(**family)
 
 @api_router.put("/customer-families/{family_id}", response_model=CustomerFamilyResponse)
-async def update_customer_family(family_id: str, updates: CustomerFamilyUpdate, admin: dict = Depends(get_admin_user)):
+async def update_customer_family(family_id: str, updates: CustomerFamilyUpdate, admin: dict = Depends(get_tenant_admin)):
     family = await db.customer_families.find_one({"id": family_id})
     if not family:
         raise HTTPException(status_code=404, detail="عائلة الزبائن غير موجودة")
@@ -6865,7 +6865,7 @@ async def update_customer_family(family_id: str, updates: CustomerFamilyUpdate, 
     return CustomerFamilyResponse(**updated)
 
 @api_router.delete("/customer-families/{family_id}")
-async def delete_customer_family(family_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_customer_family(family_id: str, admin: dict = Depends(get_tenant_admin)):
     count = await db.customers.count_documents({"family_id": family_id})
     if count > 0:
         raise HTTPException(status_code=400, detail=f"لا يمكن حذف عائلة بها {count} زبون")
@@ -6877,7 +6877,7 @@ async def delete_customer_family(family_id: str, admin: dict = Depends(get_admin
 
 # Supplier Families CRUD
 @api_router.post("/supplier-families", response_model=SupplierFamilyResponse)
-async def create_supplier_family(family: SupplierFamilyCreate, admin: dict = Depends(get_admin_user)):
+async def create_supplier_family(family: SupplierFamilyCreate, admin: dict = Depends(get_tenant_admin)):
     family_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -6893,7 +6893,7 @@ async def create_supplier_family(family: SupplierFamilyCreate, admin: dict = Dep
     return SupplierFamilyResponse(**family_doc)
 
 @api_router.get("/supplier-families", response_model=List[SupplierFamilyResponse])
-async def get_supplier_families(user: dict = Depends(get_current_user)):
+async def get_supplier_families(user: dict = Depends(require_tenant)):
     families = await db.supplier_families.find({}, {"_id": 0}).to_list(100)
     
     # Update supplier counts
@@ -6904,7 +6904,7 @@ async def get_supplier_families(user: dict = Depends(get_current_user)):
     return [SupplierFamilyResponse(**f) for f in families]
 
 @api_router.get("/supplier-families/{family_id}", response_model=SupplierFamilyResponse)
-async def get_supplier_family(family_id: str, user: dict = Depends(get_current_user)):
+async def get_supplier_family(family_id: str, user: dict = Depends(require_tenant)):
     family = await db.supplier_families.find_one({"id": family_id}, {"_id": 0})
     if not family:
         raise HTTPException(status_code=404, detail="عائلة الموردين غير موجودة")
@@ -6915,7 +6915,7 @@ async def get_supplier_family(family_id: str, user: dict = Depends(get_current_u
     return SupplierFamilyResponse(**family)
 
 @api_router.put("/supplier-families/{family_id}", response_model=SupplierFamilyResponse)
-async def update_supplier_family(family_id: str, updates: SupplierFamilyUpdate, admin: dict = Depends(get_admin_user)):
+async def update_supplier_family(family_id: str, updates: SupplierFamilyUpdate, admin: dict = Depends(get_tenant_admin)):
     family = await db.supplier_families.find_one({"id": family_id})
     if not family:
         raise HTTPException(status_code=404, detail="عائلة الموردين غير موجودة")
@@ -6931,7 +6931,7 @@ async def update_supplier_family(family_id: str, updates: SupplierFamilyUpdate, 
     return SupplierFamilyResponse(**updated)
 
 @api_router.delete("/supplier-families/{family_id}")
-async def delete_supplier_family(family_id: str, admin: dict = Depends(get_admin_user)):
+async def delete_supplier_family(family_id: str, admin: dict = Depends(get_tenant_admin)):
     count = await db.suppliers.count_documents({"family_id": family_id})
     if count > 0:
         raise HTTPException(status_code=400, detail=f"لا يمكن حذف عائلة بها {count} مورد")
@@ -7018,7 +7018,7 @@ class SparePartUpdate(BaseModel):
 async def get_repairs(
     status: Optional[str] = None,
     search: Optional[str] = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get all repair tickets"""
     query = {}
@@ -7037,7 +7037,7 @@ async def get_repairs(
     return repairs
 
 @api_router.get("/repairs/stats")
-async def get_repair_stats(user: dict = Depends(get_current_user)):
+async def get_repair_stats(user: dict = Depends(require_tenant)):
     """Get repair statistics"""
     total = await db.repairs.count_documents({})
     received = await db.repairs.count_documents({"status": "received"})
@@ -7081,7 +7081,7 @@ async def get_repair_stats(user: dict = Depends(get_current_user)):
     }
 
 @api_router.get("/repairs/{repair_id}")
-async def get_repair(repair_id: str, user: dict = Depends(get_current_user)):
+async def get_repair(repair_id: str, user: dict = Depends(require_tenant)):
     """Get a single repair ticket"""
     repair = await db.repairs.find_one({"id": repair_id}, {"_id": 0})
     if not repair:
@@ -7091,7 +7091,7 @@ async def get_repair(repair_id: str, user: dict = Depends(get_current_user)):
     return repair
 
 @api_router.post("/repairs")
-async def create_repair(repair: RepairCreate, user: dict = Depends(get_current_user)):
+async def create_repair(repair: RepairCreate, user: dict = Depends(require_tenant)):
     """Create a new repair ticket"""
     repair_data = repair.model_dump()
     repair_data["id"] = str(uuid.uuid4())
@@ -7109,7 +7109,7 @@ async def create_repair(repair: RepairCreate, user: dict = Depends(get_current_u
     return repair_data
 
 @api_router.put("/repairs/{repair_id}")
-async def update_repair(repair_id: str, repair: RepairUpdate, user: dict = Depends(get_current_user)):
+async def update_repair(repair_id: str, repair: RepairUpdate, user: dict = Depends(require_tenant)):
     """Update a repair ticket"""
     existing = await db.repairs.find_one({"id": repair_id}, {"_id": 0})
     if not existing:
@@ -7152,7 +7152,7 @@ def get_status_note(status: str) -> str:
     return notes.get(status, "تم تحديث الحالة")
 
 @api_router.delete("/repairs/{repair_id}")
-async def delete_repair(repair_id: str, user: dict = Depends(get_current_user)):
+async def delete_repair(repair_id: str, user: dict = Depends(require_tenant)):
     """Delete a repair ticket"""
     result = await db.repairs.delete_one({"id": repair_id})
     if result.deleted_count == 0:
@@ -7167,7 +7167,7 @@ async def get_spare_parts(
     category: Optional[str] = None,
     search: Optional[str] = None,
     low_stock: Optional[bool] = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get all spare parts"""
     query = {}
@@ -7186,7 +7186,7 @@ async def get_spare_parts(
     return parts
 
 @api_router.get("/spare-parts/stats")
-async def get_spare_parts_stats(user: dict = Depends(get_current_user)):
+async def get_spare_parts_stats(user: dict = Depends(require_tenant)):
     """Get spare parts statistics"""
     total = await db.spare_parts.count_documents({})
     
@@ -7225,7 +7225,7 @@ async def get_spare_parts_stats(user: dict = Depends(get_current_user)):
     }
 
 @api_router.get("/spare-parts/{part_id}")
-async def get_spare_part(part_id: str, user: dict = Depends(get_current_user)):
+async def get_spare_part(part_id: str, user: dict = Depends(require_tenant)):
     """Get a single spare part"""
     part = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
     if not part:
@@ -7233,7 +7233,7 @@ async def get_spare_part(part_id: str, user: dict = Depends(get_current_user)):
     return part
 
 @api_router.post("/spare-parts")
-async def create_spare_part(part: SparePartCreate, user: dict = Depends(get_current_user)):
+async def create_spare_part(part: SparePartCreate, user: dict = Depends(require_tenant)):
     """Create a new spare part"""
     part_data = part.model_dump()
     part_data["id"] = str(uuid.uuid4())
@@ -7244,7 +7244,7 @@ async def create_spare_part(part: SparePartCreate, user: dict = Depends(get_curr
     return part_data
 
 @api_router.put("/spare-parts/{part_id}")
-async def update_spare_part(part_id: str, part: SparePartUpdate, user: dict = Depends(get_current_user)):
+async def update_spare_part(part_id: str, part: SparePartUpdate, user: dict = Depends(require_tenant)):
     """Update a spare part"""
     existing = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
     if not existing:
@@ -7258,7 +7258,7 @@ async def update_spare_part(part_id: str, part: SparePartUpdate, user: dict = De
     return updated
 
 @api_router.delete("/spare-parts/{part_id}")
-async def delete_spare_part(part_id: str, user: dict = Depends(get_current_user)):
+async def delete_spare_part(part_id: str, user: dict = Depends(require_tenant)):
     """Delete a spare part"""
     result = await db.spare_parts.delete_one({"id": part_id})
     if result.deleted_count == 0:
@@ -7270,7 +7270,7 @@ async def update_spare_part_stock(
     part_id: str,
     quantity_change: int,
     operation: str,  # "add" or "subtract"
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Update spare part stock"""
     existing = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
@@ -7314,7 +7314,7 @@ REPAIR_STATUS_MESSAGES = {
 }
 
 @api_router.get("/whatsapp/settings")
-async def get_whatsapp_settings(user: dict = Depends(get_current_user)):
+async def get_whatsapp_settings(user: dict = Depends(require_tenant)):
     """Get WhatsApp settings"""
     settings = await db.whatsapp_settings.find_one({}, {"_id": 0})
     if not settings:
@@ -7325,7 +7325,7 @@ async def get_whatsapp_settings(user: dict = Depends(get_current_user)):
     return settings
 
 @api_router.put("/whatsapp/settings")
-async def update_whatsapp_settings(settings: WhatsAppSettings, user: dict = Depends(get_current_user)):
+async def update_whatsapp_settings(settings: WhatsAppSettings, user: dict = Depends(require_tenant)):
     """Update WhatsApp settings"""
     settings_data = settings.model_dump()
     settings_data["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -7339,7 +7339,7 @@ async def update_whatsapp_settings(settings: WhatsAppSettings, user: dict = Depe
     return {"message": "تم تحديث إعدادات WhatsApp"}
 
 @api_router.post("/whatsapp/send")
-async def send_whatsapp_message(message: WhatsAppMessage, user: dict = Depends(get_current_user)):
+async def send_whatsapp_message(message: WhatsAppMessage, user: dict = Depends(require_tenant)):
     """Send a WhatsApp message"""
     settings = await db.whatsapp_settings.find_one({}, {"_id": 0})
     if not settings or not settings.get("enabled"):
@@ -7394,7 +7394,7 @@ async def send_whatsapp_message(message: WhatsAppMessage, user: dict = Depends(g
         return {"success": False, "error": str(e)}
 
 @api_router.post("/whatsapp/notify-repair/{repair_id}")
-async def notify_repair_status_change(repair_id: str, user: dict = Depends(get_current_user)):
+async def notify_repair_status_change(repair_id: str, user: dict = Depends(require_tenant)):
     """Send WhatsApp notification for repair status change"""
     repair = await db.repairs.find_one({"id": repair_id}, {"_id": 0})
     if not repair:
@@ -7428,7 +7428,7 @@ async def notify_repair_status_change(repair_id: str, user: dict = Depends(get_c
 @api_router.get("/whatsapp/logs")
 async def get_whatsapp_logs(
     limit: int = 50,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get WhatsApp message logs"""
     logs = await db.whatsapp_logs.find({}, {"_id": 0}).sort("sent_at", -1).limit(limit).to_list(limit)
@@ -7441,7 +7441,7 @@ async def use_spare_part_in_repair(
     repair_id: str,
     part_id: str,
     quantity: int = 1,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Use a spare part in a repair - deducts from inventory"""
     # Verify repair exists
@@ -7501,7 +7501,7 @@ async def use_spare_part_in_repair(
 async def link_spare_part_to_product(
     part_id: str,
     product_id: str,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Link a spare part to a main product for synchronized inventory"""
     # Verify both exist
@@ -7531,7 +7531,7 @@ async def link_spare_part_to_product(
 @api_router.delete("/spare-parts/unlink-product/{part_id}")
 async def unlink_spare_part_from_product(
     part_id: str,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Remove link between spare part and product"""
     part = await db.spare_parts.find_one({"id": part_id}, {"_id": 0})
@@ -7546,7 +7546,7 @@ async def unlink_spare_part_from_product(
     return {"success": True, "message": "تم إلغاء الربط"}
 
 @api_router.post("/spare-parts/sync-inventory")
-async def sync_spare_parts_with_products(user: dict = Depends(get_current_user)):
+async def sync_spare_parts_with_products(user: dict = Depends(require_tenant)):
     """Sync spare parts inventory with linked products"""
     # Get all linked spare parts
     linked_parts = await db.spare_parts.find(
@@ -7597,7 +7597,7 @@ class ExpenseUpdate(BaseModel):
 @api_router.get("/expenses")
 async def get_expenses(
     category: Optional[str] = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Get all expenses"""
     query = {}
@@ -7608,7 +7608,7 @@ async def get_expenses(
     return expenses
 
 @api_router.get("/expenses/stats")
-async def get_expenses_stats(user: dict = Depends(get_current_user)):
+async def get_expenses_stats(user: dict = Depends(require_tenant)):
     """Get expenses statistics"""
     # Total expenses
     total_pipeline = [{"$group": {"_id": None, "total": {"$sum": "$amount"}}}]
@@ -7650,7 +7650,7 @@ async def get_expenses_stats(user: dict = Depends(get_current_user)):
     }
 
 @api_router.post("/expenses")
-async def create_expense(expense: ExpenseCreate, user: dict = Depends(get_current_user)):
+async def create_expense(expense: ExpenseCreate, user: dict = Depends(require_tenant)):
     """Create a new expense"""
     expense_data = expense.model_dump()
     expense_data["id"] = str(uuid.uuid4())
@@ -7664,7 +7664,7 @@ async def create_expense(expense: ExpenseCreate, user: dict = Depends(get_curren
     return expense_data
 
 @api_router.put("/expenses/{expense_id}")
-async def update_expense(expense_id: str, expense: ExpenseUpdate, user: dict = Depends(get_current_user)):
+async def update_expense(expense_id: str, expense: ExpenseUpdate, user: dict = Depends(require_tenant)):
     """Update an expense"""
     existing = await db.expenses.find_one({"id": expense_id}, {"_id": 0})
     if not existing:
@@ -7678,7 +7678,7 @@ async def update_expense(expense_id: str, expense: ExpenseUpdate, user: dict = D
     return updated
 
 @api_router.delete("/expenses/{expense_id}")
-async def delete_expense(expense_id: str, user: dict = Depends(get_current_user)):
+async def delete_expense(expense_id: str, user: dict = Depends(require_tenant)):
     """Delete an expense"""
     result = await db.expenses.delete_one({"id": expense_id})
     if result.deleted_count == 0:
@@ -7686,7 +7686,7 @@ async def delete_expense(expense_id: str, user: dict = Depends(get_current_user)
     return {"message": "تم حذف التكلفة بنجاح"}
 
 @api_router.get("/expenses/reminders")
-async def get_expense_reminders(user: dict = Depends(get_current_user)):
+async def get_expense_reminders(user: dict = Depends(require_tenant)):
     """Get upcoming expense reminders for recurring expenses"""
     now = datetime.now(timezone.utc)
     
@@ -7750,7 +7750,7 @@ async def get_expense_reminders(user: dict = Depends(get_current_user)):
     return reminders
 
 @api_router.post("/expenses/{expense_id}/mark-paid")
-async def mark_expense_paid(expense_id: str, user: dict = Depends(get_current_user)):
+async def mark_expense_paid(expense_id: str, user: dict = Depends(require_tenant)):
     """Mark a recurring expense as paid and update the date"""
     expense = await db.expenses.find_one({"id": expense_id}, {"_id": 0})
     if not expense:
@@ -7899,7 +7899,7 @@ def generate_session_report_html(report: dict, language: str = 'ar') -> str:
 @api_router.post("/email/send-session-report")
 async def send_session_report_email(
     report_email: SessionReportEmail,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Send session closing report via email"""
     if not RESEND_AVAILABLE:
@@ -7953,7 +7953,7 @@ class EmailSettings(BaseModel):
     sender_name: str = "NT POS System"
 
 @api_router.get("/email/settings")
-async def get_email_settings(user: dict = Depends(get_current_user)):
+async def get_email_settings(user: dict = Depends(require_tenant)):
     """Get email settings"""
     settings = await db.system_settings.find_one({"type": "email_settings"}, {"_id": 0})
     if not settings:
@@ -7967,7 +7967,7 @@ async def get_email_settings(user: dict = Depends(get_current_user)):
     return settings
 
 @api_router.put("/email/settings")
-async def update_email_settings(settings: EmailSettings, user: dict = Depends(get_current_user)):
+async def update_email_settings(settings: EmailSettings, user: dict = Depends(require_tenant)):
     """Update email settings"""
     # Check if user is admin
     if user.get("role") not in ["admin", "manager"]:
@@ -8002,7 +8002,7 @@ async def update_email_settings(settings: EmailSettings, user: dict = Depends(ge
     return {"success": True, "message": "تم حفظ إعدادات البريد بنجاح"}
 
 @api_router.post("/email/test")
-async def test_email_settings(user: dict = Depends(get_current_user)):
+async def test_email_settings(user: dict = Depends(require_tenant)):
     """Send a test email to verify settings"""
     if not RESEND_AVAILABLE:
         raise HTTPException(status_code=500, detail="مكتبة Resend غير متوفرة")
@@ -8058,7 +8058,7 @@ class SmartReportSettings(BaseModel):
     include_debt_reminders: bool = True
 
 @api_router.get("/smart-reports/settings")
-async def get_smart_report_settings(user: dict = Depends(get_current_user)):
+async def get_smart_report_settings(user: dict = Depends(require_tenant)):
     """Get smart report settings"""
     settings = await db.system_settings.find_one({"type": "smart_reports"}, {"_id": 0})
     if not settings:
@@ -8066,7 +8066,7 @@ async def get_smart_report_settings(user: dict = Depends(get_current_user)):
     return settings
 
 @api_router.put("/smart-reports/settings")
-async def update_smart_report_settings(settings: SmartReportSettings, user: dict = Depends(get_current_user)):
+async def update_smart_report_settings(settings: SmartReportSettings, user: dict = Depends(require_tenant)):
     """Update smart report settings"""
     if user.get("role") not in ["admin", "manager"]:
         raise HTTPException(status_code=403, detail="غير مصرح")
@@ -8079,13 +8079,13 @@ async def update_smart_report_settings(settings: SmartReportSettings, user: dict
     return {"success": True}
 
 @api_router.get("/smart-reports/last")
-async def get_last_smart_report(user: dict = Depends(get_current_user)):
+async def get_last_smart_report(user: dict = Depends(require_tenant)):
     """Get last sent report info"""
     report = await db.smart_reports_log.find_one({}, {"_id": 0}, sort=[("sent_at", -1)])
     return report
 
 @api_router.get("/smart-reports/preview")
-async def preview_smart_report(user: dict = Depends(get_current_user)):
+async def preview_smart_report(user: dict = Depends(require_tenant)):
     """Generate a preview of the smart report"""
     today = datetime.now(timezone.utc).date()
     yesterday = today - timedelta(days=1)
@@ -8139,7 +8139,7 @@ async def preview_smart_report(user: dict = Depends(get_current_user)):
     }
 
 @api_router.post("/smart-reports/send-now")
-async def send_smart_report_now(user: dict = Depends(get_current_user)):
+async def send_smart_report_now(user: dict = Depends(require_tenant)):
     """Send smart report immediately"""
     if not RESEND_AVAILABLE:
         raise HTTPException(status_code=500, detail="مكتبة Resend غير متوفرة")
@@ -9337,7 +9337,7 @@ def get_ai_system_message(context: str = None, language: str = "ar") -> str:
     return base_msg
 
 @api_router.post("/ai/chat", response_model=AIChatResponse)
-async def ai_chat(request: AIChatRequest, user: dict = Depends(get_current_user)):
+async def ai_chat(request: AIChatRequest, user: dict = Depends(require_tenant)):
     """Chat with AI assistant"""
     if not AI_AVAILABLE:
         raise HTTPException(status_code=503, detail="AI service not available")
@@ -9421,7 +9421,7 @@ async def ai_chat(request: AIChatRequest, user: dict = Depends(get_current_user)
         raise HTTPException(status_code=500, detail=f"AI error: {str(e)}")
 
 @api_router.get("/ai/chat-history/{session_id}")
-async def get_ai_chat_history(session_id: str, user: dict = Depends(get_current_user)):
+async def get_ai_chat_history(session_id: str, user: dict = Depends(require_tenant)):
     """Get chat history for a session"""
     full_session_id = f"{user['id']}_{session_id}"
     history = await db.ai_chat_history.find_one({"session_id": full_session_id}, {"_id": 0})
@@ -9430,14 +9430,14 @@ async def get_ai_chat_history(session_id: str, user: dict = Depends(get_current_
     return {"messages": history.get("messages", [])}
 
 @api_router.delete("/ai/chat-history/{session_id}")
-async def clear_ai_chat_history(session_id: str, user: dict = Depends(get_current_user)):
+async def clear_ai_chat_history(session_id: str, user: dict = Depends(require_tenant)):
     """Clear chat history for a session"""
     full_session_id = f"{user['id']}_{session_id}"
     await db.ai_chat_history.delete_one({"session_id": full_session_id})
     return {"success": True}
 
 @api_router.post("/ai/analyze")
-async def ai_analyze(request: AIAnalysisRequest, user: dict = Depends(get_current_user)):
+async def ai_analyze(request: AIAnalysisRequest, user: dict = Depends(require_tenant)):
     """Perform AI analysis on business data"""
     if not AI_AVAILABLE:
         raise HTTPException(status_code=503, detail="AI service not available")
@@ -9567,7 +9567,7 @@ async def get_advanced_sales_report(
     customer_id: Optional[str] = None,
     product_id: Optional[str] = None,
     payment_method: Optional[str] = None,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_tenant_admin)
 ):
     """Get advanced sales report with filtering"""
     query = {"status": {"$ne": "returned"}}
@@ -9657,7 +9657,7 @@ async def get_employee_sales_report(
     employee_id: str,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_tenant_admin)
 ):
     """Get detailed sales report for a specific employee"""
     query = {"employee_id": employee_id, "status": {"$ne": "returned"}}
@@ -9707,7 +9707,7 @@ async def get_employee_sales_report(
 @api_router.get("/sales/peak-hours")
 async def get_peak_hours_report(
     days: int = 30,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_tenant_admin)
 ):
     """Get sales peak hours analysis"""
     start_date = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%d")
@@ -9758,7 +9758,7 @@ async def get_peak_hours_report(
 async def get_returns_report(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_tenant_admin)
 ):
     """Get returns report"""
     query = {"status": "returned"}
@@ -9794,7 +9794,7 @@ async def get_returns_report(
     }
 
 @api_router.get("/sales/{sale_id}/audit-log")
-async def get_sale_audit_log(sale_id: str, admin: dict = Depends(get_admin_user)):
+async def get_sale_audit_log(sale_id: str, admin: dict = Depends(get_tenant_admin)):
     """Get audit log for a specific sale"""
     logs = await db.sale_audit_logs.find(
         {"sale_id": sale_id},
@@ -9806,7 +9806,7 @@ async def get_sale_audit_log(sale_id: str, admin: dict = Depends(get_admin_user)
 # ============ FEATURES MANAGEMENT ============
 
 @api_router.get("/settings/features")
-async def get_features_settings(admin: dict = Depends(get_admin_user)):
+async def get_features_settings(admin: dict = Depends(get_tenant_admin)):
     """Get enabled/disabled features for the system"""
     settings = await db.settings.find_one({"key": "features"}, {"_id": 0})
     if settings:
@@ -9830,7 +9830,7 @@ async def get_features_settings(admin: dict = Depends(get_admin_user)):
     }
 
 @api_router.post("/settings/features")
-async def save_features_settings(features: dict, admin: dict = Depends(get_admin_user)):
+async def save_features_settings(features: dict, admin: dict = Depends(get_tenant_admin)):
     """Save features settings - Super Admin only applies to all sub-accounts"""
     if admin.get("role") not in ["admin", "super_admin"]:
         raise HTTPException(status_code=403, detail="Only admins can change features")
@@ -9845,7 +9845,7 @@ async def save_features_settings(features: dict, admin: dict = Depends(get_admin
 # ============ USER PERMISSIONS MANAGEMENT ============
 
 @api_router.put("/users/{user_id}/permissions")
-async def update_user_permissions(user_id: str, data: dict, admin: dict = Depends(get_admin_user)):
+async def update_user_permissions(user_id: str, data: dict, admin: dict = Depends(get_tenant_admin)):
     """Update specific user permissions"""
     user = await db.users.find_one({"id": user_id})
     if not user:
@@ -9867,7 +9867,7 @@ async def log_sale_action(
     sale_id: str,
     action: str,
     details: dict = {},
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Log an action on a sale"""
     log = {
@@ -9885,7 +9885,7 @@ async def log_sale_action(
     return {"message": "Action logged", "log_id": log["id"]}
 
 @api_router.get("/settings/sales-permissions")
-async def get_sales_permissions(admin: dict = Depends(get_admin_user)):
+async def get_sales_permissions(admin: dict = Depends(get_tenant_admin)):
     """Get sales permission settings"""
     settings = await db.settings.find_one({"key": "sales_permissions"}, {"_id": 0})
     if settings:
@@ -9902,7 +9902,7 @@ async def get_sales_permissions(admin: dict = Depends(get_admin_user)):
 @api_router.post("/settings/sales-permissions")
 async def update_sales_permissions(
     settings: SalesPermissionSettings,
-    admin: dict = Depends(get_admin_user)
+    admin: dict = Depends(get_tenant_admin)
 ):
     """Update sales permission settings"""
     await db.settings.update_one(
@@ -9934,7 +9934,7 @@ class ReceiptSettings(BaseModel):
     templates: List[dict] = []
 
 @api_router.get("/settings/receipt")
-async def get_receipt_settings(user: dict = Depends(get_current_user)):
+async def get_receipt_settings(user: dict = Depends(require_tenant)):
     """Get receipt/invoice settings"""
     settings = await db.settings.find_one({"key": "receipt_settings"}, {"_id": 0})
     if settings:
@@ -9988,7 +9988,7 @@ async def get_receipt_settings(user: dict = Depends(get_current_user)):
     }
 
 @api_router.post("/settings/receipt")
-async def update_receipt_settings(settings: dict, admin: dict = Depends(get_admin_user)):
+async def update_receipt_settings(settings: dict, admin: dict = Depends(get_tenant_admin)):
     """Update receipt settings"""
     await db.settings.update_one(
         {"key": "receipt_settings"},
@@ -10002,7 +10002,7 @@ async def get_product_sales_tracking(
     product_id: str,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    user: dict = Depends(get_current_user)
+    user: dict = Depends(require_tenant)
 ):
     """Track all sales for a specific product"""
     query = {"status": {"$ne": "returned"}}
@@ -10445,7 +10445,7 @@ async def lock_tenant_settings(tenant_ids: List[str], lock: bool, admin: dict = 
 # ============ TENANT DATABASE MANAGEMENT ============
 
 @api_router.get("/tenant/database-info")
-async def get_tenant_database_info(current_user: dict = Depends(get_current_user)):
+async def get_tenant_database_info(current_user: dict = Depends(require_tenant)):
     """Get database info for current tenant"""
     tenant_id = current_user.get("tenant_id") or current_user.get("id")
     
@@ -10482,7 +10482,7 @@ async def get_tenant_database_info(current_user: dict = Depends(get_current_user
     }
 
 @api_router.post("/tenant/request-backup")
-async def request_tenant_backup(current_user: dict = Depends(get_current_user)):
+async def request_tenant_backup(current_user: dict = Depends(require_tenant)):
     """Request backup for tenant database"""
     tenant_id = current_user.get("tenant_id") or current_user.get("id")
     now = datetime.now(timezone.utc).isoformat()
@@ -10513,7 +10513,7 @@ async def request_tenant_backup(current_user: dict = Depends(get_current_user)):
     return {"message": "تم إرسال طلب النسخ الاحتياطي", "request_id": request_id}
 
 @api_router.get("/tenant/export-data")
-async def export_tenant_data(current_user: dict = Depends(get_current_user)):
+async def export_tenant_data(current_user: dict = Depends(require_tenant)):
     """Export tenant's own data"""
     import json
     
