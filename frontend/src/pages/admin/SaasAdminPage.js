@@ -1342,6 +1342,10 @@ export default function SaasAdminPage() {
           <TabsContent value="databases" className="space-y-6">
             <DatabaseManager tenants={tenants} agents={agents} />
           </TabsContent>
+
+          <TabsContent value="monitoring" className="space-y-6" data-testid="monitoring-content">
+            <MonitoringSection />
+          </TabsContent>
         </Tabs>
 
         {/* Plan Dialog */}
