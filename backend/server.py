@@ -395,7 +395,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
                     user["created_at"] = datetime.now(timezone.utc).isoformat()
         else:
             # For admin users, get from main database
-            user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
+            user = await main_db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
             if user is None:
                 raise HTTPException(status_code=401, detail="User not found")
             user["user_type"] = user_type or "admin"
