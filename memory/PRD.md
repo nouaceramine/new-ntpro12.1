@@ -31,7 +31,40 @@
 
 ---
 
-## التحديثات الأخيرة (2026-02-12) - إنشاء قاعدة بيانات تلقائي
+## التحديثات الأخيرة (2026-02-12) - إنشاء قاعدة بيانات تلقائي وتخفيف الكود
+
+### 44. تخفيف الكود - المرحلة الأولى ✅ مكتمل
+تم البدء في إعادة هيكلة الكود:
+
+**صفحات الدخول:**
+- **قبل:** 4 صفحات دخول مكررة (LoginPage, AgentLoginPage, TenantLoginPage, UnifiedLoginPage)
+- **بعد:** صفحة واحدة موحدة `UnifiedLoginPage.js` على المسار `/portal`
+- تم حذف 3 ملفات: `LoginPage.js`, `AgentLoginPage.js`, `TenantLoginPage.js`
+
+**هيكل Backend الجديد:**
+```
+/app/backend/
+├── config/
+│   ├── __init__.py
+│   └── database.py      # إعدادات MongoDB والتهيئة
+├── utils/
+│   ├── __init__.py
+│   └── auth.py          # وظائف المصادقة (hash, verify, JWT)
+├── models/              # (للتوسعة المستقبلية)
+├── routes/              # (للتوسعة المستقبلية)
+├── services/            # (للتوسعة المستقبلية)
+└── server.py            # 11,703 سطر (يحتاج تقسيم أكثر)
+```
+
+**الملفات المحذوفة:**
+- `frontend/src/pages/LoginPage.js`
+- `frontend/src/pages/AgentLoginPage.js`
+- `frontend/src/pages/landing/TenantLoginPage.js`
+
+**الملفات المُعدلة:**
+- `frontend/src/App.js` - إزالة imports غير مستخدمة
+
+---
 
 ### 43. إنشاء قاعدة بيانات تلقائية للمشتركين الجدد ✅ مكتمل
 تم تنفيذ ميزة إنشاء قاعدة بيانات منفصلة تلقائياً لكل مشترك عند أول تسجيل دخول:
