@@ -8215,7 +8215,7 @@ async def get_super_admin(credentials: HTTPAuthorizationCredentials = Depends(se
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
-        user = await db.users.find_one({"id": user_id})
+        user = await main_db.users.find_one({"id": user_id})
         if not user or user.get("role") not in ["super_admin", "saas_admin"]:
             raise HTTPException(status_code=403, detail="Super admin access required")
         return user
