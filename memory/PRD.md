@@ -50,44 +50,63 @@ Multi-tenant SaaS e-commerce platform (FastAPI + React + MongoDB) with:
 
 ### Phase 4 - Code Refactoring (Feb 12, 2026)
 **Backend Refactoring Started:**
-- Updated `/app/backend/config/database.py` with:
-  - ContextVar + DB Proxy pattern
-  - `main_db` exported for SaaS operations
-  - `set_tenant_context()` helper function
-- Updated `/app/backend/utils/dependencies.py` with:
-  - `get_tenant_admin`: Blocks super_admin from tenant write operations
-  - `require_tenant`: Blocks super_admin from tenant read operations
+- Updated `/app/backend/config/database.py` with ContextVar + DB Proxy pattern
+- Updated `/app/backend/utils/dependencies.py` with RBAC dependencies
 - Updated route imports in `routes/saas.py`, `routes/customers.py`, `routes/suppliers.py`
 - Created `/app/memory/ARCHITECTURE.md` for documentation
 
-**Frontend Refactoring Started:**
-- Created modular admin components:
-  - `/app/frontend/src/pages/admin/components/MonitoringSection.js`
-  - `/app/frontend/src/pages/admin/components/FinanceReportsSection.js`
-  - `/app/frontend/src/pages/admin/components/index.js`
+**Frontend Refactoring:**
+- Created modular admin components in `/app/frontend/src/pages/admin/components/`
 
-**All tests passed after refactoring: 18/18 (iteration 41)**
+### Phase 5 - Enhanced Agents Dashboard (Feb 12, 2026)
+**New AgentsDashboard Component:** `/app/frontend/src/pages/admin/components/AgentsDashboard.js`
+
+**Features Implemented:**
+1. **UI التصميم الجديد:**
+   - بطاقات إحصائيات متدرجة الألوان (4 بطاقات رئيسية)
+   - بطاقات الأداء (متوسط الأداء، أفضل وكيل، صافي الرصيد)
+   - رموز دائرية ملونة حسب مستوى الأداء
+   - رسوم بيانية صغيرة (Mini Charts) لعرض التغيرات
+
+2. **الفلترة والبحث المتقدم:**
+   - البحث بالاسم، البريد، الهاتف، اسم الشركة
+   - فلترة حسب الحالة (الكل، نشط، معطل، عليهم ديون، الأفضل أداءً)
+   - ترتيب حسب (المشتركين، العمولات، الرصيد، الأداء، تاريخ الإنشاء)
+   - تبديل اتجاه الترتيب (تصاعدي/تنازلي)
+
+3. **تقارير الأداء:**
+   - شارات أداء ملونة (ممتاز >=80%, جيد >=60%, متوسط >=40%, ضعيف <40%)
+   - حساب تلقائي لنقاط الأداء بناءً على: المشتركين، الرصيد، الحالة، العمولات
+   - نافذة تفاصيل شاملة لكل وكيل
+
+4. **نظام العمولات:**
+   - عرض العمولة النسبية والثابتة
+   - إجمالي العمولات المكتسبة
+   - نافذة إضافة دفعات (دفعة، عمولة، استرداد، خصم)
+   - سجل المعاملات المفصل
+
+5. **الإشعارات والتنبيهات:**
+   - تنبيه عند اقتراب الوكيل من حد الدين
+   - عرض الرصيد السالب بلون أحمر
+
+**All 8 features tested: 100% PASS (iteration 42)**
 
 ### Test Credentials
 - Super Admin: `super@ntcommerce.com` / `password`
 - Tenant A: `tenanta@test.com` / `password123`
 - Tenant B: `tenantb@test.com` / `password123`
+- Agent: `wakil@wakil` / password in DB
 
 ## Remaining Backlog
 
 ### P1: Complete Backend Refactoring
-- Migrate routes from `server.py` (11000+ lines) to modular files in `/app/backend/routes/`:
-  - `/saas/*` → `routes/saas.py` (38 routes)
-  - `/products/*` → `routes/products.py` (17 routes)
-  - `/sales/*` → `routes/sales.py` (14 routes)
-  - `/auth/*` → `routes/auth.py` (4 routes)
-  - Other domain routes...
+- Migrate routes from `server.py` (11000+ lines) to modular files in `/app/backend/routes/`
 
-### P1: Complete Frontend Refactoring
-- Break down `SaasAdminPage.js` (1886 lines) into smaller components:
-  - TenantsTable, PlansTable, AgentsTable
-  - PaymentsSection, DatabaseManager
-- Import new components from `/pages/admin/components/`
+### P1: Complete Frontend Refactoring  
+- Break down remaining sections of `SaasAdminPage.js`:
+  - TenantsTable component
+  - PlansTable component
+  - PaymentsSection component
 
 ### P2: E2E Frontend Tests
 - Playwright tests for full user flows
@@ -96,3 +115,4 @@ Multi-tenant SaaS e-commerce platform (FastAPI + React + MongoDB) with:
 - Email notifications for expiring subscriptions
 - Payment gateway integration (Stripe)
 - Automated backup scheduling
+- Agent personal dashboard (لوحة تحكم خاصة بكل وكيل)
