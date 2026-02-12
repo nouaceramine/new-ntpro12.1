@@ -8325,7 +8325,7 @@ async def get_tenant(tenant_id: str, admin: dict = Depends(get_super_admin)):
     tenant["plan_name"] = plan.get("name_ar", "") if plan else ""
     
     # Get tenant stats
-    tenant_db = client[f"tenant_{tenant['id']}"]
+    tenant_db = client[f"tenant_{tenant['id'].replace('-', '_')}"]
     products_count = await tenant_db.products.count_documents({})
     users_count = await tenant_db.users.count_documents({})
     sales_count = await tenant_db.sales.count_documents({})
