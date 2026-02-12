@@ -14,44 +14,39 @@ Multi-tenant SaaS e-commerce platform (FastAPI + React + MongoDB) with:
 - **Auth**: JWT with `tenant_id` claim for tenant users
 
 ### Data Isolation Pattern (ContextVar + DB Proxy)
-```
-Request → Middleware extracts tenant_id from JWT → Sets ContextVar →
-DB Proxy routes all `db.*` calls to tenant-specific database automatically
-```
-- `main_db`: Always points to the SaaS management database
-- `db` (proxy): Routes to tenant DB when ContextVar is set, falls back to main_db
-- Database naming: `tenant_{id_with_underscores}` (hyphens replaced)
+- Middleware extracts `tenant_id` from JWT → Sets ContextVar → DB Proxy routes all `db.*` calls to tenant-specific database
+- `main_db`: SaaS management database (plans, tenants, agents)
+- `db` (proxy): Routes to tenant DB or falls back to main_db
+- Database naming: `tenant_{id_with_underscores}`
 
 ### RBAC Architecture
-- `get_tenant_admin`: Requires tenant_id in JWT - for tenant write operations (251 routes)
-- `require_tenant`: Requires tenant_id in JWT - for tenant read operations
+- `get_tenant_admin`: Requires tenant_id - for tenant write operations (251 routes)
+- `require_tenant`: Requires tenant_id - for tenant read operations
 - `get_admin_user`: Allows super_admin + admin - for user management only
-- `get_super_admin`: Requires super_admin role - for SaaS management routes
-
-### Key Files
-- `/app/backend/server.py`: Main application (all routes, models, middleware)
-- `/app/frontend/src/pages/admin/SaasAdminPage.js`: SaaS Admin with monitoring
-- `/app/frontend/src/pages/UnifiedLoginPage.js`: Single login page
-- `/app/frontend/src/contexts/AuthContext.js`: Auth state management
+- `get_super_admin`: Requires super_admin - for SaaS management + impersonation
 
 ## What's Been Implemented
 
-### Phase 1 - Foundation (Completed)
+### Phase 1 - Foundation
 - Automatic DB creation on first tenant login
 - Unified login page (`/portal`) for all user types
-- Backend modular structure created (routes/, models/, services/)
-- Super Admin UI cleanup (tenant-specific menus hidden)
-- Dashboard TenantResponse optional fields fix
+- Backend modular structure created
+- Super Admin UI cleanup
+- Dashboard TenantResponse fix
 
-### Phase 2 - Security (Feb 12, 2026 - Completed)
-- **Critical Fix: Tenant Data Isolation** - ContextVar + DB Proxy pattern
-  - 22/22 backend isolation tests passed
-- **RBAC on 251 routes** - Super Admin blocked from tenant data
-  - 18/18 RBAC tests passed
-- **Monitoring Dashboard** for Super Admin
+### Phase 2 - Security (Feb 12, 2026)
+- **Data Isolation** - ContextVar + DB Proxy (22/22 tests passed)
+- **RBAC on 251 routes** (18/18 tests passed)
+
+### Phase 3 - Admin Features (Feb 12, 2026)
+- **Tenant Impersonation** - Super Admin can login to any tenant account via `POST /api/saas/impersonate/{tenant_id}` (6/6 tests)
+- **Agent Name** in tenant table - shows which agent created the tenant account
+- **Monitoring Dashboard** with:
   - Per-tenant stats: products, customers, sales, revenue, last activity
-  - Summary cards with totals
-  - Sortable table with all tenant metrics
+  - Summary cards with platform totals
+  - **Automatic alerts**: expiring subscriptions (warning), expired subscriptions (critical), product/user limit reached (warning)
+  - Sortable table + refresh
+- All features tested: **14/14 tests passed (iteration 40)**
 
 ### Test Credentials
 - Super Admin: `super@ntcommerce.com` / `password`
@@ -59,12 +54,8 @@ DB Proxy routes all `db.*` calls to tenant-specific database automatically
 - Tenant B: `tenantb@test.com` / `password123`
 
 ## Remaining Backlog
-
 ### P2: Code Cleanup
-- `/app/backend/routes/` has unused modular route stubs (not connected to app)
-- server.py could be migrated to modular structure in the future
-- Standardize error messages (Arabic vs English)
-
+- `/app/backend/routes/` has unused modular route stubs
+- server.py could be migrated to modular structure
 ### P2: E2E Frontend Tests
-- Playwright tests for tenant login → products → data isolation flow
-- Super Admin monitoring dashboard tests
+- Playwright tests for full user flows
