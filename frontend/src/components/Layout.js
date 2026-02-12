@@ -75,7 +75,8 @@ const iconMap = {
 
 export const Layout = ({ children }) => {
   const { t, language, toggleLanguage, isRTL } = useLanguage();
-  const { user, logout, isAdmin } = useAuth();
+  // Get user type
+  const { user, logout, isAdmin, isSuperAdmin, isTenant } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
