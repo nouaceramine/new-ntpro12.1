@@ -10860,23 +10860,6 @@ class AnnouncementCreate(BaseModel):
 class SettingsPush(BaseModel):
     settings: List[str]
 
-async def get_super_admin_v2(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Verify user is super_admin"""
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        role = payload.get("role")
-        if role not in ["super_admin", "saas_admin"]:
-            raise HTTPException(status_code=403, detail="Super admin access required")
-        user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
 @api_router.get("/system-updates/stats")
 async def get_system_stats(admin: dict = Depends(get_super_admin)):
     """Get system statistics for super admin"""
