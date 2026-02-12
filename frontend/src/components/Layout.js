@@ -228,8 +228,21 @@ export const Layout = ({ children }) => {
     navigate('/login');
   };
 
-  // Default nav sections
-  const defaultNavSections = [
+  // Super Admin sees only SaaS management
+  const superAdminNavSections = [
+    {
+      id: 'saas',
+      title: 'NT Commerce',
+      icon: Building,
+      items: [
+        { path: '/saas-admin', icon: Building, label: language === 'ar' ? 'لوحة تحكم SaaS' : 'SaaS Dashboard' },
+        { path: '/system-updates', icon: Bell, label: language === 'ar' ? 'تحديثات النظام' : 'Mises à jour système' },
+      ]
+    }
+  ];
+
+  // Default nav sections for Tenants and regular users
+  const tenantNavSections = [
     {
       id: 'main',
       title: language === 'ar' ? 'الرئيسية' : 'Principal',
@@ -377,17 +390,11 @@ export const Layout = ({ children }) => {
         { path: '/settings', icon: Settings, label: t.settings },
         { path: '/settings/sidebar', icon: LayoutDashboard, label: language === 'ar' ? 'ترتيب القائمة' : 'Ordre menu' },
       ]
-    }] : []),
-    ...(user?.role === 'super_admin' ? [{
-      id: 'saas',
-      title: 'NT Commerce',
-      icon: Building,
-      items: [
-        { path: '/saas-admin', icon: Building, label: language === 'ar' ? 'لوحة تحكم SaaS' : 'SaaS Dashboard' },
-        { path: '/system-updates', icon: Bell, label: language === 'ar' ? 'تحديثات النظام' : 'Mises à jour système' },
-      ]
     }] : [])
   ];
+
+  // Select navigation based on user type
+  const defaultNavSections = isSuperAdmin ? superAdminNavSections : tenantNavSections;
 
   // Build navSections from customSidebarOrder if available
   const navSections = (() => {
