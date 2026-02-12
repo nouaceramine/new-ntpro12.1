@@ -43,6 +43,7 @@ import {
   Database, Activity, BarChart3, ShoppingCart, UserCheck, LogIn, Bell, UserCog, Copy
 } from 'lucide-react';
 import { DatabaseManager } from '../../components/DatabaseManager';
+import { AgentsDashboard } from './components/AgentsDashboard';
 
 // Monitoring Dashboard Component
 const MonitoringSection = () => {
