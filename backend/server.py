@@ -9845,6 +9845,8 @@ async def agent_create_tenant(tenant: TenantCreate, agent: dict = Depends(get_cu
         "limits_override": {},
         "notes": tenant.notes or "",
         "business_type": tenant.business_type or "retailer",
+        "database_name": f"tenant_{tenant_id.replace('-', '_')}",
+        "database_initialized": False,
         "created_at": now.isoformat()
     }
     
