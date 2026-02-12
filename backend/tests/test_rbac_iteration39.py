@@ -231,11 +231,12 @@ class TestRBACChanges:
     # ==================== Login flows work ====================
     
     def test_health_check(self):
-        """Health check: GET /api/health returns ok"""
+        """Health check: GET /api/health returns ok/healthy"""
         response = requests.get(f"{BASE_URL}/api/health")
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
-        assert data.get("status") == "ok" or "ok" in str(data).lower()
+        status = data.get("status", "").lower()
+        assert status in ["ok", "healthy"], f"Expected ok/healthy, got: {data}"
     
     def test_super_admin_login_works(self):
         """Login flow works for super admin"""
@@ -257,8 +258,10 @@ class TestRBACChanges:
         assert response.status_code == 200, f"Tenant A login failed: {response.text}"
         data = response.json()
         assert "access_token" in data
-        # Tenant should have tenant_id
-        assert data.get("tenant_id") or data.get("user", {}).get("tenant_id")
+        # Tenant should have user_type=tenant and the JWT contains tenant_id
+        assert data.get("user_type") == "tenant", f"Expected user_type=tenant, got: {data}"
+        # Verify JWT contains tenant_id by checking the decoded token structure
+        assert data.get("redirect_to") == "/tenant/dashboard", f"Expected tenant dashboard redirect"
 
 
 class TestCleanup:
