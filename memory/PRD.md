@@ -45,22 +45,32 @@
 ```
 /app/backend/
 ├── config/
-│   ├── __init__.py
-│   └── database.py      # إعدادات MongoDB والتهيئة (62 سطر)
-├── utils/
-│   ├── __init__.py
-│   └── auth.py          # وظائف المصادقة JWT/bcrypt (44 سطر)
+│   ├── __init__.py          # تصدير الإعدادات
+│   └── database.py          # إعدادات MongoDB (62 سطر)
 ├── models/
-│   ├── __init__.py
-│   └── schemas.py       # جميع Pydantic models (1,105 سطر)
+│   ├── __init__.py          # تصدير Models
+│   └── schemas.py           # جميع Pydantic Models (1,105 سطر)
+├── utils/
+│   ├── __init__.py          # تصدير الأدوات
+│   ├── auth.py              # JWT/bcrypt (44 سطر)
+│   └── dependencies.py      # FastAPI Dependencies (48 سطر)
 ├── routes/
-│   ├── __init__.py
-│   └── auth.py          # مسارات المصادقة (54 سطر)
+│   ├── __init__.py          # تصدير Routes
+│   ├── auth.py              # مسارات المصادقة (54 سطر)
+│   ├── customers.py         # مسارات العملاء (80 سطر)
+│   ├── suppliers.py         # مسارات الموردين (65 سطر)
+│   ├── warehouses.py        # مسارات المخازن (74 سطر)
+│   ├── sales.py             # مسارات المبيعات (105 سطر)
+│   ├── purchases.py         # مسارات المشتريات (87 سطر)
+│   ├── saas.py              # مسارات SaaS (174 سطر)
+│   └── reports.py           # مسارات التقارير (120 سطر)
 ├── services/
-│   ├── __init__.py
-│   └── code_generator.py # توليد الأكواد التلقائية (81 سطر)
-└── server.py            # الملف الرئيسي (11,703 سطر - يحتاج تقسيم أكثر)
+│   ├── __init__.py          # تصدير الخدمات
+│   └── code_generator.py    # توليد الأكواد التلقائية (81 سطر)
+└── server.py                # الملف الرئيسي (11,703 سطر)
 ```
+
+**ملاحظة:** الـ routes الجديدة جاهزة للاستخدام ويمكن دمجها في server.py تدريجياً.
 
 **الملفات المحذوفة:**
 - `frontend/src/pages/LoginPage.js`
