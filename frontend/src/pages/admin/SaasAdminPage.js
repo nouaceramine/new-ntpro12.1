@@ -593,6 +593,11 @@ export default function SaasAdminPage() {
   const [agentTransactions, setAgentTransactions] = useState([]);
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
   
+  // Impersonation State
+  const [impersonateDialogOpen, setImpersonateDialogOpen] = useState(false);
+  const [impersonateTenant, setImpersonateTenant] = useState(null);
+  const [impersonateLoading, setImpersonateLoading] = useState(false);
+  
   const [agentForm, setAgentForm] = useState({
     name: '', email: '', password: '', phone: '', company_name: '', address: '',
     commission_percent: 10, commission_fixed: 0, credit_limit: 100000, notes: ''
