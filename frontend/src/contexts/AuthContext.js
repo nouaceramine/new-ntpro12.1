@@ -77,6 +77,8 @@ export const AuthProvider = ({ children }) => {
   // Admin includes both 'admin' and 'super_admin' roles
   const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
   const isSuperAdmin = user?.role === 'super_admin';
+  const isTenant = user?.user_type === 'tenant' || user?.role === 'tenant_admin';
+  const isAgent = user?.user_type === 'agent' || user?.role === 'agent';
   
   const value = {
     user,
@@ -87,6 +89,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     isAdmin,
     isSuperAdmin,
+    isTenant,
+    isAgent,
     isAuthenticated: !!user
   };
   
