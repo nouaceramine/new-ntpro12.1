@@ -46,14 +46,20 @@
 /app/backend/
 ├── config/
 │   ├── __init__.py
-│   └── database.py      # إعدادات MongoDB والتهيئة
+│   └── database.py      # إعدادات MongoDB والتهيئة (62 سطر)
 ├── utils/
 │   ├── __init__.py
-│   └── auth.py          # وظائف المصادقة (hash, verify, JWT)
-├── models/              # (للتوسعة المستقبلية)
-├── routes/              # (للتوسعة المستقبلية)
-├── services/            # (للتوسعة المستقبلية)
-└── server.py            # 11,703 سطر (يحتاج تقسيم أكثر)
+│   └── auth.py          # وظائف المصادقة JWT/bcrypt (44 سطر)
+├── models/
+│   ├── __init__.py
+│   └── schemas.py       # جميع Pydantic models (1,105 سطر)
+├── routes/
+│   ├── __init__.py
+│   └── auth.py          # مسارات المصادقة (54 سطر)
+├── services/
+│   ├── __init__.py
+│   └── code_generator.py # توليد الأكواد التلقائية (81 سطر)
+└── server.py            # الملف الرئيسي (11,703 سطر - يحتاج تقسيم أكثر)
 ```
 
 **الملفات المحذوفة:**
