@@ -465,7 +465,7 @@ async def get_tenant_admin(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="صلاحيات غير كافية")
     return current_user
 
-async def get_tenant_user(current_user: dict = Depends(get_current_user)):
+async def require_tenant(current_user: dict = Depends(get_current_user)):
     """Require tenant context for read operations - any authenticated tenant user."""
     if not current_user.get("tenant_id"):
         raise HTTPException(status_code=403, detail="هذا الإجراء متاح فقط لمشتركي المنصة")
