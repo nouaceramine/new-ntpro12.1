@@ -4,3 +4,4 @@
  */
 export { MonitoringSection } from './MonitoringSection';
 export { FinanceReportsSection } from './FinanceReportsSection';
+export { AgentsDashboard } from './AgentsDashboard';
