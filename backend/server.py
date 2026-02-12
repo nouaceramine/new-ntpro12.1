@@ -1464,7 +1464,7 @@ async def unified_login(credentials: UserLogin):
             pass
     
     # 3. Check Tenants
-    tenant = await db.saas_tenants.find_one({"email": email}, {"_id": 0})
+    tenant = await db.saas_tenants.find_one({"email": email})
     if tenant:
         stored_password = tenant.get("password", "")
         try:
@@ -1477,6 +1477,34 @@ async def unified_login(credentials: UserLogin):
                     end_date = datetime.fromisoformat(tenant["subscription_ends_at"].replace("Z", "+00:00"))
                     if end_date < datetime.now(timezone.utc) and not tenant.get("is_trial"):
                         raise HTTPException(status_code=403, detail="انتهت صلاحية الاشتراك")
+                
+                # Check if this is the first login - create database if not initialized
+                tenant_id = tenant['id']
+                if not tenant.get("database_initialized", False):
+                    logger.info(f"First login (unified) for tenant {tenant_id} - initializing database...")
+                    tenant_db = await init_tenant_database(tenant_id)
+                    
+                    # Create admin user in tenant's database
+                    admin_user = {
+                        "id": str(uuid.uuid4()),
+                        "name": tenant["name"],
+                        "email": tenant["email"],
+                        "password": stored_password,
+                        "role": "admin",
+                        "permissions": {},
+                        "created_at": datetime.now(timezone.utc).isoformat()
+                    }
+                    await tenant_db.users.insert_one(admin_user)
+                    
+                    # Mark database as initialized
+                    await db.saas_tenants.update_one(
+                        {"id": tenant_id},
+                        {"$set": {
+                            "database_initialized": True,
+                            "first_login_at": datetime.now(timezone.utc).isoformat()
+                        }}
+                    )
+                    logger.info(f"Database initialized successfully for tenant {tenant_id}")
                 
                 token_data = {
                     "sub": tenant["id"],
@@ -1501,7 +1529,8 @@ async def unified_login(credentials: UserLogin):
                         "company_name": tenant.get("company_name", ""),
                         "plan_name": plan.get("name_ar", "") if plan else "",
                         "subscription_ends_at": tenant.get("subscription_ends_at"),
-                        "database_name": f"tenant_{tenant['id'].replace('-', '_')}"
+                        "database_name": f"tenant_{tenant['id'].replace('-', '_')}",
+                        "is_first_login": not tenant.get("database_initialized", False)
                     }
                 }
         except HTTPException:
