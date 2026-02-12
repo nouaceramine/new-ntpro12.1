@@ -42,13 +42,33 @@ if RESEND_AVAILABLE:
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]  # Main SaaS database
+main_db = client[os.environ['DB_NAME']]  # Main SaaS database (plans, tenants, agents, super admin users)
+
+# ContextVar for per-request tenant database isolation
+_tenant_db_ctx: ContextVar = ContextVar('tenant_db')
+
+class _TenantDBProxy:
+    """Proxy that routes DB calls to tenant-specific DB when in tenant context, otherwise main DB.
+    This ensures data isolation: each tenant's requests automatically use their own database."""
+    def __getattr__(self, name):
+        try:
+            return getattr(_tenant_db_ctx.get(), name)
+        except LookupError:
+            return getattr(main_db, name)
+
+    def __getitem__(self, name):
+        try:
+            return _tenant_db_ctx.get()[name]
+        except LookupError:
+            return main_db[name]
+
+db = _TenantDBProxy()  # All existing code uses `db` - now routes to correct tenant DB automatically
 
 # Multi-tenancy: Get tenant-specific database
 def get_tenant_db(tenant_id: str):
     """Get database for a specific tenant"""
     if not tenant_id:
-        return db
+        return main_db
     db_name = f"tenant_{tenant_id.replace('-', '_')}"
     return client[db_name]
 
