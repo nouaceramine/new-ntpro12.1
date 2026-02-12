@@ -40,7 +40,7 @@ import {
   AlertTriangle, DollarSign, Search, MoreHorizontal,
   Star, Eye, EyeOff, Ban, RefreshCw, Calendar, Store, Truck, ShoppingBag,
   Banknote, Wallet, PiggyBank, Receipt, Calculator, FileText, ArrowUpRight, ArrowDownRight,
-  Database, Activity, BarChart3, ShoppingCart, UserCheck
+  Database, Activity, BarChart3, ShoppingCart, UserCheck, LogIn, Bell, UserCog, Copy
 } from 'lucide-react';
 import { DatabaseManager } from '../../components/DatabaseManager';
 
