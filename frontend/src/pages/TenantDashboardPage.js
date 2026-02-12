@@ -298,6 +298,18 @@ export default function TenantDashboardPage() {
   const [customerForm, setCustomerForm] = useState({ name: '', phone: '', email: '' });
   const [supplierForm, setSupplierForm] = useState({ name: '', phone: '', email: '' });
   const [employeeForm, setEmployeeForm] = useState({ name: '', email: '', password: '', role: 'seller' });
+  
+  // Database Management State
+  const [dbInfo, setDbInfo] = useState({
+    size_mb: 0,
+    collections_count: 0,
+    documents_count: 0,
+    last_backup: null,
+    is_frozen: false,
+    status: 'healthy'
+  });
+  const [dbLoading, setDbLoading] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
 
   const tenantData = JSON.parse(localStorage.getItem('tenantData') || localStorage.getItem('user') || '{}');
   const token = localStorage.getItem('tenantToken') || localStorage.getItem('token');
