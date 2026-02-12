@@ -9236,6 +9236,8 @@ async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_ad
         "notes": "",
         "business_type": tenant.business_type or "retailer",
         "database_name": f"tenant_{tenant_id.replace('-', '_')}",
+        "database_initialized": True,
+        "first_login_at": now.isoformat(),
         "created_at": now.isoformat()
     }
     
