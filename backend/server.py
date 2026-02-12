@@ -10016,8 +10016,36 @@ async def tenant_login(login: UserLogin):
     if ends_at < now:
         raise HTTPException(status_code=403, detail="انتهت صلاحية الاشتراك. يرجى تجديد الاشتراك.")
     
+    # Check if this is the first login - create database if not initialized
+    tenant_id = tenant['id']
+    if not tenant.get("database_initialized", False):
+        logger.info(f"First login for tenant {tenant_id} - initializing database...")
+        tenant_db = await init_tenant_database(tenant_id)
+        
+        # Create admin user in tenant's database
+        admin_user = {
+            "id": str(uuid.uuid4()),
+            "name": tenant["name"],
+            "email": tenant["email"],
+            "password": password_hash,
+            "role": "admin",
+            "permissions": {},
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await tenant_db.users.insert_one(admin_user)
+        
+        # Mark database as initialized
+        await db.saas_tenants.update_one(
+            {"id": tenant_id},
+            {"$set": {
+                "database_initialized": True,
+                "first_login_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        logger.info(f"Database initialized successfully for tenant {tenant_id}")
+    
     # Get admin user from tenant DB using proper function
-    tenant_db = get_tenant_db(tenant['id'])
+    tenant_db = get_tenant_db(tenant_id)
     user = await tenant_db.users.find_one({"email": login.email}, {"_id": 0, "hashed_password": 0})
     
     if not user:
