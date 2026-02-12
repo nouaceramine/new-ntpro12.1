@@ -71,8 +71,8 @@ import SaasRegisterPage from "./pages/landing/RegisterPage";
 import SaasAdminPage from "./pages/admin/SaasAdminPage";
 
 // Protected Route Component
-const ProtectedRoute = ({ children, adminOnly = false }) => {
-  const { isAuthenticated, loading, isAdmin } = useAuth();
+const ProtectedRoute = ({ children, adminOnly = false, tenantOnly = false }) => {
+  const { isAuthenticated, loading, isAdmin, isSuperAdmin, isTenant, user } = useAuth();
 
   if (loading) {
     return (
@@ -86,7 +86,21 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
     return <Navigate to="/portal" replace />;
   }
 
+  // Super Admin should only access /saas-admin
+  if (isSuperAdmin && !window.location.pathname.startsWith('/saas-admin')) {
+    return <Navigate to="/saas-admin" replace />;
+  }
+
+  // Tenant should not access /saas-admin
+  if (isTenant && window.location.pathname.startsWith('/saas-admin')) {
+    return <Navigate to="/" replace />;
+  }
+
   if (adminOnly && !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (tenantOnly && !isTenant) {
     return <Navigate to="/" replace />;
   }
 
