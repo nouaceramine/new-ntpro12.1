@@ -35,12 +35,13 @@ class TestDatabaseManagementAPIs:
     def test_saas_admin_login(self):
         """Test saas_admin login with super@ntcommerce.com / admin123"""
         response = requests.post(
-            f"{BASE_URL}/api/saas-admin/login",
+            f"{BASE_URL}/api/auth/login",
             json={"email": "super@ntcommerce.com", "password": "admin123"}
         )
         assert response.status_code == 200, f"Login failed: {response.text}"
         data = response.json()
-        assert "token" in data, "Token not in response"
+        assert "access_token" in data, "access_token not in response"
+        assert data.get("user", {}).get("role") == "saas_admin", "User should have saas_admin role"
         print(f"✓ Login successful, token received")
     
     def test_get_all_databases(self):
