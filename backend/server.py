@@ -456,6 +456,21 @@ async def get_admin_user(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
+async def get_tenant_admin(current_user: dict = Depends(get_current_user)):
+    """Require tenant context - rejects super_admin users without tenant_id.
+    Use this for tenant-specific data routes (products, customers, sales, etc.)."""
+    if not current_user.get("tenant_id"):
+        raise HTTPException(status_code=403, detail="هذا الإجراء متاح فقط لمشتركي المنصة")
+    if current_user.get("role") not in ["admin", "manager", "user", "tenant_admin"]:
+        raise HTTPException(status_code=403, detail="صلاحيات غير كافية")
+    return current_user
+
+async def get_tenant_user(current_user: dict = Depends(get_current_user)):
+    """Require tenant context for read operations - any authenticated tenant user."""
+    if not current_user.get("tenant_id"):
+        raise HTTPException(status_code=403, detail="هذا الإجراء متاح فقط لمشتركي المنصة")
+    return current_user
+
 async def generate_invoice_number(prefix: str) -> str:
     today = datetime.now(timezone.utc).strftime("%Y%m%d")
     count = await db.counters.find_one_and_update(
