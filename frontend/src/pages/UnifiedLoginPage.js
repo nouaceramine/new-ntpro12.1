@@ -58,7 +58,9 @@ export default function UnifiedLoginPage() {
       // Redirect after short delay
       setTimeout(() => {
         // Use window.location for full page reload to update AuthContext
-        window.location.href = redirect_to;
+        const redirectPath = user_type === 'admin' ? '/saas-admin' : 
+                            user_type === 'agent' ? '/agent/dashboard' : '/';
+        window.location.href = redirectPath;
       }, 1500);
       
     } catch (error) {
