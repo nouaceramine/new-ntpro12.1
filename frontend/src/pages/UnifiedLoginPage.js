@@ -35,22 +35,22 @@ export default function UnifiedLoginPage() {
       // Store token based on user type
       if (user_type === 'admin') {
         localStorage.setItem('token', access_token);
-        localStorage.setItem('user', JSON.stringify(user));
-        setLoginSuccess({ type: 'admin', name: user.name, redirect: redirect_to });
+        localStorage.setItem('user', JSON.stringify({ ...user, user_type: 'admin' }));
+        setLoginSuccess({ type: 'admin', name: user.name, redirect: '/saas-admin' });
       } else if (user_type === 'agent') {
         localStorage.setItem('agentToken', access_token);
         localStorage.setItem('agentData', JSON.stringify(user));
         // Also set token for Layout compatibility
         localStorage.setItem('token', access_token);
-        localStorage.setItem('user', JSON.stringify({ ...user, role: 'agent' }));
-        setLoginSuccess({ type: 'agent', name: user.name, redirect: redirect_to });
+        localStorage.setItem('user', JSON.stringify({ ...user, role: 'agent', user_type: 'agent' }));
+        setLoginSuccess({ type: 'agent', name: user.name, redirect: '/agent/dashboard' });
       } else if (user_type === 'tenant') {
         localStorage.setItem('tenantToken', access_token);
         localStorage.setItem('tenantData', JSON.stringify(user));
         // Also set token for Layout compatibility
         localStorage.setItem('token', access_token);
         localStorage.setItem('user', JSON.stringify({ ...user, role: 'admin', user_type: 'tenant' }));
-        setLoginSuccess({ type: 'tenant', name: user.name, redirect: redirect_to });
+        setLoginSuccess({ type: 'tenant', name: user.name, redirect: '/' });
       }
       
       toast.success(`مرحباً ${user.name}!`);
