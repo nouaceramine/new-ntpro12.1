@@ -10860,13 +10860,13 @@ class AnnouncementCreate(BaseModel):
 class SettingsPush(BaseModel):
     settings: List[str]
 
-async def get_super_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_super_admin_v2(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Verify user is super_admin"""
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
         role = payload.get("role")
-        if role != "super_admin":
+        if role not in ["super_admin", "saas_admin"]:
             raise HTTPException(status_code=403, detail="Super admin access required")
         user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
         if not user:
