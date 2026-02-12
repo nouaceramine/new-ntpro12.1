@@ -19,14 +19,14 @@ class TestDatabaseManagementAPIs:
         self.session = requests.Session()
         self.session.headers.update({"Content-Type": "application/json"})
         
-        # Login as saas_admin
+        # Login as saas_admin using /api/auth/login
         login_response = self.session.post(
-            f"{BASE_URL}/api/saas-admin/login",
+            f"{BASE_URL}/api/auth/login",
             json={"email": "super@ntcommerce.com", "password": "admin123"}
         )
         
         if login_response.status_code == 200:
-            token = login_response.json().get("token")
+            token = login_response.json().get("access_token")
             self.session.headers.update({"Authorization": f"Bearer {token}"})
             self.token = token
         else:
