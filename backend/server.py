@@ -8295,10 +8295,18 @@ async def get_tenants(admin: dict = Depends(get_super_admin)):
     """Get all tenants"""
     tenants = await db.saas_tenants.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
     
-    # Add plan names and stats
+    # Cache agents for lookup
+    agents_list = await db.saas_agents.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(1000)
+    agents_map = {a["id"]: a["name"] for a in agents_list}
+    
+    # Add plan names, agent names, and stats
     for tenant in tenants:
         plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0, "name": 1, "name_ar": 1})
         tenant["plan_name"] = plan.get("name_ar", "") if plan else ""
+        
+        # Add agent name
+        agent_id = tenant.get("agent_id")
+        tenant["agent_name"] = agents_map.get(agent_id, "") if agent_id else ""
         
         # Get tenant stats
         tenant_db = client[f"tenant_{tenant['id'].replace('-', '_')}"]
