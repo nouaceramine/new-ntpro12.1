@@ -2,13 +2,14 @@
 NT Commerce API Server
 Main server file with organized imports from modules
 """
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, UploadFile, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, File, UploadFile, Header, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from contextvars import ContextVar
 import os
 import logging
 from pathlib import Path
