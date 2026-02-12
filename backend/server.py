@@ -423,14 +423,14 @@ async def get_tenant_user(credentials: HTTPAuthorizationCredentials = Depends(se
         if user_type == "tenant" and tenant_id:
             tenant_db = get_tenant_db(tenant_id)
         else:
-            tenant_db = db  # Use main database for admin users
+            tenant_db = main_db  # Use main database for admin users
             tenant_id = None
         
         # Get user info
         user = await tenant_db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
         if user is None and tenant_id:
             # For tenant owner, create entry from saas_tenants
-            tenant = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0, "password": 0})
+            tenant = await main_db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0, "password": 0})
             if tenant:
                 user = {
                     "id": tenant["id"],
@@ -440,7 +440,7 @@ async def get_tenant_user(credentials: HTTPAuthorizationCredentials = Depends(se
                 }
         
         if user is None:
-            user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
+            user = await main_db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
         
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
