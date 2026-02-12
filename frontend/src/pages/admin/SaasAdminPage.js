@@ -1812,6 +1812,74 @@ export default function SaasAdminPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Impersonate Tenant Dialog */}
+        <Dialog open={impersonateDialogOpen} onOpenChange={setImpersonateDialogOpen}>
+          <DialogContent className="max-w-md" data-testid="impersonate-dialog">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <LogIn className="h-5 w-5 text-primary" />
+                الدخول لحساب المشترك
+              </DialogTitle>
+              <DialogDescription>
+                سيتم تسجيل دخولك كمشرف في حساب هذا المشترك
+              </DialogDescription>
+            </DialogHeader>
+            {impersonateTenant && (
+              <div className="space-y-4 py-2">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">الاسم:</span>
+                    <span className="font-medium">{impersonateTenant.name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">الشركة:</span>
+                    <span className="font-medium">{impersonateTenant.company_name || '—'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">البريد:</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium font-mono text-sm">{impersonateTenant.email}</span>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => {
+                        navigator.clipboard.writeText(impersonateTenant.email);
+                        toast.success('تم نسخ البريد');
+                      }}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">الحالة:</span>
+                    <Badge className={impersonateTenant.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+                      {impersonateTenant.is_active ? 'نشط' : 'معطل'}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">الخطة:</span>
+                    <Badge variant="outline">{impersonateTenant.plan_name || '—'}</Badge>
+                  </div>
+                  {impersonateTenant.agent_name && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">الوكيل:</span>
+                      <span className="font-medium">{impersonateTenant.agent_name}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setImpersonateDialogOpen(false)}>إلغاء</Button>
+              <Button onClick={handleImpersonate} disabled={impersonateLoading || !impersonateTenant?.is_active} data-testid="impersonate-login-btn">
+                {impersonateLoading ? (
+                  <RefreshCw className="h-4 w-4 animate-spin ml-2" />
+                ) : (
+                  <LogIn className="h-4 w-4 ml-2" />
+                )}
+                {impersonateLoading ? 'جاري الدخول...' : 'دخول للحساب'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
