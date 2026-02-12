@@ -9981,6 +9981,8 @@ async def register_tenant(tenant: TenantCreate):
         "limits_override": {},
         "notes": "",
         "database_name": f"tenant_{tenant_id.replace('-', '_')}",
+        "database_initialized": True,
+        "first_login_at": now.isoformat(),
         "created_at": now.isoformat()
     }
     
