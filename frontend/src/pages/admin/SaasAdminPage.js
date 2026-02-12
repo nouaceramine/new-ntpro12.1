@@ -69,7 +69,7 @@ const MonitoringSection = () => {
   if (loading) return <div className="text-center py-12 text-muted-foreground">جاري التحميل...</div>;
   if (!monitoringData) return null;
 
-  const { tenants, summary } = monitoringData;
+  const { tenants, summary, alerts = [] } = monitoringData;
   const sorted = [...tenants].sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
 
   const formatDate = (d) => {
@@ -78,8 +78,39 @@ const MonitoringSection = () => {
     catch { return '—'; }
   };
 
+  const severityStyles = {
+    critical: 'bg-red-50 border-red-200 text-red-800',
+    warning: 'bg-amber-50 border-amber-200 text-amber-800',
+    info: 'bg-blue-50 border-blue-200 text-blue-800',
+  };
+  const severityIcon = {
+    critical: <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />,
+    warning: <Bell className="h-4 w-4 text-amber-500 shrink-0" />,
+    info: <Activity className="h-4 w-4 text-blue-500 shrink-0" />,
+  };
+
   return (
     <div className="space-y-6">
+      {/* Alerts Section */}
+      {alerts.length > 0 && (
+        <div className="space-y-2" data-testid="monitoring-alerts">
+          <h3 className="font-semibold text-sm flex items-center gap-2">
+            <Bell className="h-4 w-4" /> التنبيهات ({alerts.length})
+          </h3>
+          <div className="grid gap-2">
+            {alerts.map((alert, i) => (
+              <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${severityStyles[alert.severity] || severityStyles.info}`}>
+                {severityIcon[alert.severity]}
+                <span className="text-sm font-medium">{alert.message}</span>
+                {alert.days_left !== undefined && alert.days_left > 0 && (
+                  <Badge variant="outline" className="mr-auto text-xs">{alert.days_left} يوم</Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card><CardContent className="p-4 text-center">
