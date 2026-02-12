@@ -8623,6 +8623,75 @@ async def get_tenant_monitoring(admin: dict = Depends(get_super_admin)):
     total_rev = sum(t["total_revenue"] for t in monitoring_data)
     active_count = sum(1 for t in monitoring_data if t["is_active"])
     
+    # Generate alerts
+    alerts = []
+    now = datetime.now(timezone.utc)
+    plans_cache = {}
+    for t in monitoring_data:
+        # Alert: subscription expiring within 7 days
+        sub_end = t.get("subscription_ends_at")
+        if sub_end:
+            try:
+                end_dt = datetime.fromisoformat(sub_end.replace('Z', '+00:00')) if isinstance(sub_end, str) else sub_end
+                days_left = (end_dt - now).days
+                if 0 < days_left <= 7:
+                    alerts.append({
+                        "type": "expiring_soon",
+                        "severity": "warning",
+                        "tenant_name": t["tenant_name"],
+                        "tenant_id": t["tenant_id"],
+                        "message": f"اشتراك {t['tenant_name']} ينتهي خلال {days_left} يوم",
+                        "days_left": days_left
+                    })
+                elif days_left <= 0:
+                    alerts.append({
+                        "type": "expired",
+                        "severity": "critical",
+                        "tenant_name": t["tenant_name"],
+                        "tenant_id": t["tenant_id"],
+                        "message": f"اشتراك {t['tenant_name']} منتهي",
+                        "days_left": days_left
+                    })
+            except Exception:
+                pass
+        
+        # Alert: products exceeding plan limit
+        tenant_full = next((tn for tn in tenants if tn.get("id") == t["tenant_id"]), None)
+        if tenant_full:
+            plan_id = tenant_full.get("plan_id")
+            if plan_id:
+                if plan_id not in plans_cache:
+                    plan = await main_db.saas_plans.find_one({"id": plan_id}, {"_id": 0})
+                    plans_cache[plan_id] = plan
+                plan = plans_cache.get(plan_id)
+                if plan:
+                    max_products = plan.get("limits", {}).get("products", 0)
+                    max_users = plan.get("limits", {}).get("users", 0)
+                    if max_products and t["products_count"] >= max_products:
+                        alerts.append({
+                            "type": "product_limit",
+                            "severity": "warning",
+                            "tenant_name": t["tenant_name"],
+                            "tenant_id": t["tenant_id"],
+                            "message": f"{t['tenant_name']} وصل لحد المنتجات ({t['products_count']}/{max_products})",
+                            "current": t["products_count"],
+                            "limit": max_products
+                        })
+                    if max_users and t["users_count"] >= max_users:
+                        alerts.append({
+                            "type": "user_limit",
+                            "severity": "info",
+                            "tenant_name": t["tenant_name"],
+                            "tenant_id": t["tenant_id"],
+                            "message": f"{t['tenant_name']} وصل لحد المستخدمين ({t['users_count']}/{max_users})",
+                            "current": t["users_count"],
+                            "limit": max_users
+                        })
+    
+    # Sort alerts: critical first, then warning, then info
+    severity_order = {"critical": 0, "warning": 1, "info": 2}
+    alerts.sort(key=lambda a: severity_order.get(a["severity"], 3))
+    
     return {
         "tenants": monitoring_data,
         "summary": {
@@ -8632,7 +8701,8 @@ async def get_tenant_monitoring(admin: dict = Depends(get_super_admin)):
             "total_customers": total_customers,
             "total_sales": total_sales,
             "total_revenue": total_rev,
-        }
+        },
+        "alerts": alerts
     }
 
 @api_router.get("/saas/payments", response_model=List[SubscriptionPaymentResponse])
