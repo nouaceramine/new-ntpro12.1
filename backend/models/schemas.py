@@ -117,24 +117,25 @@ class TenantResponse(BaseModel):
     id: str
     name: str
     email: str
-    phone: str
-    company_name: str
+    phone: str = ""
+    company_name: str = ""
     plan_id: str
     plan_name: Optional[str] = ""
     agent_id: Optional[str] = None
     agent_name: Optional[str] = ""
-    is_active: bool
-    is_trial: bool
+    is_active: bool = True
+    is_trial: bool = False
     trial_ends_at: Optional[str] = None
-    subscription_type: str
-    subscription_starts_at: str
-    subscription_ends_at: str
-    features_override: dict
-    limits_override: dict
-    notes: str
+    subscription_type: str = "monthly"
+    subscription_starts_at: str = ""
+    subscription_ends_at: str = ""
+    features_override: dict = {}
+    limits_override: dict = {}
+    notes: str = ""
     stats: Optional[dict] = None
     business_type: Optional[str] = "retailer"
-    created_at: str
+    database_initialized: bool = False
+    created_at: str = ""
 
 # ============ AGENT/RESELLER MODELS ============
 
