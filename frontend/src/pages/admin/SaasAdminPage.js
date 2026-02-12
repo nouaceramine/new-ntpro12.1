@@ -788,6 +788,32 @@ export default function SaasAdminPage() {
   };
 
   // Tenant Functions
+  const openImpersonateDialog = (tenant) => {
+    setImpersonateTenant(tenant);
+    setImpersonateDialogOpen(true);
+  };
+
+  const handleImpersonate = async () => {
+    if (!impersonateTenant) return;
+    setImpersonateLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post(`${API}/saas/impersonate/${impersonateTenant.id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = res.data;
+      // Store new token and user data
+      localStorage.setItem('token', data.access_token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('user_type', 'tenant');
+      // Redirect to dashboard
+      window.location.href = '/';
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'فشل الدخول لحساب المشترك');
+      setImpersonateLoading(false);
+    }
+  };
+
   const openTenantDialog = (tenant = null) => {
     if (tenant) {
       setEditingTenant(tenant);
