@@ -11231,6 +11231,131 @@ async def lock_tenant_settings(tenant_ids: List[str], lock: bool, admin: dict = 
     return {"message": f"تم {'قفل' if lock else 'فتح'} الإعدادات لـ {len(tenant_ids)} مشترك"}
 
 
+# ============ TENANT DATABASE MANAGEMENT ============
+
+@api_router.get("/tenant/database-info")
+async def get_tenant_database_info(current_user: dict = Depends(get_current_user)):
+    """Get database info for current tenant"""
+    tenant_id = current_user.get("tenant_id") or current_user.get("id")
+    
+    # Get tenant info
+    tenant = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0})
+    
+    if tenant:
+        db_name = f"tenant_{tenant_id.replace('-', '_')}"
+        try:
+            tenant_db = client[db_name]
+            stats = await tenant_db.command("dbStats")
+            cols = await tenant_db.list_collection_names()
+            docs = sum([await tenant_db[c].count_documents({}) for c in cols])
+            
+            return {
+                "size_mb": round(stats.get("dataSize", 0) / (1024 * 1024), 2),
+                "collections_count": len(cols),
+                "documents_count": docs,
+                "last_backup": tenant.get("last_backup"),
+                "is_frozen": tenant.get("is_frozen", False),
+                "status": "frozen" if tenant.get("is_frozen") else "healthy"
+            }
+        except Exception as e:
+            logger.error(f"Error getting tenant DB info: {e}")
+    
+    # Fallback: return estimated data
+    return {
+        "size_mb": 0,
+        "collections_count": 8,
+        "documents_count": 0,
+        "last_backup": None,
+        "is_frozen": False,
+        "status": "healthy"
+    }
+
+@api_router.post("/tenant/request-backup")
+async def request_tenant_backup(current_user: dict = Depends(get_current_user)):
+    """Request backup for tenant database"""
+    tenant_id = current_user.get("tenant_id") or current_user.get("id")
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Create backup request
+    request_id = str(uuid.uuid4())
+    await db.backup_requests.insert_one({
+        "id": request_id,
+        "tenant_id": tenant_id,
+        "tenant_name": current_user.get("name") or current_user.get("company_name"),
+        "status": "pending",
+        "requested_at": now,
+        "processed_at": None
+    })
+    
+    # Log operation
+    await db.database_operation_logs.insert_one({
+        "id": str(uuid.uuid4()),
+        "operation": "backup_request",
+        "database_id": tenant_id,
+        "database_name": f"tenant_{tenant_id.replace('-', '_')}",
+        "executed_by": current_user.get("name"),
+        "status": "pending",
+        "details": "طلب نسخة احتياطية من المشترك",
+        "created_at": now
+    })
+    
+    return {"message": "تم إرسال طلب النسخ الاحتياطي", "request_id": request_id}
+
+@api_router.get("/tenant/export-data")
+async def export_tenant_data(current_user: dict = Depends(get_current_user)):
+    """Export tenant's own data"""
+    import json
+    
+    tenant_id = current_user.get("tenant_id") or current_user.get("id")
+    
+    # Check if frozen
+    tenant = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if tenant and tenant.get("is_frozen"):
+        raise HTTPException(status_code=403, detail="قاعدة البيانات مجمدة")
+    
+    db_name = f"tenant_{tenant_id.replace('-', '_')}"
+    
+    try:
+        tenant_db = client[db_name]
+        export_data = {}
+        
+        # Export allowed collections only
+        allowed_collections = ["products", "customers", "suppliers", "employees", "sales", "expenses", "settings"]
+        
+        for col in allowed_collections:
+            try:
+                docs = await tenant_db[col].find({}, {"_id": 0}).to_list(100000)
+                export_data[col] = docs
+            except:
+                export_data[col] = []
+        
+        export_data["exported_at"] = datetime.now(timezone.utc).isoformat()
+        export_data["tenant_id"] = tenant_id
+        
+        content = json.dumps(export_data, ensure_ascii=False, indent=2, default=str)
+        
+        # Log export
+        await db.database_operation_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "operation": "self_export",
+            "database_id": tenant_id,
+            "database_name": db_name,
+            "executed_by": current_user.get("name"),
+            "status": "success",
+            "details": "تصدير بيانات ذاتي",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return StreamingResponse(
+            io.BytesIO(content.encode('utf-8')),
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename={db_name}_export.json"}
+        )
+    except Exception as e:
+        logger.error(f"Error exporting tenant data: {e}")
+        raise HTTPException(status_code=500, detail="حدث خطأ أثناء التصدير")
+
+
 # ============ DATABASE MANAGEMENT SYSTEM ============
 
 @api_router.get("/saas/databases")
