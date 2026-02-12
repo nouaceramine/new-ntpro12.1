@@ -1101,3 +1101,5 @@ class OCRRequest(BaseModel):
     image_base64: str
 
 class OCRResponse(BaseModel):
+    extracted_models: List[str]
+    raw_text: str
