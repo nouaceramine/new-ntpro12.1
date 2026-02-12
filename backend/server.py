@@ -826,7 +826,7 @@ async def create_product(product: ProductCreate, admin: dict = Depends(get_tenan
     return ProductResponse(**product_doc)
 
 @api_router.get("/products", response_model=List[ProductResponse])
-async def get_products(search: Optional[str] = None, model: Optional[str] = None, barcode: Optional[str] = None, family_id: Optional[str] = None):
+async def get_products(search: Optional[str] = None, model: Optional[str] = None, barcode: Optional[str] = None, family_id: Optional[str] = None, user: dict = Depends(require_tenant)):
     query = {}
     
     if barcode:
@@ -895,7 +895,8 @@ async def get_products_paginated(
     barcode: Optional[str] = None, 
     family_id: Optional[str] = None,
     page: int = 1,
-    page_size: int = 20
+    page_size: int = 20,
+    user: dict = Depends(require_tenant)
 ):
     """Get products with pagination support"""
     query = {}
@@ -1149,7 +1150,7 @@ async def generate_session_code():
     return {"code": f"S{str(next_num).zfill(3)}/{year}"}
 
 @api_router.get("/products/{product_id}", response_model=ProductResponse)
-async def get_product(product_id: str):
+async def get_product(product_id: str, user: dict = Depends(require_tenant)):
     product = await db.products.find_one({"id": product_id}, {"_id": 0})
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
