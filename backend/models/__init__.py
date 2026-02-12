@@ -1,1 +1,2 @@
-"""Models package"""
+"""Models package - All Pydantic models"""
+from .schemas import *
