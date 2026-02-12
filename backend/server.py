@@ -10816,6 +10816,24 @@ async def schedule_database_backup(db_id: str, schedule: dict, admin: dict = Dep
 # Include router and middleware
 app.include_router(api_router)
 
+# Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
+@app.middleware("http")
+async def tenant_context_middleware(request: Request, call_next):
+    """Sets the tenant database context for each request based on JWT tenant_id"""
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
+        try:
+            token = auth_header.split(" ")[1]
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            tenant_id = payload.get("tenant_id")
+            if tenant_id:
+                tenant_specific_db = client[f"tenant_{tenant_id.replace('-', '_')}"]
+                _tenant_db_ctx.set(tenant_specific_db)
+        except Exception:
+            pass  # Invalid/expired token - no tenant context, falls back to main_db
+    response = await call_next(request)
+    return response
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
