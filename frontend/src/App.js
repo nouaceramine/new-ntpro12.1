@@ -6,7 +6,6 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
 // Pages
-import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProductsPage from "./pages/ProductsPage";
@@ -62,7 +61,6 @@ import EmployeeAlertsPage from "./pages/EmployeeAlertsPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import PermissionsPage from "./pages/PermissionsPage";
 import SystemUpdatesPage from "./pages/SystemUpdatesPage";
-import AgentLoginPage from "./pages/AgentLoginPage";
 import AgentDashboardPage from "./pages/AgentDashboardPage";
 import UnifiedLoginPage from "./pages/UnifiedLoginPage";
 import TenantDashboardPage from "./pages/TenantDashboardPage";
@@ -70,7 +68,6 @@ import TenantDashboardPage from "./pages/TenantDashboardPage";
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
 import SaasRegisterPage from "./pages/landing/RegisterPage";
-import TenantLoginPage from "./pages/landing/TenantLoginPage";
 import SaasAdminPage from "./pages/admin/SaasAdminPage";
 
 // Protected Route Component
