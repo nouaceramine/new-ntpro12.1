@@ -44,6 +44,139 @@ import {
 } from 'lucide-react';
 import { DatabaseManager } from '../../components/DatabaseManager';
 
+// Monitoring Dashboard Component
+const MonitoringSection = () => {
+  const [monitoringData, setMonitoringData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState('products_count');
+
+  useEffect(() => { fetchMonitoring(); }, []);
+
+  const fetchMonitoring = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API}/saas/monitoring`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMonitoringData(res.data);
+    } catch (err) {
+      toast.error('فشل تحميل بيانات المراقبة');
+    }
+    setLoading(false);
+  };
+
+  if (loading) return <div className="text-center py-12 text-muted-foreground">جاري التحميل...</div>;
+  if (!monitoringData) return null;
+
+  const { tenants, summary } = monitoringData;
+  const sorted = [...tenants].sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+
+  const formatDate = (d) => {
+    if (!d) return '—';
+    try { return new Date(d).toLocaleDateString('ar-DZ', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    catch { return '—'; }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <Card><CardContent className="p-4 text-center">
+          <Users className="h-5 w-5 mx-auto mb-1 text-blue-500" />
+          <p className="text-2xl font-bold">{summary.total_tenants}</p>
+          <p className="text-xs text-muted-foreground">إجمالي المشتركين</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 text-center">
+          <UserCheck className="h-5 w-5 mx-auto mb-1 text-green-500" />
+          <p className="text-2xl font-bold text-green-600">{summary.active_tenants}</p>
+          <p className="text-xs text-muted-foreground">نشط</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 text-center">
+          <Package className="h-5 w-5 mx-auto mb-1 text-purple-500" />
+          <p className="text-2xl font-bold">{summary.total_products}</p>
+          <p className="text-xs text-muted-foreground">إجمالي المنتجات</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 text-center">
+          <Users className="h-5 w-5 mx-auto mb-1 text-indigo-500" />
+          <p className="text-2xl font-bold">{summary.total_customers}</p>
+          <p className="text-xs text-muted-foreground">إجمالي العملاء</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 text-center">
+          <ShoppingCart className="h-5 w-5 mx-auto mb-1 text-amber-500" />
+          <p className="text-2xl font-bold">{summary.total_sales}</p>
+          <p className="text-xs text-muted-foreground">إجمالي المبيعات</p>
+        </CardContent></Card>
+        <Card><CardContent className="p-4 text-center">
+          <DollarSign className="h-5 w-5 mx-auto mb-1 text-emerald-500" />
+          <p className="text-2xl font-bold">{(summary.total_revenue || 0).toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">إجمالي الإيراد (دج)</p>
+        </CardContent></Card>
+      </div>
+
+      {/* Sort & Refresh */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">ترتيب حسب:</span>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="products_count">المنتجات</SelectItem>
+              <SelectItem value="customers_count">العملاء</SelectItem>
+              <SelectItem value="sales_count">المبيعات</SelectItem>
+              <SelectItem value="total_revenue">الإيراد</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button variant="outline" size="sm" onClick={fetchMonitoring}>
+          <RefreshCw className="h-4 w-4 ml-1" /> تحديث
+        </Button>
+      </div>
+
+      {/* Tenant Details Table */}
+      <Card>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-right">المشترك</TableHead>
+              <TableHead className="text-center">الحالة</TableHead>
+              <TableHead className="text-center">المنتجات</TableHead>
+              <TableHead className="text-center">العملاء</TableHead>
+              <TableHead className="text-center">المبيعات</TableHead>
+              <TableHead className="text-center">الإيراد (دج)</TableHead>
+              <TableHead className="text-center">المستخدمين</TableHead>
+              <TableHead className="text-center">آخر نشاط</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map(t => (
+              <TableRow key={t.tenant_id} data-testid={`monitoring-row-${t.tenant_id}`}>
+                <TableCell className="text-right">
+                  <div>
+                    <p className="font-medium">{t.tenant_name}</p>
+                    <p className="text-xs text-muted-foreground">{t.email}</p>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <Badge variant={t.is_active ? "default" : "destructive"} className={t.is_active ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}>
+                    {t.is_active ? 'نشط' : 'معطل'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-center font-medium">{t.products_count}</TableCell>
+                <TableCell className="text-center font-medium">{t.customers_count}</TableCell>
+                <TableCell className="text-center font-medium">{t.sales_count}</TableCell>
+                <TableCell className="text-center font-medium">{(t.total_revenue || 0).toLocaleString()}</TableCell>
+                <TableCell className="text-center">{t.users_count}</TableCell>
+                <TableCell className="text-center text-xs text-muted-foreground">{formatDate(t.last_activity)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Card>
+    </div>
+  );
+};
+
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // Finance Reports Component
