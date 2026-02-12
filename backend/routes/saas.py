@@ -1,5 +1,6 @@
 """
 SaaS Routes - Multi-tenant management endpoints
+Super Admin only routes for managing tenants, plans, and agents
 """
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
@@ -14,7 +15,7 @@ from models.schemas import (
 )
 from utils.dependencies import get_current_user, get_super_admin
 from utils.auth import hash_password
-from config.database import db, get_tenant_db, init_tenant_database
+from config.database import db, main_db, get_tenant_db, init_tenant_database, client
 
 router = APIRouter(prefix="/saas", tags=["SaaS"])
 

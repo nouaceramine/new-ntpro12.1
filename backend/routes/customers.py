@@ -1,5 +1,6 @@
 """
 Customer Routes - All customer-related endpoints
+Tenant-specific routes using require_tenant for RBAC
 """
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
@@ -7,7 +8,7 @@ from datetime import datetime, timezone
 import uuid
 
 from models.schemas import CustomerCreate, CustomerResponse, CustomerUpdate
-from utils.dependencies import get_current_user, get_admin_user
+from utils.dependencies import get_current_user, get_admin_user, require_tenant, get_tenant_admin
 from config.database import db, get_tenant_db
 
 router = APIRouter(prefix="/customers", tags=["Customers"])
