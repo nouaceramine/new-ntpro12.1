@@ -1081,6 +1081,7 @@ export default function SaasAdminPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>المشترك</TableHead>
+                      <TableHead>الوكيل</TableHead>
                       <TableHead>التصنيف</TableHead>
                       <TableHead>الخطة</TableHead>
                       <TableHead className="text-center">الإحصائيات</TableHead>
@@ -1093,13 +1094,27 @@ export default function SaasAdminPage() {
                     {filteredTenants.map(tenant => (
                       <TableRow key={tenant.id}>
                         <TableCell>
-                          <div>
-                            <p className="font-medium">{tenant.name}</p>
+                          <div 
+                            className="cursor-pointer hover:text-primary transition-colors"
+                            onClick={() => openImpersonateDialog(tenant)}
+                            data-testid={`tenant-name-${tenant.id}`}
+                            title="اضغط للدخول لحساب المشترك"
+                          >
+                            <p className="font-medium hover:underline">{tenant.name}</p>
                             <p className="text-sm text-muted-foreground">{tenant.email}</p>
                             {tenant.company_name && (
                               <p className="text-xs text-muted-foreground">{tenant.company_name}</p>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {tenant.agent_name ? (
+                            <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
+                              <UserCog className="h-3 w-3 me-1" />{tenant.agent_name}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={
