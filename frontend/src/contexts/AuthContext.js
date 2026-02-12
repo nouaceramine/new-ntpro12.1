@@ -29,7 +29,13 @@ export const AuthProvider = ({ children }) => {
       
       try {
         const response = await axios.get(`${API}/auth/me`);
-        setUser(response.data);
+        // Merge with localStorage data to get user_type
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const userData = {
+          ...response.data,
+          user_type: response.data.user_type || storedUser.user_type
+        };
+        setUser(userData);
       } catch (error) {
         console.error('Token verification failed:', error);
         logout();
