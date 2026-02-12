@@ -8524,6 +8524,72 @@ async def extend_subscription(tenant_id: str, payment: SubscriptionPayment, admi
     
     return {"new_subscription_ends_at": new_end.isoformat()}
 
+@api_router.get("/saas/monitoring")
+async def get_tenant_monitoring(admin: dict = Depends(get_super_admin)):
+    """Get monitoring data for all tenants - products, customers, sales, revenue, last activity"""
+    tenants = await main_db.saas_tenants.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    monitoring_data = []
+    
+    for tenant in tenants:
+        tid = tenant.get("id", "")
+        tdb = client[f"tenant_{tid.replace('-', '_')}"]
+        
+        products_count = await tdb.products.count_documents({})
+        customers_count = await tdb.customers.count_documents({})
+        sales_count = await tdb.sales.count_documents({})
+        users_count = await tdb.users.count_documents({})
+        
+        # Total sales revenue
+        revenue_pipeline = [{"$group": {"_id": None, "total": {"$sum": "$total_amount"}}}]
+        revenue_result = await tdb.sales.aggregate(revenue_pipeline).to_list(1)
+        total_revenue = revenue_result[0]["total"] if revenue_result else 0
+        
+        # Last activity (most recent sale or product update)
+        last_sale = await tdb.sales.find_one({}, {"_id": 0, "created_at": 1}, sort=[("created_at", -1)])
+        last_product = await tdb.products.find_one({}, {"_id": 0, "updated_at": 1}, sort=[("updated_at", -1)])
+        
+        last_activity = None
+        if last_sale and last_sale.get("created_at"):
+            last_activity = last_sale["created_at"]
+        if last_product and last_product.get("updated_at"):
+            if not last_activity or last_product["updated_at"] > last_activity:
+                last_activity = last_product["updated_at"]
+        
+        monitoring_data.append({
+            "tenant_id": tid,
+            "tenant_name": tenant.get("name", ""),
+            "company_name": tenant.get("company_name", ""),
+            "email": tenant.get("email", ""),
+            "is_active": tenant.get("is_active", False),
+            "subscription_ends_at": tenant.get("subscription_ends_at"),
+            "products_count": products_count,
+            "customers_count": customers_count,
+            "sales_count": sales_count,
+            "users_count": users_count,
+            "total_revenue": total_revenue,
+            "last_activity": last_activity,
+            "database_initialized": tenant.get("database_initialized", False),
+        })
+    
+    # Summary stats
+    total_products = sum(t["products_count"] for t in monitoring_data)
+    total_customers = sum(t["customers_count"] for t in monitoring_data)
+    total_sales = sum(t["sales_count"] for t in monitoring_data)
+    total_rev = sum(t["total_revenue"] for t in monitoring_data)
+    active_count = sum(1 for t in monitoring_data if t["is_active"])
+    
+    return {
+        "tenants": monitoring_data,
+        "summary": {
+            "total_tenants": len(monitoring_data),
+            "active_tenants": active_count,
+            "total_products": total_products,
+            "total_customers": total_customers,
+            "total_sales": total_sales,
+            "total_revenue": total_rev,
+        }
+    }
+
 @api_router.get("/saas/payments", response_model=List[SubscriptionPaymentResponse])
 async def get_payments(tenant_id: Optional[str] = None, admin: dict = Depends(get_super_admin)):
     """Get subscription payments"""
