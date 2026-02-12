@@ -989,6 +989,10 @@ export default function SaasAdminPage() {
               <Database className="h-4 w-4" />
               قواعد البيانات
             </TabsTrigger>
+            <TabsTrigger value="monitoring" className="gap-2" data-testid="monitoring-tab">
+              <Activity className="h-4 w-4" />
+              المراقبة
+            </TabsTrigger>
           </TabsList>
 
           {/* Tenants Tab */}
