@@ -8346,6 +8346,43 @@ async def get_tenant(tenant_id: str, admin: dict = Depends(get_super_admin)):
     
     return TenantResponse(**tenant)
 
+@api_router.post("/saas/impersonate/{tenant_id}")
+async def impersonate_tenant(tenant_id: str, admin: dict = Depends(get_super_admin)):
+    """Generate a login token to impersonate a tenant (Super Admin only)"""
+    tenant = await main_db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="المشترك غير موجود")
+    
+    if not tenant.get("is_active"):
+        raise HTTPException(status_code=400, detail="حساب المشترك معطل")
+    
+    # Generate JWT token for the tenant
+    access_token = create_access_token({
+        "sub": tenant_id,
+        "email": tenant["email"],
+        "role": "admin",
+        "type": "tenant",
+        "tenant_id": tenant_id
+    })
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "email": tenant["email"],
+        "name": tenant.get("name", ""),
+        "company_name": tenant.get("company_name", ""),
+        "tenant_id": tenant_id,
+        "user_type": "tenant",
+        "user": {
+            "id": tenant_id,
+            "email": tenant["email"],
+            "name": tenant.get("name", ""),
+            "role": "admin",
+            "tenant_id": tenant_id,
+            "company_name": tenant.get("company_name", ""),
+            "database_name": tenant.get("database_name", "")
+        }
+    }
 @api_router.post("/saas/tenants", response_model=TenantResponse)
 async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_admin)):
     """Create a new tenant (subscriber) with their own database"""
