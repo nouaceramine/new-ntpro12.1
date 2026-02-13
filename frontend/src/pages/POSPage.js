@@ -963,7 +963,7 @@ export default function POSPage() {
           </div>
 
           {/* Main Area - Products Table */}
-          <div className="col-span-8 flex flex-col min-h-0">
+          <div className="col-span-8 flex flex-col min-h-0" style={{ direction: isRTL ? 'rtl' : 'ltr' }}
             <Card className="flex-1 flex flex-col overflow-hidden">
               {/* Customer & Warehouse Selection */}
               <div className="p-2 border-b flex flex-wrap items-center gap-2">
