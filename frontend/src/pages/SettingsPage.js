@@ -1720,6 +1720,201 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
+          {/* Sound Settings Tab */}
+          <TabsContent value="sound" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Volume2 className="h-5 w-5 text-primary" />
+                  {language === 'ar' ? 'إعدادات الصوت' : 'Sound Settings'}
+                </CardTitle>
+                <CardDescription>
+                  {language === 'ar' 
+                    ? 'تحكم في أصوات التطبيق والتنبيهات'
+                    : 'Control application sounds and alerts'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Master Sound Toggle */}
+                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    {soundSettings.enabled ? (
+                      <Volume2 className="h-6 w-6 text-green-600" />
+                    ) : (
+                      <VolumeX className="h-6 w-6 text-red-500" />
+                    )}
+                    <div>
+                      <p className="font-medium">
+                        {language === 'ar' ? 'تفعيل الأصوات' : 'Enable Sounds'}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {language === 'ar' 
+                          ? 'تفعيل أو تعطيل جميع أصوات التطبيق'
+                          : 'Enable or disable all application sounds'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={soundSettings.enabled}
+                    onCheckedChange={(checked) => setSoundSettings(prev => ({ ...prev, enabled: checked }))}
+                    data-testid="toggle-master-sound"
+                  />
+                </div>
+
+                {/* Individual Sound Settings */}
+                {soundSettings.enabled && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm text-muted-foreground">
+                      {language === 'ar' ? 'أنواع الأصوات' : 'Sound Types'}
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Sale Success Sound */}
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border">
+                        <div>
+                          <p className="font-medium text-sm">
+                            {language === 'ar' ? 'صوت البيع الناجح' : 'Sale Success'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'ar' ? 'عند إتمام عملية البيع' : 'When sale is completed'}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={soundSettings.sale_success}
+                          onCheckedChange={(checked) => setSoundSettings(prev => ({ ...prev, sale_success: checked }))}
+                          data-testid="toggle-sale-sound"
+                        />
+                      </div>
+
+                      {/* Error Sound */}
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border">
+                        <div>
+                          <p className="font-medium text-sm">
+                            {language === 'ar' ? 'صوت الخطأ' : 'Error Sound'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'ar' ? 'عند حدوث خطأ' : 'When error occurs'}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={soundSettings.error_sound}
+                          onCheckedChange={(checked) => setSoundSettings(prev => ({ ...prev, error_sound: checked }))}
+                          data-testid="toggle-error-sound"
+                        />
+                      </div>
+
+                      {/* Notification Sound */}
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border">
+                        <div>
+                          <p className="font-medium text-sm">
+                            {language === 'ar' ? 'صوت الإشعارات' : 'Notification Sound'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'ar' ? 'عند وصول إشعار جديد' : 'When notification arrives'}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={soundSettings.notification_sound}
+                          onCheckedChange={(checked) => setSoundSettings(prev => ({ ...prev, notification_sound: checked }))}
+                          data-testid="toggle-notification-sound"
+                        />
+                      </div>
+
+                      {/* Scan Beep */}
+                      <div className="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-lg border">
+                        <div>
+                          <p className="font-medium text-sm">
+                            {language === 'ar' ? 'صوت المسح' : 'Scan Beep'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'ar' ? 'عند مسح الباركود' : 'When barcode is scanned'}
+                          </p>
+                        </div>
+                        <Switch
+                          checked={soundSettings.scan_beep}
+                          onCheckedChange={(checked) => setSoundSettings(prev => ({ ...prev, scan_beep: checked }))}
+                          data-testid="toggle-scan-sound"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Volume Slider */}
+                    <div className="space-y-2 pt-4 border-t">
+                      <Label>{language === 'ar' ? 'مستوى الصوت' : 'Volume Level'}</Label>
+                      <div className="flex items-center gap-4">
+                        <VolumeX className="h-4 w-4 text-muted-foreground" />
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={soundSettings.volume}
+                          onChange={(e) => setSoundSettings(prev => ({ ...prev, volume: parseInt(e.target.value) }))}
+                          className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                          data-testid="volume-slider"
+                        />
+                        <Volume2 className="h-4 w-4 text-muted-foreground" />
+                        <span className="w-12 text-center font-mono text-sm">{soundSettings.volume}%</span>
+                      </div>
+                    </div>
+
+                    {/* Test Sound Button */}
+                    <div className="flex justify-between items-center pt-4 border-t">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          try {
+                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            const oscillator = audioContext.createOscillator();
+                            const gainNode = audioContext.createGain();
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                            oscillator.frequency.value = 880;
+                            gainNode.gain.value = soundSettings.volume / 100 * 0.3;
+                            oscillator.start();
+                            setTimeout(() => oscillator.stop(), 200);
+                            toast.success(language === 'ar' ? 'تم اختبار الصوت' : 'Sound tested');
+                          } catch (e) {
+                            toast.error(language === 'ar' ? 'فشل تشغيل الصوت' : 'Sound test failed');
+                          }
+                        }}
+                        className="gap-2"
+                        data-testid="test-sound-btn"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                        {language === 'ar' ? 'اختبار الصوت' : 'Test Sound'}
+                      </Button>
+
+                      <Button 
+                        onClick={async () => {
+                          setSavingSoundSettings(true);
+                          try {
+                            // Save to localStorage for now
+                            localStorage.setItem('soundSettings', JSON.stringify(soundSettings));
+                            toast.success(language === 'ar' ? 'تم حفظ إعدادات الصوت' : 'Sound settings saved');
+                          } catch (error) {
+                            toast.error(language === 'ar' ? 'فشل حفظ الإعدادات' : 'Failed to save settings');
+                          } finally {
+                            setSavingSoundSettings(false);
+                          }
+                        }}
+                        disabled={savingSoundSettings}
+                        className="gap-2"
+                        data-testid="save-sound-settings-btn"
+                      >
+                        {savingSoundSettings ? (
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+                        {language === 'ar' ? 'حفظ الإعدادات' : 'Save Settings'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* System Tab */}
           <TabsContent value="system" className="space-y-6">
             {/* System Stats */}
