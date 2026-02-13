@@ -501,6 +501,73 @@ export default function PurchasesPage() {
     }
   };
 
+  // Edit purchase functions
+  const openEditPurchaseDialog = (purchase) => {
+    setEditingPurchase(purchase);
+    setEditPaidAmount(purchase.paid_amount);
+    setEditNotes(purchase.notes || '');
+    setShowEditPurchaseDialog(true);
+  };
+
+  const handleUpdatePurchase = async () => {
+    if (!editingPurchase) return;
+    
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/purchases/${editingPurchase.id}`, {
+        paid_amount: editPaidAmount,
+        notes: editNotes
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success(language === 'ar' ? 'تم تحديث المشتريات بنجاح' : 'Achat mis à jour');
+      setShowEditPurchaseDialog(false);
+      setEditingPurchase(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error updating purchase:', error);
+      toast.error(error.response?.data?.detail || t.somethingWentWrong);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete purchase functions
+  const confirmDeletePurchase = (purchase) => {
+    setPurchaseToDelete(purchase);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeletePurchase = async () => {
+    if (!purchaseToDelete) return;
+    
+    setDeletingPurchase(true);
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/purchases/${purchaseToDelete.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success(language === 'ar' ? 'تم حذف المشتريات بنجاح' : 'Achat supprimé');
+      setShowDeleteConfirm(false);
+      setPurchaseToDelete(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting purchase:', error);
+      toast.error(error.response?.data?.detail || t.somethingWentWrong);
+    } finally {
+      setDeletingPurchase(false);
+    }
+  };
+
+  // View purchase details
+  const viewPurchaseDetails = (purchase) => {
+    setViewingPurchase(purchase);
+    setShowViewPurchaseDialog(true);
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat(language === 'ar' ? 'ar-SA' : 'fr-FR', {
