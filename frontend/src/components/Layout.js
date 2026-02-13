@@ -231,6 +231,7 @@ export const Layout = ({ children }) => {
       icon: Building,
       items: [
         { path: '/saas-admin', icon: Building, label: language === 'ar' ? 'لوحة تحكم SaaS' : 'SaaS Dashboard' },
+        { path: '/saas-admin/feature-flags', icon: Shield, label: language === 'ar' ? 'إدارة الميزات' : 'Feature Flags' },
         { path: '/system-updates', icon: Bell, label: language === 'ar' ? 'تحديثات النظام' : 'Mises à jour système' },
       ]
     }
