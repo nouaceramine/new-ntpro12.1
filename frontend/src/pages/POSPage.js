@@ -75,8 +75,6 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function POSPage() {
   const { t, language, isRTL } = useLanguage();
-  const searchInputRef = useRef(null);
-  const searchDropdownRef = useRef(null);
   
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -86,8 +84,6 @@ export default function POSPage() {
   const [warehouses, setWarehouses] = useState([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState('');
   const [cart, setCart] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedFamily, setSelectedFamily] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerDebt, setCustomerDebt] = useState(0);
