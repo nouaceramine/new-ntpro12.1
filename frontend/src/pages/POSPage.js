@@ -556,7 +556,7 @@ export default function POSPage() {
       
       setCart([...cart, {
         product_id: product.id,
-        product_name: language === 'ar' ? product.name_ar : product.name_en,
+        product_name: language === 'ar' ? (product.name_ar || product.name_en) : (product.name_en || product.name_ar),
         barcode: product.barcode,
         quantity: 1,
         unit_price: price,
@@ -566,9 +566,9 @@ export default function POSPage() {
       }]);
     }
     
-    setSearchQuery('');
-    setShowSearchResults(false);
-    searchInputRef.current?.focus();
+    toast.success(language === 'ar' 
+      ? `تمت إضافة: ${product.name_ar || product.name_en}` 
+      : `Ajouté: ${product.name_en || product.name_ar}`);
   };
 
   const updateCartItemQuantity = (productId, newQty) => {
