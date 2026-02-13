@@ -73,6 +73,7 @@ import SaasRegisterPage from "./pages/landing/RegisterPage";
 import PricingPage from "./pages/landing/PricingPage";
 import SaasAdminPage from "./pages/admin/SaasAdminPage";
 import FeatureFlagsPage from "./pages/admin/FeatureFlagsPage";
+import StoreManagementPage from "./pages/store/StoreManagementPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false, tenantOnly = false }) => {
