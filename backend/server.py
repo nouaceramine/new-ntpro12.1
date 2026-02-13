@@ -2743,42 +2743,6 @@ async def update_purchase(purchase_id: str, update_data: PurchaseUpdate, admin: 
     if update_data.notes is not None:
         update_dict["notes"] = update_data.notes
     
-    # Update items if provided (recalculate total)
-    if update_data.items is not None:
-        # Reverse old stock changes
-        for item in purchase.get("items", []):
-            await db.products.update_one(
-                {"id": item["product_id"]},
-                {"$inc": {"quantity": -item["quantity"]}}
-            )
-        
-        # Apply new items
-        new_total = 0
-        new_items = []
-        for item in update_data.items:
-            item_dict = item.model_dump()
-            new_total += item_dict.get("total", item_dict["quantity"] * item_dict["unit_price"])
-            new_items.append(item_dict)
-            await db.products.update_one(
-                {"id": item.product_id},
-                {"$inc": {"quantity": item.quantity}}
-            )
-        
-        update_dict["items"] = new_items
-        update_dict["total"] = new_total
-        
-        # Recalculate remaining
-        current_paid = update_dict.get("paid_amount", purchase.get("paid_amount", 0))
-        update_dict["remaining"] = max(0, new_total - current_paid)
-        update_dict["status"] = "paid" if update_dict["remaining"] <= 0 else ("partial" if current_paid > 0 else "unpaid")
-        
-        # Update supplier total
-        total_diff = new_total - old_total
-        await db.suppliers.update_one(
-            {"id": purchase["supplier_id"]},
-            {"$inc": {"total_purchases": total_diff, "balance": update_dict["remaining"] - old_remaining}}
-        )
-    
     await db.purchases.update_one({"id": purchase_id}, {"$set": update_dict})
     
     updated_purchase = await db.purchases.find_one({"id": purchase_id}, {"_id": 0})
