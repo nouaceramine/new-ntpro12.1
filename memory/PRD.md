@@ -99,6 +99,10 @@ Multi-tenant SaaS e-commerce platform (FastAPI + React + MongoDB) with:
 
 ## Remaining Backlog
 
+### P0: User Requested Features (Pending Clarification)
+- **تعديل المدفوعات** - Needs clarification from user
+- **إشعارات البريد الإلكتروني** - Auto emails for expiring subscriptions (needs email service integration)
+
 ### P1: Complete Backend Refactoring
 - Migrate routes from `server.py` (11000+ lines) to modular files in `/app/backend/routes/`
 
@@ -112,7 +116,52 @@ Multi-tenant SaaS e-commerce platform (FastAPI + React + MongoDB) with:
 - Playwright tests for full user flows
 
 ### Future Enhancements
-- Email notifications for expiring subscriptions
 - Payment gateway integration (Stripe)
 - Automated backup scheduling
-- Agent personal dashboard (لوحة تحكم خاصة بكل وكيل)
+- Agent personal dashboard enhancements
+
+---
+
+## Latest Update: Feb 13, 2026
+
+### Phase 6 - Unified Search Enhancement ✅
+
+**Problem:** خانة البحث في الهيدر ونقطة البيع كانت بطيئة وغير موحدة
+
+**Solution Implemented:**
+
+#### 1. Backend: New Quick Search API
+- **File:** `/app/backend/server.py`
+- **Endpoint:** `GET /api/products/quick-search?q={query}&limit={limit}`
+- **Features:**
+  - Optimized lightweight response (only essential fields)
+  - Prioritizes exact barcode matches
+  - Searches: name (AR/EN), barcode, article_code
+  - Fast response with minimal data projection
+
+#### 2. Frontend: Unified Search Component
+- **File:** `/app/frontend/src/components/UnifiedSearch.js`
+- **Features:**
+  - 150ms debounce for fast typing
+  - Keyboard navigation (arrows, Enter, Escape)
+  - Barcode scanner support (Enter key triggers exact match)
+  - RTL support for Arabic
+  - Sound feedback on selection
+  - Out-of-stock products highlighted
+  - Works in: Header (navigate) and POS (add to cart)
+
+#### 3. Integration Points
+- **Layout.js:** Header search uses UnifiedSearch with `mode="header"`
+- **POSPage.js:** POS search uses UnifiedSearch with `mode="pos"` and `onSelect={addToCart}`
+
+#### Test Results
+- ✅ Arabic search: Working
+- ✅ English search: Working  
+- ✅ Article code search: Working
+- ✅ Barcode search: Working
+- ✅ POS integration: Working
+- ✅ Header integration: Working
+- ✅ Out-of-stock display: Working
+
+### Test Credentials (Updated)
+- Tenant: `amir@amir` / `test123` (subscription extended to Mar 15, 2026)
