@@ -181,18 +181,24 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/saas/plans/public` | GET | Get pricing plans |
-| `/api/public-plans` | GET | Get all subscription plans |
+| `/api/delivery/wilayas` | GET | Get delivery wilayas |
+| `/api/sales/generate-code` | GET | Generate new sale code |
 
 ## Upcoming Tasks (P1)
 
 ### Backend Refactoring
 - تقسيم `server.py` إلى ملفات منفصلة (routes, models, services)
+- الملف حالياً 12,332 سطر ويحتاج تقسيم
 
 ### Frontend Refactoring
 - تقسيم `SaasAdminPage.js` إلى مكونات أصغر
 
 ### E2E Testing
 - إضافة اختبارات شاملة للمسارات الحرجة
+- تم إنشاء `/app/backend/tests/test_pos_redesign.py` للاختبارات الأساسية
+
+## Test Files
+- `/app/backend/tests/test_pos_redesign.py` - اختبارات POS redesign (6 tests - all passing)
 
 ---
 *Last Updated: February 13, 2026*
