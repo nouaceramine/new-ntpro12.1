@@ -1562,6 +1562,211 @@ export default function PurchasesPage() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Edit Purchase Dialog */}
+        <Dialog open={showEditPurchaseDialog} onOpenChange={setShowEditPurchaseDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5 text-amber-600" />
+                {language === 'ar' ? 'تعديل المشتريات' : 'Modifier l\'achat'}
+              </DialogTitle>
+            </DialogHeader>
+            {editingPurchase && (
+              <div className="space-y-4 py-4">
+                {/* Purchase Info */}
+                <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{language === 'ar' ? 'رقم الفاتورة:' : 'N° Facture:'}</span>
+                    <span className="font-medium">{editingPurchase.invoice_number}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{language === 'ar' ? 'المورد:' : 'Fournisseur:'}</span>
+                    <span className="font-medium">{editingPurchase.supplier_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{language === 'ar' ? 'الإجمالي:' : 'Total:'}</span>
+                    <span className="font-bold text-lg">{editingPurchase.total.toFixed(2)} {t.currency}</span>
+                  </div>
+                </div>
+
+                {/* Paid Amount */}
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'المبلغ المدفوع' : 'Montant payé'}</Label>
+                  <Input
+                    type="number"
+                    value={editPaidAmount}
+                    onChange={(e) => setEditPaidAmount(Math.min(parseFloat(e.target.value) || 0, editingPurchase.total))}
+                    max={editingPurchase.total}
+                    className="text-lg"
+                  />
+                  {editPaidAmount < editingPurchase.total && (
+                    <p className="text-sm text-red-500">
+                      {language === 'ar' ? 'المتبقي:' : 'Restant:'} {(editingPurchase.total - editPaidAmount).toFixed(2)} {t.currency}
+                    </p>
+                  )}
+                </div>
+
+                {/* Notes */}
+                <div className="space-y-2">
+                  <Label>{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
+                  <Textarea
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    placeholder={language === 'ar' ? 'ملاحظات...' : 'Notes...'}
+                    rows={3}
+                  />
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowEditPurchaseDialog(false)}
+                    className="flex-1"
+                  >
+                    {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                  </Button>
+                  <Button
+                    onClick={handleUpdatePurchase}
+                    disabled={loading}
+                    className="flex-1 gap-2"
+                  >
+                    {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                    {language === 'ar' ? 'حفظ التغييرات' : 'Enregistrer'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* View Purchase Details Dialog */}
+        <Dialog open={showViewPurchaseDialog} onOpenChange={setShowViewPurchaseDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-blue-600" />
+                {language === 'ar' ? 'تفاصيل المشتريات' : 'Détails de l\'achat'}
+              </DialogTitle>
+            </DialogHeader>
+            {viewingPurchase && (
+              <div className="space-y-4 py-4">
+                {/* Purchase Header */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{language === 'ar' ? 'رقم الفاتورة' : 'N° Facture'}</p>
+                    <p className="font-medium">{viewingPurchase.invoice_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{language === 'ar' ? 'المورد' : 'Fournisseur'}</p>
+                    <p className="font-medium">{viewingPurchase.supplier_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{language === 'ar' ? 'التاريخ' : 'Date'}</p>
+                    <p className="font-medium">{formatDate(viewingPurchase.created_at)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">{language === 'ar' ? 'الحالة' : 'Statut'}</p>
+                    {getStatusBadge(viewingPurchase.status)}
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead>{language === 'ar' ? 'المنتج' : 'Produit'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                        <TableHead className="text-center">{language === 'ar' ? 'المجموع' : 'Total'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {viewingPurchase.items?.map((item, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{item.product_name}</TableCell>
+                          <TableCell className="text-center">{item.quantity}</TableCell>
+                          <TableCell className="text-center">{item.unit_price?.toFixed(2)} {t.currency}</TableCell>
+                          <TableCell className="text-center font-semibold">{item.total?.toFixed(2)} {t.currency}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Totals */}
+                <div className="space-y-2 p-4 bg-muted/50 rounded-lg">
+                  <div className="flex justify-between text-lg">
+                    <span>{language === 'ar' ? 'الإجمالي:' : 'Total:'}</span>
+                    <span className="font-bold">{viewingPurchase.total.toFixed(2)} {t.currency}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-600">
+                    <span>{language === 'ar' ? 'المدفوع:' : 'Payé:'}</span>
+                    <span className="font-semibold">{viewingPurchase.paid_amount.toFixed(2)} {t.currency}</span>
+                  </div>
+                  {viewingPurchase.remaining > 0 && (
+                    <div className="flex justify-between text-red-600">
+                      <span>{language === 'ar' ? 'المتبقي:' : 'Restant:'}</span>
+                      <span className="font-semibold">{viewingPurchase.remaining.toFixed(2)} {t.currency}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Notes */}
+                {viewingPurchase.notes && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-800">{viewingPurchase.notes}</p>
+                  </div>
+                )}
+
+                <Button
+                  variant="outline"
+                  onClick={() => setShowViewPurchaseDialog(false)}
+                  className="w-full"
+                >
+                  {language === 'ar' ? 'إغلاق' : 'Fermer'}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                <Trash2 className="h-5 w-5" />
+                {language === 'ar' ? 'تأكيد الحذف' : 'Confirmer la suppression'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {language === 'ar' 
+                  ? `هل أنت متأكد من حذف فاتورة الشراء رقم ${purchaseToDelete?.invoice_number}؟ سيتم إلغاء جميع التغييرات على المخزون والحسابات.`
+                  : `Êtes-vous sûr de vouloir supprimer l'achat N° ${purchaseToDelete?.invoice_number}? Toutes les modifications de stock et de compte seront annulées.`
+                }
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>
+                {language === 'ar' ? 'إلغاء' : 'Annuler'}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeletePurchase}
+                disabled={deletingPurchase}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {deletingPurchase ? (
+                  <RefreshCw className="h-4 w-4 animate-spin me-2" />
+                ) : (
+                  <Trash2 className="h-4 w-4 me-2" />
+                )}
+                {language === 'ar' ? 'حذف' : 'Supprimer'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );
