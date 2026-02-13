@@ -238,9 +238,11 @@ export const Layout = ({ children }) => {
   ];
 
   // Default nav sections for Tenants and regular users
+  // Each section has a featureKey that maps to the feature flags
   const tenantNavSections = [
     {
       id: 'main',
+      featureKey: null, // Always visible
       title: language === 'ar' ? 'الرئيسية' : 'Principal',
       icon: LayoutDashboard,
       items: [
@@ -249,70 +251,77 @@ export const Layout = ({ children }) => {
     },
     {
       id: 'inventory',
+      featureKey: 'inventory',
       title: language === 'ar' ? 'المخزون' : 'Stock',
       icon: Package,
       items: [
-        { path: '/products', icon: Package, label: t.products },
-        { path: '/product-families', icon: FolderTree, label: t.productFamilies },
-        { path: '/warehouses', icon: Warehouse, label: language === 'ar' ? 'المخازن' : 'Entrepôts' },
-        { path: '/inventory-count', icon: ClipboardList, label: language === 'ar' ? 'جرد المخزون' : 'Inventaire' },
-        { path: '/barcode-print', icon: QrCode, label: language === 'ar' ? 'طباعة الباركود' : 'Codes-barres' },
+        { path: '/products', icon: Package, label: t.products, subFeature: 'products' },
+        { path: '/product-families', icon: FolderTree, label: t.productFamilies, subFeature: 'categories' },
+        { path: '/warehouses', icon: Warehouse, label: language === 'ar' ? 'المخازن' : 'Entrepôts', subFeature: 'warehouses' },
+        { path: '/inventory-count', icon: ClipboardList, label: language === 'ar' ? 'جرد المخزون' : 'Inventaire', subFeature: 'inventory_count' },
+        { path: '/barcode-print', icon: QrCode, label: language === 'ar' ? 'طباعة الباركود' : 'Codes-barres', subFeature: 'barcode' },
         { path: '/bulk-price-update', icon: DollarSign, label: t.bulkPriceUpdate },
         { path: '/price-history', icon: History, label: language === 'ar' ? 'سجل الأسعار' : 'Historique prix' },
       ]
     },
     {
       id: 'purchases',
+      featureKey: 'purchases',
       title: language === 'ar' ? 'المشتريات' : 'Achats',
       icon: ShoppingBag,
       items: [
-        { path: '/purchases', icon: ShoppingBag, label: t.purchases },
-        { path: '/suppliers', icon: Truck, label: t.suppliers },
+        { path: '/purchases', icon: ShoppingBag, label: t.purchases, subFeature: 'purchase_orders' },
+        { path: '/suppliers', icon: Truck, label: t.suppliers, subFeature: 'suppliers' },
         { path: '/supplier-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الموردين' : 'Familles fournisseurs' },
       ]
     },
     {
       id: 'customers',
+      featureKey: 'customers',
       title: language === 'ar' ? 'الزبائن' : 'Clients',
       icon: Users,
       items: [
-        { path: '/customers', icon: Users, label: t.customers },
-        { path: '/customer-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الزبائن' : 'Familles clients' },
-        { path: '/customer-debts', icon: CreditCard, label: t.customerDebts },
+        { path: '/customers', icon: Users, label: t.customers, subFeature: 'customer_list' },
+        { path: '/customer-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الزبائن' : 'Familles clients', subFeature: 'customer_families' },
+        { path: '/customer-debts', icon: CreditCard, label: t.customerDebts, subFeature: 'customer_debts' },
       ]
     },
     {
       id: 'sales',
+      featureKey: 'sales',
       title: language === 'ar' ? 'المبيعات' : 'Ventes',
       icon: Receipt,
       items: [
-        { path: '/pos', icon: ShoppingCart, label: t.pos },
+        { path: '/pos', icon: ShoppingCart, label: t.pos, subFeature: 'pos' },
         { path: '/daily-sessions', icon: Clock, label: language === 'ar' ? 'حصص البيع اليومية' : 'Sessions journalières' },
-        { path: '/sales', icon: Receipt, label: t.sales },
+        { path: '/sales', icon: Receipt, label: t.sales, subFeature: 'invoices' },
         { path: '/sales/advanced-report', icon: BarChart3, label: language === 'ar' ? 'تقارير متقدمة' : 'Rapports avancés' },
       ]
     },
     {
       id: 'reports',
+      featureKey: 'reports',
       title: language === 'ar' ? 'التقارير' : 'Rapports',
       icon: BarChart3,
       items: [
-        { path: '/reports', icon: BarChart3, label: t.reports },
-        { path: '/analytics', icon: BarChart3, label: language === 'ar' ? 'إحصائيات متقدمة' : 'Analyses avancées' },
-        { path: '/smart-reports', icon: Sparkles, label: language === 'ar' ? 'تقارير ذكية' : 'Rapports intelligents' },
+        { path: '/reports', icon: BarChart3, label: t.reports, subFeature: 'sales_reports' },
+        { path: '/analytics', icon: BarChart3, label: language === 'ar' ? 'إحصائيات متقدمة' : 'Analyses avancées', subFeature: 'financial_reports' },
+        { path: '/smart-reports', icon: Sparkles, label: language === 'ar' ? 'تقارير ذكية' : 'Rapports intelligents', subFeature: 'smart_reports' },
       ]
     },
     {
       id: 'notifications',
+      featureKey: 'notifications',
       title: language === 'ar' ? 'الإشعارات' : 'Notifications',
       icon: Bell,
       items: [
-        { path: '/notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات' : 'Notifications' },
-        { path: '/email-notifications', icon: Mail, label: language === 'ar' ? 'إشعارات البريد' : 'Email Notifications' },
+        { path: '/notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات' : 'Notifications', subFeature: 'push_notifications' },
+        { path: '/email-notifications', icon: Mail, label: language === 'ar' ? 'إشعارات البريد' : 'Email Notifications', subFeature: 'email_notifications' },
       ]
     },
     {
       id: 'payments',
+      featureKey: null, // Always visible
       title: language === 'ar' ? 'المدفوعات' : 'Payments',
       icon: CreditCard,
       items: [
@@ -321,6 +330,7 @@ export const Layout = ({ children }) => {
     },
     {
       id: 'loyalty',
+      featureKey: null, // Always visible
       title: language === 'ar' ? 'الولاء والتسويق' : 'Fidélité & Marketing',
       icon: Award,
       items: [
@@ -329,14 +339,16 @@ export const Layout = ({ children }) => {
     },
     {
       id: 'ecommerce',
+      featureKey: 'ecommerce',
       title: language === 'ar' ? 'المتجر الإلكتروني' : 'E-Commerce',
       icon: Store,
       items: [
-        { path: '/store', icon: Store, label: language === 'ar' ? 'إدارة المتجر' : 'Store Management' },
+        { path: '/store', icon: Store, label: language === 'ar' ? 'إدارة المتجر' : 'Store Management', subFeature: 'online_store' },
       ]
     },
     {
       id: 'administration',
+      featureKey: null, // Always visible
       title: language === 'ar' ? 'الإدارة' : 'Administration',
       icon: Settings,
       items: [
@@ -352,15 +364,17 @@ export const Layout = ({ children }) => {
     },
     {
       id: 'repairs',
+      featureKey: 'repairs',
       title: language === 'ar' ? 'الصيانة' : 'Réparations',
       icon: Wrench,
       items: [
-        { path: '/repairs', icon: ClipboardList, label: language === 'ar' ? 'تتبع الصيانة' : 'Suivi réparations' },
+        { path: '/repairs', icon: ClipboardList, label: language === 'ar' ? 'تتبع الصيانة' : 'Suivi réparations', subFeature: 'repair_tickets' },
         { path: '/repairs/new', icon: Smartphone, label: language === 'ar' ? 'استقبال جهاز' : 'Réception appareil' },
       ]
     },
     {
       id: 'services',
+      featureKey: null, // Always visible
       title: language === 'ar' ? 'الخدمات' : 'Services',
       icon: Smartphone,
       items: [
@@ -380,22 +394,25 @@ export const Layout = ({ children }) => {
     },
     ...(isAdmin ? [{
       id: 'woocommerce',
+      featureKey: 'ecommerce',
       title: 'WooCommerce',
       icon: Store,
       items: [
-        { path: '/woocommerce', icon: Store, label: 'WooCommerce' },
+        { path: '/woocommerce', icon: Store, label: 'WooCommerce', subFeature: 'woocommerce' },
       ]
     }] : []),
     ...(isAdmin ? [{
       id: 'shipping',
+      featureKey: 'delivery',
       title: language === 'ar' ? 'التوصيل' : 'Livraison',
       icon: Truck,
       items: [
-        { path: '/shipping', icon: Truck, label: language === 'ar' ? 'شركات الشحن' : 'Transporteurs' },
+        { path: '/shipping', icon: Truck, label: language === 'ar' ? 'شركات الشحن' : 'Transporteurs', subFeature: 'shipping_companies' },
       ]
     }] : []),
     ...(isAdmin ? [{
       id: 'settings',
+      featureKey: null, // Always visible
       title: language === 'ar' ? 'الإعدادات' : 'Paramètres',
       icon: Settings,
       items: [
@@ -406,8 +423,30 @@ export const Layout = ({ children }) => {
     }] : [])
   ];
 
+  // Filter sections based on feature flags
+  const filterNavSections = (sections) => {
+    return sections
+      .filter(section => {
+        // If no featureKey, always show
+        if (!section.featureKey) return true;
+        // Check if feature category is enabled
+        return isFeatureEnabled(section.featureKey);
+      })
+      .map(section => {
+        // If no featureKey, return section as-is
+        if (!section.featureKey) return section;
+        // Filter items based on sub-features
+        const filteredItems = section.items.filter(item => {
+          if (!item.subFeature) return true;
+          return isFeatureEnabled(section.featureKey, item.subFeature);
+        });
+        return { ...section, items: filteredItems };
+      })
+      .filter(section => section.items.length > 0); // Remove empty sections
+  };
+
   // Select navigation based on user type
-  const defaultNavSections = isSuperAdmin ? superAdminNavSections : tenantNavSections;
+  const defaultNavSections = isSuperAdmin ? superAdminNavSections : filterNavSections(tenantNavSections);
 
   // Build navSections from customSidebarOrder if available
   const navSections = (() => {
