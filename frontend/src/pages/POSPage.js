@@ -93,7 +93,7 @@ const SHORTCUT_COLORS = [
   '#db2777', '#e11d48', '#64748b', '#78716c', '#71717a'
 ];
 
-export default function POSPageRedesigned() {
+export default function POSPage() {
   const { t, language, isRTL } = useLanguage();
   
   const [products, setProducts] = useState([]);
