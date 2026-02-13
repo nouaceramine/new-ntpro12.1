@@ -276,6 +276,16 @@ export default function SettingsPage() {
       if (receiptRes.data) {
         setReceiptSettings(receiptRes.data);
       }
+
+      // Load sound settings from localStorage
+      const savedSoundSettings = localStorage.getItem('soundSettings');
+      if (savedSoundSettings) {
+        try {
+          setSoundSettings(JSON.parse(savedSoundSettings));
+        } catch (e) {
+          console.error('Error loading sound settings:', e);
+        }
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast.error(t.error);
