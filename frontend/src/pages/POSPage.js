@@ -1233,29 +1233,32 @@ export default function POSPage() {
                 <TableBody>
                   {cart.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                        <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                        <p>{language === 'ar' ? 'السلة فارغة - ابحث عن منتج لإضافته' : 'Panier vide - Recherchez un article'}</p>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        <ShoppingCart className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">{language === 'ar' ? 'السلة فارغة - ابحث عن منتج لإضافته' : 'Panier vide - Recherchez un article'}</p>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    cart.map((item) => (
-                      <TableRow key={item.product_id}>
-                        <TableCell>
-                          <Input
-                            type="text"
-                            value={item.product_name}
-                            onChange={(e) => updateCartItemName(item.product_id, e.target.value)}
-                            className="h-8 font-medium"
-                            placeholder={language === 'ar' ? 'اسم المنتج' : 'Nom article'}
-                          />
+                    cart.map((item, index) => (
+                      <TableRow key={item.product_id} className={`${index % 2 === 0 ? 'bg-muted/30' : ''} hover:bg-primary/5 transition-colors`}>
+                        <TableCell className="py-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">{index + 1}</span>
+                            <Input
+                              type="text"
+                              value={item.product_name}
+                              onChange={(e) => updateCartItemName(item.product_id, e.target.value)}
+                              className="h-7 text-sm font-medium border-0 bg-transparent hover:bg-muted/50 focus:bg-background px-1"
+                              placeholder={language === 'ar' ? 'اسم المنتج' : 'Nom article'}
+                            />
+                          </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-1">
+                        <TableCell className="py-1.5">
+                          <div className="flex items-center justify-center gap-0.5">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive"
                               onClick={() => updateCartItemQuantity(item.product_id, item.quantity - 1)}
                             >
                               <Minus className="h-3 w-3" />
@@ -1265,28 +1268,28 @@ export default function POSPage() {
                               min="1"
                               value={item.quantity}
                               onChange={(e) => updateCartItemQuantity(item.product_id, parseInt(e.target.value) || 1)}
-                              className="w-14 h-8 text-center"
+                              className="w-10 h-7 text-center text-sm font-bold border-0 bg-primary/10 rounded"
                             />
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="icon"
-                              className="h-8 w-8"
+                              className="h-6 w-6 hover:bg-primary/10 hover:text-primary"
                               onClick={() => updateCartItemQuantity(item.product_id, item.quantity + 1)}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-1.5">
                           <Input
                             type="number"
                             min="0"
                             value={item.unit_price}
                             onChange={(e) => updateCartItemPrice(item.product_id, e.target.value)}
-                            className="w-24 h-8 text-center"
+                            className="w-20 h-7 text-center text-sm border-0 bg-transparent hover:bg-muted/50"
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-1.5">
                           <Input
                             type="number"
                             min="0"
@@ -1294,19 +1297,22 @@ export default function POSPage() {
                             placeholder="0"
                             value={item.discount_percent || ''}
                             onChange={(e) => updateCartItemDiscount(item.product_id, e.target.value)}
-                            className="w-16 h-8 text-center"
+                            className="w-12 h-7 text-center text-sm border-0 bg-transparent hover:bg-muted/50"
                           />
                         </TableCell>
-                        <TableCell className="text-center font-bold text-green-600">
-                          {formatCurrency(item.total)}
+                        <TableCell className="text-center font-bold text-green-600 py-1.5">
+                          <span className="bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded text-sm">
+                            {formatCurrency(item.total)}
+                          </span>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-1.5">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            className="h-6 w-6 text-destructive hover:bg-destructive/10"
+                            onClick={() => removeFromCart(item.product_id)}
                           >
-                            <X className="h-4 w-4" />
+                            <X className="h-3 w-3" />
                           </Button>
                         </TableCell>
                       </TableRow>
