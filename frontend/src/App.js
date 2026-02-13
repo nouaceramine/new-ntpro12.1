@@ -70,6 +70,7 @@ import PaymentsPage from "./pages/PaymentsPage";
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
 import SaasRegisterPage from "./pages/landing/RegisterPage";
+import PricingPage from "./pages/landing/PricingPage";
 import SaasAdminPage from "./pages/admin/SaasAdminPage";
 import FeatureFlagsPage from "./pages/admin/FeatureFlagsPage";
 
