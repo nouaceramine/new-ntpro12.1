@@ -48,13 +48,13 @@ class TestPublicAPIs:
 
 
 class TestAuthenticatedAPIs:
-    """APIs requiring authentication"""
+    """APIs requiring authentication - uses tenant user for store APIs"""
     
     @pytest.fixture(autouse=True)
     def setup(self):
-        """Login and get token"""
+        """Login with tenant admin user"""
         login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@test.com",
+            "email": "tenant_admin@test.com",
             "password": "test123"
         })
         if login_response.status_code != 200:
@@ -136,13 +136,13 @@ class TestAuthenticatedAPIs:
 
 
 class TestPOSPageIntegration:
-    """Test APIs used by the POS page"""
+    """Test APIs used by the POS page - uses tenant user"""
     
     @pytest.fixture(autouse=True)
     def setup(self):
-        """Login and get token"""
+        """Login with tenant admin user"""
         login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@test.com",
+            "email": "tenant_admin@test.com",
             "password": "test123"
         })
         if login_response.status_code != 200:
@@ -198,13 +198,13 @@ class TestPOSPageIntegration:
 
 
 class TestPurchasesCRUD:
-    """Test Purchases Edit/Delete functionality"""
+    """Test Purchases Edit/Delete functionality - uses tenant user"""
     
     @pytest.fixture(autouse=True)
     def setup(self):
-        """Login and get token"""
+        """Login with tenant admin user"""
         login_response = requests.post(f"{BASE_URL}/api/auth/login", json={
-            "email": "test@test.com",
+            "email": "tenant_admin@test.com",
             "password": "test123"
         })
         if login_response.status_code != 200:
