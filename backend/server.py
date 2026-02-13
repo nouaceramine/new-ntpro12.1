@@ -408,9 +408,12 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if user_type == "tenant" and tenant_id:
             tenant_db = get_tenant_db(tenant_id)
             user = await tenant_db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
+            
+            # Get tenant info from main_db to get plan features
+            tenant = await main_db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0, "password": 0})
+            
             if user is None:
                 # Check main tenant record (always in main_db)
-                tenant = await main_db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0, "password": 0})
                 if tenant:
                     user = {
                         "id": tenant["id"],
@@ -429,6 +432,14 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
                 user["user_type"] = "tenant"
                 if not user.get("created_at"):
                     user["created_at"] = datetime.now(timezone.utc).isoformat()
+            
+            # Add plan features and limits for tenant users
+            if tenant:
+                plan = await main_db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0})
+                if plan:
+                    user["features"] = {**plan.get("features", {}), **tenant.get("features_override", {})}
+                    user["limits"] = {**plan.get("limits", {}), **tenant.get("limits_override", {})}
+                user["company_name"] = tenant.get("company_name", "")
         else:
             # For admin users, get from main database
             user = await main_db.users.find_one({"id": user_id}, {"_id": 0, "password": 0, "hashed_password": 0})
