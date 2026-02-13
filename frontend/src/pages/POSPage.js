@@ -223,17 +223,6 @@ export default function POSPage() {
     fetchSaleCode();
   }, []);
 
-  // Close search dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target)) {
-        setShowSearchResults(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const checkOpenSession = async () => {
     try {
       const token = localStorage.getItem('token');
