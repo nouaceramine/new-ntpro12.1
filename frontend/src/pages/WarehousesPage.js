@@ -86,10 +86,13 @@ export default function WarehousesPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
       const [warehousesRes, productsRes, transfersRes] = await Promise.all([
-        axios.get(`${API}/warehouses`).catch(() => ({ data: [] })),
-        axios.get(`${API}/products`),
-        axios.get(`${API}/stock-transfers`).catch(() => ({ data: [] }))
+        axios.get(`${API}/warehouses`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API}/products`, { headers }),
+        axios.get(`${API}/stock-transfers`, { headers }).catch(() => ({ data: [] }))
       ]);
       
       // If no warehouses, create default main warehouse
