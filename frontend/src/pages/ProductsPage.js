@@ -620,7 +620,7 @@ export default function ProductsPage() {
                         : '-'}
                     </div>
                   </div>
-                </Link>
+                </div>
               ))}
             </div>
           </div>
@@ -628,76 +628,95 @@ export default function ProductsPage() {
           /* Compact View */
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
             {sortedProducts.map((product) => (
-              <Link
+              <div
                 key={product.id}
-                to={`/products/${product.id}`}
-                className="block"
+                className={`relative block ${selectedProducts.has(product.id) ? 'ring-2 ring-primary' : ''}`}
                 data-testid={`product-item-${product.id}`}
               >
-                <div className="border rounded-lg p-2 bg-card hover:bg-muted/50 transition-colors text-center">
-                  <LazyImage
-                    src={product.image_url}
-                    alt={language === 'ar' ? product.name_ar : product.name_en}
-                    className="w-full aspect-square object-cover rounded-md mb-2"
-                  />
-                  <p className="text-xs font-medium truncate">{language === 'ar' ? product.name_ar : product.name_en}</p>
-                  <p className="text-xs font-bold text-primary">{product.retail_price?.toFixed(0)} {t.currency}</p>
-                </div>
-              </Link>
+                {selectMode && (
+                  <div className="absolute top-1 right-1 z-10">
+                    <Checkbox
+                      checked={selectedProducts.has(product.id)}
+                      onCheckedChange={() => toggleProductSelection(product.id)}
+                      className="bg-white shadow"
+                    />
+                  </div>
+                )}
+                <Link to={`/products/${product.id}`}>
+                  <div className="border rounded-lg p-2 bg-card hover:bg-muted/50 transition-colors text-center">
+                    <LazyImage
+                      src={product.image_url}
+                      alt={language === 'ar' ? product.name_ar : product.name_en}
+                      className="w-full aspect-square object-cover rounded-md mb-2"
+                    />
+                    <p className="text-xs font-medium truncate">{language === 'ar' ? product.name_ar : product.name_en}</p>
+                    <p className="text-xs font-bold text-primary">{product.retail_price?.toFixed(0)} {t.currency}</p>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         ) : (
           /* Grid View (default) */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {sortedProducts.map((product) => (
-              <Link
+              <div
                 key={product.id}
-                to={`/products/${product.id}`}
-                className="block"
+                className={`relative block ${selectedProducts.has(product.id) ? 'ring-2 ring-primary' : ''}`}
                 data-testid={`product-item-${product.id}`}
               >
-                <div className="product-card border rounded-xl overflow-hidden bg-card h-full flex flex-col">
-                  <div className="product-image-container aspect-square relative">
-                    <LazyImage
-                      src={product.image_url}
-                      alt={language === 'ar' ? product.name_ar : product.name_en}
-                      className="w-full h-full object-cover"
+                {selectMode && (
+                  <div className="absolute top-3 left-3 z-10">
+                    <Checkbox
+                      checked={selectedProducts.has(product.id)}
+                      onCheckedChange={() => toggleProductSelection(product.id)}
+                      className="bg-white shadow h-5 w-5"
                     />
-                    <div className={`absolute top-3 ${isRTL ? 'left-3' : 'right-3'}`}>
-                      {getStockBadge(product.quantity)}
-                    </div>
                   </div>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <h3 className="font-semibold text-lg line-clamp-1">
-                      {language === 'ar' ? product.name_ar : product.name_en}
-                    </h3>
-                    <p className="text-muted-foreground text-sm mt-1 line-clamp-2 flex-1">
-                      {language === 'ar' ? product.description_ar : product.description_en}
-                    </p>
-                    <div className="mt-4">
-                      <p className="text-primary font-bold text-xl">
-                        {(product.retail_price ?? product.price ?? 0).toFixed(2)} {t.currency}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {t.quantity}: {product.quantity ?? 0}
-                      </p>
+                )}
+                <Link to={`/products/${product.id}`}>
+                  <div className="product-card border rounded-xl overflow-hidden bg-card h-full flex flex-col">
+                    <div className="product-image-container aspect-square relative">
+                      <LazyImage
+                        src={product.image_url}
+                        alt={language === 'ar' ? product.name_ar : product.name_en}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className={`absolute top-3 ${isRTL ? 'left-3' : 'right-3'}`}>
+                        {getStockBadge(product.quantity)}
+                      </div>
                     </div>
-                    {product.compatible_models && product.compatible_models.length > 0 && (
-                      <div className="mt-3">
-                        <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
-                          {t.compatibleModels}
+                    <div className="p-5 flex-1 flex flex-col">
+                      <h3 className="font-semibold text-lg line-clamp-1">
+                        {language === 'ar' ? product.name_ar : product.name_en}
+                      </h3>
+                      <p className="text-muted-foreground text-sm mt-1 line-clamp-2 flex-1">
+                        {language === 'ar' ? product.description_ar : product.description_en}
+                      </p>
+                      <div className="mt-4">
+                        <p className="text-primary font-bold text-xl">
+                          {(product.retail_price ?? product.price ?? 0).toFixed(2)} {t.currency}
                         </p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {product.compatible_models.slice(0, 3).map((model, idx) => (
-                            <span key={idx} className="model-badge">
-                              {model}
-                            </span>
-                          ))}
-                          {product.compatible_models.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{product.compatible_models.length - 3}
-                            </Badge>
-                          )}
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {t.quantity}: {product.quantity ?? 0}
+                        </p>
+                      </div>
+                      {product.compatible_models && product.compatible_models.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-xs font-medium text-muted-foreground uppercase mb-2">
+                            {t.compatibleModels}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {product.compatible_models.slice(0, 3).map((model, idx) => (
+                              <span key={idx} className="model-badge">
+                                {model}
+                              </span>
+                            ))}
+                            {product.compatible_models.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{product.compatible_models.length - 3}
+                              </Badge>
+                            )}
                         </div>
                       </div>
                     )}
