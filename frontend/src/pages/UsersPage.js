@@ -60,7 +60,7 @@ export default function UsersPage() {
   });
 
   const roles = [
-    { value: 'super_admin', label: language === 'ar' ? 'سوبر أدمين' : 'Super Admin', icon: Shield },
+    // Note: super_admin is NOT available for tenants (security restriction)
     { value: 'admin', label: language === 'ar' ? 'مدير' : 'Admin', icon: Shield },
     { value: 'manager', label: language === 'ar' ? 'مدير فرع' : 'Manager', icon: User },
     { value: 'seller', label: language === 'ar' ? 'بائع' : 'Seller', icon: User },

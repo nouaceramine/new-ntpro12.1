@@ -717,6 +717,16 @@ class UserCreate(BaseModel):
 @api_router.post("/users", response_model=UserResponse)
 async def create_user(user_data: UserCreate, admin: dict = Depends(get_admin_user)):
     """Create a new user (admin only)"""
+    # SECURITY: Prevent creating super_admin or saas_admin roles
+    forbidden_roles = ["super_admin", "saas_admin", "superadmin"]
+    if user_data.role and user_data.role.lower() in [r.lower() for r in forbidden_roles]:
+        # Only super_admin can create super_admin users
+        if admin.get("role") != "super_admin":
+            raise HTTPException(
+                status_code=403, 
+                detail="لا يمكن إنشاء حساب بصلاحية سوبر أدمين - Creating super_admin accounts is not allowed"
+            )
+    
     # Check if email already exists
     existing = await db.users.find_one({"email": user_data.email})
     if existing:
