@@ -410,6 +410,22 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/email-notifications"
+        element={
+          <ProtectedRoute adminOnly>
+            <EmailNotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/payments"
+        element={
+          <ProtectedRoute adminOnly>
+            <PaymentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/bulk-price-update"
         element={
           <ProtectedRoute adminOnly>
