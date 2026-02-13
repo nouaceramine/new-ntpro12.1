@@ -306,6 +306,15 @@ export const Layout = ({ children }) => {
       icon: Bell,
       items: [
         { path: '/notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات' : 'Notifications' },
+        { path: '/email-notifications', icon: Mail, label: language === 'ar' ? 'إشعارات البريد' : 'Email Notifications' },
+      ]
+    },
+    {
+      id: 'payments',
+      title: language === 'ar' ? 'المدفوعات' : 'Payments',
+      icon: CreditCard,
+      items: [
+        { path: '/payments', icon: CreditCard, label: language === 'ar' ? 'إدارة المدفوعات' : 'Payments Management' },
       ]
     },
     {
