@@ -362,12 +362,12 @@ export default function PaymentsPage() {
                   />
                 </div>
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder={language === 'ar' ? 'جميع الحالات' : 'All Statuses'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{language === 'ar' ? 'جميع الحالات' : 'All Statuses'}</SelectItem>
+                  <SelectItem value="all">{language === 'ar' ? 'جميع الحالات' : 'All Statuses'}</SelectItem>
                   <SelectItem value="paid">{language === 'ar' ? 'مدفوع' : 'Paid'}</SelectItem>
                   <SelectItem value="pending">{language === 'ar' ? 'قيد الانتظار' : 'Pending'}</SelectItem>
                   <SelectItem value="failed">{language === 'ar' ? 'فشل' : 'Failed'}</SelectItem>
