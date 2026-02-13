@@ -1944,6 +1944,9 @@ async def create_warehouse(warehouse: WarehouseCreate, admin: dict = Depends(get
         "id": warehouse_id,
         "name": warehouse.name,
         "address": warehouse.address or "",
+        "phone": warehouse.phone or "",
+        "manager": warehouse.manager or "",
+        "notes": warehouse.notes or "",
         "is_main": warehouse.is_main,
         "created_at": now
     }
