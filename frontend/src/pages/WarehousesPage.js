@@ -70,7 +70,7 @@ export default function WarehousesPage() {
   const [editingWarehouse, setEditingWarehouse] = useState(null);
   
   // Form states
-  const [newWarehouse, setNewWarehouse] = useState({ name: '', address: '', is_main: false });
+  const [newWarehouse, setNewWarehouse] = useState({ name: '', address: '', phone: '', manager: '', notes: '', is_main: false });
   const [transfer, setTransfer] = useState({
     from_warehouse: '',
     to_warehouse: '',
