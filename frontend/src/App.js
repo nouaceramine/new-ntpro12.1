@@ -286,6 +286,14 @@ function AppRoutes() {
         }
       />
       <Route
+        path="/store"
+        element={
+          <ProtectedRoute adminOnly>
+            <StoreManagementPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/cash"
         element={
           <ProtectedRoute adminOnly>
