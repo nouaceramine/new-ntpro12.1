@@ -12110,11 +12110,31 @@ async def get_store_settings(admin: dict = Depends(get_tenant_admin)):
 @api_router.put("/store/settings")
 async def update_store_settings(settings: StoreSettings, admin: dict = Depends(get_tenant_admin)):
     """Update store settings"""
+    tenant_id = admin.get("tenant_id")
+    
+    # Save settings in tenant database
     await db.store_settings.update_one(
         {},
         {"$set": settings.model_dump()},
         upsert=True
     )
+    
+    # Also save slug mapping in main database for public access
+    if settings.store_slug and tenant_id:
+        await main_db.store_slugs.update_one(
+            {"tenant_id": tenant_id},
+            {"$set": {
+                "tenant_id": tenant_id,
+                "store_slug": settings.store_slug,
+                "enabled": settings.enabled,
+                "store_name": settings.store_name,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }},
+            upsert=True
+        )
+        # Also create index on store_slug for faster lookups
+        await main_db.store_slugs.create_index("store_slug", unique=True, sparse=True)
+    
     return {"message": "تم حفظ إعدادات المتجر"}
 
 @api_router.get("/store/products")
