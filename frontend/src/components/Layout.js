@@ -329,6 +329,14 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'ecommerce',
+      title: language === 'ar' ? 'المتجر الإلكتروني' : 'E-Commerce',
+      icon: Store,
+      items: [
+        { path: '/store', icon: Store, label: language === 'ar' ? 'إدارة المتجر' : 'Store Management' },
+      ]
+    },
+    {
       id: 'administration',
       title: language === 'ar' ? 'الإدارة' : 'Administration',
       icon: Settings,
