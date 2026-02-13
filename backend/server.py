@@ -2689,11 +2689,10 @@ async def get_purchase(purchase_id: str, admin: dict = Depends(get_tenant_admin)
 class PurchaseUpdate(BaseModel):
     paid_amount: Optional[float] = None
     notes: Optional[str] = None
-    items: Optional[List[PurchaseItemCreate]] = None
 
 @api_router.put("/purchases/{purchase_id}")
 async def update_purchase(purchase_id: str, update_data: PurchaseUpdate, admin: dict = Depends(get_tenant_admin)):
-    """Update purchase - can modify paid amount, notes, or items"""
+    """Update purchase - can modify paid amount and notes"""
     purchase = await db.purchases.find_one({"id": purchase_id})
     if not purchase:
         raise HTTPException(status_code=404, detail="Purchase not found")
