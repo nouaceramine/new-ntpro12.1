@@ -116,6 +116,17 @@ export default function PurchasesPage() {
   const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
   const [activeTab, setActiveTab] = useState('purchases');
   
+  // Edit/Delete purchase states
+  const [showEditPurchaseDialog, setShowEditPurchaseDialog] = useState(false);
+  const [editingPurchase, setEditingPurchase] = useState(null);
+  const [editPaidAmount, setEditPaidAmount] = useState(0);
+  const [editNotes, setEditNotes] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [purchaseToDelete, setPurchaseToDelete] = useState(null);
+  const [deletingPurchase, setDeletingPurchase] = useState(false);
+  const [showViewPurchaseDialog, setShowViewPurchaseDialog] = useState(false);
+  const [viewingPurchase, setViewingPurchase] = useState(null);
+  
   // New supplier dialog
   const [showNewSupplierDialog, setShowNewSupplierDialog] = useState(false);
   const [newSupplierData, setNewSupplierData] = useState({
