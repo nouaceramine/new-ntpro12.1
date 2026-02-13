@@ -95,15 +95,18 @@ export function BackupSystem() {
     setProgress(0);
     
     try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
       // Fetch all data
       setProgress(10);
       const [products, customers, suppliers, sales, purchases, expenses] = await Promise.all([
-        axios.get(`${API}/products`).catch(() => ({ data: [] })),
-        axios.get(`${API}/customers`).catch(() => ({ data: [] })),
-        axios.get(`${API}/suppliers`).catch(() => ({ data: [] })),
-        axios.get(`${API}/sales`).catch(() => ({ data: [] })),
-        axios.get(`${API}/purchases`).catch(() => ({ data: [] })),
-        axios.get(`${API}/expenses`).catch(() => ({ data: [] }))
+        axios.get(`${API}/products`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API}/customers`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API}/suppliers`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API}/sales`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API}/purchases`, { headers }).catch(() => ({ data: [] })),
+        axios.get(`${API}/expenses`, { headers }).catch(() => ({ data: [] }))
       ]);
       
       setProgress(50);
