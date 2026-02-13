@@ -192,3 +192,49 @@ Multi-tenant SaaS e-commerce platform (FastAPI + React + MongoDB) with:
 
 ### Test Credentials (Updated)
 - Tenant: `amir@amir` / `test123` (subscription extended to Mar 15, 2026)
+
+---
+
+## Latest Update: Feb 13, 2026 (Session 2)
+
+### Phase 7 - Critical Security Fix: Super Admin Creation Prevention ✅
+
+**Problem:** ثغرة أمنية حرجة - المستأجرون يمكنهم إنشاء حسابات super_admin من صفحة /settings
+
+**Solution Implemented (100% tested):**
+
+#### 1. Backend Security Hardening
+
+**File:** `/app/backend/server.py`
+
+**Secured Endpoints:**
+- `POST /api/auth/register` (Lines 506-535): Added validation to block super_admin/saas_admin/superadmin roles
+- `POST /api/users` (Lines 717-753): Only super_admin can create super_admin users
+- `PUT /api/users/{id}` (Lines 746-774): 
+  - Only super_admin can assign super_admin role
+  - Non-super_admin cannot modify super_admin accounts
+
+**Security Features:**
+- Case-insensitive role validation (catches "Super_Admin", "SUPER_ADMIN", etc.)
+- Arabic error messages for better UX
+- Returns HTTP 403 Forbidden for unauthorized attempts
+
+#### 2. Frontend Role Restriction
+
+**Files Updated:**
+- `/app/frontend/src/pages/SettingsPage.js` (Lines 677-688): Removed super_admin from availableRoles
+- `/app/frontend/src/pages/UsersPage.js` (Lines 62-72): Removed super_admin from roles array
+
+**Result:** Tenants can no longer see or select super_admin in any role dropdown
+
+#### Test Results
+- ✅ 10/10 Backend security tests passed
+- ✅ Frontend code review verified
+- ✅ Super admin option removed from all role dropdowns
+- ✅ Normal user creation (seller, admin, manager) works correctly
+
+**Test Report:** `/app/test_reports/iteration_43.json`
+
+### Test Credentials (Updated)
+- Super Admin: `super@ntcommerce.com` / `superadmin123`
+- Tenant Admin: `tenant_admin@test.com` / `test1234`
