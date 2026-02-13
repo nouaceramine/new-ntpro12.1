@@ -1060,20 +1060,31 @@ async def quick_search_products(
             product["family_name"] = family.get("name_ar", "") if family else ""
         else:
             product["family_name"] = ""
+        # Ensure min_quantity has default
+        if "min_quantity" not in product:
+            product["min_quantity"] = 0
     
     # Sort to prioritize exact barcode matches
     def sort_key(p):
-        if p.get("barcode") == q:
+        if q and p.get("barcode") == q:
             return 0  # Exact barcode match first
-        if p.get("article_code", "").lower().startswith(q.lower()):
+        if q and p.get("article_code", "").lower().startswith(q.lower()):
             return 1  # Article code starts with query
         return 2  # Other matches
     
-    products.sort(key=sort_key)
+    if q:
+        products.sort(key=sort_key)
+    
+    # Optionally include families for filter dropdown
+    families_list = None
+    if include_families:
+        families = await db.product_families.find({}, {"_id": 0, "id": 1, "name_ar": 1, "name_en": 1}).to_list(100)
+        families_list = families
     
     return QuickSearchResponse(
         results=[QuickSearchProduct(**p) for p in products],
-        total=total
+        total=total,
+        families=families_list
     )
 
 @api_router.get("/products/generate-barcode")
