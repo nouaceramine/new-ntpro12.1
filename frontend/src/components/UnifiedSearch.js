@@ -377,12 +377,12 @@ export function UnifiedSearch({
                 <FolderTree className="h-4 w-4" />
                 {language === 'ar' ? 'العائلة' : 'Famille'}
               </label>
-              <Select value={selectedFamily} onValueChange={setSelectedFamily}>
+              <Select value={selectedFamily || "all"} onValueChange={(v) => setSelectedFamily(v === "all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder={language === 'ar' ? 'جميع العائلات' : 'Toutes'} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{language === 'ar' ? 'جميع العائلات' : 'Toutes'}</SelectItem>
+                  <SelectItem value="all">{language === 'ar' ? 'جميع العائلات' : 'Toutes'}</SelectItem>
                   {families.map(f => (
                     <SelectItem key={f.id} value={f.id}>
                       {language === 'ar' ? f.name_ar : (f.name_en || f.name_ar)}
