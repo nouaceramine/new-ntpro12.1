@@ -7,14 +7,9 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { 
   Search, Package, Loader2, X, AlertTriangle, Filter, 
-  ChevronDown, FolderTree, DollarSign, PackageX, PackageCheck
+  FolderTree, DollarSign, PackageX, PackageCheck
 } from 'lucide-react';
 import { playSuccessBeep, playErrorBeep } from '../utils/beep';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from './ui/popover';
 import {
   Select,
   SelectContent,
@@ -42,15 +37,6 @@ function useDebounce(value, delay) {
 
 /**
  * UnifiedSearch - High-performance unified search component with advanced filters
- * 
- * Features:
- * - Fast API-based search with debouncing
- * - Advanced filters: family, stock status, price range
- * - Barcode scanner support (Enter key)
- * - Keyboard navigation (arrows, escape)
- * - RTL support
- * - Sound feedback
- * - Works in: Header, POS, Products page
  */
 export function UnifiedSearch({
   mode = 'header',
@@ -79,11 +65,12 @@ export function UnifiedSearch({
   const [stockFilter, setStockFilter] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
   
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
   const containerRef = useRef(null);
+  const filterPanelRef = useRef(null);
   
   const debouncedQuery = useDebounce(query, 150);
   const debouncedMinPrice = useDebounce(minPrice, 300);
@@ -91,6 +78,7 @@ export function UnifiedSearch({
 
   // Check if any filter is active
   const hasActiveFilters = selectedFamily || stockFilter || minPrice || maxPrice;
+  const activeFilterCount = [selectedFamily, stockFilter, minPrice, maxPrice].filter(Boolean).length;
 
   // Fetch families on mount
   useEffect(() => {
@@ -109,7 +97,6 @@ export function UnifiedSearch({
 
   // Search products via API
   const searchProducts = useCallback(async (searchQuery, filters = {}) => {
-    // Allow search with filters even without query
     const hasFilters = filters.family_id || filters.stock_filter || filters.min_price || filters.max_price;
     
     if (!searchQuery && !hasFilters) {
@@ -136,7 +123,6 @@ export function UnifiedSearch({
       setSelectedIndex(-1);
     } catch (error) {
       console.error('Search error:', error);
-      // Fallback to regular search
       try {
         const params = {};
         if (searchQuery) params.search = searchQuery;
@@ -168,11 +154,12 @@ export function UnifiedSearch({
     }
   }, [debouncedQuery, selectedFamily, stockFilter, debouncedMinPrice, debouncedMaxPrice, searchProducts, hasActiveFilters]);
 
-  // Close dropdown when clicking outside
+  // Close dropdown and filter panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setIsOpen(false);
+        setShowFilterPanel(false);
       }
     };
     
@@ -252,7 +239,7 @@ export function UnifiedSearch({
     }
   }, []);
 
-  // Clear search and filters
+  // Clear search
   const handleClear = useCallback(() => {
     setQuery('');
     setResults([]);
@@ -291,10 +278,10 @@ export function UnifiedSearch({
 
   // Stock filter options
   const stockOptions = [
-    { value: '', label: language === 'ar' ? 'الكل' : 'Tous' },
-    { value: 'available', label: language === 'ar' ? 'متوفر' : 'Disponible' },
-    { value: 'low', label: language === 'ar' ? 'منخفض' : 'Stock bas' },
-    { value: 'out', label: language === 'ar' ? 'نفذ' : 'Rupture' },
+    { value: '', label: language === 'ar' ? 'الكل' : 'Tous', icon: null },
+    { value: 'available', label: language === 'ar' ? 'متوفر' : 'Disponible', icon: <PackageCheck className="h-3 w-3 text-green-500" /> },
+    { value: 'low', label: language === 'ar' ? 'منخفض' : 'Bas', icon: <AlertTriangle className="h-3 w-3 text-amber-500" /> },
+    { value: 'out', label: language === 'ar' ? 'نفذ' : 'Rupture', icon: <PackageX className="h-3 w-3 text-red-500" /> },
   ];
 
   return (
@@ -346,119 +333,124 @@ export function UnifiedSearch({
 
         {/* Filter Button */}
         {showFilters && (
-          <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <PopoverTrigger asChild>
-              <Button 
-                variant={hasActiveFilters ? "default" : "outline"} 
-                size="icon" 
-                className="h-11 w-11 relative"
-                data-testid="search-filter-btn"
-              >
-                <Filter className="h-5 w-5" />
-                {hasActiveFilters && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                    {[selectedFamily, stockFilter, minPrice, maxPrice].filter(Boolean).length}
-                  </span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align={isRTL ? "start" : "end"}>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">
-                    {language === 'ar' ? 'فلترة متقدمة' : 'Filtres avancés'}
-                  </h4>
-                  {hasActiveFilters && (
-                    <Button variant="ghost" size="sm" onClick={clearFilters}>
-                      {language === 'ar' ? 'مسح الكل' : 'Effacer'}
-                    </Button>
-                  )}
-                </div>
-                
-                {/* Family Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <FolderTree className="h-4 w-4" />
-                    {language === 'ar' ? 'العائلة' : 'Famille'}
-                  </label>
-                  <Select value={selectedFamily} onValueChange={setSelectedFamily}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={language === 'ar' ? 'جميع العائلات' : 'Toutes les familles'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">{language === 'ar' ? 'جميع العائلات' : 'Toutes'}</SelectItem>
-                      {families.map(f => (
-                        <SelectItem key={f.id} value={f.id}>
-                          {language === 'ar' ? f.name_ar : (f.name_en || f.name_ar)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Stock Filter */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    {language === 'ar' ? 'حالة المخزون' : 'État du stock'}
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {stockOptions.map(opt => (
-                      <Button
-                        key={opt.value}
-                        variant={stockFilter === opt.value ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setStockFilter(opt.value)}
-                        className="justify-start"
-                      >
-                        {opt.value === 'available' && <PackageCheck className="h-3 w-3 me-1 text-green-500" />}
-                        {opt.value === 'low' && <AlertTriangle className="h-3 w-3 me-1 text-amber-500" />}
-                        {opt.value === 'out' && <PackageX className="h-3 w-3 me-1 text-red-500" />}
-                        {opt.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Price Range */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    <DollarSign className="h-4 w-4" />
-                    {language === 'ar' ? 'نطاق السعر' : 'Fourchette de prix'}
-                  </label>
-                  <div className="flex gap-2 items-center">
-                    <Input
-                      type="number"
-                      placeholder={language === 'ar' ? 'من' : 'Min'}
-                      value={minPrice}
-                      onChange={(e) => setMinPrice(e.target.value)}
-                      className="h-9"
-                    />
-                    <span className="text-muted-foreground">-</span>
-                    <Input
-                      type="number"
-                      placeholder={language === 'ar' ? 'إلى' : 'Max'}
-                      value={maxPrice}
-                      onChange={(e) => setMaxPrice(e.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                </div>
-
-                <Button 
-                  className="w-full" 
-                  onClick={() => {
-                    setFiltersOpen(false);
-                    setIsOpen(true);
-                  }}
-                >
-                  {language === 'ar' ? 'تطبيق الفلاتر' : 'Appliquer'}
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Button 
+            variant={hasActiveFilters ? "default" : "outline"} 
+            size="icon" 
+            className="h-11 w-11 relative"
+            onClick={() => setShowFilterPanel(!showFilterPanel)}
+            data-testid="search-filter-btn"
+          >
+            <Filter className="h-5 w-5" />
+            {hasActiveFilters && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </Button>
         )}
       </div>
+
+      {/* Filter Panel (Dropdown) */}
+      {showFilterPanel && showFilters && (
+        <div 
+          ref={filterPanelRef}
+          className={`absolute z-50 top-full mt-2 w-80 bg-popover border rounded-xl shadow-xl p-4 ${
+            isRTL ? 'left-0' : 'right-0'
+          }`}
+          data-testid="filter-panel"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">
+                {language === 'ar' ? 'فلترة متقدمة' : 'Filtres avancés'}
+              </h4>
+              {hasActiveFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  {language === 'ar' ? 'مسح الكل' : 'Effacer'}
+                </Button>
+              )}
+            </div>
+            
+            {/* Family Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <FolderTree className="h-4 w-4" />
+                {language === 'ar' ? 'العائلة' : 'Famille'}
+              </label>
+              <Select value={selectedFamily} onValueChange={setSelectedFamily}>
+                <SelectTrigger>
+                  <SelectValue placeholder={language === 'ar' ? 'جميع العائلات' : 'Toutes'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">{language === 'ar' ? 'جميع العائلات' : 'Toutes'}</SelectItem>
+                  {families.map(f => (
+                    <SelectItem key={f.id} value={f.id}>
+                      {language === 'ar' ? f.name_ar : (f.name_en || f.name_ar)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Stock Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                {language === 'ar' ? 'حالة المخزون' : 'État du stock'}
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {stockOptions.map(opt => (
+                  <Button
+                    key={opt.value || 'all'}
+                    variant={stockFilter === opt.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setStockFilter(opt.value)}
+                    className="justify-start gap-1"
+                  >
+                    {opt.icon}
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Price Range */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                {language === 'ar' ? 'نطاق السعر' : 'Fourchette de prix'}
+              </label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  placeholder={language === 'ar' ? 'من' : 'Min'}
+                  value={minPrice}
+                  onChange={(e) => setMinPrice(e.target.value)}
+                  className="h-9"
+                />
+                <span className="text-muted-foreground">-</span>
+                <Input
+                  type="number"
+                  placeholder={language === 'ar' ? 'إلى' : 'Max'}
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            <Button 
+              className="w-full" 
+              onClick={() => {
+                setShowFilterPanel(false);
+                setIsOpen(true);
+              }}
+            >
+              {language === 'ar' ? 'تطبيق الفلاتر' : 'Appliquer'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Active Filters Pills */}
       {hasActiveFilters && (
@@ -489,6 +481,7 @@ export function UnifiedSearch({
         <div
           ref={dropdownRef}
           className="absolute z-50 top-full mt-1 w-full bg-popover border rounded-xl shadow-xl max-h-96 overflow-y-auto"
+          style={{ marginTop: hasActiveFilters ? '0.5rem' : '0.25rem' }}
           data-testid="search-dropdown"
         >
           {results.length > 0 ? (
@@ -588,8 +581,8 @@ export function UnifiedSearch({
               {totalResults > results.length && (
                 <div className="px-4 py-2 text-center text-sm text-muted-foreground bg-muted/50">
                   {language === 'ar' 
-                    ? `+${totalResults - results.length} نتيجة أخرى - اضغط Enter للبحث الكامل` 
-                    : `+${totalResults - results.length} autres résultats - Appuyez Entrée pour recherche complète`}
+                    ? `+${totalResults - results.length} نتيجة أخرى` 
+                    : `+${totalResults - results.length} autres résultats`}
                 </div>
               )}
             </>
@@ -601,8 +594,8 @@ export function UnifiedSearch({
               </p>
               <p className="text-sm mt-1">
                 {language === 'ar' 
-                  ? 'جرب البحث بالباركود أو تغيير الفلاتر' 
-                  : 'Essayez avec un code-barres ou modifiez les filtres'}
+                  ? 'جرب تغيير الفلاتر أو البحث بكلمة أخرى' 
+                  : 'Essayez de modifier les filtres'}
               </p>
               {hasActiveFilters && (
                 <Button variant="outline" size="sm" className="mt-3" onClick={clearFilters}>
