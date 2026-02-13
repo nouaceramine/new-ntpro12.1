@@ -9,7 +9,7 @@ import requests
 import os
 from datetime import datetime
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://tenant-lockdown.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://saas-inventory-hub.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 TENANT_ADMIN_EMAIL = "tenant_admin@test.com"
