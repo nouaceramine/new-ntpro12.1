@@ -386,14 +386,70 @@ export default function AddProductPage() {
               {/* Image Upload & Description */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1">
-                  <Label className="text-xs">{language === 'ar' ? 'صورة المنتج' : 'Image produit'}</Label>
-                  <div className="flex gap-2">
+                  <Label className="text-xs flex items-center gap-1">
+                    <Camera className="h-3 w-3 text-primary" />
+                    {language === 'ar' ? 'صورة المنتج' : 'Image produit'}
+                  </Label>
+                  <div className="flex flex-col gap-2">
+                    {/* Image Preview or Upload Area */}
+                    <div 
+                      onClick={() => !uploadingProductImage && imageUploadRef.current?.click()}
+                      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary'); }}
+                      onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary'); }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove('border-primary');
+                        const file = e.dataTransfer.files?.[0];
+                        if (file && file.type.startsWith('image/')) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            setFormData(prev => ({ ...prev, image_url: event.target.result }));
+                            toast.success(language === 'ar' ? 'تم رفع الصورة' : 'Image téléchargée');
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className={`border-2 border-dashed rounded-lg p-2 cursor-pointer hover:border-primary transition-colors ${formData.image_url ? 'border-primary/50' : 'border-muted-foreground/30'}`}
+                    >
+                      {formData.image_url ? (
+                        <div className="relative">
+                          <img 
+                            src={formData.image_url} 
+                            alt="Product" 
+                            className="w-full h-20 object-cover rounded"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-1 -right-1 h-5 w-5"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFormData(prev => ({ ...prev, image_url: '' }));
+                            }}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-20 text-muted-foreground">
+                          {uploadingProductImage ? (
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                          ) : (
+                            <>
+                              <Camera className="h-6 w-6 mb-1" />
+                              <span className="text-xs">{language === 'ar' ? 'اسحب أو انقر' : 'Glisser ou cliquer'}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <Input 
                       name="image_url" 
-                      value={formData.image_url} 
+                      value={formData.image_url?.startsWith('data:') ? '' : formData.image_url} 
                       onChange={handleChange} 
                       placeholder="URL..."
-                      className="h-9 flex-1" 
+                      className="h-8 text-xs" 
                     />
                     <input
                       ref={imageUploadRef}
@@ -403,16 +459,6 @@ export default function AddProductPage() {
                       className="hidden"
                       id="product-image-upload"
                     />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => imageUploadRef.current?.click()}
-                      disabled={uploadingProductImage}
-                      className="h-9 px-2"
-                    >
-                      {uploadingProductImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                    </Button>
                   </div>
                 </div>
                 <div className="col-span-2 space-y-1">
