@@ -509,6 +509,14 @@ async def register(user: UserCreate):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # SECURITY: Prevent creating super_admin or saas_admin roles
+    forbidden_roles = ["super_admin", "saas_admin", "superadmin"]
+    if user.role and user.role.lower() in [r.lower() for r in forbidden_roles]:
+        raise HTTPException(
+            status_code=403, 
+            detail="لا يمكن إنشاء حساب بصلاحية سوبر أدمين - Creating super_admin accounts is not allowed"
+        )
+    
     user_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -740,6 +748,24 @@ async def update_user(user_id: str, updates: UserUpdate, admin: dict = Depends(g
     user = await db.users.find_one({"id": user_id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # SECURITY: Prevent changing role to super_admin or saas_admin
+    forbidden_roles = ["super_admin", "saas_admin", "superadmin"]
+    if updates.role and updates.role.lower() in [r.lower() for r in forbidden_roles]:
+        # Only super_admin can assign super_admin role
+        if admin.get("role") != "super_admin":
+            raise HTTPException(
+                status_code=403, 
+                detail="لا يمكن تعيين صلاحية سوبر أدمين - Cannot assign super_admin role"
+            )
+    
+    # SECURITY: Prevent non-super_admin from modifying super_admin users
+    if user.get("role") == "super_admin" and admin.get("role") != "super_admin":
+        raise HTTPException(
+            status_code=403, 
+            detail="لا يمكن تعديل حساب سوبر أدمين - Cannot modify super_admin account"
+        )
+    
     update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
     if update_data:
         await db.users.update_one({"id": user_id}, {"$set": update_data})
