@@ -1147,7 +1147,7 @@ export default function POSPage() {
           </div>
 
           {/* Right Sidebar - Product Shortcuts (Compact) */}
-          <div className="col-span-2">
+          <div className="col-span-2" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
             <Card className="h-full">
               <CardHeader className="p-2 pb-1">
                 <CardTitle className="text-xs text-center text-muted-foreground">
