@@ -902,9 +902,9 @@ export default function POSPage() {
         )}
 
         {/* Main Content Grid */}
-        <div className="flex-1 grid grid-cols-12 gap-2 min-h-0">
+        <div className={`flex-1 grid grid-cols-12 gap-2 min-h-0 ${isRTL ? 'direction-ltr' : ''}`} style={{ direction: 'ltr' }}>
           {/* Left Sidebar - Search, Add Product & Task Menu */}
-          <div className="col-span-2 flex flex-col gap-2">
+          <div className="col-span-2 flex flex-col gap-2" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
             {/* Search & Add Product */}
             <Card className="p-2">
               <div className="relative mb-2">
