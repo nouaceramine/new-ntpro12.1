@@ -650,8 +650,8 @@ export default function POSPage() {
     }
   };
 
-  // Thermal Printer Support - Universal ESC/POS compatible
-  const printThermalReceipt = async (saleId) => {
+  // Thermal Printer Support - Universal ESC/POS compatible for all models (58mm, 80mm)
+  const printThermalReceipt = async (saleId, printerSize = '80mm') => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${API}/sales/${saleId}`, {
@@ -660,7 +660,7 @@ export default function POSPage() {
       const sale = response.data;
       
       // Generate thermal receipt HTML
-      const receiptHtml = generateThermalReceiptHtml(sale);
+      const receiptHtml = generateThermalReceiptHtml(sale, printerSize);
       
       const printWindow = window.open('', '_blank', 'width=300,height=600');
       if (printWindow) {
@@ -678,11 +678,14 @@ export default function POSPage() {
     }
   };
 
-  // Generate thermal receipt HTML (ESC/POS compatible)
-  const generateThermalReceiptHtml = (sale) => {
+  // Generate thermal receipt HTML (ESC/POS compatible for 58mm, 80mm thermal printers)
+  const generateThermalReceiptHtml = (sale, printerSize = '80mm') => {
     const storeName = receiptSettings?.store_name || 'NT Commerce';
     const storeAddress = receiptSettings?.store_address || '';
     const storePhone = receiptSettings?.store_phone || '';
+    const fontSize = printerSize === '58mm' ? '10px' : '12px';
+    const titleSize = printerSize === '58mm' ? '14px' : '16px';
+    const totalSize = printerSize === '58mm' ? '12px' : '14px';
     
     return `
 <!DOCTYPE html>
@@ -691,39 +694,46 @@ export default function POSPage() {
   <meta charset="UTF-8">
   <title>Receipt</title>
   <style>
-    @page { size: 80mm auto; margin: 0; }
+    @page { size: ${printerSize} auto; margin: 0; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      width: 80mm;
-      padding: 5mm;
+      font-family: 'Courier New', 'Lucida Console', monospace;
+      font-size: ${fontSize};
+      width: ${printerSize};
+      padding: 3mm;
       direction: ${isRTL ? 'rtl' : 'ltr'};
+      line-height: 1.4;
     }
     .center { text-align: center; }
     .bold { font-weight: bold; }
-    .line { border-bottom: 1px dashed #000; margin: 5px 0; }
-    .row { display: flex; justify-content: space-between; }
-    .items { margin: 10px 0; }
-    .item { margin: 3px 0; }
-    .total { font-size: 14px; font-weight: bold; }
-    .footer { margin-top: 15px; font-size: 10px; }
+    .line { border-bottom: 1px dashed #000; margin: 4px 0; }
+    .double-line { border-bottom: 2px solid #000; margin: 4px 0; }
+    .row { display: flex; justify-content: space-between; gap: 4px; }
+    .items { margin: 8px 0; }
+    .item { margin: 4px 0; padding-bottom: 2px; }
+    .total { font-size: ${totalSize}; font-weight: bold; }
+    .footer { margin-top: 12px; font-size: 9px; }
+    .cashier { font-size: 9px; color: #666; margin-top: 4px; }
+    .barcode { font-family: 'Libre Barcode 39', monospace; font-size: 24px; margin: 8px 0; }
   </style>
 </head>
 <body>
-  <div class="center bold" style="font-size: 16px;">${storeName}</div>
-  ${storeAddress ? `<div class="center">${storeAddress}</div>` : ''}
-  ${storePhone ? `<div class="center">${storePhone}</div>` : ''}
+  <div class="center bold" style="font-size: ${titleSize};">${storeName}</div>
+  ${storeAddress ? `<div class="center" style="font-size: 10px;">${storeAddress}</div>` : ''}
+  ${storePhone ? `<div class="center" style="font-size: 10px;">${storePhone}</div>` : ''}
   
-  <div class="line"></div>
+  <div class="double-line"></div>
   
   <div class="row">
-    <span>${language === 'ar' ? 'رقم الفاتورة:' : 'Facture:'}</span>
-    <span>${sale.invoice_number || sale.code}</span>
+    <span>${language === 'ar' ? 'رقم:' : 'N°:'}</span>
+    <span class="bold">${sale.invoice_number || sale.code}</span>
   </div>
   <div class="row">
     <span>${language === 'ar' ? 'التاريخ:' : 'Date:'}</span>
-    <span>${new Date(sale.created_at).toLocaleString()}</span>
+    <span>${new Date(sale.created_at).toLocaleString(language === 'ar' ? 'ar-DZ' : 'fr-FR')}</span>
   </div>
   ${sale.customer_name ? `
   <div class="row">
@@ -737,10 +747,10 @@ export default function POSPage() {
   <div class="items">
     ${(sale.items || []).map(item => `
       <div class="item">
-        <div>${item.product_name}</div>
+        <div class="bold">${item.product_name}</div>
         <div class="row">
-          <span>${item.quantity} x ${item.unit_price}</span>
-          <span>${item.total}</span>
+          <span>${item.quantity} x ${formatCurrency(item.unit_price)}</span>
+          <span class="bold">${formatCurrency(item.total)}</span>
         </div>
       </div>
     `).join('')}
@@ -750,24 +760,45 @@ export default function POSPage() {
   
   <div class="row">
     <span>${language === 'ar' ? 'المجموع الفرعي:' : 'Sous-total:'}</span>
-    <span>${sale.subtotal}</span>
+    <span>${formatCurrency(sale.subtotal)}</span>
   </div>
   ${sale.discount > 0 ? `
   <div class="row">
     <span>${language === 'ar' ? 'الخصم:' : 'Remise:'}</span>
-    <span>-${sale.discount}</span>
+    <span>-${formatCurrency(sale.discount)}</span>
+  </div>
+  ` : ''}
+  ${sale.delivery?.fee > 0 ? `
+  <div class="row">
+    <span>${language === 'ar' ? 'التوصيل:' : 'Livraison:'}</span>
+    <span>${formatCurrency(sale.delivery.fee)}</span>
   </div>
   ` : ''}
   
-  <div class="line"></div>
+  <div class="double-line"></div>
   
   <div class="row total">
-    <span>${language === 'ar' ? 'الإجمالي:' : 'Total:'}</span>
-    <span>${sale.total} ${t.currency}</span>
+    <span>${language === 'ar' ? 'الإجمالي:' : 'TOTAL:'}</span>
+    <span>${formatCurrency(sale.total)} ${t.currency}</span>
   </div>
   
+  ${sale.paid_amount ? `
+  <div class="row" style="margin-top: 4px;">
+    <span>${language === 'ar' ? 'المدفوع:' : 'Payé:'}</span>
+    <span>${formatCurrency(sale.paid_amount)}</span>
+  </div>
+  ${sale.total - sale.paid_amount > 0 ? `
+  <div class="row">
+    <span>${language === 'ar' ? 'الباقي:' : 'Reste:'}</span>
+    <span>${formatCurrency(sale.total - sale.paid_amount)}</span>
+  </div>
+  ` : ''}
+  ` : ''}
+  
   <div class="footer center">
-    <div>${language === 'ar' ? 'شكراً لزيارتكم' : 'Merci de votre visite'}</div>
+    <div class="line"></div>
+    <div style="margin-top: 6px;">${language === 'ar' ? 'شكراً لزيارتكم' : 'Merci de votre visite'}</div>
+    <div class="cashier">${language === 'ar' ? 'البائع:' : 'Caissier:'} ${currentCashier}</div>
   </div>
 </body>
 </html>
