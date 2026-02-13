@@ -68,8 +68,27 @@ import {
   Check,
   RefreshCw,
   Percent,
-  Tag
+  Tag,
+  Eye,
+  MoreHorizontal,
+  Pencil
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 import { ExportPrintButtons } from '../components/ExportPrintButtons';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
