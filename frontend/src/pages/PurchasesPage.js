@@ -762,11 +762,12 @@ export default function PurchasesPage() {
                           <TableHead>{language === 'ar' ? 'المدفوع' : 'Payé'}</TableHead>
                           <TableHead>{language === 'ar' ? 'المتبقي' : 'Restant'}</TableHead>
                           <TableHead>{language === 'ar' ? 'الحالة' : 'Statut'}</TableHead>
+                          <TableHead className="text-center">{language === 'ar' ? 'الإجراءات' : 'Actions'}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {purchases.map(purchase => (
-                          <TableRow key={purchase.id}>
+                          <TableRow key={purchase.id} className="hover:bg-muted/50">
                             <TableCell className="font-medium">{purchase.invoice_number}</TableCell>
                             <TableCell>{purchase.supplier_name}</TableCell>
                             <TableCell>{formatDate(purchase.created_at)}</TableCell>
@@ -776,6 +777,40 @@ export default function PurchasesPage() {
                               {purchase.remaining.toFixed(2)} {t.currency}
                             </TableCell>
                             <TableCell>{getStatusBadge(purchase.status)}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-blue-600 hover:bg-blue-50"
+                                  onClick={() => viewPurchaseDetails(purchase)}
+                                  title={language === 'ar' ? 'عرض' : 'Voir'}
+                                  data-testid={`view-purchase-${purchase.id}`}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-amber-600 hover:bg-amber-50"
+                                  onClick={() => openEditPurchaseDialog(purchase)}
+                                  title={language === 'ar' ? 'تعديل' : 'Modifier'}
+                                  data-testid={`edit-purchase-${purchase.id}`}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-600 hover:bg-red-50"
+                                  onClick={() => confirmDeletePurchase(purchase)}
+                                  title={language === 'ar' ? 'حذف' : 'Supprimer'}
+                                  data-testid={`delete-purchase-${purchase.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
