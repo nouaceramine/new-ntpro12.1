@@ -787,18 +787,27 @@ class EmployeeAlertSettings(BaseModel):
 class WarehouseCreate(BaseModel):
     name: str
     address: Optional[str] = ""
+    phone: Optional[str] = ""
+    manager: Optional[str] = ""
+    notes: Optional[str] = ""
     is_main: bool = False
 
 class WarehouseUpdate(BaseModel):
     name: Optional[str] = None
     address: Optional[str] = None
+    phone: Optional[str] = None
+    manager: Optional[str] = None
+    notes: Optional[str] = None
     is_main: Optional[bool] = None
 
 class WarehouseResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     name: str
-    address: str
+    address: str = ""
+    phone: str = ""
+    manager: str = ""
+    notes: str = ""
     is_main: bool
     created_at: str
 
