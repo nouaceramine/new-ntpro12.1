@@ -1005,89 +1005,16 @@ export default function POSPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-4 flex-wrap">
-              {/* Search with Dropdown */}
-              <div className="relative flex-1 min-w-[300px]" ref={searchDropdownRef}>
-                <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
-                <Input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder={language === 'ar' ? 'البحث بالاسم أو الباركود أو كود المنتج...' : 'Rechercher par nom, code-barres ou code article...'}
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  onKeyDown={handleSearchKeyDown}
-                  onFocus={() => setShowSearchResults(true)}
-                  className={`h-11 ${isRTL ? 'pr-10' : 'pl-10'}`}
-                  data-testid="pos-search-input"
-                  autoComplete="off"
+              {/* Unified Search Component */}
+              <div className="flex-1 min-w-[300px]">
+                <UnifiedSearch 
+                  mode="pos"
+                  onSelect={addToCart}
+                  priceType={priceType}
+                  formatCurrency={formatCurrency}
+                  currency={t.currency}
+                  autoFocus={true}
                 />
-                
-                {/* Search Results Dropdown */}
-                {showSearchResults && filteredProducts.length > 0 && (
-                  <div className="absolute z-50 top-full mt-1 w-full bg-white border rounded-lg shadow-lg max-h-80 overflow-auto">
-                    {filteredProducts.slice(0, 10).map((product) => (
-                      <div
-                        key={product.id}
-                        onClick={() => addToCart(product)}
-                        className={`px-4 py-3 cursor-pointer border-b last:border-b-0 flex items-center justify-between transition-colors ${
-                          product.quantity <= 0 
-                            ? 'bg-gradient-to-r from-amber-100 to-orange-100 border-amber-300 hover:from-amber-200 hover:to-orange-200' 
-                            : 'hover:bg-blue-50'
-                        }`}
-                        data-testid={`search-result-${product.id}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                            product.quantity <= 0 ? 'bg-amber-200 ring-2 ring-amber-400' : 'bg-gray-100'
-                          }`}>
-                            {product.quantity <= 0 ? (
-                              <AlertTriangle className="h-5 w-5 text-amber-700" />
-                            ) : (
-                              <Package className="h-5 w-5 text-gray-400" />
-                            )}
-                          </div>
-                          <div>
-                            <p className={`font-medium ${product.quantity <= 0 ? 'text-amber-900' : ''}`}>
-                              {language === 'ar' ? product.name_ar : product.name_en}
-                            </p>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-muted-foreground">{product.barcode || '---'}</span>
-                              <span className="text-muted-foreground">•</span>
-                              <span className={product.quantity <= 0 
-                                ? 'text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded' 
-                                : 'text-muted-foreground'
-                              }>
-                                {language === 'ar' ? 'المخزون:' : 'Stock:'} {product.quantity}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-end">
-                          <p className="font-bold text-blue-600">
-                            {formatCurrency(priceType === 'wholesale' ? product.wholesale_price : product.retail_price)} {t.currency}
-                          </p>
-                          {product.quantity <= 0 && (
-                            <Badge className="text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm">
-                              <AlertTriangle className="h-3 w-3 me-1" />
-                              {language === 'ar' ? 'غير متوفر' : 'Rupture'}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {filteredProducts.length > 10 && (
-                      <div className="px-4 py-2 text-center text-sm text-muted-foreground bg-gray-50">
-                        {language === 'ar' ? `+${filteredProducts.length - 10} منتج آخر...` : `+${filteredProducts.length - 10} autres articles...`}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {showSearchResults && filteredProducts.length === 0 && products.length > 0 && searchQuery && (
-                  <div className="absolute z-50 top-full mt-1 w-full bg-white border rounded-lg shadow-lg p-4 text-center text-muted-foreground">
-                    <Package className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                    {language === 'ar' ? 'لا توجد منتجات مطابقة' : 'Aucun article trouvé'}
-                  </div>
-                )}
               </div>
 
               {/* Filters */}
