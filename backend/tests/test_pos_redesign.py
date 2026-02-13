@@ -46,7 +46,7 @@ class TestPOSPublicAPIs:
     
     def test_get_public_plans(self):
         """Test public plans endpoint"""
-        response = requests.get(f"{BASE_URL}/public-plans")
+        response = requests.get(f"{BASE_URL}/saas/plans/public")
         assert response.status_code == 200
         data = response.json()
         assert isinstance(data, list)
