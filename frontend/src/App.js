@@ -147,6 +147,7 @@ function AppRoutes() {
       {/* Landing & SaaS Public Routes */}
       <Route path="/landing" element={<LandingPage />} />
       <Route path="/register" element={<SaasRegisterPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
       
       {/* Unified Login - Single Entry Point for ALL users */}
       <Route path="/portal" element={<UnifiedLoginPage />} />
