@@ -494,23 +494,6 @@ export default function POSPage() {
     }
   };
 
-  // Filter products based on search query
-  const filteredProducts = products.filter(p => {
-    if (selectedFamily !== 'all' && p.family_id !== selectedFamily) {
-      return false;
-    }
-    // Show all products if search is focused, filter by query if typing
-    if (!searchQuery) return true; // Show all when no search query
-    const query = searchQuery.toLowerCase();
-    return (
-      p.name_en.toLowerCase().includes(query) ||
-      p.name_ar.toLowerCase().includes(query) ||
-      p.barcode?.toLowerCase().includes(query) ||
-      p.article_code?.toLowerCase().includes(query) ||  // البحث بكود المنتج
-      p.compatible_models.some(m => m.toLowerCase().includes(query))
-    );
-  });
-
   const addToCart = (product) => {
     const existingItem = cart.find(item => item.product_id === product.id);
     const price = priceType === 'wholesale' ? product.wholesale_price : product.retail_price;
