@@ -446,7 +446,7 @@ export default function WarehousesPage() {
 
         {/* Add Warehouse Dialog */}
         <Dialog open={showAddWarehouse} onOpenChange={setShowAddWarehouse}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Warehouse className="h-5 w-5" />
@@ -455,13 +455,33 @@ export default function WarehousesPage() {
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div>
-                <Label>{language === 'ar' ? 'اسم المخزن' : 'Nom de l\'entrepôt'}</Label>
+                <Label>{language === 'ar' ? 'اسم المخزن *' : 'Nom de l\'entrepôt *'}</Label>
                 <Input
                   value={newWarehouse.name}
                   onChange={(e) => setNewWarehouse({ ...newWarehouse, name: e.target.value })}
                   placeholder={language === 'ar' ? 'مثال: مخزن الفرع الثاني' : 'Ex: Entrepôt succursale 2'}
                   className="mt-1"
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>{language === 'ar' ? 'رقم الهاتف' : 'Téléphone'}</Label>
+                  <Input
+                    value={newWarehouse.phone || ''}
+                    onChange={(e) => setNewWarehouse({ ...newWarehouse, phone: e.target.value })}
+                    placeholder={language === 'ar' ? 'رقم الهاتف' : 'Téléphone'}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>{language === 'ar' ? 'مسؤول المخزن' : 'Responsable'}</Label>
+                  <Input
+                    value={newWarehouse.manager || ''}
+                    onChange={(e) => setNewWarehouse({ ...newWarehouse, manager: e.target.value })}
+                    placeholder={language === 'ar' ? 'اسم المسؤول' : 'Nom du responsable'}
+                    className="mt-1"
+                  />
+                </div>
               </div>
               <div>
                 <Label>{language === 'ar' ? 'العنوان' : 'Adresse'}</Label>
@@ -471,6 +491,22 @@ export default function WarehousesPage() {
                   placeholder={language === 'ar' ? 'العنوان (اختياري)' : 'Adresse (optionnel)'}
                   className="mt-1"
                 />
+              </div>
+              <div>
+                <Label>{language === 'ar' ? 'ملاحظات' : 'Notes'}</Label>
+                <Input
+                  value={newWarehouse.notes || ''}
+                  onChange={(e) => setNewWarehouse({ ...newWarehouse, notes: e.target.value })}
+                  placeholder={language === 'ar' ? 'ملاحظات إضافية' : 'Notes supplémentaires'}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={newWarehouse.is_main}
+                  onCheckedChange={(checked) => setNewWarehouse({ ...newWarehouse, is_main: checked })}
+                />
+                <Label className="cursor-pointer">{language === 'ar' ? 'مخزن رئيسي' : 'Entrepôt principal'}</Label>
               </div>
               <Button onClick={handleAddWarehouse} className="w-full">
                 {language === 'ar' ? 'إضافة المخزن' : 'Ajouter l\'entrepôt'}
