@@ -2678,6 +2678,162 @@ async def get_purchases(supplier_id: Optional[str] = None, admin: dict = Depends
     purchases = await db.purchases.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return [PurchaseResponse(**p) for p in purchases]
 
+@api_router.get("/purchases/{purchase_id}", response_model=PurchaseResponse)
+async def get_purchase(purchase_id: str, admin: dict = Depends(get_tenant_admin)):
+    """Get single purchase by ID"""
+    purchase = await db.purchases.find_one({"id": purchase_id}, {"_id": 0})
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    return PurchaseResponse(**purchase)
+
+class PurchaseUpdate(BaseModel):
+    paid_amount: Optional[float] = None
+    notes: Optional[str] = None
+    items: Optional[List[PurchaseItemCreate]] = None
+
+@api_router.put("/purchases/{purchase_id}")
+async def update_purchase(purchase_id: str, update_data: PurchaseUpdate, admin: dict = Depends(get_tenant_admin)):
+    """Update purchase - can modify paid amount, notes, or items"""
+    purchase = await db.purchases.find_one({"id": purchase_id})
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    update_dict = {"updated_at": now, "updated_by": admin["name"]}
+    
+    old_paid = purchase.get("paid_amount", 0)
+    old_total = purchase.get("total", 0)
+    old_remaining = purchase.get("remaining", 0)
+    
+    # Update paid amount
+    if update_data.paid_amount is not None:
+        new_paid = update_data.paid_amount
+        new_remaining = max(0, old_total - new_paid)
+        new_status = "paid" if new_remaining <= 0 else ("partial" if new_paid > 0 else "unpaid")
+        
+        update_dict["paid_amount"] = new_paid
+        update_dict["remaining"] = new_remaining
+        update_dict["status"] = new_status
+        
+        # Update supplier balance
+        balance_diff = old_remaining - new_remaining
+        await db.suppliers.update_one(
+            {"id": purchase["supplier_id"]},
+            {"$inc": {"balance": -balance_diff}}
+        )
+        
+        # Update cash box if payment increased
+        payment_diff = new_paid - old_paid
+        if payment_diff > 0:
+            await db.cash_boxes.update_one(
+                {"id": purchase.get("payment_method", "cash")},
+                {"$inc": {"balance": -payment_diff}, "$set": {"updated_at": now}}
+            )
+            await db.transactions.insert_one({
+                "id": str(uuid.uuid4()),
+                "cash_box_id": purchase.get("payment_method", "cash"),
+                "type": "expense",
+                "amount": payment_diff,
+                "description": f"دفعة إضافية للمشتريات - فاتورة {purchase.get('invoice_number', '')}",
+                "reference_type": "purchase",
+                "reference_id": purchase_id,
+                "created_at": now,
+                "created_by": admin["name"]
+            })
+    
+    if update_data.notes is not None:
+        update_dict["notes"] = update_data.notes
+    
+    # Update items if provided (recalculate total)
+    if update_data.items is not None:
+        # Reverse old stock changes
+        for item in purchase.get("items", []):
+            await db.products.update_one(
+                {"id": item["product_id"]},
+                {"$inc": {"quantity": -item["quantity"]}}
+            )
+        
+        # Apply new items
+        new_total = 0
+        new_items = []
+        for item in update_data.items:
+            item_dict = item.model_dump()
+            new_total += item_dict.get("total", item_dict["quantity"] * item_dict["unit_price"])
+            new_items.append(item_dict)
+            await db.products.update_one(
+                {"id": item.product_id},
+                {"$inc": {"quantity": item.quantity}}
+            )
+        
+        update_dict["items"] = new_items
+        update_dict["total"] = new_total
+        
+        # Recalculate remaining
+        current_paid = update_dict.get("paid_amount", purchase.get("paid_amount", 0))
+        update_dict["remaining"] = max(0, new_total - current_paid)
+        update_dict["status"] = "paid" if update_dict["remaining"] <= 0 else ("partial" if current_paid > 0 else "unpaid")
+        
+        # Update supplier total
+        total_diff = new_total - old_total
+        await db.suppliers.update_one(
+            {"id": purchase["supplier_id"]},
+            {"$inc": {"total_purchases": total_diff, "balance": update_dict["remaining"] - old_remaining}}
+        )
+    
+    await db.purchases.update_one({"id": purchase_id}, {"$set": update_dict})
+    
+    updated_purchase = await db.purchases.find_one({"id": purchase_id}, {"_id": 0})
+    return {"message": "تم تحديث المشتريات بنجاح", "purchase": updated_purchase}
+
+@api_router.delete("/purchases/{purchase_id}")
+async def delete_purchase(purchase_id: str, admin: dict = Depends(get_tenant_admin)):
+    """Delete purchase and reverse all related changes"""
+    purchase = await db.purchases.find_one({"id": purchase_id})
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Reverse product stock changes
+    for item in purchase.get("items", []):
+        await db.products.update_one(
+            {"id": item["product_id"]},
+            {"$inc": {"quantity": -item["quantity"]}}
+        )
+    
+    # Reverse supplier balance
+    await db.suppliers.update_one(
+        {"id": purchase["supplier_id"]},
+        {"$inc": {
+            "total_purchases": -purchase.get("total", 0),
+            "balance": -purchase.get("remaining", 0)
+        }}
+    )
+    
+    # If there was a payment, reverse cash box change
+    if purchase.get("paid_amount", 0) > 0:
+        await db.cash_boxes.update_one(
+            {"id": purchase.get("payment_method", "cash")},
+            {"$inc": {"balance": purchase["paid_amount"]}, "$set": {"updated_at": now}}
+        )
+        # Add reversal transaction
+        await db.transactions.insert_one({
+            "id": str(uuid.uuid4()),
+            "cash_box_id": purchase.get("payment_method", "cash"),
+            "type": "income",
+            "amount": purchase["paid_amount"],
+            "description": f"إلغاء مشتريات - فاتورة {purchase.get('invoice_number', '')}",
+            "reference_type": "purchase_reversal",
+            "reference_id": purchase_id,
+            "created_at": now,
+            "created_by": admin["name"]
+        })
+    
+    # Delete the purchase
+    await db.purchases.delete_one({"id": purchase_id})
+    
+    return {"message": "تم حذف المشتريات بنجاح", "deleted_id": purchase_id}
+
 # ============ CASH BOX ROUTES ============
 
 @api_router.get("/cash-boxes", response_model=List[CashBoxResponse])
