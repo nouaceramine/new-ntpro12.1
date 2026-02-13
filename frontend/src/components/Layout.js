@@ -90,7 +90,6 @@ export const Layout = ({ children }) => {
     const saved = localStorage.getItem('expandedSections');
     return saved ? JSON.parse(saved) : ['الرئيسية', 'Principal', 'المالية', 'Finances'];
   });
-  const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
