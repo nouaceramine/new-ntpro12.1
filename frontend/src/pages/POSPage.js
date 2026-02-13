@@ -930,41 +930,6 @@ export default function POSPage() {
     return new Intl.NumberFormat('ar-DZ', { minimumFractionDigits: 2 }).format(amount || 0);
   };
 
-  const handleSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    setShowSearchResults(true);
-  };
-
-  // Handle barcode scanner input (usually sends Enter after scan)
-  const handleSearchKeyDown = (e) => {
-    if (e.key === 'Enter' && searchQuery) {
-      // Find product by barcode or article code
-      const product = products.find(p => 
-        p.barcode === searchQuery || 
-        p.article_code?.toLowerCase() === searchQuery.toLowerCase()
-      );
-      
-      if (product) {
-        addToCart(product);
-        setSearchQuery('');
-        setShowSearchResults(false);
-        playSuccessBeep();  // صوت التنبيه عند النجاح
-        toast.success(language === 'ar' ? `تمت إضافة: ${product.name_ar}` : `Ajouté: ${product.name_en}`);
-      } else if (filteredProducts.length === 1) {
-        // If only one result, add it
-        addToCart(filteredProducts[0]);
-        setSearchQuery('');
-        setShowSearchResults(false);
-        playSuccessBeep();  // صوت التنبيه عند النجاح
-      } else {
-        playErrorBeep();  // صوت خطأ عند عدم العثور على المنتج
-      }
-    } else if (e.key === 'Escape') {
-      setShowSearchResults(false);
-    }
-  };
-
   return (
     <Layout>
       <div className="space-y-4" data-testid="pos-page">
