@@ -36,10 +36,15 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
   - `DELETE /api/purchases/{id}` - حذف المشتريات مع عكس تغييرات المخزون
   - `GET /api/purchases/{id}` - عرض تفاصيل المشتريات
 
-#### 3. نظام Feature Flags ✅
+#### 3. نظام Feature Flags ✅ (UPDATED - Feb 13, 2026)
 - صفحة إدارة الميزات لـ Super Admin (`/saas-admin/feature-flags`)
 - تحكم في الميزات لكل خطة اشتراك
 - فئات الميزات: المبيعات، المخزون، المشتريات، الزبائن، التقارير، التوصيل، الإصلاحات، المتجر الإلكتروني
+- **تم تنفيذ منطق Feature Flags في Frontend:**
+  - إضافة `features` و `limits` في `AuthContext.js`
+  - دالة `isFeatureEnabled(categoryKey, subFeatureKey)` للتحقق من تفعيل الميزات
+  - تصفية عناصر القائمة الجانبية بناءً على الميزات المفعلة في `Layout.js`
+  - كل قسم في القائمة الجانبية مرتبط بـ `featureKey`
 
 #### 4. إعدادات الصوت ✅
 - تبويب جديد "الصوت" في صفحة الإعدادات
@@ -58,29 +63,41 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 - دعم اللغة العربية والفرنسية
 - تصميم احترافي ومتجاوب
 
-#### 6. نظام المتجر الإلكتروني ✅
+#### 6. نظام المتجر الإلكتروني ✅ (COMPLETED - Feb 13, 2026)
 - صفحة إدارة المتجر (`/store`)
-- ميزات:
+- **صفحة المتجر العام (`/shop/{slug}`)** - تم تنفيذها بالكامل:
+  - عرض المنتجات المتاحة
+  - سلة التسوق
+  - نموذج الطلب مع معلومات التوصيل
+  - الدفع عند الاستلام (COD)
+  - دعم عربي/فرنسي
+- ميزات إدارة المتجر:
   - تفعيل/تعطيل المتجر
   - إعدادات المتجر (الاسم، الرابط، الوصف)
   - التصميم (الشعار، اللون الرئيسي)
   - معلومات التواصل
-  - التوصيل والدفع (COD - الدفع عند الاستلام)
+  - التوصيل والدفع
   - إدارة المنتجات المعروضة
   - إدارة الطلبات وحالاتها
-- Backend APIs:
-  - `GET/PUT /api/store/settings`
-  - `GET/POST/DELETE /api/store/products`
-  - `GET /api/store/orders`
-  - `PUT /api/store/orders/{id}/status`
-  - `GET /api/shop/{slug}` (عام)
-  - `POST /api/shop/{slug}/order` (عام)
+- **تحسينات Backend:**
+  - تخزين `store_slug` في `main_db.store_slugs` للوصول العام
+  - البحث عن المستأجر باستخدام slug من القاعدة الرئيسية
+  - تحديث المخزون تلقائياً عند إنشاء طلب
 
 ## Database Schema
 
 ### New Collections
 ```javascript
-// store_settings
+// main_db.store_slugs (NEW - for public store access)
+{
+  tenant_id: String,
+  store_slug: String (unique),
+  enabled: Boolean,
+  store_name: String,
+  updated_at: DateTime
+}
+
+// store_settings (tenant db)
 {
   enabled: Boolean,
   store_name: String,
@@ -91,56 +108,78 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
   contact_phone: String,
   cod_enabled: Boolean,
   delivery_enabled: Boolean,
-  delivery_fee: Number
+  delivery_fee: Number,
+  free_delivery_threshold: Number,
+  min_order_amount: Number
 }
 
-// store_products
+// store_products (tenant db)
 {
   id: String,
   product_id: String,
   is_active: Boolean,
+  is_featured: Boolean,
+  store_price: Number,
   created_at: DateTime
 }
 
-// store_orders
+// store_orders (tenant db)
 {
   id: String,
   order_number: String,
+  store_slug: String,
   customer_name: String,
   customer_phone: String,
+  customer_email: String,
   delivery_address: String,
+  delivery_city: String,
+  delivery_wilaya: String,
   items: Array,
+  subtotal: Number,
+  delivery_fee: Number,
   total: Number,
+  notes: String,
+  payment_method: String, // cod
   status: String, // pending, confirmed, processing, shipped, delivered, cancelled
-  payment_method: String // cod
+  payment_status: String, // unpaid, paid
+  created_at: DateTime
 }
 ```
 
 ## Test Credentials
-- **Super Admin**: `super@ntcommerce.com`
-- **Test Tenant**: `test@test.com` / `test123`
+- **Super Admin**: `super@ntcommerce.com` / `admin123`
+- **Test Tenant**: `demo@demo.com` / `demo123`
+- **Test Store Slug**: `demo-store`
 
 ## API Endpoints Summary
+
+### Feature Flags APIs
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/auth/unified-login` | POST | Public | Login with features & limits returned |
+| `/api/auth/me` | GET | Auth | Get user with features & limits |
+| `/api/saas/plans/{id}/features` | PUT | SuperAdmin | Update plan features |
 
 ### Store APIs
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
 | `/api/store/settings` | GET | Admin | Get store settings |
-| `/api/store/settings` | PUT | Admin | Update store settings |
+| `/api/store/settings` | PUT | Admin | Update store settings (saves slug to main_db) |
 | `/api/store/products` | GET | Admin | Get store products |
 | `/api/store/products` | POST | Admin | Add product to store |
 | `/api/store/products/{id}` | DELETE | Admin | Remove from store |
 | `/api/store/orders` | GET | Admin | Get all orders |
 | `/api/store/orders/{id}/status` | PUT | Admin | Update order status |
-| `/api/shop/{slug}` | GET | Public | Get public store |
-| `/api/shop/{slug}/order` | POST | Public | Create order (COD) |
+| `/api/shop/{slug}` | GET | **Public** | Get public store (uses main_db lookup) |
+| `/api/shop/{slug}/order` | POST | **Public** | Create order (COD, updates stock) |
 
 ### Public APIs
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/saas/plans/public` | GET | Get pricing plans |
+| `/api/public-plans` | GET | Get all subscription plans |
 
-## Upcoming Tasks (P2)
+## Upcoming Tasks (P1)
 
 ### Backend Refactoring
 - تقسيم `server.py` إلى ملفات منفصلة (routes, models, services)
@@ -151,10 +190,5 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 ### E2E Testing
 - إضافة اختبارات شاملة للمسارات الحرجة
 
-### Public Store UI
-- إنشاء صفحة المتجر العامة للزبائن (`/shop/{slug}`)
-- صفحة عربة التسوق
-- صفحة تأكيد الطلب
-
 ---
-*Last Updated: February 2026*
+*Last Updated: February 13, 2026*
