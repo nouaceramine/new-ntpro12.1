@@ -8574,6 +8574,12 @@ async def get_plans(include_inactive: bool = False):
     plans = await db.saas_plans.find(query, {"_id": 0}).sort("sort_order", 1).to_list(100)
     return [PlanResponse(**p) for p in plans]
 
+@api_router.get("/saas/plans/public")
+async def get_public_plans():
+    """Get active plans for public pricing page - no auth required"""
+    plans = await db.saas_plans.find({"is_active": True}, {"_id": 0}).sort("sort_order", 1).to_list(100)
+    return plans
+
 @api_router.get("/saas/plans/{plan_id}", response_model=PlanResponse)
 async def get_plan(plan_id: str):
     """Get a specific plan"""
