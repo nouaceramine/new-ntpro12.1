@@ -168,6 +168,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/saas-admin/feature-flags"
+        element={
+          <ProtectedRoute>
+            <FeatureFlagsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected Routes */}
       <Route
