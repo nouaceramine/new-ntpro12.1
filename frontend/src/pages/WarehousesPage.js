@@ -157,7 +157,10 @@ export default function WarehousesPage() {
     if (!confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا المخزن؟' : 'Êtes-vous sûr de supprimer cet entrepôt?')) return;
 
     try {
-      await axios.delete(`${API}/warehouses/${id}`);
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API}/warehouses/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success(language === 'ar' ? 'تم حذف المخزن' : 'Entrepôt supprimé');
       fetchData();
     } catch (error) {
