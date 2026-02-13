@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="12" time="6.587" timestamp="2026-02-13T20:25:31.916768+00:00" hostname="agent-env-cc18db52-bd10-404a-ad78-3a2bfbfe7e8b"><testcase classname="backend.tests.test_iteration47_features.TestPublicAPIs" name="test_saas_plans_public_returns_plans" time="0.254" /><testcase classname="backend.tests.test_iteration47_features.TestPublicAPIs" name="test_saas_plans_public_plan_has_pricing" time="0.228" /><testcase classname="backend.tests.test_iteration47_features.TestAuthenticatedAPIs" name="test_store_settings_get" time="0.737"><failure message="AssertionError: Expected 200, got 403: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration47_features.py:69: in test_store_settings_get
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+E   AssertionError: Expected 200, got 403: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration47_features.TestAuthenticatedAPIs" name="test_store_settings_put" time="0.535"><failure message="assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration47_features.py:86: in test_store_settings_put
+    assert get_response.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration47_features.TestAuthenticatedAPIs" name="test_store_products_list" time="0.573"><failure message="AssertionError: Expected 200, got 403&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration47_features.py:122: in test_store_products_list
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+E   AssertionError: Expected 200, got 403
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration47_features.TestAuthenticatedAPIs" name="test_store_orders_list" time="0.507"><failure message="AssertionError: Expected 200, got 403&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration47_features.py:131: in test_store_orders_list
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+E   AssertionError: Expected 200, got 403
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration47_features.TestPOSPageIntegration" name="test_products_endpoint" time="0.758"><failure message="assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration47_features.py:157: in test_products_endpoint
+    assert response.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration47_features.TestPOSPageIntegration" name="test_customers_endpoint" time="0.734"><failure message="assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration47_features.py:166: in test_customers_endpoint
+    assert response.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration47_features.TestPOSPageIntegration" name="test_warehouses_endpoint" time="0.566"><failure message="assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration47_features.py:175: in test_warehouses_endpoint
+    assert response.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration47_features.TestPOSPageIntegration" name="test_delivery_wilayas_endpoint" time="0.471" /><testcase classname="backend.tests.test_iteration47_features.TestPOSPageIntegration" name="test_sale_code_generation" time="0.506" /><testcase classname="backend.tests.test_iteration47_features.TestPurchasesCRUD" name="test_purchases_list" time="0.605"><failure message="assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration47_features.py:219: in test_purchases_list
+    assert response.status_code == 200
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase></testsuite></testsuites>
