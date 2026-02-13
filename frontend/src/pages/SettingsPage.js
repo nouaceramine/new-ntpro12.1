@@ -197,6 +197,17 @@ export default function SettingsPage() {
   });
   const [savingWhatsapp, setSavingWhatsapp] = useState(false);
 
+  // Sound Settings
+  const [soundSettings, setSoundSettings] = useState({
+    enabled: true,
+    sale_success: true,
+    error_sound: true,
+    notification_sound: true,
+    scan_beep: true,
+    volume: 50
+  });
+  const [savingSoundSettings, setSavingSoundSettings] = useState(false);
+
   // Email Settings
   const [emailSettings, setEmailSettings] = useState({
     enabled: false,
