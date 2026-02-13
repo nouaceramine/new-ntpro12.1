@@ -954,6 +954,82 @@ async def get_products_paginated(
         total_pages=total_pages
     )
 
+# Quick Search Response Model (lightweight)
+class QuickSearchProduct(BaseModel):
+    id: str
+    name_ar: str
+    name_en: str
+    barcode: Optional[str] = None
+    article_code: Optional[str] = None
+    retail_price: float = 0
+    wholesale_price: float = 0
+    quantity: int = 0
+    image_url: Optional[str] = None
+
+class QuickSearchResponse(BaseModel):
+    results: List[QuickSearchProduct]
+    total: int
+
+@api_router.get("/products/quick-search", response_model=QuickSearchResponse)
+async def quick_search_products(
+    q: str,
+    limit: int = 15,
+    user: dict = Depends(require_tenant)
+):
+    """
+    Fast product search endpoint optimized for autocomplete.
+    Searches by: name, barcode, article_code
+    Returns minimal data for speed.
+    """
+    if not q or len(q) < 1:
+        return QuickSearchResponse(results=[], total=0)
+    
+    # Build search query - prioritize exact matches
+    search_query = {
+        "$or": [
+            {"barcode": q},  # Exact barcode match first
+            {"article_code": {"$regex": f"^{q}", "$options": "i"}},  # Article code starts with
+            {"name_ar": {"$regex": q, "$options": "i"}},
+            {"name_en": {"$regex": q, "$options": "i"}},
+            {"barcode": {"$regex": q, "$options": "i"}},
+        ]
+    }
+    
+    # Only fetch required fields for speed
+    projection = {
+        "_id": 0,
+        "id": 1,
+        "name_ar": 1,
+        "name_en": 1,
+        "barcode": 1,
+        "article_code": 1,
+        "retail_price": 1,
+        "wholesale_price": 1,
+        "quantity": 1,
+        "image_url": 1
+    }
+    
+    # Get total count
+    total = await db.products.count_documents(search_query)
+    
+    # Fetch products with limit
+    products = await db.products.find(search_query, projection).limit(limit).to_list(limit)
+    
+    # Sort to prioritize exact barcode matches
+    def sort_key(p):
+        if p.get("barcode") == q:
+            return 0  # Exact barcode match first
+        if p.get("article_code", "").lower().startswith(q.lower()):
+            return 1  # Article code starts with query
+        return 2  # Other matches
+    
+    products.sort(key=sort_key)
+    
+    return QuickSearchResponse(
+        results=[QuickSearchProduct(**p) for p in products],
+        total=total
+    )
+
 @api_router.get("/products/generate-barcode")
 async def generate_barcode(article_code: Optional[str] = None):
     """Generate a unique product barcode based on article code"""
