@@ -558,7 +558,8 @@ export default function ProductsPage() {
           /* List View - Table style with all info */
           <div className="border rounded-lg overflow-hidden">
             {/* Table Header */}
-            <div className="grid grid-cols-6 gap-2 p-3 bg-muted/50 text-xs font-medium border-b">
+            <div className={`grid gap-2 p-3 bg-muted/50 text-xs font-medium border-b ${selectMode ? 'grid-cols-7' : 'grid-cols-6'}`}>
+              {selectMode && <div className="w-8"></div>}
               <div>{language === 'ar' ? 'كود المنتج' : 'Code Article'}</div>
               <div>{language === 'ar' ? 'اسم المنتج' : 'Nom d\'article'}</div>
               <div>{language === 'ar' ? 'العائلة' : 'Famille'}</div>
@@ -569,19 +570,28 @@ export default function ProductsPage() {
             {/* Table Body */}
             <div className="divide-y">
               {sortedProducts.map((product) => (
-                <Link
+                <div
                   key={product.id}
-                  to={`/products/${product.id}`}
-                  className="block hover:bg-muted/30 transition-colors"
+                  className={`block hover:bg-muted/30 transition-colors ${selectedProducts.has(product.id) ? 'bg-primary/5' : ''}`}
                   data-testid={`product-item-${product.id}`}
                 >
-                  <div className="grid grid-cols-6 gap-2 p-3 items-center text-sm">
+                  <div className={`grid gap-2 p-3 items-center text-sm ${selectMode ? 'grid-cols-7' : 'grid-cols-6'}`}>
+                    {/* Selection Checkbox */}
+                    {selectMode && (
+                      <div className="flex items-center justify-center">
+                        <Checkbox
+                          checked={selectedProducts.has(product.id)}
+                          onCheckedChange={() => toggleProductSelection(product.id)}
+                          data-testid={`select-product-${product.id}`}
+                        />
+                      </div>
+                    )}
                     {/* Code Article */}
-                    <div className="font-mono text-xs text-blue-600 font-medium">
+                    <Link to={`/products/${product.id}`} className="font-mono text-xs text-blue-600 font-medium hover:underline">
                       {product.article_code || '-'}
-                    </div>
+                    </Link>
                     {/* Nom d'article */}
-                    <div className="flex items-center gap-2">
+                    <Link to={`/products/${product.id}`} className="flex items-center gap-2">
                       <img
                         src={product.image_url || 'https://images.unsplash.com/photo-1634403665443-81dc4d75843a?crop=entropy&cs=srgb&fm=jpg&q=85'}
                         alt=""
@@ -590,7 +600,7 @@ export default function ProductsPage() {
                       <span className="truncate font-medium">
                         {language === 'ar' ? product.name_ar : product.name_en}
                       </span>
-                    </div>
+                    </Link>
                     {/* Famille */}
                     <div className="text-muted-foreground text-xs">
                       {product.family_name || '-'}
