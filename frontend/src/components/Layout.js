@@ -51,7 +51,8 @@ import {
   Sparkles,
   History,
   Building,
-  Mail
+  Mail,
+  Store
 } from 'lucide-react';
 import { AIAssistant } from './AIAssistant';
 import { UnifiedSearch } from './UnifiedSearch';
