@@ -72,7 +72,7 @@ const getAIContext = (pathname) => {
 const iconMap = {
   LayoutDashboard, Package, ShoppingCart, Truck, Users, CreditCard, Wallet,
   BarChart3, Settings, Bell, Wrench, Receipt, FolderTree, Warehouse,
-  ClipboardList, QrCode, DollarSign, ShoppingBag, Clock, Smartphone, Store, Shield, Key, Award, Zap
+  ClipboardList, QrCode, DollarSign, ShoppingBag, Clock, Smartphone, Store, Shield, Key, Award, Zap, Mail
 };
 
 export const Layout = ({ children }) => {
