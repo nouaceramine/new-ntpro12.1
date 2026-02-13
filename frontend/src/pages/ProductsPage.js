@@ -304,9 +304,49 @@ export default function ProductsPage() {
             <h1 className="text-3xl font-bold tracking-tight">{t.products}</h1>
             <p className="text-muted-foreground mt-1">
               {totalItems} {t.products.toLowerCase()}
+              {selectMode && selectedProducts.size > 0 && (
+                <span className="ms-2 text-primary font-medium">
+                  ({selectedProducts.size} {language === 'ar' ? 'محدد' : 'sélectionnés'})
+                </span>
+              )}
             </p>
           </div>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
+            {/* Bulk Selection Mode Toggle */}
+            <Button 
+              variant={selectMode ? "default" : "outline"} 
+              onClick={toggleSelectMode} 
+              className="gap-2"
+              data-testid="bulk-select-btn"
+            >
+              {selectMode ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
+              <span className="hidden sm:inline">{language === 'ar' ? 'تحديد متعدد' : 'Sélection multiple'}</span>
+            </Button>
+            
+            {/* Bulk Actions */}
+            {selectMode && selectedProducts.size > 0 && (
+              <>
+                <Button 
+                  variant="destructive" 
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="gap-2"
+                  data-testid="bulk-delete-btn"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {language === 'ar' ? `حذف (${selectedProducts.size})` : `Supprimer (${selectedProducts.size})`}
+                </Button>
+                <Button variant="ghost" onClick={deselectAllProducts} size="sm">
+                  <X className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            
+            {selectMode && (
+              <Button variant="outline" onClick={selectAllProducts} size="sm">
+                {language === 'ar' ? 'تحديد الكل' : 'Tout sélectionner'}
+              </Button>
+            )}
+            
             {/* Quick Excel Export Button */}
             <Button variant="outline" onClick={quickExportToExcel} className="gap-2" data-testid="quick-export-excel-btn">
               <FileSpreadsheet className="h-5 w-5 text-green-600" />
@@ -320,6 +360,36 @@ export default function ProductsPage() {
             </Link>
           </div>
         </div>
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {language === 'ar' ? 'تأكيد الحذف' : 'Confirmer la suppression'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {language === 'ar' 
+                  ? `هل أنت متأكد من حذف ${selectedProducts.size} منتج؟ لا يمكن التراجع عن هذا الإجراء.`
+                  : `Êtes-vous sûr de supprimer ${selectedProducts.size} produits? Cette action est irréversible.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>
+                {language === 'ar' ? 'إلغاء' : 'Annuler'}
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleBulkDelete}
+                disabled={deleting}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {deleting 
+                  ? (language === 'ar' ? 'جارٍ الحذف...' : 'Suppression...') 
+                  : (language === 'ar' ? 'حذف' : 'Supprimer')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Search & Filters */}
         <Card>
