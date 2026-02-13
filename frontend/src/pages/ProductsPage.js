@@ -8,10 +8,12 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import { Checkbox } from '../components/ui/checkbox';
 import { ExportPrintButtons } from '../components/ExportPrintButtons';
 import { Pagination } from '../components/Pagination';
 import { LazyImage } from '../components/LazyImage';
 import { ProductAutocomplete } from '../components/ProductAutocomplete';
+import { toast } from 'sonner';
 import { 
   Package, 
   Plus, 
@@ -25,7 +27,10 @@ import {
   SortAsc,
   SortDesc,
   FileSpreadsheet,
-  Zap
+  Zap,
+  Trash2,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import {
   Select,
@@ -34,6 +39,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
