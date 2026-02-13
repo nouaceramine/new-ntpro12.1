@@ -8517,7 +8517,11 @@ async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_ad
     tenant_db = await init_tenant_database(tenant_id)
     
     # Use provided role or default to admin
+    # SECURITY: Prevent creating super_admin or saas_admin roles for tenants
     user_role = tenant.role or "admin"
+    forbidden_roles = ["super_admin", "saas_admin", "superadmin"]
+    if user_role.lower() in [r.lower() for r in forbidden_roles]:
+        raise HTTPException(status_code=400, detail="لا يمكن إنشاء مستخدم بصلاحية مدير النظام")
     
     # Create admin user in tenant database
     admin_user = {
