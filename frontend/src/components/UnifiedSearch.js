@@ -4,8 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { Search, Package, Loader2, X, AlertTriangle } from 'lucide-react';
+import { Button } from './ui/button';
+import { 
+  Search, Package, Loader2, X, AlertTriangle, Filter, 
+  ChevronDown, FolderTree, DollarSign, PackageX, PackageCheck
+} from 'lucide-react';
 import { playSuccessBeep, playErrorBeep } from '../utils/beep';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -25,24 +41,16 @@ function useDebounce(value, delay) {
 }
 
 /**
- * UnifiedSearch - High-performance unified search component
+ * UnifiedSearch - High-performance unified search component with advanced filters
  * 
  * Features:
  * - Fast API-based search with debouncing
+ * - Advanced filters: family, stock status, price range
  * - Barcode scanner support (Enter key)
  * - Keyboard navigation (arrows, escape)
  * - RTL support
  * - Sound feedback
  * - Works in: Header, POS, Products page
- * 
- * @param {Object} props
- * @param {'header' | 'pos' | 'inline'} props.mode - Search mode
- * @param {Function} props.onSelect - Called when product is selected (for pos/inline)
- * @param {string} props.priceType - 'retail' or 'wholesale' (for pos)
- * @param {Function} props.formatCurrency - Currency formatter
- * @param {string} props.currency - Currency symbol
- * @param {boolean} props.autoFocus - Auto focus input
- * @param {string} props.className - Additional CSS classes
  */
 export function UnifiedSearch({
   mode = 'header',
@@ -53,6 +61,7 @@ export function UnifiedSearch({
   autoFocus = false,
   className = '',
   disabled = false,
+  showFilters = true,
 }) {
   const { language, isRTL } = useLanguage();
   const navigate = useNavigate();
@@ -64,15 +73,46 @@ export function UnifiedSearch({
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [totalResults, setTotalResults] = useState(0);
   
+  // Filter states
+  const [families, setFamilies] = useState([]);
+  const [selectedFamily, setSelectedFamily] = useState('');
+  const [stockFilter, setStockFilter] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
   const containerRef = useRef(null);
   
-  const debouncedQuery = useDebounce(query, 150); // Fast debounce
+  const debouncedQuery = useDebounce(query, 150);
+  const debouncedMinPrice = useDebounce(minPrice, 300);
+  const debouncedMaxPrice = useDebounce(maxPrice, 300);
+
+  // Check if any filter is active
+  const hasActiveFilters = selectedFamily || stockFilter || minPrice || maxPrice;
+
+  // Fetch families on mount
+  useEffect(() => {
+    const fetchFamilies = async () => {
+      try {
+        const response = await axios.get(`${API}/product-families`);
+        setFamilies(response.data || []);
+      } catch (error) {
+        console.error('Error fetching families:', error);
+      }
+    };
+    if (showFilters) {
+      fetchFamilies();
+    }
+  }, [showFilters]);
 
   // Search products via API
-  const searchProducts = useCallback(async (searchQuery) => {
-    if (!searchQuery || searchQuery.length < 1) {
+  const searchProducts = useCallback(async (searchQuery, filters = {}) => {
+    // Allow search with filters even without query
+    const hasFilters = filters.family_id || filters.stock_filter || filters.min_price || filters.max_price;
+    
+    if (!searchQuery && !hasFilters) {
       setResults([]);
       setTotalResults(0);
       setIsOpen(false);
@@ -81,25 +121,30 @@ export function UnifiedSearch({
     
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/products/quick-search`, {
-        params: { q: searchQuery, limit: 15 }
-      });
+      const params = { limit: 15 };
+      if (searchQuery) params.q = searchQuery;
+      if (filters.family_id) params.family_id = filters.family_id;
+      if (filters.stock_filter) params.stock_filter = filters.stock_filter;
+      if (filters.min_price) params.min_price = filters.min_price;
+      if (filters.max_price) params.max_price = filters.max_price;
+      
+      const response = await axios.get(`${API}/products/quick-search`, { params });
       
       setResults(response.data.results || []);
       setTotalResults(response.data.total || 0);
-      setIsOpen(response.data.results?.length > 0 || searchQuery.length > 0);
+      setIsOpen(response.data.results?.length > 0 || (searchQuery && searchQuery.length > 0) || hasFilters);
       setSelectedIndex(-1);
     } catch (error) {
       console.error('Search error:', error);
       // Fallback to regular search
       try {
-        const response = await axios.get(`${API}/products`, {
-          params: { search: searchQuery }
-        });
+        const params = {};
+        if (searchQuery) params.search = searchQuery;
+        const response = await axios.get(`${API}/products`, { params });
         const products = (response.data || []).slice(0, 15);
         setResults(products);
         setTotalResults(products.length);
-        setIsOpen(products.length > 0 || searchQuery.length > 0);
+        setIsOpen(products.length > 0 || (searchQuery && searchQuery.length > 0));
       } catch (e) {
         setResults([]);
         setTotalResults(0);
@@ -109,12 +154,19 @@ export function UnifiedSearch({
     }
   }, []);
 
-  // Effect for debounced search
+  // Effect for debounced search with filters
   useEffect(() => {
-    if (debouncedQuery) {
-      searchProducts(debouncedQuery);
+    const filters = {
+      family_id: selectedFamily,
+      stock_filter: stockFilter,
+      min_price: debouncedMinPrice ? parseFloat(debouncedMinPrice) : null,
+      max_price: debouncedMaxPrice ? parseFloat(debouncedMaxPrice) : null,
+    };
+    
+    if (debouncedQuery || hasActiveFilters) {
+      searchProducts(debouncedQuery, filters);
     }
-  }, [debouncedQuery, searchProducts]);
+  }, [debouncedQuery, selectedFamily, stockFilter, debouncedMinPrice, debouncedMaxPrice, searchProducts, hasActiveFilters]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -131,7 +183,6 @@ export function UnifiedSearch({
   // Handle product selection
   const handleSelect = useCallback((product) => {
     if (mode === 'header') {
-      // Navigate to product detail or products page
       navigate(`/products/${product.id}`);
     } else if (onSelect) {
       onSelect(product);
@@ -151,7 +202,6 @@ export function UnifiedSearch({
       e.preventDefault();
       
       if (query) {
-        // Check for exact barcode/article_code match first
         const exactMatch = results.find(p => 
           p.barcode === query || 
           p.article_code?.toLowerCase() === query.toLowerCase()
@@ -162,19 +212,16 @@ export function UnifiedSearch({
           return;
         }
         
-        // If there's a selected item, use it
         if (selectedIndex >= 0 && selectedIndex < results.length) {
           handleSelect(results[selectedIndex]);
           return;
         }
         
-        // If only one result, select it
         if (results.length === 1) {
           handleSelect(results[0]);
           return;
         }
         
-        // In header mode, navigate to products page with search
         if (mode === 'header') {
           navigate(`/products?search=${encodeURIComponent(query)}`);
           setQuery('');
@@ -182,7 +229,6 @@ export function UnifiedSearch({
           return;
         }
         
-        // No match found
         playErrorBeep();
       }
     } else if (e.key === 'ArrowDown') {
@@ -206,12 +252,20 @@ export function UnifiedSearch({
     }
   }, []);
 
-  // Clear search
+  // Clear search and filters
   const handleClear = useCallback(() => {
     setQuery('');
     setResults([]);
     setIsOpen(false);
     inputRef.current?.focus();
+  }, []);
+
+  // Clear all filters
+  const clearFilters = useCallback(() => {
+    setSelectedFamily('');
+    setStockFilter('');
+    setMinPrice('');
+    setMaxPrice('');
   }, []);
 
   // Get product display name
@@ -235,55 +289,200 @@ export function UnifiedSearch({
       : 'Rechercher par nom, code-barres ou code article...';
   }, [language]);
 
-  // Input height based on mode
-  const inputHeight = mode === 'pos' ? 'h-11' : 'h-11';
+  // Stock filter options
+  const stockOptions = [
+    { value: '', label: language === 'ar' ? 'الكل' : 'Tous' },
+    { value: 'available', label: language === 'ar' ? 'متوفر' : 'Disponible' },
+    { value: 'low', label: language === 'ar' ? 'منخفض' : 'Stock bas' },
+    { value: 'out', label: language === 'ar' ? 'نفذ' : 'Rupture' },
+  ];
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
-      <div className="relative">
-        <Search 
-          className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none ${
-            isRTL ? 'right-3' : 'left-3'
-          }`} 
-        />
-        <Input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onFocus={() => query && setIsOpen(true)}
-          placeholder={placeholder}
-          className={`${inputHeight} ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} search-input focus:ring-2 focus:ring-primary/20`}
-          autoFocus={autoFocus}
-          disabled={disabled}
-          autoComplete="off"
-          data-testid="unified-search-input"
-        />
-        
-        {/* Loading indicator */}
-        {loading && (
-          <Loader2 
-            className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground ${
-              isRTL ? 'left-3' : 'right-3'
+      <div className="flex gap-2">
+        {/* Search Input */}
+        <div className="relative flex-1">
+          <Search 
+            className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none ${
+              isRTL ? 'right-3' : 'left-3'
             }`} 
           />
-        )}
-        
-        {/* Clear button */}
-        {query && !loading && (
-          <button
-            onClick={handleClear}
-            className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground hover:text-foreground transition-colors ${
-              isRTL ? 'left-3' : 'right-3'
-            }`}
-            type="button"
-            data-testid="search-clear-btn"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <Input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => (query || hasActiveFilters) && setIsOpen(true)}
+            placeholder={placeholder}
+            className={`h-11 ${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} search-input focus:ring-2 focus:ring-primary/20`}
+            autoFocus={autoFocus}
+            disabled={disabled}
+            autoComplete="off"
+            data-testid="unified-search-input"
+          />
+          
+          {loading && (
+            <Loader2 
+              className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground ${
+                isRTL ? 'left-3' : 'right-3'
+              }`} 
+            />
+          )}
+          
+          {query && !loading && (
+            <button
+              onClick={handleClear}
+              className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground hover:text-foreground transition-colors ${
+                isRTL ? 'left-3' : 'right-3'
+              }`}
+              type="button"
+              data-testid="search-clear-btn"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Filter Button */}
+        {showFilters && (
+          <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <PopoverTrigger asChild>
+              <Button 
+                variant={hasActiveFilters ? "default" : "outline"} 
+                size="icon" 
+                className="h-11 w-11 relative"
+                data-testid="search-filter-btn"
+              >
+                <Filter className="h-5 w-5" />
+                {hasActiveFilters && (
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+                    {[selectedFamily, stockFilter, minPrice, maxPrice].filter(Boolean).length}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align={isRTL ? "start" : "end"}>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">
+                    {language === 'ar' ? 'فلترة متقدمة' : 'Filtres avancés'}
+                  </h4>
+                  {hasActiveFilters && (
+                    <Button variant="ghost" size="sm" onClick={clearFilters}>
+                      {language === 'ar' ? 'مسح الكل' : 'Effacer'}
+                    </Button>
+                  )}
+                </div>
+                
+                {/* Family Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <FolderTree className="h-4 w-4" />
+                    {language === 'ar' ? 'العائلة' : 'Famille'}
+                  </label>
+                  <Select value={selectedFamily} onValueChange={setSelectedFamily}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={language === 'ar' ? 'جميع العائلات' : 'Toutes les familles'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">{language === 'ar' ? 'جميع العائلات' : 'Toutes'}</SelectItem>
+                      {families.map(f => (
+                        <SelectItem key={f.id} value={f.id}>
+                          {language === 'ar' ? f.name_ar : (f.name_en || f.name_ar)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Stock Filter */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    {language === 'ar' ? 'حالة المخزون' : 'État du stock'}
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {stockOptions.map(opt => (
+                      <Button
+                        key={opt.value}
+                        variant={stockFilter === opt.value ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setStockFilter(opt.value)}
+                        className="justify-start"
+                      >
+                        {opt.value === 'available' && <PackageCheck className="h-3 w-3 me-1 text-green-500" />}
+                        {opt.value === 'low' && <AlertTriangle className="h-3 w-3 me-1 text-amber-500" />}
+                        {opt.value === 'out' && <PackageX className="h-3 w-3 me-1 text-red-500" />}
+                        {opt.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price Range */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    {language === 'ar' ? 'نطاق السعر' : 'Fourchette de prix'}
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="number"
+                      placeholder={language === 'ar' ? 'من' : 'Min'}
+                      value={minPrice}
+                      onChange={(e) => setMinPrice(e.target.value)}
+                      className="h-9"
+                    />
+                    <span className="text-muted-foreground">-</span>
+                    <Input
+                      type="number"
+                      placeholder={language === 'ar' ? 'إلى' : 'Max'}
+                      value={maxPrice}
+                      onChange={(e) => setMaxPrice(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  className="w-full" 
+                  onClick={() => {
+                    setFiltersOpen(false);
+                    setIsOpen(true);
+                  }}
+                >
+                  {language === 'ar' ? 'تطبيق الفلاتر' : 'Appliquer'}
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
       </div>
+
+      {/* Active Filters Pills */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {selectedFamily && (
+            <Badge variant="secondary" className="gap-1">
+              {families.find(f => f.id === selectedFamily)?.name_ar || selectedFamily}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedFamily('')} />
+            </Badge>
+          )}
+          {stockFilter && (
+            <Badge variant="secondary" className="gap-1">
+              {stockOptions.find(o => o.value === stockFilter)?.label}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => setStockFilter('')} />
+            </Badge>
+          )}
+          {(minPrice || maxPrice) && (
+            <Badge variant="secondary" className="gap-1">
+              {minPrice || '0'} - {maxPrice || '∞'} {currency}
+              <X className="h-3 w-3 cursor-pointer" onClick={() => { setMinPrice(''); setMaxPrice(''); }} />
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Search Results Dropdown */}
       {isOpen && (
@@ -303,7 +502,9 @@ export function UnifiedSearch({
                       ? 'bg-primary/10 border-s-2 border-primary' 
                       : product.quantity <= 0
                         ? 'bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100'
-                        : 'hover:bg-muted'
+                        : product.quantity <= (product.min_quantity || 0)
+                          ? 'bg-gradient-to-r from-yellow-50 to-amber-50 hover:from-yellow-100 hover:to-amber-100'
+                          : 'hover:bg-muted'
                   } ${index !== results.length - 1 ? 'border-b' : ''}`}
                   data-testid={`search-result-${product.id}`}
                 >
@@ -311,7 +512,9 @@ export function UnifiedSearch({
                   <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
                     product.quantity <= 0 
                       ? 'bg-amber-200 ring-2 ring-amber-400' 
-                      : 'bg-muted'
+                      : product.quantity <= (product.min_quantity || 0)
+                        ? 'bg-yellow-200 ring-2 ring-yellow-400'
+                        : 'bg-muted'
                   }`}>
                     {product.image_url ? (
                       <img 
@@ -321,7 +524,9 @@ export function UnifiedSearch({
                         loading="lazy"
                       />
                     ) : product.quantity <= 0 ? (
-                      <AlertTriangle className="h-5 w-5 text-amber-700" />
+                      <PackageX className="h-5 w-5 text-amber-700" />
+                    ) : product.quantity <= (product.min_quantity || 0) ? (
+                      <AlertTriangle className="h-5 w-5 text-yellow-700" />
                     ) : (
                       <Package className="h-5 w-5 text-muted-foreground" />
                     )}
@@ -332,7 +537,7 @@ export function UnifiedSearch({
                     <p className={`font-medium truncate ${product.quantity <= 0 ? 'text-amber-900' : ''}`}>
                       {getProductName(product)}
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
                       {product.article_code && (
                         <span className="font-mono bg-muted px-1.5 py-0.5 rounded">
                           {product.article_code}
@@ -341,10 +546,17 @@ export function UnifiedSearch({
                       {product.barcode && (
                         <span className="font-mono">{product.barcode}</span>
                       )}
+                      {product.family_name && (
+                        <Badge variant="outline" className="text-xs py-0">
+                          {product.family_name}
+                        </Badge>
+                      )}
                       <span>•</span>
                       <span className={product.quantity <= 0 
                         ? 'text-red-600 font-bold' 
-                        : ''
+                        : product.quantity <= (product.min_quantity || 0)
+                          ? 'text-amber-600 font-bold'
+                          : ''
                       }>
                         {language === 'ar' ? 'المخزون:' : 'Stock:'} {product.quantity}
                       </span>
@@ -358,8 +570,14 @@ export function UnifiedSearch({
                     </span>
                     {product.quantity <= 0 && (
                       <Badge className="text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                        <PackageX className="h-3 w-3 me-1" />
+                        {language === 'ar' ? 'نفذ' : 'Rupture'}
+                      </Badge>
+                    )}
+                    {product.quantity > 0 && product.quantity <= (product.min_quantity || 0) && (
+                      <Badge className="text-xs bg-gradient-to-r from-yellow-500 to-amber-500 text-white">
                         <AlertTriangle className="h-3 w-3 me-1" />
-                        {language === 'ar' ? 'غير متوفر' : 'Rupture'}
+                        {language === 'ar' ? 'منخفض' : 'Bas'}
                       </Badge>
                     )}
                   </div>
@@ -375,7 +593,7 @@ export function UnifiedSearch({
                 </div>
               )}
             </>
-          ) : query && !loading ? (
+          ) : (query || hasActiveFilters) && !loading ? (
             <div className="p-6 text-center text-muted-foreground">
               <Package className="h-10 w-10 mx-auto mb-2 opacity-30" />
               <p className="font-medium">
@@ -383,9 +601,14 @@ export function UnifiedSearch({
               </p>
               <p className="text-sm mt-1">
                 {language === 'ar' 
-                  ? 'جرب البحث بالباركود أو اسم مختلف' 
-                  : 'Essayez avec un code-barres ou nom différent'}
+                  ? 'جرب البحث بالباركود أو تغيير الفلاتر' 
+                  : 'Essayez avec un code-barres ou modifiez les filtres'}
               </p>
+              {hasActiveFilters && (
+                <Button variant="outline" size="sm" className="mt-3" onClick={clearFilters}>
+                  {language === 'ar' ? 'مسح الفلاتر' : 'Effacer les filtres'}
+                </Button>
+              )}
             </div>
           ) : null}
         </div>
