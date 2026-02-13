@@ -718,8 +718,10 @@ async def unified_login(credentials: UserLogin):
                 }
                 access_token = create_access_token(token_data)
                 
-                # Get plan info
-                plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0, "name_ar": 1})
+                # Get plan info with features and limits
+                plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0})
+                features = {**plan.get("features", {}), **tenant.get("features_override", {})} if plan else {}
+                limits = {**plan.get("limits", {}), **tenant.get("limits_override", {})} if plan else {}
                 
                 return {
                     "access_token": access_token,
@@ -733,7 +735,9 @@ async def unified_login(credentials: UserLogin):
                         "plan_name": plan.get("name_ar", "") if plan else "",
                         "subscription_ends_at": tenant.get("subscription_ends_at"),
                         "database_name": f"tenant_{tenant['id'].replace('-', '_')}",
-                        "is_first_login": not tenant.get("database_initialized", False)
+                        "is_first_login": not tenant.get("database_initialized", False),
+                        "features": features,
+                        "limits": limits
                     }
                 }
         except HTTPException:
