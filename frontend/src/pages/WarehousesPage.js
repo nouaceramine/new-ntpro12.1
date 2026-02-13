@@ -141,7 +141,10 @@ export default function WarehousesPage() {
     if (!editingWarehouse?.name.trim()) return;
 
     try {
-      await axios.put(`${API}/warehouses/${editingWarehouse.id}`, editingWarehouse);
+      const token = localStorage.getItem('token');
+      await axios.put(`${API}/warehouses/${editingWarehouse.id}`, editingWarehouse, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success(language === 'ar' ? 'تم تحديث المخزن' : 'Entrepôt mis à jour');
       setEditingWarehouse(null);
       fetchData();
