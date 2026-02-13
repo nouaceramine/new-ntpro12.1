@@ -674,9 +674,8 @@ export default function SettingsPage() {
     }
   };
 
-  // Available roles
+  // Available roles - Note: super_admin is NOT available for tenants (security restriction)
   const availableRoles = [
-    { value: 'super_admin', label_ar: 'سوبر أدمين', label_fr: 'Super Admin', color: 'bg-purple-600', desc_ar: 'صلاحيات كاملة على النظام بالكامل + إدارة SaaS', desc_fr: 'Full system access + SaaS management' },
     { value: 'admin', label_ar: 'مدير', label_fr: 'Admin', color: 'bg-red-500', desc_ar: 'صلاحيات كاملة على المتجر', desc_fr: 'Full store access' },
     { value: 'manager', label_ar: 'مشرف', label_fr: 'Manager', color: 'bg-blue-500', desc_ar: 'إدارة العمليات اليومية', desc_fr: 'Daily operations management' },
     { value: 'sales_supervisor', label_ar: 'مشرف مبيعات', label_fr: 'Sales Supervisor', color: 'bg-teal-500', desc_ar: 'إشراف على المبيعات والعملاء', desc_fr: 'Sales and customer oversight' },
