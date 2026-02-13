@@ -11222,6 +11222,711 @@ async def schedule_database_backup(db_id: str, schedule: dict, admin: dict = Dep
     return {"message": "تم حفظ جدولة النسخ الاحتياطي"}
 
 
+# ============ SENDGRID EMAIL NOTIFICATIONS ============
+
+class SendGridSettings(BaseModel):
+    enabled: bool = False
+    api_key: str = ""
+    sender_email: str = ""
+    sender_name: str = "NT Commerce"
+    # Notification types
+    new_sale_notification: bool = True
+    low_stock_notification: bool = True
+    daily_report: bool = False
+    weekly_report: bool = False
+    notification_email: str = ""
+
+class EmailNotificationRequest(BaseModel):
+    notification_type: str  # new_sale, low_stock, daily_report, weekly_report, custom
+    recipient_email: str
+    subject: str = ""
+    data: dict = {}
+
+async def send_email_with_sendgrid(to_email: str, subject: str, html_content: str, settings: dict = None):
+    """Send email using SendGrid"""
+    if not SENDGRID_AVAILABLE:
+        raise HTTPException(status_code=500, detail="SendGrid غير متوفر")
+    
+    # Get settings from database if not provided
+    if not settings:
+        settings = await main_db.system_settings.find_one({"type": "sendgrid_settings"})
+    
+    if not settings or not settings.get("api_key"):
+        raise HTTPException(status_code=400, detail="يرجى إعداد مفتاح SendGrid أولاً")
+    
+    try:
+        sg = SendGridAPIClient(settings["api_key"])
+        from_email = Email(settings.get("sender_email", "noreply@ntcommerce.com"), settings.get("sender_name", "NT Commerce"))
+        to_email_obj = To(to_email)
+        content = Content("text/html", html_content)
+        mail = Mail(from_email, to_email_obj, subject, content)
+        
+        response = sg.send(mail)
+        return response.status_code == 202
+    except Exception as e:
+        logger.error(f"SendGrid error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"فشل إرسال البريد: {str(e)}")
+
+def generate_sale_notification_html(sale_data: dict):
+    """Generate HTML for sale notification"""
+    return f"""
+    <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fa; padding: 20px;">
+        <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="color: #22c55e; margin: 0;">🛒 عملية بيع جديدة</h1>
+            </div>
+            <div style="background: #f0fdf4; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                <p style="margin: 5px 0;"><strong>رقم الفاتورة:</strong> {sale_data.get('invoice_number', 'N/A')}</p>
+                <p style="margin: 5px 0;"><strong>الزبون:</strong> {sale_data.get('customer_name', 'زبون عام')}</p>
+                <p style="margin: 5px 0;"><strong>المبلغ الإجمالي:</strong> <span style="color: #16a34a; font-size: 1.2em; font-weight: bold;">{sale_data.get('total', 0):,.2f} دج</span></p>
+                <p style="margin: 5px 0;"><strong>طريقة الدفع:</strong> {sale_data.get('payment_method', 'نقداً')}</p>
+                <p style="margin: 5px 0;"><strong>عدد المنتجات:</strong> {sale_data.get('items_count', 0)}</p>
+            </div>
+            <p style="color: #6b7280; font-size: 12px; text-align: center; margin-top: 20px;">
+                تم إرسال هذا الإشعار تلقائياً من نظام NT Commerce
+            </p>
+        </div>
+    </div>
+    """
+
+def generate_low_stock_notification_html(products: list):
+    """Generate HTML for low stock notification"""
+    products_html = ""
+    for p in products[:20]:  # Limit to 20 products
+        products_html += f"""
+        <tr>
+            <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">{p.get('name', 'N/A')}</td>
+            <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center; color: {'#dc2626' if p.get('stock', 0) == 0 else '#f59e0b'};">
+                {p.get('stock', 0)}
+            </td>
+            <td style="padding: 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">{p.get('min_quantity', 10)}</td>
+        </tr>
+        """
+    
+    return f"""
+    <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fa; padding: 20px;">
+        <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="color: #f59e0b; margin: 0;">⚠️ تنبيه انخفاض المخزون</h1>
+                <p style="color: #6b7280;">يوجد {len(products)} منتج بحاجة إلى إعادة تزويد</p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                <thead>
+                    <tr style="background: #f3f4f6;">
+                        <th style="padding: 10px; text-align: right;">المنتج</th>
+                        <th style="padding: 10px; text-align: center;">الكمية الحالية</th>
+                        <th style="padding: 10px; text-align: center;">الحد الأدنى</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {products_html}
+                </tbody>
+            </table>
+            <p style="color: #6b7280; font-size: 12px; text-align: center; margin-top: 20px;">
+                تم إرسال هذا الإشعار تلقائياً من نظام NT Commerce
+            </p>
+        </div>
+    </div>
+    """
+
+def generate_daily_report_html(report_data: dict):
+    """Generate HTML for daily report"""
+    return f"""
+    <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fa; padding: 20px;">
+        <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="color: #3b82f6; margin: 0;">📊 التقرير اليومي</h1>
+                <p style="color: #6b7280;">{report_data.get('date', datetime.now().strftime('%Y-%m-%d'))}</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0;">
+                <div style="background: #f0fdf4; border-radius: 8px; padding: 15px; text-align: center;">
+                    <p style="margin: 0; color: #6b7280; font-size: 12px;">إجمالي المبيعات</p>
+                    <p style="margin: 5px 0; color: #16a34a; font-size: 1.5em; font-weight: bold;">{report_data.get('total_sales', 0):,.2f} دج</p>
+                </div>
+                <div style="background: #eff6ff; border-radius: 8px; padding: 15px; text-align: center;">
+                    <p style="margin: 0; color: #6b7280; font-size: 12px;">عدد الفواتير</p>
+                    <p style="margin: 5px 0; color: #3b82f6; font-size: 1.5em; font-weight: bold;">{report_data.get('sales_count', 0)}</p>
+                </div>
+                <div style="background: #fef3c7; border-radius: 8px; padding: 15px; text-align: center;">
+                    <p style="margin: 0; color: #6b7280; font-size: 12px;">صافي الربح</p>
+                    <p style="margin: 5px 0; color: #d97706; font-size: 1.5em; font-weight: bold;">{report_data.get('total_profit', 0):,.2f} دج</p>
+                </div>
+                <div style="background: #fce7f3; border-radius: 8px; padding: 15px; text-align: center;">
+                    <p style="margin: 0; color: #6b7280; font-size: 12px;">المصاريف</p>
+                    <p style="margin: 5px 0; color: #db2777; font-size: 1.5em; font-weight: bold;">{report_data.get('total_expenses', 0):,.2f} دج</p>
+                </div>
+            </div>
+            
+            <div style="background: #f3f4f6; border-radius: 8px; padding: 15px; margin-top: 15px;">
+                <p style="margin: 5px 0;"><strong>أفضل منتج مبيعاً:</strong> {report_data.get('top_product', 'N/A')}</p>
+                <p style="margin: 5px 0;"><strong>زبائن جدد:</strong> {report_data.get('new_customers', 0)}</p>
+                <p style="margin: 5px 0;"><strong>ديون جديدة:</strong> {report_data.get('new_debts', 0):,.2f} دج</p>
+                <p style="margin: 5px 0;"><strong>ديون محصلة:</strong> {report_data.get('collected_debts', 0):,.2f} دج</p>
+            </div>
+            
+            <p style="color: #6b7280; font-size: 12px; text-align: center; margin-top: 20px;">
+                تم إرسال هذا التقرير تلقائياً من نظام NT Commerce
+            </p>
+        </div>
+    </div>
+    """
+
+@api_router.get("/notifications/sendgrid/settings")
+async def get_sendgrid_settings(user: dict = Depends(require_tenant)):
+    """Get SendGrid email notification settings"""
+    settings = await db.system_settings.find_one({"type": "sendgrid_settings"}, {"_id": 0})
+    if not settings:
+        return SendGridSettings().model_dump()
+    
+    # Mask API key
+    if settings.get("api_key"):
+        key = settings["api_key"]
+        settings["api_key"] = key[:8] + "..." + key[-4:] if len(key) > 12 else "***configured***"
+    
+    return settings
+
+@api_router.put("/notifications/sendgrid/settings")
+async def update_sendgrid_settings(settings: SendGridSettings, user: dict = Depends(require_tenant)):
+    """Update SendGrid email notification settings"""
+    if user.get("role") not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="غير مصرح لك")
+    
+    # Get existing settings to preserve API key if masked
+    existing = await db.system_settings.find_one({"type": "sendgrid_settings"})
+    
+    settings_dict = settings.model_dump()
+    
+    # If API key looks masked, keep the old one
+    if settings.api_key and ("..." in settings.api_key or settings.api_key == "***configured***"):
+        if existing and existing.get("api_key"):
+            settings_dict["api_key"] = existing["api_key"]
+    
+    await db.system_settings.update_one(
+        {"type": "sendgrid_settings"},
+        {"$set": {**settings_dict, "type": "sendgrid_settings", "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    
+    return {"success": True, "message": "تم حفظ إعدادات الإشعارات"}
+
+@api_router.post("/notifications/sendgrid/test")
+async def test_sendgrid_settings(user: dict = Depends(require_tenant)):
+    """Send a test email via SendGrid"""
+    settings = await db.system_settings.find_one({"type": "sendgrid_settings"})
+    if not settings or not settings.get("api_key"):
+        raise HTTPException(status_code=400, detail="يرجى إعداد مفتاح SendGrid أولاً")
+    
+    user_record = await db.users.find_one({"id": user["id"]})
+    if not user_record or not user_record.get("email"):
+        raise HTTPException(status_code=400, detail="لم يتم العثور على بريدك الإلكتروني")
+    
+    test_html = """
+    <div dir="rtl" style="font-family: Arial, sans-serif; padding: 20px; background: #f3f4f6;">
+        <div style="max-width: 400px; margin: 0 auto; background: white; border-radius: 8px; padding: 30px; text-align: center;">
+            <h2 style="color: #22c55e;">✅ SendGrid يعمل بنجاح!</h2>
+            <p style="color: #6b7280;">هذه رسالة اختبار من نظام NT Commerce</p>
+            <p style="color: #9ca3af; font-size: 12px; margin-top: 20px;">
+                إذا وصلتك هذه الرسالة، فإن إعدادات البريد الإلكتروني تعمل بشكل صحيح.
+            </p>
+        </div>
+    </div>
+    """
+    
+    try:
+        await send_email_with_sendgrid(user_record["email"], "🧪 اختبار SendGrid - NT Commerce", test_html, settings)
+        return {"success": True, "message": f"تم إرسال بريد اختباري إلى {user_record['email']}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/notifications/send")
+async def send_notification(request: EmailNotificationRequest, user: dict = Depends(require_tenant)):
+    """Send a notification email"""
+    settings = await db.system_settings.find_one({"type": "sendgrid_settings"})
+    if not settings or not settings.get("enabled"):
+        raise HTTPException(status_code=400, detail="إشعارات البريد غير مفعلة")
+    
+    subject = request.subject
+    html_content = ""
+    
+    if request.notification_type == "new_sale":
+        subject = subject or f"🛒 عملية بيع جديدة - {request.data.get('invoice_number', '')}"
+        html_content = generate_sale_notification_html(request.data)
+    elif request.notification_type == "low_stock":
+        subject = subject or "⚠️ تنبيه انخفاض المخزون"
+        html_content = generate_low_stock_notification_html(request.data.get("products", []))
+    elif request.notification_type == "daily_report":
+        subject = subject or f"📊 التقرير اليومي - {datetime.now().strftime('%Y-%m-%d')}"
+        html_content = generate_daily_report_html(request.data)
+    else:
+        html_content = request.data.get("html_content", "<p>إشعار من NT Commerce</p>")
+    
+    try:
+        await send_email_with_sendgrid(request.recipient_email, subject, html_content, settings)
+        
+        # Log the notification
+        await db.notification_logs.insert_one({
+            "id": str(uuid.uuid4()),
+            "type": request.notification_type,
+            "recipient": request.recipient_email,
+            "subject": subject,
+            "status": "sent",
+            "sent_at": datetime.now(timezone.utc).isoformat(),
+            "sent_by": user["id"]
+        })
+        
+        return {"success": True, "message": "تم إرسال الإشعار بنجاح"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/notifications/check-low-stock")
+async def check_and_notify_low_stock(user: dict = Depends(require_tenant)):
+    """Check for low stock products and send notification"""
+    settings = await db.system_settings.find_one({"type": "sendgrid_settings"})
+    if not settings or not settings.get("enabled") or not settings.get("low_stock_notification"):
+        return {"success": False, "message": "إشعارات انخفاض المخزون غير مفعلة"}
+    
+    # Get low stock products
+    low_stock_products = await db.products.find({
+        "$expr": {"$lte": ["$stock", "$min_quantity"]}
+    }).to_list(100)
+    
+    if not low_stock_products:
+        return {"success": True, "message": "لا توجد منتجات منخفضة المخزون"}
+    
+    products_list = [{"name": p.get("name", ""), "stock": p.get("stock", 0), "min_quantity": p.get("min_quantity", 10)} for p in low_stock_products]
+    
+    recipient = settings.get("notification_email")
+    if not recipient:
+        return {"success": False, "message": "يرجى إعداد بريد الإشعارات"}
+    
+    html_content = generate_low_stock_notification_html(products_list)
+    
+    try:
+        await send_email_with_sendgrid(recipient, "⚠️ تنبيه انخفاض المخزون - NT Commerce", html_content, settings)
+        return {"success": True, "message": f"تم إرسال تنبيه بـ {len(products_list)} منتج منخفض المخزون"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/notifications/send-daily-report")
+async def send_daily_report(user: dict = Depends(require_tenant)):
+    """Generate and send daily report"""
+    settings = await db.system_settings.find_one({"type": "sendgrid_settings"})
+    if not settings or not settings.get("enabled"):
+        raise HTTPException(status_code=400, detail="إشعارات البريد غير مفعلة")
+    
+    recipient = settings.get("notification_email")
+    if not recipient:
+        raise HTTPException(status_code=400, detail="يرجى إعداد بريد الإشعارات")
+    
+    # Generate report data
+    today = datetime.now(timezone.utc).date()
+    today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc)
+    
+    sales = await db.sales.find({"created_at": {"$gte": today_start.isoformat()}}).to_list(1000)
+    expenses = await db.expenses.find({"created_at": {"$gte": today_start.isoformat()}}).to_list(1000)
+    
+    total_sales = sum(s.get("total", 0) for s in sales)
+    total_profit = sum(s.get("profit", 0) for s in sales)
+    total_expenses = sum(e.get("amount", 0) for e in expenses)
+    
+    # Find top product
+    product_sales = {}
+    for s in sales:
+        for item in s.get("items", []):
+            pid = item.get("product_id", "")
+            product_sales[pid] = product_sales.get(pid, 0) + item.get("quantity", 0)
+    
+    top_product_id = max(product_sales, key=product_sales.get) if product_sales else None
+    top_product = await db.products.find_one({"id": top_product_id}) if top_product_id else None
+    
+    report_data = {
+        "date": today.strftime('%Y-%m-%d'),
+        "total_sales": total_sales,
+        "sales_count": len(sales),
+        "total_profit": total_profit,
+        "total_expenses": total_expenses,
+        "top_product": top_product.get("name", "N/A") if top_product else "N/A",
+        "new_customers": await db.customers.count_documents({"created_at": {"$gte": today_start.isoformat()}}),
+        "new_debts": sum(s.get("remaining", 0) for s in sales if s.get("payment_status") == "partial"),
+        "collected_debts": 0  # Would need debt payments tracking
+    }
+    
+    html_content = generate_daily_report_html(report_data)
+    
+    try:
+        await send_email_with_sendgrid(recipient, f"📊 التقرير اليومي - {today.strftime('%Y-%m-%d')}", html_content, settings)
+        return {"success": True, "message": "تم إرسال التقرير اليومي"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============ STRIPE PAYMENT INTEGRATION ============
+
+# Subscription packages (prices defined on backend for security)
+SUBSCRIPTION_PACKAGES = {
+    "basic_monthly": {"name": "الباقة الأساسية - شهري", "amount": 2500.0, "duration_days": 30, "currency": "dzd"},
+    "basic_yearly": {"name": "الباقة الأساسية - سنوي", "amount": 25000.0, "duration_days": 365, "currency": "dzd"},
+    "pro_monthly": {"name": "الباقة المتقدمة - شهري", "amount": 5000.0, "duration_days": 30, "currency": "dzd"},
+    "pro_yearly": {"name": "الباقة المتقدمة - سنوي", "amount": 50000.0, "duration_days": 365, "currency": "dzd"},
+    "enterprise_monthly": {"name": "باقة المؤسسات - شهري", "amount": 10000.0, "duration_days": 30, "currency": "dzd"},
+    "enterprise_yearly": {"name": "باقة المؤسسات - سنوي", "amount": 100000.0, "duration_days": 365, "currency": "dzd"},
+}
+
+class CreateCheckoutRequest(BaseModel):
+    package_id: str
+    origin_url: str
+
+class PaymentRecord(BaseModel):
+    tenant_id: Optional[str] = None
+    amount: float
+    currency: str = "dzd"
+    payment_method: str = "stripe"
+    description: str = ""
+    invoice_number: str = ""
+    status: str = "pending"
+    metadata: dict = {}
+
+class PaymentUpdateRequest(BaseModel):
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    invoice_number: Optional[str] = None
+
+@api_router.get("/payments/packages")
+async def get_subscription_packages():
+    """Get available subscription packages"""
+    packages = []
+    for pkg_id, pkg in SUBSCRIPTION_PACKAGES.items():
+        packages.append({
+            "id": pkg_id,
+            "name": pkg["name"],
+            "amount": pkg["amount"],
+            "duration_days": pkg["duration_days"],
+            "currency": pkg["currency"]
+        })
+    return packages
+
+@api_router.post("/payments/create-checkout")
+async def create_checkout_session(request: CreateCheckoutRequest, http_request: Request):
+    """Create a Stripe checkout session"""
+    if not STRIPE_AVAILABLE:
+        raise HTTPException(status_code=500, detail="Stripe غير متوفر")
+    
+    package = SUBSCRIPTION_PACKAGES.get(request.package_id)
+    if not package:
+        raise HTTPException(status_code=400, detail="الباقة غير موجودة")
+    
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="مفتاح Stripe غير موجود")
+    
+    try:
+        # Build URLs from origin
+        success_url = f"{request.origin_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
+        cancel_url = f"{request.origin_url}/payment-cancel"
+        
+        # Create webhook URL
+        host_url = str(http_request.base_url)
+        webhook_url = f"{host_url}api/webhook/stripe"
+        
+        stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+        
+        checkout_request = CheckoutSessionRequest(
+            amount=package["amount"],
+            currency="usd",  # Stripe requires USD for most operations
+            success_url=success_url,
+            cancel_url=cancel_url,
+            metadata={
+                "package_id": request.package_id,
+                "package_name": package["name"],
+                "duration_days": str(package["duration_days"]),
+                "source": "nt_commerce"
+            }
+        )
+        
+        session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(checkout_request)
+        
+        # Create payment transaction record
+        transaction_id = str(uuid.uuid4())
+        await main_db.payment_transactions.insert_one({
+            "id": transaction_id,
+            "session_id": session.session_id,
+            "package_id": request.package_id,
+            "package_name": package["name"],
+            "amount": package["amount"],
+            "currency": package["currency"],
+            "payment_status": "pending",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "metadata": {
+                "package_id": request.package_id,
+                "duration_days": package["duration_days"]
+            }
+        })
+        
+        return {
+            "url": session.url,
+            "session_id": session.session_id,
+            "transaction_id": transaction_id
+        }
+    except Exception as e:
+        logger.error(f"Stripe checkout error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"فشل إنشاء جلسة الدفع: {str(e)}")
+
+@api_router.get("/payments/status/{session_id}")
+async def get_payment_status(session_id: str, http_request: Request):
+    """Get payment status from Stripe"""
+    if not STRIPE_AVAILABLE:
+        raise HTTPException(status_code=500, detail="Stripe غير متوفر")
+    
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="مفتاح Stripe غير موجود")
+    
+    try:
+        host_url = str(http_request.base_url)
+        webhook_url = f"{host_url}api/webhook/stripe"
+        stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+        
+        status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
+        
+        # Update transaction in database
+        await main_db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {
+                "payment_status": status.payment_status,
+                "status": status.status,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
+        return {
+            "status": status.status,
+            "payment_status": status.payment_status,
+            "amount_total": status.amount_total,
+            "currency": status.currency,
+            "metadata": status.metadata
+        }
+    except Exception as e:
+        logger.error(f"Stripe status error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"فشل التحقق من حالة الدفع: {str(e)}")
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhooks"""
+    if not STRIPE_AVAILABLE:
+        raise HTTPException(status_code=500, detail="Stripe غير متوفر")
+    
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="مفتاح Stripe غير موجود")
+    
+    try:
+        body = await request.body()
+        signature = request.headers.get("Stripe-Signature")
+        
+        host_url = str(request.base_url)
+        webhook_url = f"{host_url}api/webhook/stripe"
+        stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+        
+        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        
+        # Update payment transaction
+        if webhook_response.session_id:
+            await main_db.payment_transactions.update_one(
+                {"session_id": webhook_response.session_id},
+                {"$set": {
+                    "payment_status": webhook_response.payment_status,
+                    "event_type": webhook_response.event_type,
+                    "event_id": webhook_response.event_id,
+                    "webhook_received_at": datetime.now(timezone.utc).isoformat()
+                }}
+            )
+        
+        return {"received": True}
+    except Exception as e:
+        logger.error(f"Stripe webhook error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Payment Records Management (for manual/offline payments)
+@api_router.get("/payments/records")
+async def get_payment_records(
+    page: int = 1,
+    limit: int = 20,
+    status: Optional[str] = None,
+    admin: dict = Depends(get_super_admin)
+):
+    """Get all payment records"""
+    query = {}
+    if status:
+        query["payment_status"] = status
+    
+    skip = (page - 1) * limit
+    records = await main_db.payment_transactions.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    total = await main_db.payment_transactions.count_documents(query)
+    
+    return {
+        "records": records,
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit
+    }
+
+@api_router.post("/payments/records")
+async def create_payment_record(payment: PaymentRecord, admin: dict = Depends(get_super_admin)):
+    """Create a manual payment record"""
+    record_id = str(uuid.uuid4())
+    record = {
+        "id": record_id,
+        "tenant_id": payment.tenant_id,
+        "amount": payment.amount,
+        "currency": payment.currency,
+        "payment_method": payment.payment_method,
+        "description": payment.description,
+        "invoice_number": payment.invoice_number or f"INV-{datetime.now().strftime('%Y%m%d')}-{record_id[:8].upper()}",
+        "payment_status": payment.status,
+        "metadata": payment.metadata,
+        "created_by": admin.get("id"),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await main_db.payment_transactions.insert_one(record)
+    
+    # If payment is for a tenant, update subscription if paid
+    if payment.tenant_id and payment.status == "paid":
+        # Extend subscription
+        tenant = await main_db.saas_tenants.find_one({"id": payment.tenant_id})
+        if tenant:
+            current_end = tenant.get("subscription_end")
+            if current_end:
+                try:
+                    end_date = datetime.fromisoformat(current_end.replace('Z', '+00:00'))
+                except:
+                    end_date = datetime.now(timezone.utc)
+            else:
+                end_date = datetime.now(timezone.utc)
+            
+            # Default 30 days extension for manual payments
+            new_end = end_date + timedelta(days=30)
+            await main_db.saas_tenants.update_one(
+                {"id": payment.tenant_id},
+                {"$set": {"subscription_end": new_end.isoformat()}}
+            )
+    
+    return {"id": record_id, "message": "تم إنشاء سجل الدفع"}
+
+@api_router.put("/payments/records/{record_id}")
+async def update_payment_record(record_id: str, update: PaymentUpdateRequest, admin: dict = Depends(get_super_admin)):
+    """Update a payment record"""
+    update_data = {}
+    if update.status:
+        update_data["payment_status"] = update.status
+    if update.notes:
+        update_data["notes"] = update.notes
+    if update.invoice_number:
+        update_data["invoice_number"] = update.invoice_number
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    update_data["updated_by"] = admin.get("id")
+    
+    result = await main_db.payment_transactions.update_one(
+        {"id": record_id},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="سجل الدفع غير موجود")
+    
+    return {"success": True, "message": "تم تحديث سجل الدفع"}
+
+@api_router.delete("/payments/records/{record_id}")
+async def delete_payment_record(record_id: str, admin: dict = Depends(get_super_admin)):
+    """Delete a payment record"""
+    result = await main_db.payment_transactions.delete_one({"id": record_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="سجل الدفع غير موجود")
+    
+    return {"success": True, "message": "تم حذف سجل الدفع"}
+
+# Invoice Generation
+@api_router.get("/payments/invoice/{record_id}")
+async def generate_invoice(record_id: str, admin: dict = Depends(get_super_admin)):
+    """Generate invoice for a payment"""
+    record = await main_db.payment_transactions.find_one({"id": record_id}, {"_id": 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="سجل الدفع غير موجود")
+    
+    # Get tenant info if available
+    tenant = None
+    if record.get("tenant_id"):
+        tenant = await main_db.saas_tenants.find_one({"id": record["tenant_id"]}, {"_id": 0})
+    
+    invoice_html = f"""
+    <html dir="rtl">
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; padding: 40px; }}
+            .header {{ text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }}
+            .invoice-info {{ display: flex; justify-content: space-between; margin-bottom: 30px; }}
+            .table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
+            .table th, .table td {{ border: 1px solid #ddd; padding: 12px; text-align: right; }}
+            .table th {{ background: #f3f4f6; }}
+            .total {{ font-size: 1.2em; font-weight: bold; text-align: left; margin-top: 20px; }}
+            .footer {{ text-align: center; margin-top: 50px; color: #666; font-size: 12px; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>فاتورة</h1>
+            <p>NT Commerce</p>
+        </div>
+        
+        <div class="invoice-info">
+            <div>
+                <p><strong>رقم الفاتورة:</strong> {record.get('invoice_number', 'N/A')}</p>
+                <p><strong>التاريخ:</strong> {record.get('created_at', '')[:10]}</p>
+                <p><strong>الحالة:</strong> {'مدفوع' if record.get('payment_status') == 'paid' else 'قيد الانتظار'}</p>
+            </div>
+            <div>
+                <p><strong>العميل:</strong> {tenant.get('business_name', 'N/A') if tenant else 'N/A'}</p>
+                <p><strong>البريد:</strong> {tenant.get('email', 'N/A') if tenant else 'N/A'}</p>
+            </div>
+        </div>
+        
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>الوصف</th>
+                    <th>المبلغ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{record.get('description', record.get('package_name', 'اشتراك'))}</td>
+                    <td>{record.get('amount', 0):,.2f} {record.get('currency', 'دج').upper()}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="total">
+            الإجمالي: {record.get('amount', 0):,.2f} {record.get('currency', 'دج').upper()}
+        </div>
+        
+        <div class="footer">
+            <p>شكراً لتعاملكم معنا</p>
+            <p>NT Commerce - نظام إدارة نقاط البيع</p>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return StreamingResponse(
+        io.BytesIO(invoice_html.encode('utf-8')),
+        media_type="text/html",
+        headers={"Content-Disposition": f"inline; filename=invoice_{record.get('invoice_number', record_id)}.html"}
+    )
+
+
 # Include router and middleware
 app.include_router(api_router)
 
