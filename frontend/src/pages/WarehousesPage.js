@@ -180,7 +180,10 @@ export default function WarehousesPage() {
     }
 
     try {
-      await axios.post(`${API}/stock-transfers`, transfer);
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/stock-transfers`, transfer, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success(language === 'ar' ? 'تم تحويل المخزون بنجاح' : 'Stock transféré avec succès');
       setShowTransfer(false);
       setTransfer({ from_warehouse: '', to_warehouse: '', product_id: '', quantity: 1 });
