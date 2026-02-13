@@ -71,6 +71,7 @@ import PaymentsPage from "./pages/PaymentsPage";
 import LandingPage from "./pages/landing/LandingPage";
 import SaasRegisterPage from "./pages/landing/RegisterPage";
 import SaasAdminPage from "./pages/admin/SaasAdminPage";
+import FeatureFlagsPage from "./pages/admin/FeatureFlagsPage";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, adminOnly = false, tenantOnly = false }) => {
