@@ -37,6 +37,8 @@ class UserResponse(BaseModel):
     tenant_id: Optional[str] = None
     user_type: Optional[str] = None
     company_name: Optional[str] = None
+    features: Optional[dict] = None
+    limits: Optional[dict] = None
     created_at: Optional[str] = None
 
 # ============ SAAS MODELS ============
