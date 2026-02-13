@@ -177,28 +177,49 @@ class DailySessionResponse(BaseModel):
     closed_at: Optional[str] = None
 
 class InventorySessionCreate(BaseModel):
+    name: str = ""
+    code: Optional[str] = None
     warehouse_id: str = "main"
+    family_filter: str = "all"
+    status: str = "active"
+    started_at: Optional[str] = None
+    counted_items: Optional[dict] = {}
     notes: str = ""
 
 class InventoryItemUpdate(BaseModel):
     product_id: str
     counted_quantity: int
 
+class InventorySessionUpdate(BaseModel):
+    name: Optional[str] = None
+    status: Optional[str] = None
+    counted_items: Optional[dict] = None
+    completed_at: Optional[str] = None
+    applied_changes: Optional[bool] = None
+    notes: Optional[str] = None
+
 class InventorySessionResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
+    name: str = ""
+    code: Optional[str] = None
     session_code: Optional[str] = None
-    warehouse_id: str
+    warehouse_id: str = "main"
+    family_filter: str = "all"
     status: str
     items: List[dict] = []
+    counted_items: dict = {}
     total_products: int = 0
     counted_products: int = 0
     discrepancies: int = 0
-    user_id: str
-    user_name: str
+    user_id: Optional[str] = None
+    user_name: Optional[str] = None
     notes: str = ""
-    created_at: str
+    started_at: Optional[str] = None
+    created_at: Optional[str] = None
+    completed_at: Optional[str] = None
     closed_at: Optional[str] = None
+    applied_changes: bool = False
 
 class DebtPaymentCreate(BaseModel):
     amount: float
