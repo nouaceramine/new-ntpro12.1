@@ -646,21 +646,10 @@ export const Layout = ({ children }) => {
       <div className={`transition-all duration-300 ${sidebarCollapsed ? 'md:ms-16' : 'md:ms-64'}`}>
         {/* Desktop Header */}
         <header className="hidden md:flex items-center justify-between h-16 px-8 bg-card/80 backdrop-blur-md border-b sticky top-0 z-40">
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex-1 max-w-xl">
-            <div className="relative">
-              <Search className={`absolute top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
-              <input
-                type="text"
-                placeholder={language === 'ar' ? 'ابحث بالاسم أو الباركود أو كود المنتج...' : 'Rechercher par nom, code-barres ou code article...'}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full h-11 ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} rounded-lg border bg-background search-input focus:outline-none focus:ring-2 focus:ring-primary/20`}
-                data-testid="search-input"
-                autoComplete="off"
-              />
-            </div>
-          </form>
+          {/* Search Bar - Using UnifiedSearch */}
+          <div className="flex-1 max-w-xl">
+            <UnifiedSearch mode="header" />
+          </div>
 
           <div className="flex items-center gap-4 ms-6">
             {/* Notifications */}
