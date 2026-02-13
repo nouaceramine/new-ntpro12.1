@@ -69,7 +69,9 @@ import {
   Upload,
   HardDrive,
   GripVertical,
-  ChevronRight
+  ChevronRight,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
