@@ -216,13 +216,6 @@ export const Layout = ({ children }) => {
     }
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
-    }
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/login');
