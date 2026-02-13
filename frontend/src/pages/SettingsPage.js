@@ -1297,6 +1297,61 @@ export default function SettingsPage() {
                   />
                 </div>
 
+                {/* Thermal Printer Size Selection */}
+                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-full bg-purple-100">
+                      <Printer className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-purple-800">{language === 'ar' ? 'حجم الطابعة الحرارية' : 'Taille imprimante thermique'}</p>
+                      <p className="text-sm text-purple-600">
+                        {language === 'ar' ? 'اختر حجم ورق الطابعة الحرارية الخاصة بك' : 'Sélectionnez la taille du papier de votre imprimante thermique'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setReceiptSettings(prev => ({ ...prev, thermal_printer_size: '58mm' }))}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        receiptSettings.thermal_printer_size === '58mm' 
+                          ? 'border-purple-500 bg-purple-100' 
+                          : 'border-gray-200 hover:border-purple-300'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className={`text-2xl font-bold ${receiptSettings.thermal_printer_size === '58mm' ? 'text-purple-700' : 'text-gray-700'}`}>58mm</div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {language === 'ar' ? 'طابعة صغيرة' : 'Petite imprimante'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'ar' ? 'للإيصالات المختصرة' : 'Pour reçus compacts'}
+                        </p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setReceiptSettings(prev => ({ ...prev, thermal_printer_size: '80mm' }))}
+                      className={`p-4 rounded-lg border-2 transition-all ${
+                        receiptSettings.thermal_printer_size === '80mm' 
+                          ? 'border-purple-500 bg-purple-100' 
+                          : 'border-gray-200 hover:border-purple-300'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className={`text-2xl font-bold ${receiptSettings.thermal_printer_size === '80mm' ? 'text-purple-700' : 'text-gray-700'}`}>80mm</div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {language === 'ar' ? 'طابعة قياسية' : 'Imprimante standard'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'ar' ? 'الأكثر شيوعاً' : 'La plus courante'}
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Default Template */}
                 <div>
                   <Label>{language === 'ar' ? 'قالب الإيصال الافتراضي' : 'Modèle de reçu par défaut'}</Label>
