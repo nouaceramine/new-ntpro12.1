@@ -820,6 +820,10 @@ export default function SettingsPage() {
               <Mail className="h-4 w-4" />
               {language === 'ar' ? 'البريد' : 'Email'}
             </TabsTrigger>
+            <TabsTrigger value="sound" className="gap-2">
+              <Volume2 className="h-4 w-4" />
+              {language === 'ar' ? 'الصوت' : 'Sound'}
+            </TabsTrigger>
             <TabsTrigger value="system" className="gap-2">
               <Settings className="h-4 w-4" />
               {language === 'ar' ? 'النظام' : 'Système'}
