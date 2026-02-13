@@ -12196,35 +12196,79 @@ async def update_store_order_status(order_id: str, data: dict, admin: dict = Dep
 @api_router.get("/shop/{store_slug}")
 async def get_public_store(store_slug: str):
     """Get public store by slug"""
-    # Find tenant by store slug
-    settings = await db.store_settings.find_one({"store_slug": store_slug, "enabled": True}, {"_id": 0})
-    if not settings:
+    # Find tenant by store slug from main database
+    slug_mapping = await main_db.store_slugs.find_one({"store_slug": store_slug, "enabled": True}, {"_id": 0})
+    if not slug_mapping:
         raise HTTPException(status_code=404, detail="Store not found")
     
+    tenant_id = slug_mapping.get("tenant_id")
+    if not tenant_id:
+        raise HTTPException(status_code=404, detail="Store not configured")
+    
+    # Get tenant database
+    tenant_db = get_tenant_db(tenant_id)
+    
+    # Get store settings from tenant database
+    settings = await tenant_db.store_settings.find_one({}, {"_id": 0})
+    if not settings or not settings.get("enabled"):
+        raise HTTPException(status_code=404, detail="Store not available")
+    
     # Get store products with details
-    store_products = await db.store_products.find({"is_active": True}, {"_id": 0}).to_list(1000)
+    store_products = await tenant_db.store_products.find({"is_active": True}, {"_id": 0}).to_list(1000)
     product_ids = [sp["product_id"] for sp in store_products]
     
-    products = await db.products.find(
+    products = await tenant_db.products.find(
         {"id": {"$in": product_ids}, "quantity": {"$gt": 0}},
-        {"_id": 0, "id": 1, "name_ar": 1, "name_en": 1, "retail_price": 1, "image_url": 1, "description_ar": 1, "description_en": 1}
+        {"_id": 0, "id": 1, "name_ar": 1, "name_en": 1, "retail_price": 1, "image_url": 1, "description_ar": 1, "description_en": 1, "quantity": 1}
     ).to_list(1000)
     
     return {
         "settings": settings,
-        "products": products
+        "products": products,
+        "tenant_id": tenant_id
     }
 
 @api_router.post("/shop/{store_slug}/order")
 async def create_public_order(store_slug: str, order: StoreOrder):
     """Create order from public store (COD)"""
-    # Validate store
-    settings = await db.store_settings.find_one({"store_slug": store_slug, "enabled": True})
-    if not settings:
+    # Find tenant by store slug from main database
+    slug_mapping = await main_db.store_slugs.find_one({"store_slug": store_slug, "enabled": True}, {"_id": 0})
+    if not slug_mapping:
         raise HTTPException(status_code=404, detail="Store not found")
     
+    tenant_id = slug_mapping.get("tenant_id")
+    if not tenant_id:
+        raise HTTPException(status_code=404, detail="Store not configured")
+    
+    # Get tenant database
+    tenant_db = get_tenant_db(tenant_id)
+    
+    # Validate store is enabled
+    settings = await tenant_db.store_settings.find_one({"enabled": True})
+    if not settings:
+        raise HTTPException(status_code=404, detail="Store not available")
+    
+    # Validate minimum order amount
+    if settings.get("min_order_amount", 0) > 0 and order.subtotal < settings["min_order_amount"]:
+        raise HTTPException(status_code=400, detail=f"Minimum order amount is {settings['min_order_amount']}")
+    
+    # Validate products availability and update stock
+    for item in order.items:
+        product = await tenant_db.products.find_one({"id": item.get("product_id")})
+        if not product:
+            raise HTTPException(status_code=400, detail=f"Product {item.get('name', 'Unknown')} not found")
+        if product.get("quantity", 0) < item.get("quantity", 1):
+            raise HTTPException(status_code=400, detail=f"Product {item.get('name', product.get('name_ar', 'Unknown'))} out of stock")
+    
+    # Update stock for each product
+    for item in order.items:
+        await tenant_db.products.update_one(
+            {"id": item.get("product_id")},
+            {"$inc": {"quantity": -item.get("quantity", 1)}}
+        )
+    
     # Generate order number
-    count = await db.store_orders.count_documents({}) + 1
+    count = await tenant_db.store_orders.count_documents({}) + 1
     order_number = f"WEB{count:06d}"
     
     # Create order
@@ -12238,7 +12282,7 @@ async def create_public_order(store_slug: str, order: StoreOrder):
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
-    await db.store_orders.insert_one(order_data)
+    await tenant_db.store_orders.insert_one(order_data)
     
     return {
         "message": "تم استلام طلبك بنجاح",
