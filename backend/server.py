@@ -964,36 +964,72 @@ class QuickSearchProduct(BaseModel):
     retail_price: float = 0
     wholesale_price: float = 0
     quantity: int = 0
+    min_quantity: int = 0
+    family_id: Optional[str] = None
+    family_name: Optional[str] = None
     image_url: Optional[str] = None
 
 class QuickSearchResponse(BaseModel):
     results: List[QuickSearchProduct]
     total: int
+    families: Optional[List[dict]] = None
 
 @api_router.get("/products/quick-search", response_model=QuickSearchResponse)
 async def quick_search_products(
-    q: str,
+    q: str = "",
     limit: int = 15,
+    family_id: Optional[str] = None,
+    stock_filter: Optional[str] = None,  # "low", "out", "available"
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    include_families: bool = False,
     user: dict = Depends(require_tenant)
 ):
     """
-    Fast product search endpoint optimized for autocomplete.
-    Searches by: name, barcode, article_code
-    Returns minimal data for speed.
-    """
-    if not q or len(q) < 1:
-        return QuickSearchResponse(results=[], total=0)
+    Fast product search endpoint with advanced filtering.
     
-    # Build search query - prioritize exact matches
-    search_query = {
-        "$or": [
-            {"barcode": q},  # Exact barcode match first
-            {"article_code": {"$regex": f"^{q}", "$options": "i"}},  # Article code starts with
-            {"name_ar": {"$regex": q, "$options": "i"}},
-            {"name_en": {"$regex": q, "$options": "i"}},
-            {"barcode": {"$regex": q, "$options": "i"}},
-        ]
-    }
+    Params:
+    - q: Search query (name, barcode, article_code)
+    - family_id: Filter by product family
+    - stock_filter: "low" (below min), "out" (zero), "available" (>0)
+    - min_price, max_price: Price range filter
+    - include_families: Include families list for filter dropdown
+    """
+    # Build search query
+    conditions = []
+    
+    # Text search condition
+    if q and len(q) >= 1:
+        conditions.append({
+            "$or": [
+                {"barcode": q},  # Exact barcode match first
+                {"article_code": {"$regex": f"^{q}", "$options": "i"}},
+                {"name_ar": {"$regex": q, "$options": "i"}},
+                {"name_en": {"$regex": q, "$options": "i"}},
+                {"barcode": {"$regex": q, "$options": "i"}},
+            ]
+        })
+    
+    # Family filter
+    if family_id:
+        conditions.append({"family_id": family_id})
+    
+    # Stock filter
+    if stock_filter == "out":
+        conditions.append({"quantity": {"$lte": 0}})
+    elif stock_filter == "low":
+        conditions.append({"$expr": {"$lte": ["$quantity", "$min_quantity"]}})
+    elif stock_filter == "available":
+        conditions.append({"quantity": {"$gt": 0}})
+    
+    # Price range filter
+    if min_price is not None:
+        conditions.append({"retail_price": {"$gte": min_price}})
+    if max_price is not None:
+        conditions.append({"retail_price": {"$lte": max_price}})
+    
+    # Build final query
+    search_query = {"$and": conditions} if conditions else {}
     
     # Only fetch required fields for speed
     projection = {
@@ -1006,6 +1042,8 @@ async def quick_search_products(
         "retail_price": 1,
         "wholesale_price": 1,
         "quantity": 1,
+        "min_quantity": 1,
+        "family_id": 1,
         "image_url": 1
     }
     
@@ -1014,6 +1052,14 @@ async def quick_search_products(
     
     # Fetch products with limit
     products = await db.products.find(search_query, projection).limit(limit).to_list(limit)
+    
+    # Add family names
+    for product in products:
+        if product.get("family_id"):
+            family = await db.product_families.find_one({"id": product["family_id"]}, {"_id": 0, "name_ar": 1})
+            product["family_name"] = family.get("name_ar", "") if family else ""
+        else:
+            product["family_name"] = ""
     
     # Sort to prioritize exact barcode matches
     def sort_key(p):
