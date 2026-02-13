@@ -84,7 +84,8 @@ export const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebarCollapsed');
-    return saved === 'true';
+    // Default to collapsed (true) if no saved preference
+    return saved !== null ? saved === 'true' : true;
   });
   const [expandedSections, setExpandedSections] = useState(() => {
     const saved = localStorage.getItem('expandedSections');
