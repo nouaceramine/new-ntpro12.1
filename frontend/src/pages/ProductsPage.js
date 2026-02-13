@@ -67,6 +67,87 @@ export default function ProductsPage() {
   const [sortOrder, setSortOrder] = useState('asc');
   const [useQuickSearch, setUseQuickSearch] = useState(localStorage.getItem('useQuickSearch') === 'true');
   
+  // Selection state for bulk delete
+  const [selectedProducts, setSelectedProducts] = useState(new Set());
+  const [selectMode, setSelectMode] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(parseInt(localStorage.getItem('productsPerPage')) || 20);
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  // Toggle selection mode
+  const toggleSelectMode = () => {
+    setSelectMode(!selectMode);
+    if (selectMode) {
+      setSelectedProducts(new Set());
+    }
+  };
+
+  // Toggle single product selection
+  const toggleProductSelection = (productId) => {
+    const newSelected = new Set(selectedProducts);
+    if (newSelected.has(productId)) {
+      newSelected.delete(productId);
+    } else {
+      newSelected.add(productId);
+    }
+    setSelectedProducts(newSelected);
+  };
+
+  // Select all products on current page
+  const selectAllProducts = () => {
+    const newSelected = new Set(selectedProducts);
+    sortedProducts.forEach(p => newSelected.add(p.id));
+    setSelectedProducts(newSelected);
+  };
+
+  // Deselect all products
+  const deselectAllProducts = () => {
+    setSelectedProducts(new Set());
+  };
+
+  // Delete selected products
+  const handleBulkDelete = async () => {
+    if (selectedProducts.size === 0) return;
+    
+    setDeleting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      // Delete products one by one
+      const deletePromises = Array.from(selectedProducts).map(id =>
+        axios.delete(`${API}/products/${id}`, { headers }).catch(err => ({ error: true, id }))
+      );
+      
+      const results = await Promise.all(deletePromises);
+      const failures = results.filter(r => r.error);
+      
+      if (failures.length === 0) {
+        toast.success(language === 'ar' 
+          ? `تم حذف ${selectedProducts.size} منتج بنجاح` 
+          : `${selectedProducts.size} produits supprimés`);
+      } else {
+        toast.warning(language === 'ar' 
+          ? `تم حذف ${selectedProducts.size - failures.length} منتج، فشل حذف ${failures.length}` 
+          : `${selectedProducts.size - failures.length} supprimés, ${failures.length} échoués`);
+      }
+      
+      setSelectedProducts(new Set());
+      setSelectMode(false);
+      setShowDeleteDialog(false);
+      fetchProducts();
+    } catch (error) {
+      toast.error(language === 'ar' ? 'حدث خطأ أثناء الحذف' : 'Erreur lors de la suppression');
+    } finally {
+      setDeleting(false);
+    }
+  };
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
