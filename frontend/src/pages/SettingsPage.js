@@ -182,6 +182,10 @@ export default function SettingsPage() {
     auto_print: false,
     show_print_dialog: true,
     default_template_id: 'default_80mm',
+    thermal_printer_size: '80mm', // Default thermal printer size
+    store_name: '',
+    store_address: '',
+    store_phone: '',
     templates: [
       { id: 'default_58mm', name: 'Thermal 58mm', name_ar: 'حراري 58 مم', width: '58mm', show_logo: false, show_header: true, show_footer: true, header_text: '', footer_text: 'شكراً لزيارتكم', font_size: 'small', is_default: false },
       { id: 'default_80mm', name: 'Thermal 80mm', name_ar: 'حراري 80 مم', width: '80mm', show_logo: true, show_header: true, show_footer: true, header_text: '', footer_text: 'شكراً لزيارتكم', font_size: 'normal', is_default: true },
