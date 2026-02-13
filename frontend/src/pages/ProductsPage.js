@@ -147,12 +147,6 @@ export default function ProductsPage() {
       setDeleting(false);
     }
   };
-  
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(parseInt(localStorage.getItem('productsPerPage')) || 20);
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const changeViewMode = (mode) => {
     setViewMode(mode);
