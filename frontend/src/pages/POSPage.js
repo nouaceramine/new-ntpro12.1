@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useNavigate } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Textarea } from '../components/ui/textarea';
 import { playSuccessBeep, playErrorBeep } from '../utils/beep';
 import {
   Select,
@@ -20,6 +22,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '../components/ui/dialog';
 import {
   Table,
@@ -57,7 +60,9 @@ import {
   ChevronLeft,
   ChevronRight,
   DollarSign,
-  Trash2
+  Trash2,
+  RotateCcw,
+  History
 } from 'lucide-react';
 import { Calculator } from '../components/Calculator';
 
@@ -73,6 +78,7 @@ const SHORTCUT_COLORS = [
 
 export default function POSPage() {
   const { t, language, isRTL } = useLanguage();
+  const navigate = useNavigate();
   
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -115,6 +121,18 @@ export default function POSPage() {
   const [newCustomerData, setNewCustomerData] = useState({ name: '', phone: '', email: '', address: '', family_id: '' });
   const [savingCustomer, setSavingCustomer] = useState(false);
   
+  // Task-related dialogs
+  const [showProductsDialog, setShowProductsDialog] = useState(false);
+  const [showCustomersDialog, setShowCustomersDialog] = useState(false);
+  const [showNoteDialog, setShowNoteDialog] = useState(false);
+  const [showCashDialog, setShowCashDialog] = useState(false);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [saleNote, setSaleNote] = useState('');
+  const [returnMode, setReturnMode] = useState(false);
+  const [cashOperation, setCashOperation] = useState({ type: 'deposit', amount: 0, note: '' });
+  const [salesHistory, setSalesHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  
   // Blacklist state
   const [blacklist, setBlacklist] = useState([]);
   const [selectedCustomerBlacklisted, setSelectedCustomerBlacklisted] = useState(false);
@@ -132,10 +150,10 @@ export default function POSPage() {
   // Sale Code
   const [saleCode, setSaleCode] = useState('');
 
-  // Product Shortcuts (20 quick access boxes)
+  // Product Shortcuts (10 quick access boxes - reduced for single page)
   const [productShortcuts, setProductShortcuts] = useState(() => {
     const saved = localStorage.getItem('posProductShortcuts');
-    return saved ? JSON.parse(saved) : Array(20).fill({ productId: null, color: '#e5e7eb' });
+    return saved ? JSON.parse(saved) : Array(10).fill({ productId: null, color: '#e5e7eb' });
   });
   const [showShortcutDialog, setShowShortcutDialog] = useState(false);
   const [editingShortcutIndex, setEditingShortcutIndex] = useState(null);
@@ -298,6 +316,21 @@ export default function POSPage() {
     }
   };
 
+  const fetchSalesHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/sales?limit=20`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSalesHistory(response.data.sales || response.data || []);
+    } catch (error) {
+      console.error('Error fetching sales history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   const fetchCustomerDebt = async (customerId) => {
     try {
       const token = localStorage.getItem('token');
@@ -340,10 +373,14 @@ export default function POSPage() {
     const price = priceType === 'wholesale' ? product.wholesale_price : product.retail_price;
     
     if (existingItem) {
-      const newQty = existingItem.quantity + 1;
-      const willBeNegative = newQty > product.quantity;
+      const newQty = returnMode ? existingItem.quantity - 1 : existingItem.quantity + 1;
+      if (newQty <= 0) {
+        removeFromCart(product.id);
+        return;
+      }
       
-      if (willBeNegative) {
+      const willBeNegative = newQty > product.quantity;
+      if (willBeNegative && !returnMode) {
         toast.warning(language === 'ar' 
           ? `تنبيه: المخزون سيصبح سالب (${product.quantity - newQty})` 
           : `Attention: Stock sera negatif (${product.quantity - newQty})`);
@@ -355,7 +392,7 @@ export default function POSPage() {
           : item
       ));
     } else {
-      if (product.quantity <= 0) {
+      if (product.quantity <= 0 && !returnMode) {
         toast.warning(language === 'ar' 
           ? 'تنبيه: هذا المنتج غير متوفر - سيتم حساب المخزون بالسالب' 
           : 'Attention: Produit non disponible - stock sera negatif');
@@ -366,12 +403,13 @@ export default function POSPage() {
         product_name: language === 'ar' ? (product.name_ar || product.name_en) : (product.name_en || product.name_ar),
         barcode: product.barcode,
         article_code: product.article_code,
-        quantity: 1,
+        quantity: returnMode ? -1 : 1,
         unit_price: price,
         discount: 0,
         discount_percent: 0,
-        total: price,
-        available_stock: product.quantity
+        total: returnMode ? -price : price,
+        available_stock: product.quantity,
+        is_return: returnMode
       }]);
     }
     
@@ -381,7 +419,7 @@ export default function POSPage() {
       const gainNode = audioContext.createGain();
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      oscillator.frequency.value = 1200;
+      oscillator.frequency.value = returnMode ? 800 : 1200;
       gainNode.gain.value = 0.15;
       oscillator.start();
       setTimeout(() => oscillator.stop(), 80);
@@ -389,13 +427,13 @@ export default function POSPage() {
   };
 
   const updateCartItemQuantity = (productId, newQty) => {
-    if (newQty <= 0) {
+    if (newQty === 0) {
       removeFromCart(productId);
       return;
     }
     
     const product = products.find(p => p.id === productId);
-    if (product && newQty > product.quantity) {
+    if (product && Math.abs(newQty) > product.quantity && newQty > 0) {
       toast.warning(language === 'ar' 
         ? `تنبيه: المخزون سيصبح سالب` 
         : `Attention: Stock sera negatif`);
@@ -404,8 +442,8 @@ export default function POSPage() {
     setCart(cart.map(item => {
       if (item.product_id === productId) {
         const subtotal = newQty * item.unit_price;
-        const discountAmount = (item.discount_percent || 0) / 100 * subtotal;
-        return { ...item, quantity: newQty, total: subtotal - discountAmount };
+        const discountAmount = (item.discount_percent || 0) / 100 * Math.abs(subtotal);
+        return { ...item, quantity: newQty, total: subtotal - (newQty > 0 ? discountAmount : -discountAmount) };
       }
       return item;
     }));
@@ -416,8 +454,8 @@ export default function POSPage() {
     setCart(cart.map(item => {
       if (item.product_id === productId) {
         const subtotal = item.quantity * price;
-        const discountAmount = (item.discount_percent || 0) / 100 * subtotal;
-        return { ...item, unit_price: price, total: subtotal - discountAmount };
+        const discountAmount = (item.discount_percent || 0) / 100 * Math.abs(subtotal);
+        return { ...item, unit_price: price, total: subtotal - (item.quantity > 0 ? discountAmount : -discountAmount) };
       }
       return item;
     }));
@@ -427,8 +465,8 @@ export default function POSPage() {
     setCart(cart.map(item => {
       if (item.product_id === productId) {
         const subtotal = item.quantity * item.unit_price;
-        const discountAmount = (parseFloat(discountPercent) || 0) / 100 * subtotal;
-        return { ...item, discount_percent: parseFloat(discountPercent) || 0, discount: discountAmount, total: subtotal - discountAmount };
+        const discountAmount = (parseFloat(discountPercent) || 0) / 100 * Math.abs(subtotal);
+        return { ...item, discount_percent: parseFloat(discountPercent) || 0, discount: discountAmount, total: subtotal - (item.quantity > 0 ? discountAmount : -discountAmount) };
       }
       return item;
     }));
@@ -448,12 +486,90 @@ export default function POSPage() {
     setDeliveryAddress('');
     setDeliveryCity('');
     setPaymentType('cash');
+    setSaleNote('');
+    setReturnMode(false);
     fetchSaleCode();
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
   const total = subtotal - discount + (deliveryEnabled ? deliveryFee : 0);
   const remaining = total - paidAmount;
+
+  // Handle cash operation (deposit/withdraw)
+  const handleCashOperation = async () => {
+    if (!cashOperation.amount || cashOperation.amount <= 0) {
+      toast.error(language === 'ar' ? 'يرجى إدخال مبلغ صحيح' : 'Veuillez entrer un montant valide');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      const endpoint = cashOperation.type === 'deposit' ? '/cash/deposit' : '/cash/withdraw';
+      await axios.post(`${API}${endpoint}`, {
+        amount: cashOperation.amount,
+        note: cashOperation.note,
+        box_id: 'cash'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      toast.success(language === 'ar' 
+        ? (cashOperation.type === 'deposit' ? 'تم الإيداع بنجاح' : 'تم السحب بنجاح')
+        : (cashOperation.type === 'deposit' ? 'Depot effectue' : 'Retrait effectue'));
+      
+      setShowCashDialog(false);
+      setCashOperation({ type: 'deposit', amount: 0, note: '' });
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Error');
+    }
+  };
+
+  // Handle task menu click
+  const handleTaskClick = (taskId) => {
+    setActiveTask(taskId);
+    
+    switch(taskId) {
+      case 'articles':
+        setShowProductsDialog(true);
+        break;
+      case 'families':
+        setSelectedFamily('all');
+        setShowProductsDialog(true);
+        break;
+      case 'customers':
+        setShowCustomersDialog(true);
+        break;
+      case 'customer-families':
+        setShowCustomersDialog(true);
+        break;
+      case 'note':
+        setShowNoteDialog(true);
+        break;
+      case 'return':
+        setReturnMode(!returnMode);
+        toast.info(language === 'ar' 
+          ? (returnMode ? 'تم إلغاء وضع الإرجاع' : 'تم تفعيل وضع الإرجاع')
+          : (returnMode ? 'Mode retour desactive' : 'Mode retour active'));
+        break;
+      case 'deposit':
+        setCashOperation({ type: 'deposit', amount: 0, note: '' });
+        setShowCashDialog(true);
+        break;
+      case 'withdraw':
+        setCashOperation({ type: 'withdraw', amount: 0, note: '' });
+        setShowCashDialog(true);
+        break;
+      case 'reports':
+        navigate('/reports');
+        break;
+      case 'history':
+        fetchSalesHistory();
+        setShowHistoryDialog(true);
+        break;
+      default:
+        break;
+    }
+  };
 
   const completeSale = async () => {
     if (!hasOpenSession) {
@@ -497,7 +613,7 @@ export default function POSPage() {
         paid_amount: paymentType === 'credit' ? 0 : paidAmount || total,
         payment_method: paymentMethod,
         payment_type: paymentType,
-        notes: '',
+        notes: saleNote,
         delivery: deliveryEnabled ? {
           enabled: true,
           wilaya_code: selectedWilaya,
@@ -519,20 +635,7 @@ export default function POSPage() {
       setLastSaleInvoice(response.data.invoice_number);
       
       if (receiptSettings?.auto_print) {
-        try {
-          const invoiceResponse = await axios.get(`${API}/sales/${response.data.id}/invoice-pdf`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const printWindow = window.open('', '_blank');
-          if (printWindow) {
-            printWindow.document.write(invoiceResponse.data);
-            printWindow.document.close();
-            printWindow.focus();
-            setTimeout(() => printWindow.print(), 500);
-          }
-        } catch (printError) {
-          console.error('Print error:', printError);
-        }
+        printThermalReceipt(response.data.id);
       } else if (receiptSettings?.show_print_dialog !== false) {
         setShowPrintDialog(true);
       }
@@ -545,6 +648,130 @@ export default function POSPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Thermal Printer Support - Universal ESC/POS compatible
+  const printThermalReceipt = async (saleId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/sales/${saleId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const sale = response.data;
+      
+      // Generate thermal receipt HTML
+      const receiptHtml = generateThermalReceiptHtml(sale);
+      
+      const printWindow = window.open('', '_blank', 'width=300,height=600');
+      if (printWindow) {
+        printWindow.document.write(receiptHtml);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 500);
+      }
+    } catch (error) {
+      console.error('Print error:', error);
+      toast.error(language === 'ar' ? 'خطأ في الطباعة' : 'Erreur d\'impression');
+    }
+  };
+
+  // Generate thermal receipt HTML (ESC/POS compatible)
+  const generateThermalReceiptHtml = (sale) => {
+    const storeName = receiptSettings?.store_name || 'NT Commerce';
+    const storeAddress = receiptSettings?.store_address || '';
+    const storePhone = receiptSettings?.store_phone || '';
+    
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Receipt</title>
+  <style>
+    @page { size: 80mm auto; margin: 0; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      width: 80mm;
+      padding: 5mm;
+      direction: ${isRTL ? 'rtl' : 'ltr'};
+    }
+    .center { text-align: center; }
+    .bold { font-weight: bold; }
+    .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+    .row { display: flex; justify-content: space-between; }
+    .items { margin: 10px 0; }
+    .item { margin: 3px 0; }
+    .total { font-size: 14px; font-weight: bold; }
+    .footer { margin-top: 15px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <div class="center bold" style="font-size: 16px;">${storeName}</div>
+  ${storeAddress ? `<div class="center">${storeAddress}</div>` : ''}
+  ${storePhone ? `<div class="center">${storePhone}</div>` : ''}
+  
+  <div class="line"></div>
+  
+  <div class="row">
+    <span>${language === 'ar' ? 'رقم الفاتورة:' : 'Facture:'}</span>
+    <span>${sale.invoice_number || sale.code}</span>
+  </div>
+  <div class="row">
+    <span>${language === 'ar' ? 'التاريخ:' : 'Date:'}</span>
+    <span>${new Date(sale.created_at).toLocaleString()}</span>
+  </div>
+  ${sale.customer_name ? `
+  <div class="row">
+    <span>${language === 'ar' ? 'الزبون:' : 'Client:'}</span>
+    <span>${sale.customer_name}</span>
+  </div>
+  ` : ''}
+  
+  <div class="line"></div>
+  
+  <div class="items">
+    ${(sale.items || []).map(item => `
+      <div class="item">
+        <div>${item.product_name}</div>
+        <div class="row">
+          <span>${item.quantity} x ${item.unit_price}</span>
+          <span>${item.total}</span>
+        </div>
+      </div>
+    `).join('')}
+  </div>
+  
+  <div class="line"></div>
+  
+  <div class="row">
+    <span>${language === 'ar' ? 'المجموع الفرعي:' : 'Sous-total:'}</span>
+    <span>${sale.subtotal}</span>
+  </div>
+  ${sale.discount > 0 ? `
+  <div class="row">
+    <span>${language === 'ar' ? 'الخصم:' : 'Remise:'}</span>
+    <span>-${sale.discount}</span>
+  </div>
+  ` : ''}
+  
+  <div class="line"></div>
+  
+  <div class="row total">
+    <span>${language === 'ar' ? 'الإجمالي:' : 'Total:'}</span>
+    <span>${sale.total} ${t.currency}</span>
+  </div>
+  
+  <div class="footer center">
+    <div>${language === 'ar' ? 'شكراً لزيارتكم' : 'Merci de votre visite'}</div>
+  </div>
+</body>
+</html>
+    `;
   };
 
   // Keyboard shortcuts
@@ -564,13 +791,13 @@ export default function POSPage() {
         const index = parseInt(e.key);
         const tasks = ['articles', 'families', 'customers', 'customer-families', 'note', 'return', 'deposit', 'withdraw', 'reports', 'history'];
         if (tasks[index]) {
-          setActiveTask(tasks[index]);
+          handleTaskClick(tasks[index]);
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [cart, hasOpenSession]);
+  }, [cart, hasOpenSession, returnMode]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('ar-DZ', { minimumFractionDigits: 2 }).format(amount || 0);
@@ -578,16 +805,16 @@ export default function POSPage() {
 
   // Left sidebar menu items
   const taskMenuItems = [
-    { id: 'articles', icon: List, label: language === 'ar' ? 'قائمة المنتجات' : 'Liste des articles', shortcut: 'Ctrl+0' },
-    { id: 'families', icon: FolderTree, label: language === 'ar' ? 'المنتجات بالعائلة' : 'Articles par famille', shortcut: 'Ctrl+1' },
-    { id: 'customers', icon: Users, label: language === 'ar' ? 'قائمة الزبائن' : 'Liste des clients', shortcut: 'Ctrl+2' },
-    { id: 'customer-families', icon: FolderTree, label: language === 'ar' ? 'الزبائن بالعائلة' : 'Clients par famille', shortcut: 'Ctrl+3' },
-    { id: 'note', icon: FileText, label: language === 'ar' ? 'إدراج ملاحظة' : 'Inserer une note libre', shortcut: 'Ctrl+4' },
-    { id: 'return', icon: Undo2, label: language === 'ar' ? 'وضع الإرجاع' : 'Mode de retour', shortcut: 'Ctrl+5' },
-    { id: 'deposit', icon: ArrowDownToLine, label: language === 'ar' ? 'إيداع - الصندوق' : 'Depot - Caisse', shortcut: 'Ctrl+6' },
-    { id: 'withdraw', icon: ArrowUpFromLine, label: language === 'ar' ? 'سحب - الصندوق' : 'Retrait - Caisse', shortcut: 'Ctrl+7' },
-    { id: 'reports', icon: BarChart3, label: language === 'ar' ? 'التقارير' : 'Rapports', shortcut: 'Ctrl+8' },
-    { id: 'history', icon: ScrollText, label: language === 'ar' ? 'السجل' : 'Historiques', shortcut: 'Ctrl+9' },
+    { id: 'articles', icon: List, label: language === 'ar' ? 'قائمة المنتجات' : 'Liste articles', shortcut: '0' },
+    { id: 'families', icon: FolderTree, label: language === 'ar' ? 'بالعائلة' : 'Par famille', shortcut: '1' },
+    { id: 'customers', icon: Users, label: language === 'ar' ? 'الزبائن' : 'Clients', shortcut: '2' },
+    { id: 'customer-families', icon: FolderTree, label: language === 'ar' ? 'عائلات الزبائن' : 'Fam. clients', shortcut: '3' },
+    { id: 'note', icon: FileText, label: language === 'ar' ? 'ملاحظة' : 'Note', shortcut: '4' },
+    { id: 'return', icon: Undo2, label: language === 'ar' ? 'إرجاع' : 'Retour', shortcut: '5' },
+    { id: 'deposit', icon: ArrowDownToLine, label: language === 'ar' ? 'إيداع' : 'Depot', shortcut: '6' },
+    { id: 'withdraw', icon: ArrowUpFromLine, label: language === 'ar' ? 'سحب' : 'Retrait', shortcut: '7' },
+    { id: 'reports', icon: BarChart3, label: language === 'ar' ? 'تقارير' : 'Rapports', shortcut: '8' },
+    { id: 'history', icon: ScrollText, label: language === 'ar' ? 'السجل' : 'Historique', shortcut: '9' },
   ];
 
   // Handle shortcut click
@@ -620,32 +847,35 @@ export default function POSPage() {
 
   // Get shortcut product name
   const getShortcutProductName = (shortcut) => {
-    if (!shortcut.productId) return language === 'ar' ? 'فارغ' : 'Vide';
+    if (!shortcut.productId) return '+';
     const product = products.find(p => p.id === shortcut.productId);
     if (!product) return '---';
-    return language === 'ar' ? (product.name_ar || product.name_en) : (product.name_en || product.name_ar);
+    const name = language === 'ar' ? (product.name_ar || product.name_en) : (product.name_en || product.name_ar);
+    return name?.substring(0, 8) || '---';
   };
 
   return (
     <Layout>
-      <div className="space-y-4" data-testid="pos-page">
+      <div className="h-[calc(100vh-120px)] flex flex-col" data-testid="pos-page">
         {/* Header with title and total */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold">
               {language === 'ar' ? 'نقطة البيع' : 'Point de Vente'} - NT Commerce
             </h1>
-            <p className="text-muted-foreground">
-              {language === 'ar' ? 'إدارة المبيعات والفواتير' : 'Gestion des ventes et factures'}
-            </p>
+            {returnMode && (
+              <Badge variant="destructive" className="animate-pulse">
+                {language === 'ar' ? 'وضع الإرجاع' : 'Mode Retour'}
+              </Badge>
+            )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {saleCode && (
-              <Badge variant="outline" className="font-mono text-lg px-4 py-2">
+              <Badge variant="outline" className="font-mono text-sm px-3 py-1">
                 {saleCode}
               </Badge>
             )}
-            <div className="bg-primary text-primary-foreground text-2xl font-bold px-6 py-3 rounded-xl shadow-lg">
+            <div className="bg-primary text-primary-foreground text-xl font-bold px-4 py-2 rounded-lg shadow">
               {formatCurrency(total)} {t.currency}
             </div>
           </div>
@@ -653,18 +883,18 @@ export default function POSPage() {
 
         {/* Session Warning */}
         {!checkingSession && !hasOpenSession && (
-          <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
-            <CardContent className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-6 w-6 text-amber-600" />
-                <span className="font-medium text-amber-800 dark:text-amber-200">
-                  {language === 'ar' ? 'لا توجد حصة مفتوحة - يجب فتح حصة جديدة قبل البيع' : 'Aucune session ouverte - Ouvrez une session'}
+          <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20 mb-2">
+            <CardContent className="flex items-center justify-between p-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-amber-600" />
+                <span className="font-medium text-amber-800 dark:text-amber-200 text-sm">
+                  {language === 'ar' ? 'لا توجد حصة مفتوحة' : 'Aucune session ouverte'}
                 </span>
               </div>
               <Link to="/daily-sessions">
-                <Button variant="outline" className="gap-2 border-amber-500 text-amber-700 hover:bg-amber-100">
+                <Button size="sm" variant="outline" className="gap-1 border-amber-500 text-amber-700">
                   <Clock className="h-4 w-4" />
-                  {language === 'ar' ? 'فتح حصة' : 'Ouvrir session'}
+                  {language === 'ar' ? 'فتح حصة' : 'Ouvrir'}
                 </Button>
               </Link>
             </CardContent>
@@ -672,47 +902,59 @@ export default function POSPage() {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-12 gap-4">
-          {/* Left Sidebar - Task Menu */}
-          <div className={`${leftSidebarCollapsed ? 'col-span-1' : 'col-span-2'} transition-all duration-300`}>
-            <Card className="h-full">
-              <CardHeader className="p-3 pb-2">
-                <div className="flex items-center justify-between">
-                  {!leftSidebarCollapsed && (
-                    <CardTitle className="text-sm">
-                      {language === 'ar' ? 'مهام البيع' : 'Taches de vente'}
-                    </CardTitle>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
-                    className="h-7 w-7"
-                  >
-                    {leftSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-                  </Button>
-                </div>
+        <div className="flex-1 grid grid-cols-12 gap-2 min-h-0">
+          {/* Left Sidebar - Search, Add Product & Task Menu */}
+          <div className="col-span-2 flex flex-col gap-2">
+            {/* Search & Add Product */}
+            <Card className="p-2">
+              <div className="relative mb-2">
+                <Search className="absolute top-1/2 -translate-y-1/2 start-2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  ref={searchInputRef}
+                  placeholder={language === 'ar' ? 'بحث...' : 'Rechercher...'}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="ps-8 h-9 text-sm"
+                  data-testid="pos-search-input"
+                />
+              </div>
+              <Button 
+                size="sm" 
+                className="w-full gap-1"
+                onClick={() => setShowProductsDialog(true)}
+                data-testid="add-product-btn"
+              >
+                <Plus className="h-4 w-4" />
+                {language === 'ar' ? 'إضافة منتج' : 'Ajouter'}
+              </Button>
+            </Card>
+
+            {/* Task Menu */}
+            <Card className="flex-1 overflow-hidden">
+              <CardHeader className="p-2 pb-1">
+                <CardTitle className="text-xs font-medium text-muted-foreground">
+                  {language === 'ar' ? 'مهام البيع' : 'Taches'}
+                </CardTitle>
               </CardHeader>
-              <CardContent className="p-2 pt-0">
-                <div className="space-y-1">
+              <CardContent className="p-1 pt-0 overflow-y-auto" style={{ maxHeight: 'calc(100% - 40px)' }}>
+                <div className="space-y-0.5">
                   {taskMenuItems.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => setActiveTask(item.id)}
-                      className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
+                      onClick={() => handleTaskClick(item.id)}
+                      className={`w-full flex items-center gap-1.5 px-2 py-1.5 rounded text-xs transition-colors ${
                         activeTask === item.id 
                           ? 'bg-primary text-primary-foreground' 
-                          : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                          : item.id === 'return' && returnMode
+                            ? 'bg-destructive text-destructive-foreground'
+                            : 'hover:bg-muted text-muted-foreground hover:text-foreground'
                       }`}
-                      title={leftSidebarCollapsed ? item.label : undefined}
+                      title={item.label}
+                      data-testid={`task-${item.id}`}
                     >
-                      <item.icon className="h-4 w-4 flex-shrink-0" />
-                      {!leftSidebarCollapsed && (
-                        <>
-                          <span className="flex-1 text-start truncate">{item.label}</span>
-                          <span className="text-xs opacity-60">{item.shortcut}</span>
-                        </>
-                      )}
+                      <item.icon className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="flex-1 text-start truncate">{item.label}</span>
+                      <span className="text-[10px] opacity-60">{item.shortcut}</span>
                     </button>
                   ))}
                 </div>
@@ -721,133 +963,129 @@ export default function POSPage() {
           </div>
 
           {/* Main Area - Products Table */}
-          <div className={`${leftSidebarCollapsed ? 'col-span-9' : 'col-span-8'} transition-all duration-300`}>
-            <Card className="h-full flex flex-col">
+          <div className="col-span-8 flex flex-col min-h-0">
+            <Card className="flex-1 flex flex-col overflow-hidden">
               {/* Customer & Warehouse Selection */}
-              <CardHeader className="p-4 pb-3 border-b">
-                <div className="flex flex-wrap items-center gap-3">
-                  <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
-                    <SelectTrigger className="w-48" data-testid="customer-select">
-                      <User className="h-4 w-4 me-2 opacity-50" />
-                      <SelectValue placeholder={t.selectCustomer} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
-                      {customers.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <div className="p-2 border-b flex flex-wrap items-center gap-2">
+                <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
+                  <SelectTrigger className="w-40 h-8 text-sm" data-testid="customer-select">
+                    <User className="h-3.5 w-3.5 me-1.5 opacity-50" />
+                    <SelectValue placeholder={t.selectCustomer} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
+                    {customers.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowNewCustomerDialog(true)}
-                    className="gap-1"
-                    data-testid="add-customer-btn"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    {language === 'ar' ? 'زبون جديد' : 'Nouveau client'}
-                  </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNewCustomerDialog(true)}
+                  className="h-8 gap-1 text-xs"
+                  data-testid="add-customer-btn"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                </Button>
 
-                  {warehouses.length > 0 && (
-                    <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
-                      <SelectTrigger className="w-40" data-testid="warehouse-select">
-                        <Warehouse className="h-4 w-4 me-2 opacity-50" />
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {warehouses.map(w => (
-                          <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-
-                  <Select value={priceType} onValueChange={setPriceType}>
-                    <SelectTrigger className="w-32">
+                {warehouses.length > 0 && (
+                  <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
+                    <SelectTrigger className="w-32 h-8 text-sm" data-testid="warehouse-select">
+                      <Warehouse className="h-3.5 w-3.5 me-1.5 opacity-50" />
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="retail">{t.retailPrice}</SelectItem>
-                      <SelectItem value="wholesale">{t.wholesalePrice}</SelectItem>
+                      {warehouses.map(w => (
+                        <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                )}
 
-                  {selectedCustomer && customerDebt > 0 && (
-                    <Badge variant="destructive" className="px-3 py-1">
-                      {language === 'ar' ? 'دين:' : 'Dette:'} {formatCurrency(customerDebt)} {t.currency}
-                    </Badge>
-                  )}
-                </div>
-              </CardHeader>
+                <Select value={priceType} onValueChange={setPriceType}>
+                  <SelectTrigger className="w-24 h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="retail">{language === 'ar' ? 'تجزئة' : 'Detail'}</SelectItem>
+                    <SelectItem value="wholesale">{language === 'ar' ? 'جملة' : 'Gros'}</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {selectedCustomer && customerDebt > 0 && (
+                  <Badge variant="destructive" className="text-xs">
+                    {language === 'ar' ? 'دين:' : 'Dette:'} {formatCurrency(customerDebt)}
+                  </Badge>
+                )}
+              </div>
 
               {/* Products Table */}
-              <CardContent className="flex-1 p-0 overflow-auto">
+              <div className="flex-1 overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50">
-                      <TableHead className="w-24">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
-                      <TableHead>{language === 'ar' ? 'اسم المنتج' : 'Nom d\'article'}</TableHead>
-                      <TableHead className="w-24 text-center">{language === 'ar' ? 'الكمية' : 'Qte'}</TableHead>
-                      <TableHead className="w-28 text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
-                      <TableHead className="w-20 text-center">{language === 'ar' ? 'خصم %' : 'R. %'}</TableHead>
-                      <TableHead className="w-28 text-center">{language === 'ar' ? 'المبلغ' : 'Montant'}</TableHead>
-                      <TableHead className="w-12"></TableHead>
+                      <TableHead className="w-20 text-xs">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
+                      <TableHead className="text-xs">{language === 'ar' ? 'المنتج' : 'Article'}</TableHead>
+                      <TableHead className="w-24 text-center text-xs">{language === 'ar' ? 'الكمية' : 'Qte'}</TableHead>
+                      <TableHead className="w-24 text-center text-xs">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                      <TableHead className="w-16 text-center text-xs">%</TableHead>
+                      <TableHead className="w-24 text-center text-xs">{language === 'ar' ? 'المبلغ' : 'Total'}</TableHead>
+                      <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {cart.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
-                          <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                          <p>{language === 'ar' ? 'اضف منتجات من الشريط الجانبي او ابحث' : 'Ajoutez des articles depuis la barre laterale'}</p>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                          <p className="text-sm">{language === 'ar' ? 'أضف منتجات' : 'Ajoutez des articles'}</p>
                         </TableCell>
                       </TableRow>
                     ) : (
                       cart.map((item, index) => (
-                        <TableRow key={item.product_id} className={index % 2 === 0 ? 'bg-muted/20' : ''}>
-                          <TableCell className="font-mono text-sm">{item.article_code || item.barcode || '---'}</TableCell>
-                          <TableCell className="font-medium">{item.product_name}</TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateCartItemQuantity(item.product_id, item.quantity - 1)}>
+                        <TableRow key={item.product_id} className={`${index % 2 === 0 ? 'bg-muted/20' : ''} ${item.is_return ? 'bg-red-50 dark:bg-red-950/20' : ''}`}>
+                          <TableCell className="font-mono text-xs py-1">{item.article_code || item.barcode || '---'}</TableCell>
+                          <TableCell className="font-medium text-sm py-1">{item.product_name}</TableCell>
+                          <TableCell className="text-center py-1">
+                            <div className="flex items-center justify-center gap-0.5">
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartItemQuantity(item.product_id, item.quantity - 1)}>
                                 <Minus className="h-3 w-3" />
                               </Button>
                               <Input
                                 type="number"
-                                min="1"
                                 value={item.quantity}
-                                onChange={(e) => updateCartItemQuantity(item.product_id, parseInt(e.target.value) || 1)}
-                                className="w-14 h-8 text-center"
+                                onChange={(e) => updateCartItemQuantity(item.product_id, parseInt(e.target.value) || 0)}
+                                className="w-12 h-6 text-center text-sm p-0"
                               />
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateCartItemQuantity(item.product_id, item.quantity + 1)}>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartItemQuantity(item.product_id, item.quantity + 1)}>
                                 <Plus className="h-3 w-3" />
                               </Button>
                             </div>
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center py-1">
                             <Input
                               type="number"
                               value={item.unit_price}
                               onChange={(e) => updateCartItemPrice(item.product_id, e.target.value)}
-                              className="w-24 h-8 text-center"
+                              className="w-20 h-6 text-center text-sm p-0"
                             />
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center py-1">
                             <Input
                               type="number"
                               min="0"
                               max="100"
                               value={item.discount_percent || ''}
                               onChange={(e) => updateCartItemDiscount(item.product_id, e.target.value)}
-                              className="w-16 h-8 text-center"
+                              className="w-12 h-6 text-center text-sm p-0"
                             />
                           </TableCell>
-                          <TableCell className="text-center font-semibold">{formatCurrency(item.total)}</TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => removeFromCart(item.product_id)}>
-                              <Trash2 className="h-4 w-4" />
+                          <TableCell className="text-center font-semibold text-sm py-1">{formatCurrency(item.total)}</TableCell>
+                          <TableCell className="py-1">
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={() => removeFromCart(item.product_id)}>
+                              <Trash2 className="h-3.5 w-3.5" />
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -855,32 +1093,29 @@ export default function POSPage() {
                     )}
                   </TableBody>
                 </Table>
-              </CardContent>
+              </div>
 
               {/* Totals & Action Buttons */}
-              <div className="border-t p-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="border-t p-2">
+                <div className="flex items-center justify-between gap-4">
                   {/* Totals */}
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4">
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground">{language === 'ar' ? 'المجموع الفرعي' : 'Sous total'}</p>
-                      <p className="text-lg font-bold">{formatCurrency(subtotal)} {t.currency}</p>
+                      <p className="text-[10px] text-muted-foreground">{language === 'ar' ? 'الفرعي' : 'Sous-total'}</p>
+                      <p className="text-sm font-bold">{formatCurrency(subtotal)}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground">{language === 'ar' ? 'الخصم' : 'Remise'}</p>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          value={discount || ''}
-                          onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                          className="w-20 h-8 text-center"
-                        />
-                        <span className="font-semibold">{formatCurrency(discount)} {t.currency}</span>
-                      </div>
+                      <p className="text-[10px] text-muted-foreground">{language === 'ar' ? 'خصم' : 'Remise'}</p>
+                      <Input
+                        type="number"
+                        value={discount || ''}
+                        onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                        className="w-16 h-6 text-center text-sm"
+                      />
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-muted-foreground">{language === 'ar' ? 'الإجمالي' : 'Total'}</p>
-                      <p className="text-2xl font-bold text-primary">{formatCurrency(total)} {t.currency}</p>
+                      <p className="text-[10px] text-muted-foreground">{language === 'ar' ? 'الإجمالي' : 'Total'}</p>
+                      <p className="text-lg font-bold text-primary">{formatCurrency(total)}</p>
                     </div>
                   </div>
 
@@ -889,59 +1124,41 @@ export default function POSPage() {
                     <Button
                       onClick={completeSale}
                       disabled={loading || cart.length === 0 || !hasOpenSession}
-                      className="h-11 px-6 gap-2"
+                      className="h-9 px-4 gap-1"
                       data-testid="vente-btn"
                     >
-                      <Check className="h-5 w-5" />
-                      {language === 'ar' ? 'تاكيد البيع' : 'Valider'}
-                      <Badge variant="secondary" className="text-xs ms-1">F10</Badge>
+                      <Check className="h-4 w-4" />
+                      {language === 'ar' ? 'تأكيد' : 'Valider'}
+                      <Badge variant="secondary" className="text-[10px] ms-1">F10</Badge>
                     </Button>
                     <Button 
                       variant="outline"
                       onClick={clearCart}
-                      className="h-11 px-4 gap-2"
+                      className="h-9 px-3 gap-1"
                       data-testid="annuler-btn"
                     >
                       <X className="h-4 w-4" />
-                      {language === 'ar' ? 'الغاء' : 'Annuler'}
+                      {language === 'ar' ? 'إلغاء' : 'Annuler'}
                     </Button>
-                  </div>
-                </div>
-
-                {/* Bottom Info Bar */}
-                <div className="flex items-center justify-between mt-4 pt-3 border-t text-xs text-muted-foreground">
-                  <div className="flex items-center gap-4">
-                    <span>{language === 'ar' ? 'الصندوق:' : 'Caisse:'} 1</span>
-                    <span>{language === 'ar' ? 'البائع:' : 'Caissier:'} {currentCashier}</span>
-                  </div>
-                  <div>
-                    {new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
                   </div>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* Right Sidebar - Product Shortcuts */}
+          {/* Right Sidebar - Product Shortcuts (Compact) */}
           <div className="col-span-2">
             <Card className="h-full">
-              <CardHeader className="p-3 pb-2">
-                <CardTitle className="text-sm text-center">
-                  {language === 'ar' ? 'اختصارات المنتجات' : 'Raccourcis'}
+              <CardHeader className="p-2 pb-1">
+                <CardTitle className="text-xs text-center text-muted-foreground">
+                  {language === 'ar' ? 'اختصارات' : 'Raccourcis'}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-2 pt-0">
+              <CardContent className="p-1.5 pt-0">
                 <div className="grid grid-cols-2 gap-1">
-                  {productShortcuts.slice(0, 20).map((shortcut, index) => {
+                  {productShortcuts.slice(0, 10).map((shortcut, index) => {
                     const productName = getShortcutProductName(shortcut);
-                    const bgColor = shortcut.productId ? shortcut.color : 'hsl(var(--muted))';
+                    const bgColor = shortcut.productId ? shortcut.color : undefined;
                     
                     return (
                       <button
@@ -954,15 +1171,16 @@ export default function POSPage() {
                           setShortcutProductId(shortcut.productId || '');
                           setShowShortcutDialog(true);
                         }}
-                        style={{ backgroundColor: shortcut.productId ? bgColor : undefined }}
-                        className={`py-3 px-1 rounded-lg text-xs font-medium text-center leading-tight transition-all min-h-[56px] flex items-center justify-center ${
+                        style={{ backgroundColor: bgColor }}
+                        className={`py-2 px-1 rounded text-[10px] font-medium text-center leading-tight transition-all h-10 flex items-center justify-center ${
                           shortcut.productId 
                             ? 'text-white hover:opacity-90 shadow-sm' 
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80 border border-dashed'
                         }`}
                         title={productName}
+                        data-testid={`shortcut-${index}`}
                       >
-                        <span className="line-clamp-3">{productName}</span>
+                        <span className="line-clamp-2">{productName}</span>
                       </button>
                     );
                   })}
@@ -971,6 +1189,203 @@ export default function POSPage() {
             </Card>
           </div>
         </div>
+
+        {/* Products Dialog */}
+        <Dialog open={showProductsDialog} onOpenChange={setShowProductsDialog}>
+          <DialogContent className="max-w-3xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>{language === 'ar' ? 'اختر منتج' : 'Choisir un produit'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute top-1/2 -translate-y-1/2 start-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder={language === 'ar' ? 'بحث بالاسم أو الباركود...' : 'Rechercher par nom ou code-barres...'}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="ps-9"
+                  />
+                </div>
+                <Select value={selectedFamily} onValueChange={setSelectedFamily}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder={language === 'ar' ? 'العائلة' : 'Famille'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'ar' ? 'الكل' : 'Tous'}</SelectItem>
+                    {families.map(f => (
+                      <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="max-h-96 overflow-y-auto border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{language === 'ar' ? 'المنتج' : 'Produit'}</TableHead>
+                      <TableHead className="w-24 text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                      <TableHead className="w-20 text-center">{language === 'ar' ? 'المخزون' : 'Stock'}</TableHead>
+                      <TableHead className="w-20"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProducts.slice(0, 50).map(product => (
+                      <TableRow key={product.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { addToCart(product); setShowProductsDialog(false); }}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{language === 'ar' ? product.name_ar : product.name_en}</p>
+                            <p className="text-xs text-muted-foreground">{product.barcode || product.article_code}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">{formatCurrency(priceType === 'wholesale' ? product.wholesale_price : product.retail_price)}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={product.quantity > 10 ? 'default' : product.quantity > 0 ? 'secondary' : 'destructive'}>
+                            {product.quantity}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button size="sm" variant="ghost" className="h-8">
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Customers Dialog */}
+        <Dialog open={showCustomersDialog} onOpenChange={setShowCustomersDialog}>
+          <DialogContent className="max-w-md max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>{language === 'ar' ? 'اختر زبون' : 'Choisir un client'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="max-h-80 overflow-y-auto border rounded-lg">
+                {customers.map(customer => (
+                  <div 
+                    key={customer.id} 
+                    className="p-3 border-b cursor-pointer hover:bg-muted/50"
+                    onClick={() => { setSelectedCustomer(customer.id); setShowCustomersDialog(false); }}
+                  >
+                    <p className="font-medium">{customer.name}</p>
+                    <p className="text-sm text-muted-foreground">{customer.phone}</p>
+                  </div>
+                ))}
+              </div>
+              <Button variant="outline" className="w-full gap-2" onClick={() => { setShowCustomersDialog(false); setShowNewCustomerDialog(true); }}>
+                <UserPlus className="h-4 w-4" />
+                {language === 'ar' ? 'إضافة زبون جديد' : 'Nouveau client'}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Note Dialog */}
+        <Dialog open={showNoteDialog} onOpenChange={setShowNoteDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{language === 'ar' ? 'إضافة ملاحظة' : 'Ajouter une note'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Textarea
+                value={saleNote}
+                onChange={(e) => setSaleNote(e.target.value)}
+                placeholder={language === 'ar' ? 'اكتب ملاحظة للفاتورة...' : 'Ecrivez une note pour la facture...'}
+                rows={4}
+              />
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowNoteDialog(false)} className="flex-1">
+                  {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                </Button>
+                <Button onClick={() => { toast.success(language === 'ar' ? 'تم حفظ الملاحظة' : 'Note enregistree'); setShowNoteDialog(false); }} className="flex-1">
+                  {language === 'ar' ? 'حفظ' : 'Enregistrer'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Cash Operation Dialog */}
+        <Dialog open={showCashDialog} onOpenChange={setShowCashDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {cashOperation.type === 'deposit' 
+                  ? (language === 'ar' ? 'إيداع في الصندوق' : 'Depot en caisse')
+                  : (language === 'ar' ? 'سحب من الصندوق' : 'Retrait de caisse')}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>{language === 'ar' ? 'المبلغ' : 'Montant'}</Label>
+                <Input
+                  type="number"
+                  value={cashOperation.amount || ''}
+                  onChange={(e) => setCashOperation(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <Label>{language === 'ar' ? 'ملاحظة' : 'Note'}</Label>
+                <Input
+                  value={cashOperation.note}
+                  onChange={(e) => setCashOperation(prev => ({ ...prev, note: e.target.value }))}
+                  placeholder={language === 'ar' ? 'سبب العملية...' : 'Raison de l\'operation...'}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowCashDialog(false)} className="flex-1">
+                  {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                </Button>
+                <Button onClick={handleCashOperation} className="flex-1">
+                  {language === 'ar' ? 'تأكيد' : 'Confirmer'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Sales History Dialog */}
+        <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+          <DialogContent className="max-w-3xl max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>{language === 'ar' ? 'سجل المبيعات' : 'Historique des ventes'}</DialogTitle>
+            </DialogHeader>
+            <div className="max-h-96 overflow-y-auto border rounded-lg">
+              {historyLoading ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  {language === 'ar' ? 'جاري التحميل...' : 'Chargement...'}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{language === 'ar' ? 'الرقم' : 'N°'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'التاريخ' : 'Date'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'الزبون' : 'Client'}</TableHead>
+                      <TableHead className="text-center">{language === 'ar' ? 'المبلغ' : 'Montant'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {salesHistory.map(sale => (
+                      <TableRow key={sale.id}>
+                        <TableCell className="font-mono">{sale.invoice_number || sale.code}</TableCell>
+                        <TableCell>{new Date(sale.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>{sale.customer_name || (language === 'ar' ? 'زبون عابر' : 'Client passant')}</TableCell>
+                        <TableCell className="text-center font-semibold">{formatCurrency(sale.total)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Shortcut Edit Dialog */}
         <Dialog open={showShortcutDialog} onOpenChange={setShowShortcutDialog}>
@@ -1117,23 +1532,9 @@ export default function POSPage() {
                   {language === 'ar' ? 'اغلاق' : 'Fermer'}
                 </Button>
                 <Button
-                  onClick={async () => {
+                  onClick={() => {
                     if (lastSaleId) {
-                      const token = localStorage.getItem('token');
-                      try {
-                        const invoiceResponse = await axios.get(`${API}/sales/${lastSaleId}/invoice-pdf`, {
-                          headers: { Authorization: `Bearer ${token}` }
-                        });
-                        const printWindow = window.open('', '_blank');
-                        if (printWindow) {
-                          printWindow.document.write(invoiceResponse.data);
-                          printWindow.document.close();
-                          printWindow.focus();
-                          setTimeout(() => printWindow.print(), 500);
-                        }
-                      } catch (error) {
-                        toast.error('Error printing');
-                      }
+                      printThermalReceipt(lastSaleId);
                     }
                     setShowPrintDialog(false);
                   }}
