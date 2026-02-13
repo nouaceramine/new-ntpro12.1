@@ -124,10 +124,13 @@ export default function WarehousesPage() {
     }
 
     try {
-      await axios.post(`${API}/warehouses`, newWarehouse);
+      const token = localStorage.getItem('token');
+      await axios.post(`${API}/warehouses`, newWarehouse, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       toast.success(language === 'ar' ? 'تم إضافة المخزن' : 'Entrepôt ajouté');
       setShowAddWarehouse(false);
-      setNewWarehouse({ name: '', address: '', is_main: false });
+      setNewWarehouse({ name: '', address: '', phone: '', manager: '', notes: '', is_main: false });
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.detail || t.somethingWentWrong);
