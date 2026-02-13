@@ -6,10 +6,8 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
-import { Switch } from '../components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { playSuccessBeep, playErrorBeep } from '../utils/beep';
-import { UnifiedSearch } from '../components/UnifiedSearch';
 import {
   Select,
   SelectContent,
@@ -38,50 +36,30 @@ import {
   Search, 
   Plus, 
   Minus, 
-  CreditCard,
-  Banknote,
-  Wallet,
   User,
-  Truck,
   AlertCircle,
   Clock,
   Package,
   X,
   Check,
-  RotateCcw,
-  Ban,
-  Bell,
-  Users,
-  ChevronDown,
-  ChevronUp,
-  PlusCircle,
-  Save,
-  AlertTriangle,
-  DollarSign,
-  Phone,
+  UserPlus,
   Warehouse,
   Printer,
-  History,
-  Calendar,
-  Eye,
-  FileText,
-  Filter,
-  Calculator as CalcIcon,
   List,
   FolderTree,
-  UserPlus,
+  Users,
+  FileText,
   Undo2,
   ArrowDownToLine,
   ArrowUpFromLine,
   BarChart3,
   ScrollText,
-  Settings,
   ChevronLeft,
   ChevronRight,
-  Menu as MenuIcon
+  DollarSign,
+  Trash2
 } from 'lucide-react';
 import { Calculator } from '../components/Calculator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -133,37 +111,20 @@ export default function POSPage() {
   const [deliveryFee, setDeliveryFee] = useState(0);
   
   // Dialogs
-  const [showDebtDialog, setShowDebtDialog] = useState(false);
-  const [debtPaymentAmount, setDebtPaymentAmount] = useState(0);
-  const [showDeliveryDialog, setShowDeliveryDialog] = useState(false);
   const [showNewCustomerDialog, setShowNewCustomerDialog] = useState(false);
   const [newCustomerData, setNewCustomerData] = useState({ name: '', phone: '', email: '', address: '', family_id: '' });
   const [savingCustomer, setSavingCustomer] = useState(false);
-  const [showNewFamilyInput, setShowNewFamilyInput] = useState(false);
-  const [newFamilyName, setNewFamilyName] = useState('');
   
   // Blacklist state
   const [blacklist, setBlacklist] = useState([]);
   const [selectedCustomerBlacklisted, setSelectedCustomerBlacklisted] = useState(false);
   const [blacklistReason, setBlacklistReason] = useState('');
-  
-  // Payment Dialog state
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [cashAmount, setCashAmount] = useState(0);
-  const [bankAmount, setBankAmount] = useState(0);
-  const [creditAmount, setCreditAmount] = useState(0);
 
   // Print Receipt Dialog
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const [lastSaleId, setLastSaleId] = useState(null);
   const [lastSaleInvoice, setLastSaleInvoice] = useState(null);
   const [receiptSettings, setReceiptSettings] = useState(null);
-
-  // Previous Sales Dialog
-  const [showPreviousSalesDialog, setShowPreviousSalesDialog] = useState(false);
-  const [previousSales, setPreviousSales] = useState([]);
-  const [salesLoading, setSalesLoading] = useState(false);
-  const [salesDateFilter, setSalesDateFilter] = useState('today');
   
   // Calculator
   const [showCalculator, setShowCalculator] = useState(false);
@@ -385,7 +346,7 @@ export default function POSPage() {
       if (willBeNegative) {
         toast.warning(language === 'ar' 
           ? `تنبيه: المخزون سيصبح سالب (${product.quantity - newQty})` 
-          : `Attention: Stock sera négatif (${product.quantity - newQty})`);
+          : `Attention: Stock sera negatif (${product.quantity - newQty})`);
       }
       
       setCart(cart.map(item => 
@@ -397,7 +358,7 @@ export default function POSPage() {
       if (product.quantity <= 0) {
         toast.warning(language === 'ar' 
           ? 'تنبيه: هذا المنتج غير متوفر - سيتم حساب المخزون بالسالب' 
-          : 'Attention: Produit non disponible - stock sera négatif');
+          : 'Attention: Produit non disponible - stock sera negatif');
       }
       
       setCart([...cart, {
@@ -437,7 +398,7 @@ export default function POSPage() {
     if (product && newQty > product.quantity) {
       toast.warning(language === 'ar' 
         ? `تنبيه: المخزون سيصبح سالب` 
-        : `Attention: Stock sera négatif`);
+        : `Attention: Stock sera negatif`);
     }
     
     setCart(cart.map(item => {
@@ -508,7 +469,7 @@ export default function POSPage() {
     }
 
     if (paymentType !== 'cash' && !selectedCustomer) {
-      toast.error(language === 'ar' ? 'يجب اختيار زبون للبيع بالدين' : 'Sélectionnez un client pour le crédit');
+      toast.error(language === 'ar' ? 'يجب اختيار زبون للبيع بالدين' : 'Selectionnez un client pour le credit');
       return;
     }
 
@@ -552,7 +513,7 @@ export default function POSPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      toast.success(language === 'ar' ? 'تمت عملية البيع بنجاح' : 'Vente effectuée avec succès');
+      toast.success(language === 'ar' ? 'تمت عملية البيع بنجاح' : 'Vente effectuee avec succes');
       
       setLastSaleId(response.data.id);
       setLastSaleInvoice(response.data.invoice_number);
@@ -580,7 +541,7 @@ export default function POSPage() {
       fetchProducts();
     } catch (error) {
       console.error('Sale error:', error);
-      toast.error(error.response?.data?.detail || (language === 'ar' ? 'حدث خطأ أثناء البيع' : 'Erreur lors de la vente'));
+      toast.error(error.response?.data?.detail || (language === 'ar' ? 'حدث خطا اثناء البيع' : 'Erreur lors de la vente'));
     } finally {
       setLoading(false);
     }
@@ -621,9 +582,9 @@ export default function POSPage() {
     { id: 'families', icon: FolderTree, label: language === 'ar' ? 'المنتجات بالعائلة' : 'Articles par famille', shortcut: 'Ctrl+1' },
     { id: 'customers', icon: Users, label: language === 'ar' ? 'قائمة الزبائن' : 'Liste des clients', shortcut: 'Ctrl+2' },
     { id: 'customer-families', icon: FolderTree, label: language === 'ar' ? 'الزبائن بالعائلة' : 'Clients par famille', shortcut: 'Ctrl+3' },
-    { id: 'note', icon: FileText, label: language === 'ar' ? 'إدراج ملاحظة' : 'Insérer une note libre', shortcut: 'Ctrl+4' },
+    { id: 'note', icon: FileText, label: language === 'ar' ? 'إدراج ملاحظة' : 'Inserer une note libre', shortcut: 'Ctrl+4' },
     { id: 'return', icon: Undo2, label: language === 'ar' ? 'وضع الإرجاع' : 'Mode de retour', shortcut: 'Ctrl+5' },
-    { id: 'deposit', icon: ArrowDownToLine, label: language === 'ar' ? 'إيداع - الصندوق' : 'Dépôt - Caisse', shortcut: 'Ctrl+6' },
+    { id: 'deposit', icon: ArrowDownToLine, label: language === 'ar' ? 'إيداع - الصندوق' : 'Depot - Caisse', shortcut: 'Ctrl+6' },
     { id: 'withdraw', icon: ArrowUpFromLine, label: language === 'ar' ? 'سحب - الصندوق' : 'Retrait - Caisse', shortcut: 'Ctrl+7' },
     { id: 'reports', icon: BarChart3, label: language === 'ar' ? 'التقارير' : 'Rapports', shortcut: 'Ctrl+8' },
     { id: 'history', icon: ScrollText, label: language === 'ar' ? 'السجل' : 'Historiques', shortcut: 'Ctrl+9' },
@@ -666,601 +627,526 @@ export default function POSPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col" data-testid="pos-page-redesigned">
-      {/* Header */}
-      <header className="h-14 bg-black flex items-center justify-between px-4 border-b border-slate-700">
-        <div className="flex items-center gap-3">
-          <div className="text-red-500 font-bold text-xl flex items-center gap-1">
-            <span className="bg-red-500 text-white px-2 py-1 rounded text-sm">R</span>
-            <span className="text-white">Lynx</span>
+    <Layout>
+      <div className="space-y-4" data-testid="pos-page">
+        {/* Header with title and total */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">
+              {language === 'ar' ? 'نقطة البيع' : 'Point de Vente'} - NT Commerce
+            </h1>
+            <p className="text-muted-foreground">
+              {language === 'ar' ? 'إدارة المبيعات والفواتير' : 'Gestion des ventes et factures'}
+            </p>
           </div>
-          <span className="text-slate-400 text-sm">{language === 'ar' ? 'نقطة البيع' : 'Point De Vente'}</span>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          {saleCode && (
-            <Badge variant="outline" className="font-mono text-lg px-3 py-1 bg-slate-800 border-slate-600 text-white">
-              {saleCode}
-            </Badge>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400 text-sm">{t.currency}</span>
-          <div className="bg-green-600 text-white text-3xl font-bold px-6 py-1 rounded">
-            {formatCurrency(total)}
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - Task Menu */}
-        <aside className={`bg-gradient-to-b from-cyan-700 to-slate-800 border-r border-slate-700 flex flex-col transition-all duration-300 ${leftSidebarCollapsed ? 'w-12' : 'w-56'}`}>
-          {/* Search */}
-          {!leftSidebarCollapsed && (
-            <div className="p-2 border-b border-slate-600">
-              <div className="relative">
-                <Search className="absolute top-1/2 -translate-y-1/2 left-2 h-4 w-4 text-slate-400" />
-                <Input
-                  placeholder={language === 'ar' ? 'بحث...' : 'Rechercher...'}
-                  className="pl-8 h-9 bg-slate-800/50 border-slate-600 text-white placeholder:text-slate-500 text-sm"
-                />
-              </div>
-              <div className="flex gap-1 mt-2">
-                <Button size="sm" variant="outline" className="flex-1 h-7 text-xs bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600">
-                  {language === 'ar' ? 'كمية' : 'Qté'} &gt;
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1 h-7 text-xs bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600">
-                  {language === 'ar' ? 'سعر' : 'Prix'} &gt;
-                </Button>
-                <Button size="sm" variant="outline" className="flex-1 h-7 text-xs bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600">
-                  R% &gt;
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Toggle Button */}
-          <button
-            onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
-            className="p-2 hover:bg-slate-600/50 border-b border-slate-600 flex items-center justify-center"
-          >
-            {leftSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
-
-          {/* Task Menu */}
-          <div className="flex-1 overflow-y-auto">
-            {!leftSidebarCollapsed && (
-              <div className="px-2 py-2 text-xs font-semibold text-cyan-300 border-b border-slate-600">
-                {language === 'ar' ? 'مهام البيع' : 'Tâches de vente'}
-              </div>
+          <div className="flex items-center gap-4">
+            {saleCode && (
+              <Badge variant="outline" className="font-mono text-lg px-4 py-2">
+                {saleCode}
+              </Badge>
             )}
-            <div className="space-y-0.5 p-1">
-              {taskMenuItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTask(item.id)}
-                  className={`w-full flex items-center gap-2 px-2 py-2 rounded text-sm transition-colors ${
-                    activeTask === item.id 
-                      ? 'bg-cyan-600/50 text-white' 
-                      : 'text-slate-300 hover:bg-slate-700/50'
-                  }`}
-                  title={leftSidebarCollapsed ? item.label : undefined}
-                >
-                  <item.icon className="h-4 w-4 flex-shrink-0" />
-                  {!leftSidebarCollapsed && (
-                    <>
-                      <span className="flex-1 text-start truncate">{item.label}</span>
-                      <span className="text-xs text-slate-500">{item.shortcut}</span>
-                    </>
-                  )}
-                </button>
-              ))}
+            <div className="bg-primary text-primary-foreground text-2xl font-bold px-6 py-3 rounded-xl shadow-lg">
+              {formatCurrency(total)} {t.currency}
             </div>
           </div>
+        </div>
 
-          {/* Footer - Cashier Info */}
-          <div className={`border-t border-slate-600 p-2 bg-slate-800/50 ${leftSidebarCollapsed ? 'hidden' : ''}`}>
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <div className="w-6 h-6 bg-slate-600 rounded flex items-center justify-center">
-                <User className="h-3 w-3" />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-white truncate">{currentCashier}</p>
-                <p className="text-slate-500">{language === 'ar' ? 'الصندوق 1' : 'Caisse 1'}</p>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Area - Table */}
-        <main className="flex-1 flex flex-col bg-slate-100 dark:bg-slate-900 overflow-hidden">
-          {/* Session Warning */}
-          {!checkingSession && !hasOpenSession && (
-            <div className="bg-amber-500 text-amber-900 px-4 py-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5" />
-                <span className="font-medium">
+        {/* Session Warning */}
+        {!checkingSession && !hasOpenSession && (
+          <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20">
+            <CardContent className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-6 w-6 text-amber-600" />
+                <span className="font-medium text-amber-800 dark:text-amber-200">
                   {language === 'ar' ? 'لا توجد حصة مفتوحة - يجب فتح حصة جديدة قبل البيع' : 'Aucune session ouverte - Ouvrez une session'}
                 </span>
               </div>
               <Link to="/daily-sessions">
-                <Button size="sm" className="gap-2 bg-amber-700 hover:bg-amber-800 text-white">
+                <Button variant="outline" className="gap-2 border-amber-500 text-amber-700 hover:bg-amber-100">
                   <Clock className="h-4 w-4" />
                   {language === 'ar' ? 'فتح حصة' : 'Ouvrir session'}
                 </Button>
               </Link>
-            </div>
-          )}
+            </CardContent>
+          </Card>
+        )}
 
-          {/* Customer & Warehouse Selection */}
-          <div className="bg-slate-200 dark:bg-slate-800 px-4 py-2 flex items-center gap-4 border-b border-slate-300 dark:border-slate-700">
-            <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
-              <SelectTrigger className="w-48 h-9 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600" data-testid="customer-select">
-                <User className="h-4 w-4 me-2 text-slate-500" />
-                <SelectValue placeholder={t.selectCustomer} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
-                {customers.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowNewCustomerDialog(true)}
-              className="h-9 gap-1"
-              data-testid="add-customer-btn"
-            >
-              <UserPlus className="h-4 w-4" />
-              {language === 'ar' ? 'زبون جديد' : 'Nouveau client'}
-            </Button>
-
-            {warehouses.length > 0 && (
-              <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
-                <SelectTrigger className="w-40 h-9 bg-white dark:bg-slate-700" data-testid="warehouse-select">
-                  <Warehouse className="h-4 w-4 me-2 text-slate-500" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {warehouses.map(w => (
-                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            <Select value={priceType} onValueChange={setPriceType}>
-              <SelectTrigger className="w-32 h-9 bg-white dark:bg-slate-700">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="retail">{t.retailPrice}</SelectItem>
-                <SelectItem value="wholesale">{t.wholesalePrice}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {selectedCustomer && customerDebt > 0 && (
-              <Badge variant="destructive" className="px-3 py-1">
-                {language === 'ar' ? 'دين:' : 'Dette:'} {formatCurrency(customerDebt)} {t.currency}
-              </Badge>
-            )}
-          </div>
-
-          {/* Products Table */}
-          <div className="flex-1 overflow-auto p-2">
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden h-full">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-700 text-white hover:bg-slate-700">
-                    <TableHead className="text-white w-24">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
-                    <TableHead className="text-white">{language === 'ar' ? 'اسم المنتج' : 'Nom d\'article'}</TableHead>
-                    <TableHead className="text-white w-24 text-center">{language === 'ar' ? 'الكمية' : 'Qté'}</TableHead>
-                    <TableHead className="text-white w-20 text-center">{language === 'ar' ? 'عبوة' : 'Colis'}</TableHead>
-                    <TableHead className="text-white w-28 text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
-                    <TableHead className="text-white w-20 text-center">{language === 'ar' ? 'خصم %' : 'R. %'}</TableHead>
-                    <TableHead className="text-white w-28 text-center">{language === 'ar' ? 'المبلغ HT' : 'Montant HT'}</TableHead>
-                    <TableHead className="text-white w-20 text-center">{language === 'ar' ? 'ض.ق.م' : 'TVA'}</TableHead>
-                    <TableHead className="text-white w-12"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {cart.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-center py-20 text-slate-500">
-                        <ShoppingCart className="h-16 w-16 mx-auto mb-4 opacity-30" />
-                        <p>{language === 'ar' ? 'أضف منتجات من الشريط الجانبي أو ابحث' : 'Ajoutez des articles depuis la barre latérale'}</p>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    cart.map((item, index) => (
-                      <TableRow key={item.product_id} className={index % 2 === 0 ? 'bg-slate-50 dark:bg-slate-800/50' : ''}>
-                        <TableCell className="font-mono text-sm">{item.article_code || item.barcode || '---'}</TableCell>
-                        <TableCell className="font-medium">{item.product_name}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartItemQuantity(item.product_id, item.quantity - 1)}>
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <Input
-                              type="number"
-                              min="1"
-                              value={item.quantity}
-                              onChange={(e) => updateCartItemQuantity(item.product_id, parseInt(e.target.value) || 1)}
-                              className="w-14 h-7 text-center"
-                            />
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartItemQuantity(item.product_id, item.quantity + 1)}>
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">-</TableCell>
-                        <TableCell className="text-center">
-                          <Input
-                            type="number"
-                            value={item.unit_price}
-                            onChange={(e) => updateCartItemPrice(item.product_id, e.target.value)}
-                            className="w-24 h-7 text-center"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={item.discount_percent || ''}
-                            onChange={(e) => updateCartItemDiscount(item.product_id, e.target.value)}
-                            className="w-14 h-7 text-center"
-                          />
-                        </TableCell>
-                        <TableCell className="text-center font-semibold">{formatCurrency(item.total)}</TableCell>
-                        <TableCell className="text-center text-slate-500">--</TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:bg-red-50" onClick={() => removeFromCart(item.product_id)}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-12 gap-4">
+          {/* Left Sidebar - Task Menu */}
+          <div className={`${leftSidebarCollapsed ? 'col-span-1' : 'col-span-2'} transition-all duration-300`}>
+            <Card className="h-full">
+              <CardHeader className="p-3 pb-2">
+                <div className="flex items-center justify-between">
+                  {!leftSidebarCollapsed && (
+                    <CardTitle className="text-sm">
+                      {language === 'ar' ? 'مهام البيع' : 'Taches de vente'}
+                    </CardTitle>
                   )}
-                </TableBody>
-              </Table>
-            </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setLeftSidebarCollapsed(!leftSidebarCollapsed)}
+                    className="h-7 w-7"
+                  >
+                    {leftSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-2 pt-0">
+                <div className="space-y-1">
+                  {taskMenuItems.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setActiveTask(item.id)}
+                      className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm transition-colors ${
+                        activeTask === item.id 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                      }`}
+                      title={leftSidebarCollapsed ? item.label : undefined}
+                    >
+                      <item.icon className="h-4 w-4 flex-shrink-0" />
+                      {!leftSidebarCollapsed && (
+                        <>
+                          <span className="flex-1 text-start truncate">{item.label}</span>
+                          <span className="text-xs opacity-60">{item.shortcut}</span>
+                        </>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Bottom Footer */}
-          <footer className="bg-slate-700 border-t border-slate-600">
-            {/* Totals Row */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-slate-600">
-              <div className="flex items-center gap-6">
-                <div className="text-center">
-                  <p className="text-xs text-slate-400">{language === 'ar' ? 'المجموع الفرعي' : 'Sous total'}</p>
-                  <p className="text-lg font-bold text-white">{formatCurrency(subtotal)} {t.currency}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-slate-400">{language === 'ar' ? 'الخصم' : 'Remise'}</p>
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      value={discount || ''}
-                      onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                      className="w-20 h-7 text-center bg-slate-600 border-slate-500 text-white"
-                    />
-                    <span className="text-white font-bold">• {formatCurrency(discount)} {t.currency}</span>
-                  </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-slate-400">{language === 'ar' ? 'ض.ق.م' : 'TVA'}</p>
-                  <p className="text-lg font-bold text-slate-400">--</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-slate-400">{language === 'ar' ? 'التعريفة' : 'Tarif'}</p>
+          {/* Main Area - Products Table */}
+          <div className={`${leftSidebarCollapsed ? 'col-span-9' : 'col-span-8'} transition-all duration-300`}>
+            <Card className="h-full flex flex-col">
+              {/* Customer & Warehouse Selection */}
+              <CardHeader className="p-4 pb-3 border-b">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Select value={selectedCustomer || 'walk-in'} onValueChange={(v) => setSelectedCustomer(v === 'walk-in' ? null : v)}>
+                    <SelectTrigger className="w-48" data-testid="customer-select">
+                      <User className="h-4 w-4 me-2 opacity-50" />
+                      <SelectValue placeholder={t.selectCustomer} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="walk-in">{t.walkInCustomer}</SelectItem>
+                      {customers.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowNewCustomerDialog(true)}
+                    className="gap-1"
+                    data-testid="add-customer-btn"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    {language === 'ar' ? 'زبون جديد' : 'Nouveau client'}
+                  </Button>
+
+                  {warehouses.length > 0 && (
+                    <Select value={selectedWarehouse} onValueChange={setSelectedWarehouse}>
+                      <SelectTrigger className="w-40" data-testid="warehouse-select">
+                        <Warehouse className="h-4 w-4 me-2 opacity-50" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {warehouses.map(w => (
+                          <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
                   <Select value={priceType} onValueChange={setPriceType}>
-                    <SelectTrigger className="w-24 h-7 bg-slate-600 border-slate-500 text-white">
+                    <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="retail">{language === 'ar' ? 'عادي' : 'Régulier'}</SelectItem>
-                      <SelectItem value="wholesale">{language === 'ar' ? 'جملة' : 'Gros'}</SelectItem>
+                      <SelectItem value="retail">{t.retailPrice}</SelectItem>
+                      <SelectItem value="wholesale">{t.wholesalePrice}</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  {selectedCustomer && customerDebt > 0 && (
+                    <Badge variant="destructive" className="px-3 py-1">
+                      {language === 'ar' ? 'دين:' : 'Dette:'} {formatCurrency(customerDebt)} {t.currency}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+
+              {/* Products Table */}
+              <CardContent className="flex-1 p-0 overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-24">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
+                      <TableHead>{language === 'ar' ? 'اسم المنتج' : 'Nom d\'article'}</TableHead>
+                      <TableHead className="w-24 text-center">{language === 'ar' ? 'الكمية' : 'Qte'}</TableHead>
+                      <TableHead className="w-28 text-center">{language === 'ar' ? 'السعر' : 'Prix'}</TableHead>
+                      <TableHead className="w-20 text-center">{language === 'ar' ? 'خصم %' : 'R. %'}</TableHead>
+                      <TableHead className="w-28 text-center">{language === 'ar' ? 'المبلغ' : 'Montant'}</TableHead>
+                      <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cart.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
+                          <ShoppingCart className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                          <p>{language === 'ar' ? 'اضف منتجات من الشريط الجانبي او ابحث' : 'Ajoutez des articles depuis la barre laterale'}</p>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      cart.map((item, index) => (
+                        <TableRow key={item.product_id} className={index % 2 === 0 ? 'bg-muted/20' : ''}>
+                          <TableCell className="font-mono text-sm">{item.article_code || item.barcode || '---'}</TableCell>
+                          <TableCell className="font-medium">{item.product_name}</TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateCartItemQuantity(item.product_id, item.quantity - 1)}>
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <Input
+                                type="number"
+                                min="1"
+                                value={item.quantity}
+                                onChange={(e) => updateCartItemQuantity(item.product_id, parseInt(e.target.value) || 1)}
+                                className="w-14 h-8 text-center"
+                              />
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateCartItemQuantity(item.product_id, item.quantity + 1)}>
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input
+                              type="number"
+                              value={item.unit_price}
+                              onChange={(e) => updateCartItemPrice(item.product_id, e.target.value)}
+                              className="w-24 h-8 text-center"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={item.discount_percent || ''}
+                              onChange={(e) => updateCartItemDiscount(item.product_id, e.target.value)}
+                              className="w-16 h-8 text-center"
+                            />
+                          </TableCell>
+                          <TableCell className="text-center font-semibold">{formatCurrency(item.total)}</TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => removeFromCart(item.product_id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+
+              {/* Totals & Action Buttons */}
+              <div className="border-t p-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  {/* Totals */}
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">{language === 'ar' ? 'المجموع الفرعي' : 'Sous total'}</p>
+                      <p className="text-lg font-bold">{formatCurrency(subtotal)} {t.currency}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">{language === 'ar' ? 'الخصم' : 'Remise'}</p>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          value={discount || ''}
+                          onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                          className="w-20 h-8 text-center"
+                        />
+                        <span className="font-semibold">{formatCurrency(discount)} {t.currency}</span>
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">{language === 'ar' ? 'الإجمالي' : 'Total'}</p>
+                      <p className="text-2xl font-bold text-primary">{formatCurrency(total)} {t.currency}</p>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={completeSale}
+                      disabled={loading || cart.length === 0 || !hasOpenSession}
+                      className="h-11 px-6 gap-2"
+                      data-testid="vente-btn"
+                    >
+                      <Check className="h-5 w-5" />
+                      {language === 'ar' ? 'تاكيد البيع' : 'Valider'}
+                      <Badge variant="secondary" className="text-xs ms-1">F10</Badge>
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={clearCart}
+                      className="h-11 px-4 gap-2"
+                      data-testid="annuler-btn"
+                    >
+                      <X className="h-4 w-4" />
+                      {language === 'ar' ? 'الغاء' : 'Annuler'}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Bottom Info Bar */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t text-xs text-muted-foreground">
+                  <div className="flex items-center gap-4">
+                    <span>{language === 'ar' ? 'الصندوق:' : 'Caisse:'} 1</span>
+                    <span>{language === 'ar' ? 'البائع:' : 'Caissier:'} {currentCashier}</span>
+                  </div>
+                  <div>
+                    {new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
                 </div>
               </div>
+            </Card>
+          </div>
 
-              {/* Total Display */}
-              <div className="flex items-center gap-4">
-                <div className="bg-slate-800 rounded-lg px-6 py-3">
-                  <p className="text-xs text-slate-400">{language === 'ar' ? 'الإجمالي' : 'Total'}</p>
-                  <p className="text-3xl font-bold text-green-400">{formatCurrency(total)} {t.currency}</p>
+          {/* Right Sidebar - Product Shortcuts */}
+          <div className="col-span-2">
+            <Card className="h-full">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-sm text-center">
+                  {language === 'ar' ? 'اختصارات المنتجات' : 'Raccourcis'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-2 pt-0">
+                <div className="grid grid-cols-2 gap-1">
+                  {productShortcuts.slice(0, 20).map((shortcut, index) => {
+                    const productName = getShortcutProductName(shortcut);
+                    const bgColor = shortcut.productId ? shortcut.color : 'hsl(var(--muted))';
+                    
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => handleShortcutClick(shortcut, index)}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          setEditingShortcutIndex(index);
+                          setShortcutColor(shortcut.color || SHORTCUT_COLORS[index % SHORTCUT_COLORS.length]);
+                          setShortcutProductId(shortcut.productId || '');
+                          setShowShortcutDialog(true);
+                        }}
+                        style={{ backgroundColor: shortcut.productId ? bgColor : undefined }}
+                        className={`py-3 px-1 rounded-lg text-xs font-medium text-center leading-tight transition-all min-h-[56px] flex items-center justify-center ${
+                          shortcut.productId 
+                            ? 'text-white hover:opacity-90 shadow-sm' 
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                        title={productName}
+                      >
+                        <span className="line-clamp-3">{productName}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
-            {/* Action Buttons Row */}
-            <div className="flex items-center justify-between px-4 py-2">
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={completeSale}
-                  disabled={loading || cart.length === 0 || !hasOpenSession}
-                  className="h-12 px-6 bg-blue-600 hover:bg-blue-700 text-white gap-2"
-                  data-testid="vente-btn"
-                >
-                  {language === 'ar' ? 'بيع' : 'Vente'}
-                  <Badge variant="secondary" className="text-xs">F10</Badge>
-                </Button>
-                <Button variant="outline" className="h-12 px-4 bg-slate-600 border-slate-500 text-white hover:bg-slate-500">
-                  {language === 'ar' ? 'عرض سعر' : 'Devis'}
-                </Button>
-                <Button variant="outline" className="h-12 px-4 bg-slate-600 border-slate-500 text-white hover:bg-slate-500">
-                  F +
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 border-s border-slate-600 ps-4">
-                  <Button
-                    onClick={completeSale}
-                    disabled={loading || cart.length === 0 || !hasOpenSession}
-                    className="h-12 px-6 bg-green-600 hover:bg-green-700 text-white"
-                    data-testid="valider-btn"
-                  >
-                    {loading ? '...' : (language === 'ar' ? 'تأكيد' : 'Valider')}
-                    <Badge variant="secondary" className="ms-2 text-xs">F12</Badge>
-                  </Button>
-                  <Button variant="outline" className="h-12 px-4 bg-slate-600 border-slate-500 text-white hover:bg-slate-500">
-                    {language === 'ar' ? 'استدعاء' : 'Rappeler'}
-                    <Badge variant="secondary" className="ms-2 text-xs">• 0</Badge>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={clearCart}
-                    className="h-12 px-4 bg-red-600 border-red-500 text-white hover:bg-red-700"
-                    data-testid="annuler-btn"
-                  >
-                    {language === 'ar' ? 'إلغاء' : 'Annuler'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom Info Bar */}
-            <div className="flex items-center justify-between px-4 py-1 bg-slate-800 text-xs text-slate-400 border-t border-slate-700">
-              <div className="flex items-center gap-4">
-                <span>{language === 'ar' ? 'الصندوق:' : 'Caisse:'} 1</span>
-                <span>{language === 'ar' ? 'البائع:' : 'Caissier:'} {currentCashier}</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" className="h-6 text-xs text-slate-400 hover:text-white">
-                  {language === 'ar' ? 'رأس الفاتورة' : 'En-tête'}
-                  <Badge variant="secondary" className="ms-1 text-xs">F6</Badge>
-                </Button>
-                <Button variant="ghost" size="sm" className="h-6 text-xs text-slate-400 hover:text-white">
-                  {language === 'ar' ? 'تذييل الفاتورة' : 'Pied'}
-                  <Badge variant="secondary" className="ms-1 text-xs">F7</Badge>
-                </Button>
+        {/* Shortcut Edit Dialog */}
+        <Dialog open={showShortcutDialog} onOpenChange={setShowShortcutDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {language === 'ar' ? 'تعديل الاختصار' : 'Modifier le raccourci'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label>{language === 'ar' ? 'اختر المنتج' : 'Choisir le produit'}</Label>
+                <Select value={shortcutProductId} onValueChange={setShortcutProductId}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder={language === 'ar' ? 'اختر منتج...' : 'Selectionner...'} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {products.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {language === 'ar' ? p.name_ar : p.name_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                {new Date().toLocaleDateString(language === 'ar' ? 'ar-SA' : 'fr-FR', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </div>
-            </div>
-          </footer>
-        </main>
-
-        {/* Right Sidebar - Product Shortcuts */}
-        <aside className="w-28 bg-slate-800 border-s border-slate-700 flex flex-col overflow-y-auto">
-          <div className="p-1 space-y-1">
-            {productShortcuts.slice(0, 20).map((shortcut, index) => {
-              const productName = getShortcutProductName(shortcut);
-              const bgColor = shortcut.productId ? shortcut.color : '#374151';
-              
-              return (
-                <button
-                  key={index}
-                  onClick={() => handleShortcutClick(shortcut, index)}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setEditingShortcutIndex(index);
-                    setShortcutColor(shortcut.color || SHORTCUT_COLORS[index % SHORTCUT_COLORS.length]);
-                    setShortcutProductId(shortcut.productId || '');
-                    setShowShortcutDialog(true);
-                  }}
-                  style={{ backgroundColor: bgColor }}
-                  className="w-full py-3 px-1 rounded text-xs text-white font-medium text-center leading-tight hover:opacity-90 transition-opacity min-h-[60px] flex items-center justify-center"
-                  title={productName}
-                >
-                  <span className="line-clamp-3">{productName}</span>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
-      </div>
-
-      {/* Shortcut Edit Dialog */}
-      <Dialog open={showShortcutDialog} onOpenChange={setShowShortcutDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {language === 'ar' ? 'تعديل الاختصار' : 'Modifier le raccourci'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>{language === 'ar' ? 'اختر المنتج' : 'Choisir le produit'}</Label>
-              <Select value={shortcutProductId} onValueChange={setShortcutProductId}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder={language === 'ar' ? 'اختر منتج...' : 'Sélectionner...'} />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {products.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {language === 'ar' ? p.name_ar : p.name_en}
-                    </SelectItem>
+                <Label>{language === 'ar' ? 'اختر اللون' : 'Choisir la couleur'}</Label>
+                <div className="grid grid-cols-5 gap-2 mt-2">
+                  {SHORTCUT_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setShortcutColor(color)}
+                      style={{ backgroundColor: color }}
+                      className={`h-8 w-full rounded ${shortcutColor === color ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                    />
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{language === 'ar' ? 'اختر اللون' : 'Choisir la couleur'}</Label>
-              <div className="grid grid-cols-5 gap-2 mt-2">
-                {SHORTCUT_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setShortcutColor(color)}
-                    style={{ backgroundColor: color }}
-                    className={`h-8 w-full rounded ${shortcutColor === color ? 'ring-2 ring-white ring-offset-2' : ''}`}
-                  />
-                ))}
+                </div>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (editingShortcutIndex !== null) {
+                      const newShortcuts = [...productShortcuts];
+                      newShortcuts[editingShortcutIndex] = { productId: null, color: '#e5e7eb' };
+                      saveShortcuts(newShortcuts);
+                    }
+                    setShowShortcutDialog(false);
+                  }}
+                  className="flex-1"
+                >
+                  {language === 'ar' ? 'مسح' : 'Effacer'}
+                </Button>
+                <Button onClick={saveShortcut} disabled={!shortcutProductId} className="flex-1">
+                  {language === 'ar' ? 'حفظ' : 'Enregistrer'}
+                </Button>
               </div>
             </div>
-            <div className="flex gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (editingShortcutIndex !== null) {
-                    const newShortcuts = [...productShortcuts];
-                    newShortcuts[editingShortcutIndex] = { productId: null, color: '#e5e7eb' };
-                    saveShortcuts(newShortcuts);
-                  }
-                  setShowShortcutDialog(false);
-                }}
-                className="flex-1"
-              >
-                {language === 'ar' ? 'مسح' : 'Effacer'}
-              </Button>
-              <Button onClick={saveShortcut} disabled={!shortcutProductId} className="flex-1">
-                {language === 'ar' ? 'حفظ' : 'Enregistrer'}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* New Customer Dialog */}
-      <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              {language === 'ar' ? 'إضافة زبون جديد' : 'Ajouter un client'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>{language === 'ar' ? 'الاسم *' : 'Nom *'}</Label>
-              <Input
-                value={newCustomerData.name}
-                onChange={(e) => setNewCustomerData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder={language === 'ar' ? 'اسم الزبون' : 'Nom du client'}
-              />
-            </div>
-            <div>
-              <Label>{language === 'ar' ? 'الهاتف' : 'Téléphone'}</Label>
-              <Input
-                value={newCustomerData.phone}
-                onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="0555 123 456"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowNewCustomerDialog(false)} className="flex-1">
-                {language === 'ar' ? 'إلغاء' : 'Annuler'}
-              </Button>
-              <Button
-                onClick={async () => {
-                  if (!newCustomerData.name) {
-                    toast.error(language === 'ar' ? 'يرجى إدخال الاسم' : 'Veuillez entrer le nom');
-                    return;
-                  }
-                  setSavingCustomer(true);
-                  try {
-                    const token = localStorage.getItem('token');
-                    const response = await axios.post(`${API}/customers`, newCustomerData, {
-                      headers: { Authorization: `Bearer ${token}` }
-                    });
-                    toast.success(language === 'ar' ? 'تمت الإضافة' : 'Client ajouté');
-                    setNewCustomerData({ name: '', phone: '', email: '', address: '', family_id: '' });
-                    fetchCustomers();
-                    setSelectedCustomer(response.data.id);
-                    setShowNewCustomerDialog(false);
-                  } catch (error) {
-                    toast.error(error.response?.data?.detail || 'Error');
-                  } finally {
-                    setSavingCustomer(false);
-                  }
-                }}
-                disabled={savingCustomer}
-                className="flex-1"
-              >
-                {savingCustomer ? '...' : (language === 'ar' ? 'حفظ' : 'Enregistrer')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Print Receipt Dialog */}
-      <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Printer className="h-5 w-5" />
-              {language === 'ar' ? 'طباعة الوصل' : 'Imprimer le reçu'}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-center text-muted-foreground">
-              {language === 'ar' ? 'تمت عملية البيع بنجاح' : 'Vente effectuée avec succès'}
-            </p>
-            {lastSaleInvoice && (
-              <p className="text-center font-mono text-lg">{lastSaleInvoice}</p>
-            )}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowPrintDialog(false)} className="flex-1">
-                {language === 'ar' ? 'إغلاق' : 'Fermer'}
-              </Button>
-              <Button
-                onClick={async () => {
-                  if (lastSaleId) {
-                    const token = localStorage.getItem('token');
+        {/* New Customer Dialog */}
+        <Dialog open={showNewCustomerDialog} onOpenChange={setShowNewCustomerDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus className="h-5 w-5" />
+                {language === 'ar' ? 'اضافة زبون جديد' : 'Ajouter un client'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div>
+                <Label>{language === 'ar' ? 'الاسم *' : 'Nom *'}</Label>
+                <Input
+                  value={newCustomerData.name}
+                  onChange={(e) => setNewCustomerData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder={language === 'ar' ? 'اسم الزبون' : 'Nom du client'}
+                />
+              </div>
+              <div>
+                <Label>{language === 'ar' ? 'الهاتف' : 'Telephone'}</Label>
+                <Input
+                  value={newCustomerData.phone}
+                  onChange={(e) => setNewCustomerData(prev => ({ ...prev, phone: e.target.value }))}
+                  placeholder="0555 123 456"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowNewCustomerDialog(false)} className="flex-1">
+                  {language === 'ar' ? 'الغاء' : 'Annuler'}
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!newCustomerData.name) {
+                      toast.error(language === 'ar' ? 'يرجى ادخال الاسم' : 'Veuillez entrer le nom');
+                      return;
+                    }
+                    setSavingCustomer(true);
                     try {
-                      const invoiceResponse = await axios.get(`${API}/sales/${lastSaleId}/invoice-pdf`, {
+                      const token = localStorage.getItem('token');
+                      const response = await axios.post(`${API}/customers`, newCustomerData, {
                         headers: { Authorization: `Bearer ${token}` }
                       });
-                      const printWindow = window.open('', '_blank');
-                      if (printWindow) {
-                        printWindow.document.write(invoiceResponse.data);
-                        printWindow.document.close();
-                        printWindow.focus();
-                        setTimeout(() => printWindow.print(), 500);
-                      }
+                      toast.success(language === 'ar' ? 'تمت الاضافة' : 'Client ajoute');
+                      setNewCustomerData({ name: '', phone: '', email: '', address: '', family_id: '' });
+                      fetchCustomers();
+                      setSelectedCustomer(response.data.id);
+                      setShowNewCustomerDialog(false);
                     } catch (error) {
-                      toast.error('Error printing');
+                      toast.error(error.response?.data?.detail || 'Error');
+                    } finally {
+                      setSavingCustomer(false);
                     }
-                  }
-                  setShowPrintDialog(false);
-                }}
-                className="flex-1 gap-2"
-              >
-                <Printer className="h-4 w-4" />
-                {language === 'ar' ? 'طباعة' : 'Imprimer'}
-              </Button>
+                  }}
+                  disabled={savingCustomer}
+                  className="flex-1"
+                >
+                  {savingCustomer ? '...' : (language === 'ar' ? 'حفظ' : 'Enregistrer')}
+                </Button>
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Print Receipt Dialog */}
+        <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Printer className="h-5 w-5" />
+                {language === 'ar' ? 'طباعة الوصل' : 'Imprimer le recu'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <p className="text-center text-muted-foreground">
+                {language === 'ar' ? 'تمت عملية البيع بنجاح' : 'Vente effectuee avec succes'}
+              </p>
+              {lastSaleInvoice && (
+                <p className="text-center font-mono text-lg">{lastSaleInvoice}</p>
+              )}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowPrintDialog(false)} className="flex-1">
+                  {language === 'ar' ? 'اغلاق' : 'Fermer'}
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (lastSaleId) {
+                      const token = localStorage.getItem('token');
+                      try {
+                        const invoiceResponse = await axios.get(`${API}/sales/${lastSaleId}/invoice-pdf`, {
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        const printWindow = window.open('', '_blank');
+                        if (printWindow) {
+                          printWindow.document.write(invoiceResponse.data);
+                          printWindow.document.close();
+                          printWindow.focus();
+                          setTimeout(() => printWindow.print(), 500);
+                        }
+                      } catch (error) {
+                        toast.error('Error printing');
+                      }
+                    }
+                    setShowPrintDialog(false);
+                  }}
+                  className="flex-1 gap-2"
+                >
+                  <Printer className="h-4 w-4" />
+                  {language === 'ar' ? 'طباعة' : 'Imprimer'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </Layout>
   );
 }
