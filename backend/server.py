@@ -627,7 +627,14 @@ async def init_default_data(tenant_db):
             "id": default_product_family_id,
             "name": "عائلة منتج متنوع",
             "name_fr": "Famille produits divers",
+            "name_ar": "عائلة منتج متنوع",
+            "name_en": "Various Products Family",
             "description": "عائلة افتراضية للمنتجات",
+            "description_ar": "عائلة افتراضية للمنتجات المتنوعة",
+            "description_en": "Default family for various products",
+            "parent_id": None,
+            "parent_name": None,
+            "image": "",
             "created_at": now,
             "updated_at": now
         })
