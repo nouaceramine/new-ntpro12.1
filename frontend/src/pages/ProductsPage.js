@@ -765,6 +765,8 @@ export default function ProductsPage() {
             className="mt-6"
           />
         )}
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
