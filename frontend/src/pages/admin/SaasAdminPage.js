@@ -564,6 +564,10 @@ export default function SaasAdminPage() {
               <Bug className="h-4 w-4" />
               الأخطاء
             </TabsTrigger>
+            <TabsTrigger value="ai-assistant" className="gap-2" data-testid="ai-assistant-tab">
+              <Bot className="h-4 w-4" />
+              المساعد الذكي
+            </TabsTrigger>
           </TabsList>
 
           {/* Tenants Tab */}
