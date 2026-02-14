@@ -1702,6 +1702,11 @@ export default function SaasAdminPage() {
           <TabsContent value="monitoring" className="space-y-6" data-testid="monitoring-content">
             <MonitoringSection />
           </TabsContent>
+
+          {/* System Alerts Tab */}
+          <TabsContent value="alerts" className="space-y-6" data-testid="alerts-content">
+            <SystemAlertsSection />
+          </TabsContent>
         </Tabs>
 
         {/* Plan Dialog */}
