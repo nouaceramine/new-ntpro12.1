@@ -889,26 +889,26 @@ export default function POSPage() {
 
   return (
     <Layout>
-      <div className="h-[calc(100vh-120px)] flex flex-col" data-testid="pos-page">
-        {/* Header with title and total */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold">
-              {language === 'ar' ? 'نقطة البيع' : 'Point de Vente'} - NT Commerce
+      <div className="h-[calc(100vh-120px)] md:h-[calc(100vh-120px)] flex flex-col" data-testid="pos-page">
+        {/* Header with title and total - Mobile Responsive */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            <h1 className="text-base sm:text-xl font-bold">
+              {language === 'ar' ? 'نقطة البيع' : 'Point de Vente'}
             </h1>
             {returnMode && (
-              <Badge variant="destructive" className="animate-pulse">
-                {language === 'ar' ? 'وضع الإرجاع' : 'Mode Retour'}
+              <Badge variant="destructive" className="animate-pulse text-xs sm:text-sm">
+                {language === 'ar' ? 'إرجاع' : 'Retour'}
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
             {saleCode && (
-              <Badge variant="outline" className="font-mono text-sm px-3 py-1">
+              <Badge variant="outline" className="font-mono text-xs sm:text-sm px-2 py-1">
                 {saleCode}
               </Badge>
             )}
-            <div className="bg-primary text-primary-foreground text-xl font-bold px-4 py-2 rounded-lg shadow">
+            <div className="bg-primary text-primary-foreground text-base sm:text-xl font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow">
               {formatCurrency(total)} {t.currency}
             </div>
           </div>
