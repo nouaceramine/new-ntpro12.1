@@ -934,10 +934,10 @@ export default function POSPage() {
           </Card>
         )}
 
-        {/* Main Content Grid */}
-        <div className={`flex-1 grid grid-cols-12 gap-2 min-h-0 ${isRTL ? 'direction-ltr' : ''}`} style={{ direction: 'ltr' }}>
-          {/* Left Sidebar - Search, Add Product & Task Menu */}
-          <div className="col-span-2 flex flex-col gap-2" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
+        {/* Main Content Grid - Mobile Responsive */}
+        <div className={`flex-1 grid grid-cols-1 md:grid-cols-12 gap-2 min-h-0 ${isRTL ? 'direction-ltr' : ''}`} style={{ direction: 'ltr' }}>
+          {/* Left Sidebar - Search, Add Product & Task Menu - Hidden on mobile, shown as floating menu */}
+          <div className="hidden md:flex md:col-span-2 flex-col gap-2" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
             {/* Search & Add Product */}
             <Card className="p-2">
               <div className="relative mb-2">
@@ -995,8 +995,47 @@ export default function POSPage() {
             </Card>
           </div>
 
+          {/* Mobile Quick Actions Bar */}
+          <div className="md:hidden flex items-center gap-2 mb-2 overflow-x-auto pb-2" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="gap-1 shrink-0"
+              onClick={() => setShowProductsDialog(true)}
+            >
+              <Plus className="h-4 w-4" />
+              {language === 'ar' ? 'منتج' : 'Produit'}
+            </Button>
+            <Button 
+              size="sm" 
+              variant={returnMode ? "destructive" : "outline"}
+              className="gap-1 shrink-0"
+              onClick={() => handleTaskClick('return')}
+            >
+              <Undo2 className="h-4 w-4" />
+              {language === 'ar' ? 'إرجاع' : 'Retour'}
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="gap-1 shrink-0"
+              onClick={() => setShowCustomersDialog(true)}
+            >
+              <Users className="h-4 w-4" />
+              {language === 'ar' ? 'زبون' : 'Client'}
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="gap-1 shrink-0"
+              onClick={() => setShowHistoryDialog(true)}
+            >
+              <History className="h-4 w-4" />
+            </Button>
+          </div>
+
           {/* Main Area - Products Table */}
-          <div className="col-span-8 flex flex-col min-h-0" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
+          <div className="col-span-1 md:col-span-8 flex flex-col min-h-0" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
             <Card className="flex-1 flex flex-col overflow-hidden">
               {/* Customer & Warehouse Selection */}
               <div className="p-2 border-b flex flex-wrap items-center gap-2">
