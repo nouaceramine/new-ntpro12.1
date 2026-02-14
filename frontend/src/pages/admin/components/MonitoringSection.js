@@ -1,12 +1,8 @@
-/**
- * MonitoringSection - Tenant monitoring dashboard component
- * Shows real-time statistics, alerts, and tenant activity
- */
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, CardContent } from '../../../components/ui/card';
-import { Badge } from '../../../components/ui/badge';
 import { Button } from '../../../components/ui/button';
+import { Badge } from '../../../components/ui/badge';
 import {
   Table,
   TableBody,
@@ -24,8 +20,8 @@ import {
 } from '../../../components/ui/select';
 import { toast } from 'sonner';
 import { 
-  Users, Package, DollarSign, RefreshCw, 
-  AlertTriangle, Activity, ShoppingCart, UserCheck, Bell
+  Users, Package, AlertTriangle, DollarSign,
+  RefreshCw, Bell, Activity, ShoppingCart, UserCheck
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -135,9 +131,7 @@ export const MonitoringSection = () => {
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">ترتيب حسب:</span>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-36 h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
+            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="products_count">المنتجات</SelectItem>
               <SelectItem value="customers_count">العملاء</SelectItem>
@@ -146,44 +140,44 @@ export const MonitoringSection = () => {
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchMonitoring} className="gap-2">
-          <RefreshCw className="h-3 w-3" /> تحديث
+        <Button variant="outline" size="sm" onClick={fetchMonitoring}>
+          <RefreshCw className="h-4 w-4 ml-1" /> تحديث
         </Button>
       </div>
 
-      {/* Tenants Table */}
-      <Card className="overflow-hidden">
+      {/* Tenant Details Table */}
+      <Card>
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="text-xs">المشترك</TableHead>
-              <TableHead className="text-xs text-center">الحالة</TableHead>
-              <TableHead className="text-xs text-center">المنتجات</TableHead>
-              <TableHead className="text-xs text-center">العملاء</TableHead>
-              <TableHead className="text-xs text-center">المبيعات</TableHead>
-              <TableHead className="text-xs text-center">الإيراد</TableHead>
-              <TableHead className="text-xs text-center">المستخدمون</TableHead>
-              <TableHead className="text-xs text-center">آخر نشاط</TableHead>
+            <TableRow>
+              <TableHead className="text-right">المشترك</TableHead>
+              <TableHead className="text-center">الحالة</TableHead>
+              <TableHead className="text-center">المنتجات</TableHead>
+              <TableHead className="text-center">العملاء</TableHead>
+              <TableHead className="text-center">المبيعات</TableHead>
+              <TableHead className="text-center">الإيراد (دج)</TableHead>
+              <TableHead className="text-center">المستخدمين</TableHead>
+              <TableHead className="text-center">آخر نشاط</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {sorted.map(t => (
-              <TableRow key={t.tenant_id} data-testid={`tenant-row-${t.tenant_id}`}>
-                <TableCell>
+              <TableRow key={t.tenant_id} data-testid={`monitoring-row-${t.tenant_id}`}>
+                <TableCell className="text-right">
                   <div>
-                    <p className="font-medium text-sm">{t.company_name || t.tenant_name}</p>
+                    <p className="font-medium">{t.tenant_name}</p>
                     <p className="text-xs text-muted-foreground">{t.email}</p>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">
-                  <Badge variant={t.is_active ? 'default' : 'secondary'} className="text-xs">
+                  <Badge variant={t.is_active ? "default" : "destructive"} className={t.is_active ? "bg-green-100 text-green-700 hover:bg-green-100" : ""}>
                     {t.is_active ? 'نشط' : 'معطل'}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-center font-semibold">{t.products_count}</TableCell>
-                <TableCell className="text-center">{t.customers_count}</TableCell>
-                <TableCell className="text-center">{t.sales_count}</TableCell>
-                <TableCell className="text-center font-semibold text-green-600">{(t.total_revenue || 0).toLocaleString()}</TableCell>
+                <TableCell className="text-center font-medium">{t.products_count}</TableCell>
+                <TableCell className="text-center font-medium">{t.customers_count}</TableCell>
+                <TableCell className="text-center font-medium">{t.sales_count}</TableCell>
+                <TableCell className="text-center font-medium">{(t.total_revenue || 0).toLocaleString()}</TableCell>
                 <TableCell className="text-center">{t.users_count}</TableCell>
                 <TableCell className="text-center text-xs text-muted-foreground">{formatDate(t.last_activity)}</TableCell>
               </TableRow>
@@ -194,5 +188,3 @@ export const MonitoringSection = () => {
     </div>
   );
 };
-
-export default MonitoringSection;
