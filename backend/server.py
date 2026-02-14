@@ -12305,7 +12305,7 @@ class DefectiveProductCreate(BaseModel):
 @api_router.post("/defective-products")
 async def create_defective_product(data: DefectiveProductCreate, admin: dict = Depends(get_tenant_admin)):
     """Register a defective product and deduct from inventory"""
-    db = await get_tenant_db(admin["tenant_id"])
+    db = get_tenant_db(admin["tenant_id"])
     
     # Get product info
     product = await db.products.find_one({"id": data.product_id}, {"_id": 0})
@@ -12404,7 +12404,7 @@ async def get_defective_products(
     admin: dict = Depends(get_tenant_admin)
 ):
     """Get all defective products with filters"""
-    db = await get_tenant_db(admin["tenant_id"])
+    db = get_tenant_db(admin["tenant_id"])
     
     query = {}
     if status:
@@ -12420,7 +12420,7 @@ async def get_defective_products(
 @api_router.get("/defective-products/stats")
 async def get_defective_stats(admin: dict = Depends(get_tenant_admin)):
     """Get defective products statistics"""
-    db = await get_tenant_db(admin["tenant_id"])
+    db = get_tenant_db(admin["tenant_id"])
     
     total = await db.defective_products.count_documents({})
     pending = await db.defective_products.count_documents({"status": "pending"})
@@ -12462,7 +12462,7 @@ async def get_defective_stats(admin: dict = Depends(get_tenant_admin)):
 @api_router.put("/defective-products/{defective_id}")
 async def update_defective_product(defective_id: str, data: dict, admin: dict = Depends(get_tenant_admin)):
     """Update defective product status or action"""
-    db = await get_tenant_db(admin["tenant_id"])
+    db = get_tenant_db(admin["tenant_id"])
     
     defective = await db.defective_products.find_one({"id": defective_id})
     if not defective:
@@ -12508,7 +12508,7 @@ async def update_defective_product(defective_id: str, data: dict, admin: dict = 
 @api_router.delete("/defective-products/{defective_id}")
 async def delete_defective_product(defective_id: str, restore_stock: bool = False, admin: dict = Depends(get_tenant_admin)):
     """Delete defective product record, optionally restore stock"""
-    db = await get_tenant_db(admin["tenant_id"])
+    db = get_tenant_db(admin["tenant_id"])
     
     defective = await db.defective_products.find_one({"id": defective_id})
     if not defective:
@@ -12533,7 +12533,7 @@ async def get_supplier_returns(
     admin: dict = Depends(get_tenant_admin)
 ):
     """Get supplier return requests"""
-    db = await get_tenant_db(admin["tenant_id"])
+    db = get_tenant_db(admin["tenant_id"])
     
     query = {}
     if status:
@@ -12547,7 +12547,7 @@ async def get_supplier_returns(
 @api_router.put("/supplier-returns/{return_id}")
 async def update_supplier_return(return_id: str, data: dict, admin: dict = Depends(get_tenant_admin)):
     """Update supplier return status"""
-    db = await get_tenant_db(admin["tenant_id"])
+    db = get_tenant_db(admin["tenant_id"])
     
     return_request = await db.supplier_returns.find_one({"id": return_id})
     if not return_request:
