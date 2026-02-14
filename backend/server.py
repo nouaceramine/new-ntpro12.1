@@ -809,6 +809,9 @@ async def unified_login(credentials: UserLogin):
                     }
                     await tenant_db.users.insert_one(admin_user)
                     
+                    # Initialize default data (customers, suppliers, families, products)
+                    await init_default_data(tenant_db)
+                    
                     # Mark database as initialized
                     await db.saas_tenants.update_one(
                         {"id": tenant_id},
