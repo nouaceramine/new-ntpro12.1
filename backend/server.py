@@ -548,6 +548,116 @@ async def init_cash_boxes():
                 {"$set": {"name_fr": box["name_fr"]}}
             )
 
+async def init_default_data(tenant_db):
+    """Initialize default data for a tenant (customers, suppliers, families, products)"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Default Customer Family
+    default_customer_family_id = "default-customer-family"
+    existing_cf = await tenant_db.customer_families.find_one({"id": default_customer_family_id})
+    if not existing_cf:
+        await tenant_db.customer_families.insert_one({
+            "id": default_customer_family_id,
+            "name": "عائلة زبائن متنوعة",
+            "name_fr": "Famille clients divers",
+            "description": "عائلة افتراضية للزبائن",
+            "discount": 0,
+            "created_at": now,
+            "updated_at": now
+        })
+    
+    # Default Customer
+    default_customer_id = "default-customer"
+    existing_c = await tenant_db.customers.find_one({"id": default_customer_id})
+    if not existing_c:
+        await tenant_db.customers.insert_one({
+            "id": default_customer_id,
+            "name": "زبون متنوع",
+            "name_fr": "Client divers",
+            "phone": "",
+            "email": "",
+            "address": "",
+            "family_id": default_customer_family_id,
+            "family_name": "عائلة زبائن متنوعة",
+            "balance": 0,
+            "total_purchases": 0,
+            "notes": "زبون افتراضي للمبيعات العامة",
+            "created_at": now,
+            "updated_at": now
+        })
+    
+    # Default Supplier Family
+    default_supplier_family_id = "default-supplier-family"
+    existing_sf = await tenant_db.supplier_families.find_one({"id": default_supplier_family_id})
+    if not existing_sf:
+        await tenant_db.supplier_families.insert_one({
+            "id": default_supplier_family_id,
+            "name": "عائلة مورد متنوع",
+            "name_fr": "Famille fournisseurs divers",
+            "description": "عائلة افتراضية للموردين",
+            "created_at": now,
+            "updated_at": now
+        })
+    
+    # Default Supplier
+    default_supplier_id = "default-supplier"
+    existing_s = await tenant_db.suppliers.find_one({"id": default_supplier_id})
+    if not existing_s:
+        await tenant_db.suppliers.insert_one({
+            "id": default_supplier_id,
+            "name": "مورد متنوع",
+            "name_fr": "Fournisseur divers",
+            "phone": "",
+            "email": "",
+            "address": "",
+            "family_id": default_supplier_family_id,
+            "family_name": "عائلة مورد متنوع",
+            "balance": 0,
+            "total_purchases": 0,
+            "notes": "مورد افتراضي للمشتريات العامة",
+            "created_at": now,
+            "updated_at": now
+        })
+    
+    # Default Product Family
+    default_product_family_id = "default-product-family"
+    existing_pf = await tenant_db.product_families.find_one({"id": default_product_family_id})
+    if not existing_pf:
+        await tenant_db.product_families.insert_one({
+            "id": default_product_family_id,
+            "name": "عائلة منتج متنوع",
+            "name_fr": "Famille produits divers",
+            "description": "عائلة افتراضية للمنتجات",
+            "created_at": now,
+            "updated_at": now
+        })
+    
+    # Default Product
+    default_product_id = "default-product"
+    existing_p = await tenant_db.products.find_one({"id": default_product_id})
+    if not existing_p:
+        await tenant_db.products.insert_one({
+            "id": default_product_id,
+            "name_ar": "منتج متنوع",
+            "name_en": "Produit divers",
+            "article_code": "DIVERS-001",
+            "barcode": "",
+            "family_id": default_product_family_id,
+            "family_name": "عائلة منتج متنوع",
+            "purchase_price": 0,
+            "wholesale_price": 0,
+            "retail_price": 0,
+            "quantity": 0,
+            "min_stock": 0,
+            "unit": "وحدة",
+            "description": "منتج افتراضي للمبيعات المتنوعة",
+            "supplier_id": default_supplier_id,
+            "supplier_name": "مورد متنوع",
+            "image": "",
+            "created_at": now,
+            "updated_at": now
+        })
+
 # ============ AUTH ROUTES ============
 
 @api_router.post("/auth/register", response_model=TokenResponse)
