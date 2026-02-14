@@ -48,6 +48,8 @@ import { AgentsDashboard } from './components/AgentsDashboard';
 import { SystemAlertsSection } from './components/SystemAlertsSection';
 import { MonitoringSection } from './components/MonitoringSection';
 import { FinanceReportsSection } from './components/FinanceReportsSection';
+import { AIAssistant } from '../../components/AIAssistant';
+import { Bot } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
