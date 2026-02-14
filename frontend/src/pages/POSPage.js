@@ -220,6 +220,35 @@ export default function POSPage() {
     }
   }, [selectedWilaya, deliveryType, deliveryEnabled, wilayas]);
 
+  // Search products as user types
+  useEffect(() => {
+    if (searchQuery.length >= 1) {
+      const query = searchQuery.toLowerCase();
+      const filtered = products.filter(p => 
+        p.name?.toLowerCase().includes(query) ||
+        p.code?.toLowerCase().includes(query) ||
+        p.barcode?.toLowerCase().includes(query)
+      ).slice(0, 10);
+      setSearchResults(filtered);
+      setShowSearchResults(true);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+  }, [searchQuery, products]);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('[data-testid="pos-search-input"]') && 
+          !e.target.closest('.search-results-dropdown')) {
+        setShowSearchResults(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const fetchProducts = async () => {
     try {
       const response = await axios.get(`${API}/products`);
