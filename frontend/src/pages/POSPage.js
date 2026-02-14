@@ -1467,8 +1467,8 @@ export default function POSPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-1.5 pt-0">
-                <div className="grid grid-cols-2 gap-1">
-                  {productShortcuts.slice(0, 10).map((shortcut, index) => {
+                <div className="grid grid-cols-3 gap-1">
+                  {productShortcuts.slice(0, 18).map((shortcut, index) => {
                     const productName = getShortcutProductName(shortcut);
                     const product = shortcut.productId ? products.find(p => p.id === shortcut.productId) : null;
                     const bgColor = shortcut.productId ? shortcut.color : undefined;
