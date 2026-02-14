@@ -1218,8 +1218,8 @@ export default function POSPage() {
             </Card>
           </div>
 
-          {/* Right Sidebar - Product Shortcuts (Compact) */}
-          <div className="col-span-2" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
+          {/* Right Sidebar - Product Shortcuts (Compact) - Hidden on mobile */}
+          <div className="hidden md:block md:col-span-2" style={{ direction: isRTL ? 'rtl' : 'ltr' }}>
             <Card className="h-full">
               <CardHeader className="p-2 pb-1">
                 <CardTitle className="text-xs text-center text-muted-foreground">
