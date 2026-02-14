@@ -1006,6 +1006,13 @@ export default function POSPage() {
             <h1 className="text-base sm:text-xl font-bold">
               {language === 'ar' ? 'نقطة البيع' : 'Point de Vente'}
             </h1>
+            {/* Barcode Scanner Indicator */}
+            {barcodeBuffer.length > 0 && (
+              <Badge variant="secondary" className="animate-pulse text-xs gap-1">
+                <Barcode className="h-3 w-3" />
+                {barcodeBuffer}
+              </Badge>
+            )}
             {returnMode && (
               <Badge variant="destructive" className="animate-pulse text-xs sm:text-sm">
                 {language === 'ar' ? 'إرجاع' : 'Retour'}
