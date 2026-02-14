@@ -269,6 +269,14 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 
 ## Upcoming Tasks (P1)
 
+- إكمال تقسيم `server.py` إلى ملفات routes منفصلة:
+  - `/routes/auth.py` - المصادقة
+  - `/routes/products.py` - المنتجات
+  - `/routes/sales.py` - المبيعات
+  - `/routes/customers.py` - الزبائن
+  - `/routes/saas.py` - إدارة SaaS
+- ربط قسم تنبيهات الأخطاء بـ API حقيقي
+
 ### Backend Refactoring
 - تقسيم `server.py` إلى ملفات منفصلة (routes, models, services)
 - الملف حالياً 12,332 سطر ويحتاج تقسيم
