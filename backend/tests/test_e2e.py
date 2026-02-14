@@ -33,7 +33,7 @@ async def tenant_token(client):
     """Get authentication token for tenant user"""
     response = await client.post("/api/auth/login", json=TENANT_USER)
     if response.status_code == 200:
-        return response.json().get("token")
+        return response.json().get("access_token")
     return None
 
 
@@ -42,7 +42,7 @@ async def admin_token(client):
     """Get authentication token for super admin"""
     response = await client.post("/api/auth/super-admin-login", json=SUPER_ADMIN)
     if response.status_code == 200:
-        return response.json().get("token")
+        return response.json().get("access_token")
     return None
 
 
