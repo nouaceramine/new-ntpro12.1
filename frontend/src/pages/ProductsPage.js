@@ -74,6 +74,7 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [useQuickSearch, setUseQuickSearch] = useState(localStorage.getItem('useQuickSearch') === 'true');
+  const [activeTab, setActiveTab] = useState('products'); // products, defective
   
   // Selection state for bulk delete
   const [selectedProducts, setSelectedProducts] = useState(new Set());
