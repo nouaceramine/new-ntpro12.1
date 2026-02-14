@@ -1093,9 +1093,10 @@ export default function POSPage() {
                 )}
               </div>
 
-              {/* Products Table */}
+              {/* Products Table - Responsive */}
               <div className="flex-1 overflow-auto">
-                <Table>
+                {/* Desktop Table */}
+                <Table className="hidden sm:table">
                   <TableHeader>
                     <TableRow className="bg-muted/50">
                       <TableHead className="w-20 text-xs">{language === 'ar' ? 'الكود' : 'Code'}</TableHead>
