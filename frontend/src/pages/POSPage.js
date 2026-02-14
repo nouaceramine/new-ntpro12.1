@@ -1098,7 +1098,7 @@ export default function POSPage() {
                 <Barcode className="absolute top-1/2 -translate-y-1/2 end-2 h-4 w-4 text-muted-foreground/50" />
                 {/* Search Results Dropdown */}
                 {showSearchResults && searchQuery.length >= 1 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto search-results-dropdown">
                     {searchResults.length === 0 ? (
                       <div className="p-3 text-center text-muted-foreground text-sm">
                         {language === 'ar' ? 'لا توجد نتائج' : 'Aucun résultat'}
@@ -1118,8 +1118,8 @@ export default function POSPage() {
                             <Package className="h-4 w-4 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{product.name}</p>
-                            <p className="text-xs text-muted-foreground">{product.code} • {formatCurrency(product.price)}</p>
+                            <p className="text-sm font-medium truncate">{language === 'ar' ? (product.name_ar || product.name_en) : (product.name_en || product.name_ar)}</p>
+                            <p className="text-xs text-muted-foreground">{product.article_code || product.barcode} • {formatCurrency(product.retail_price)}</p>
                           </div>
                           <Badge variant="outline" className="text-xs shrink-0">
                             {product.quantity || 0}
