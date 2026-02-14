@@ -65,19 +65,6 @@ export default function AddProductPage() {
     low_stock_threshold: '10'
   });
 
-  // Auto-add product name to compatible models
-  useEffect(() => {
-    if (formData.name.trim()) {
-      const currentModels = formData.compatible_models.split(',').map(m => m.trim()).filter(m => m);
-      if (!currentModels.includes(formData.name.trim())) {
-        const newModels = currentModels.length > 0 
-          ? `${formData.compatible_models}, ${formData.name.trim()}`
-          : formData.name.trim();
-        setFormData(prev => ({ ...prev, compatible_models: newModels }));
-      }
-    }
-  }, [formData.name]);
-
   // Generate article code and barcode on page load
   useEffect(() => {
     const generateCodes = async () => {
