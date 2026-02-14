@@ -92,8 +92,8 @@ const ProtectedRoute = ({ children, adminOnly = false, tenantOnly = false }) => 
     return <Navigate to="/portal" replace />;
   }
 
-  // Super Admin should only access /saas-admin
-  if (isSuperAdmin && !window.location.pathname.startsWith('/saas-admin')) {
+  // Super Admin should only access /saas-admin and /system-updates
+  if (isSuperAdmin && !window.location.pathname.startsWith('/saas-admin') && !window.location.pathname.startsWith('/system-updates')) {
     return <Navigate to="/saas-admin" replace />;
   }
 
