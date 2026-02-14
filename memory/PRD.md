@@ -281,10 +281,12 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 - `/components/FinanceReportsSection.js` - قسم التقارير المالية (361 سطر)
 - `SaasAdminPage.js` الرئيسي (1294 سطر)
 
-### إعادة هيكلة Backend (جزئي)
+### إعادة هيكلة Backend (تم جزء كبير - Feb 14, 2026)
 - تم إنشاء `/config/database.py` - إعدادات قاعدة البيانات
 - تم تحديث `/utils/auth.py` - دوال المصادقة
-- **ملاحظة**: `server.py` لا يزال يحتاج لتقسيم إضافي (12,332 سطر)
+- **تم إنشاء `/routes/saas_routes.py`** - جميع routes الـ SaaS Admin (39 endpoint، 1117 سطر)
+- **تم تقليل `server.py`** من 12,883 سطر إلى 11,393 سطر (حذف ~1490 سطر)
+- الملف لا يزال يحتاج لمزيد من التقسيم للأقسام الأخرى
 
 ### اختبارات E2E ✅
 - تم إنشاء `/tests/test_e2e.py` مع اختبارات شاملة:
@@ -299,23 +301,45 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 ## Upcoming Tasks (P1)
 
 - إكمال تقسيم `server.py` إلى ملفات routes منفصلة:
-  - `/routes/auth.py` - المصادقة
-  - `/routes/products.py` - المنتجات
-  - `/routes/sales.py` - المبيعات
-  - `/routes/customers.py` - الزبائن
-  - `/routes/saas.py` - إدارة SaaS
+  - `/routes/products.py` - المنتجات (18 endpoint)
+  - `/routes/sales.py` - المبيعات (14 endpoint)
+  - `/routes/customers.py` - الزبائن (9 endpoint)
+  - `/routes/employees.py` - الموظفين (15 endpoint)
 - ربط قسم تنبيهات الأخطاء بـ API حقيقي
-- تفعيل اختصارات المنتجات في صفحة POS
 
-### Backend Refactoring
-- تقسيم `server.py` إلى ملفات منفصلة (routes, models, services)
-- الملف حالياً 12,600+ سطر ويحتاج تقسيم
+### Backend Refactoring (In Progress)
+- ✅ تم نقل SaaS routes إلى `/routes/saas_routes.py`
+- باقي الأقسام للنقل: products, sales, customers, employees, notifications
 
 ### Frontend Refactoring
 - تقسيم `SaasAdminPage.js` إلى مكونات أصغر
 
 ### E2E Testing
 - إضافة اختبارات شاملة للمسارات الحرجة
+
+## Recent Fixes (Feb 14, 2026 - Session 3)
+
+### 1. تفعيل 18 اختصار في صفحة POS ✅
+- **التغيير**: زيادة عدد الاختصارات من 10 إلى 18
+- **التنسيق**: 6 صفوف × 3 أعمدة
+- **الملف**: `/app/frontend/src/pages/POSPage.js`
+
+### 2. إعادة هيكلة server.py (المرحلة الأولى) ✅
+- **تم نقل**: جميع SaaS endpoints (39 endpoint) إلى `/routes/saas_routes.py`
+- **الحجم الجديد**: 11,393 سطر (من 12,883)
+- **تم حذف**: ~1,490 سطر من server.py
+- **الأقسام المنقولة**:
+  - Plans routes
+  - Tenants routes
+  - Agents routes
+  - Registration routes
+  - Database management routes
+  - Stats & Monitoring routes
+
+### 3. إصلاح خطأ frontend في SaasAdminPage ✅
+- **المشكلة**: `Cannot read properties of undefined (reading 'toLocaleString')`
+- **السبب**: عدم تطابق أسماء الحقول (price_monthly vs monthly_price)
+- **الحل**: إضافة fallback values للحقول المالية
 
 ## Recent Fixes (Feb 14, 2026 - Session 2)
 
