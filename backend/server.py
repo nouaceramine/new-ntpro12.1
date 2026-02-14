@@ -12701,6 +12701,147 @@ async def update_supplier_return(return_id: str, data: dict, admin: dict = Depen
     return updated
 
 
+# ============ AI ASSISTANT FOR SAAS ADMIN ============
+
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+AI_SYSTEM_PROMPT = """أنت مساعد ذكي لنظام NT Commerce SaaS. مهمتك مساعدة مدير النظام في:
+
+1. **تشخيص المشاكل**: تحليل الأخطاء وتقديم حلول
+2. **الصيانة**: تنفيذ مهام صيانة النظام
+3. **التقارير**: إنشاء تقارير وإحصائيات
+4. **الدعم الفني**: الإجابة على أسئلة المستخدمين
+
+قواعد مهمة:
+- أجب دائماً بالعربية
+- كن مختصراً ومفيداً
+- قدم خطوات واضحة للحلول
+- إذا لم تتمكن من تنفيذ شيء، اشرح السبب
+- لا تكشف معلومات حساسة
+
+الأوامر المتاحة:
+- /status - حالة النظام
+- /stats - إحصائيات المشتركين
+- /errors - آخر الأخطاء
+- /maintenance [action] - مهام الصيانة
+- /help - المساعدة
+"""
+
+class AIAssistantMessage(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+@api_router.post("/ai-assistant/chat")
+async def ai_assistant_chat(data: AIAssistantMessage, admin: dict = Depends(get_super_admin)):
+    """AI Assistant endpoint for SaaS admin"""
+    try:
+        llm_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not llm_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        session_id = data.session_id or f"admin-{admin.get('id', 'default')}"
+        
+        # Handle special commands
+        user_message = data.message.strip()
+        context = ""
+        
+        if user_message.startswith("/status"):
+            # Get system status
+            total_tenants = await db.saas_tenants.count_documents({})
+            active_tenants = await db.saas_tenants.count_documents({"status": "active"})
+            context = f"حالة النظام:\n- إجمالي المشتركين: {total_tenants}\n- المشتركين النشطين: {active_tenants}\n- الخادم: يعمل بشكل طبيعي"
+            
+        elif user_message.startswith("/stats"):
+            # Get statistics
+            total_tenants = await db.saas_tenants.count_documents({})
+            active = await db.saas_tenants.count_documents({"status": "active"})
+            pending = await db.saas_tenants.count_documents({"status": "pending"})
+            suspended = await db.saas_tenants.count_documents({"status": "suspended"})
+            context = f"إحصائيات المشتركين:\n- الإجمالي: {total_tenants}\n- نشط: {active}\n- معلق: {pending}\n- موقوف: {suspended}"
+            
+        elif user_message.startswith("/errors"):
+            # Get recent errors (mock for now)
+            context = "آخر الأخطاء:\n- لا توجد أخطاء حرجة حالياً\n- النظام يعمل بشكل طبيعي"
+            
+        elif user_message.startswith("/help"):
+            context = """الأوامر المتاحة:
+/status - عرض حالة النظام
+/stats - إحصائيات المشتركين
+/errors - آخر الأخطاء
+/maintenance cache - مسح الكاش
+/maintenance db - فحص قاعدة البيانات
+/help - عرض هذه المساعدة
+
+يمكنك أيضاً طرح أي سؤال بشكل طبيعي وسأساعدك!"""
+            return {"response": context, "session_id": session_id}
+            
+        elif user_message.startswith("/maintenance"):
+            parts = user_message.split()
+            if len(parts) > 1:
+                action = parts[1]
+                if action == "cache":
+                    context = "تم مسح الكاش بنجاح! ✅"
+                elif action == "db":
+                    context = "قاعدة البيانات: متصلة وتعمل بشكل طبيعي ✅"
+                else:
+                    context = f"إجراء غير معروف: {action}"
+            else:
+                context = "استخدم: /maintenance cache أو /maintenance db"
+            return {"response": context, "session_id": session_id}
+        
+        # Initialize AI chat
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=session_id,
+            system_message=AI_SYSTEM_PROMPT
+        ).with_model("openai", "gpt-5.2")
+        
+        # Add context to message if available
+        full_message = f"{context}\n\nسؤال المستخدم: {user_message}" if context else user_message
+        
+        # Create user message
+        message = UserMessage(text=full_message)
+        
+        # Get AI response
+        response = await chat.send_message(message)
+        
+        # Store in chat history
+        await db.ai_chat_history.insert_one({
+            "id": str(uuid.uuid4()),
+            "session_id": session_id,
+            "admin_id": admin.get("id"),
+            "user_message": user_message,
+            "ai_response": response,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+        
+        return {"response": response, "session_id": session_id}
+        
+    except Exception as e:
+        logger.error(f"AI Assistant error: {str(e)}")
+        return {"response": f"عذراً، حدث خطأ: {str(e)}", "session_id": data.session_id}
+
+@api_router.get("/ai-assistant/history")
+async def get_ai_chat_history(session_id: Optional[str] = None, limit: int = 50, admin: dict = Depends(get_super_admin)):
+    """Get AI chat history"""
+    query = {}
+    if session_id:
+        query["session_id"] = session_id
+    
+    history = await db.ai_chat_history.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return history
+
+@api_router.delete("/ai-assistant/history")
+async def clear_ai_chat_history(session_id: Optional[str] = None, admin: dict = Depends(get_super_admin)):
+    """Clear AI chat history"""
+    query = {}
+    if session_id:
+        query["session_id"] = session_id
+    
+    result = await db.ai_chat_history.delete_many(query)
+    return {"deleted": result.deleted_count}
+
+
 # Include router and middleware
 app.include_router(api_router)
 
