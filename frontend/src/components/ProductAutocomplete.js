@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
-import { Search, X, Package, Loader2 } from 'lucide-react';
+import { Search, X, Package, Loader2, Barcode } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
