@@ -805,9 +805,6 @@ export const Layout = ({ children }) => {
         <main className="p-6 md:p-8 pt-20 md:pt-8">
           {children}
         </main>
-
-        {/* AI Assistant - Available on all pages */}
-        <AIAssistant context={getAIContext(location.pathname)} />
       </div>
     </div>
   );
