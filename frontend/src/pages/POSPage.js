@@ -1062,13 +1062,38 @@ export default function POSPage() {
                 <Search className="absolute top-1/2 -translate-y-1/2 start-2 h-4 w-4 text-muted-foreground z-10" />
                 <Input
                   ref={searchInputRef}
-                  placeholder={language === 'ar' ? 'بحث...' : 'Rechercher...'}
+                  placeholder={language === 'ar' ? 'بحث أو مسح باركود...' : 'Rechercher ou scanner...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setShowSearchResults(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && searchQuery.trim()) {
+                      e.preventDefault();
+                      // Search by barcode/code first
+                      const product = products.find(p => 
+                        p.barcode === searchQuery.trim() || 
+                        p.code === searchQuery.trim() ||
+                        p.code?.toLowerCase() === searchQuery.trim().toLowerCase()
+                      );
+                      if (product) {
+                        addToCart(product);
+                        toast.success(language === 'ar' ? `تمت إضافة: ${product.name}` : `Ajouté: ${product.name}`);
+                        setSearchQuery('');
+                        setShowSearchResults(false);
+                      } else if (searchResults.length === 1) {
+                        // If only one result, add it
+                        addToCart(searchResults[0]);
+                        toast.success(language === 'ar' ? `تمت إضافة: ${searchResults[0].name}` : `Ajouté: ${searchResults[0].name}`);
+                        setSearchQuery('');
+                        setShowSearchResults(false);
+                      }
+                    }
+                  }}
                   className="ps-8 h-9 text-sm"
                   data-testid="pos-search-input"
                 />
+                {/* Barcode icon indicator */}
+                <Barcode className="absolute top-1/2 -translate-y-1/2 end-2 h-4 w-4 text-muted-foreground/50" />
                 {/* Search Results Dropdown */}
                 {showSearchResults && searchQuery.length >= 1 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
