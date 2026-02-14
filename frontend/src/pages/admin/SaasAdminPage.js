@@ -735,15 +735,15 @@ export default function SaasAdminPage() {
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
                         <span>شهري:</span>
-                        <span className="font-semibold">{plan.price_monthly.toLocaleString()} دج</span>
+                        <span className="font-semibold">{(plan.monthly_price || plan.price_monthly || 0).toLocaleString()} دج</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>6 أشهر:</span>
-                        <span className="font-semibold">{plan.price_6months.toLocaleString()} دج</span>
+                        <span className="font-semibold">{(plan.six_month_price || plan.price_6months || 0).toLocaleString()} دج</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span>سنوي:</span>
-                        <span className="font-semibold">{plan.price_yearly.toLocaleString()} دج</span>
+                        <span className="font-semibold">{(plan.yearly_price || plan.price_yearly || 0).toLocaleString()} دج</span>
                       </div>
                       <div className="border-t pt-3 mt-3">
                         <p className="text-xs text-muted-foreground mb-2">الحدود:</p>
