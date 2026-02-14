@@ -837,6 +837,11 @@ export default function SaasAdminPage() {
           <TabsContent value="alerts" className="space-y-6" data-testid="alerts-content">
             <SystemAlertsSection />
           </TabsContent>
+
+          {/* AI Assistant Tab */}
+          <TabsContent value="ai-assistant" className="space-y-6" data-testid="ai-assistant-content">
+            <AIAssistant />
+          </TabsContent>
         </Tabs>
 
         {/* Plan Dialog */}
