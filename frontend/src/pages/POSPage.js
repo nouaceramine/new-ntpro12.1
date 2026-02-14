@@ -941,15 +941,49 @@ export default function POSPage() {
             {/* Search & Add Product */}
             <Card className="p-2">
               <div className="relative mb-2">
-                <Search className="absolute top-1/2 -translate-y-1/2 start-2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute top-1/2 -translate-y-1/2 start-2 h-4 w-4 text-muted-foreground z-10" />
                 <Input
                   ref={searchInputRef}
                   placeholder={language === 'ar' ? 'بحث...' : 'Rechercher...'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setShowSearchResults(true)}
                   className="ps-8 h-9 text-sm"
                   data-testid="pos-search-input"
                 />
+                {/* Search Results Dropdown */}
+                {showSearchResults && searchQuery.length >= 1 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                    {searchResults.length === 0 ? (
+                      <div className="p-3 text-center text-muted-foreground text-sm">
+                        {language === 'ar' ? 'لا توجد نتائج' : 'Aucun résultat'}
+                      </div>
+                    ) : (
+                      searchResults.slice(0, 8).map((product) => (
+                        <button
+                          key={product.id}
+                          onClick={() => {
+                            addToCart(product);
+                            setSearchQuery('');
+                            setShowSearchResults(false);
+                          }}
+                          className="w-full flex items-center gap-2 p-2 hover:bg-muted text-start transition-colors border-b last:border-b-0"
+                        >
+                          <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                            <Package className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{product.name}</p>
+                            <p className="text-xs text-muted-foreground">{product.code} • {formatCurrency(product.price)}</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs shrink-0">
+                            {product.quantity || 0}
+                          </Badge>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
               <Button 
                 size="sm" 
