@@ -40,6 +40,11 @@ export function ProductAutocomplete({
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
   
+  // Barcode scanner support
+  const [barcodeBuffer, setBarcodeBuffer] = useState('');
+  const barcodeTimeoutRef = useRef(null);
+  const lastKeyTimeRef = useRef(0);
+  
   const debouncedQuery = useDebounce(query, 300);
   
   // Search products
