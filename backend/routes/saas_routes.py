@@ -22,8 +22,8 @@ logger = logging.getLogger(__name__)
 # Database imports
 from config.database import db, main_db, client, get_tenant_db, init_tenant_database
 
-# JWT Settings
-SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+# JWT Settings - Use same key as main server
+SECRET_KEY = os.environ.get('JWT_SECRET', 'screenguard-secret-key-2024')
 ALGORITHM = "HS256"
 
 security = HTTPBearer()
