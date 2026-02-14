@@ -234,7 +234,7 @@ export function ProductAutocomplete({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => query.length >= 2 && results.length > 0 && setIsOpen(true)}
-          placeholder={placeholder || (language === 'ar' ? 'ابحث عن منتج...' : 'Rechercher un produit...')}
+          placeholder={placeholder || (language === 'ar' ? 'ابحث أو امسح باركود...' : 'Rechercher ou scanner...')}
           className="pr-10 pl-8"
           autoFocus={autoFocus}
           data-testid="product-autocomplete-input"
@@ -242,13 +242,20 @@ export function ProductAutocomplete({
         {loading && (
           <Loader2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
         )}
-        {query && !loading && (
+        {query && !loading && !barcodeBuffer && (
           <button
             onClick={handleClear}
             className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
+        )}
+        {/* Barcode Scanner Indicator */}
+        {barcodeBuffer.length > 0 && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-green-500 font-mono animate-pulse">
+            <Barcode className="h-3 w-3" />
+            {barcodeBuffer}
+          </div>
         )}
       </div>
       
