@@ -635,7 +635,9 @@ export default function POSPage() {
       setLastSaleInvoice(response.data.invoice_number);
       
       if (receiptSettings?.auto_print) {
-        printThermalReceipt(response.data.id);
+        // Use the saved printer size from settings
+        const printerSize = receiptSettings?.thermal_printer_size || '80mm';
+        printThermalReceipt(response.data.id, printerSize);
       } else if (receiptSettings?.show_print_dialog !== false) {
         setShowPrintDialog(true);
       }
