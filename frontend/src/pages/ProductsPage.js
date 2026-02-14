@@ -13,6 +13,7 @@ import { ExportPrintButtons } from '../components/ExportPrintButtons';
 import { Pagination } from '../components/Pagination';
 import { LazyImage } from '../components/LazyImage';
 import { ProductAutocomplete } from '../components/ProductAutocomplete';
+import { DefectiveProducts } from '../components/DefectiveProducts';
 import { toast } from 'sonner';
 import { 
   Package, 
@@ -30,7 +31,8 @@ import {
   Zap,
   Trash2,
   CheckSquare,
-  Square
+  Square,
+  AlertTriangle
 } from 'lucide-react';
 import {
   Select,
@@ -49,6 +51,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../components/ui/tabs';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
