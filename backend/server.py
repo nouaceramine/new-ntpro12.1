@@ -632,8 +632,8 @@ async def init_default_data(tenant_db):
             "description": "عائلة افتراضية للمنتجات",
             "description_ar": "عائلة افتراضية للمنتجات المتنوعة",
             "description_en": "Default family for various products",
-            "parent_id": None,
-            "parent_name": None,
+            "parent_id": "",
+            "parent_name": "",
             "image": "",
             "created_at": now,
             "updated_at": now
