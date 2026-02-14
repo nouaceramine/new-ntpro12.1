@@ -305,16 +305,33 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
   - `/routes/customers.py` - الزبائن
   - `/routes/saas.py` - إدارة SaaS
 - ربط قسم تنبيهات الأخطاء بـ API حقيقي
+- تفعيل اختصارات المنتجات في صفحة POS
 
 ### Backend Refactoring
 - تقسيم `server.py` إلى ملفات منفصلة (routes, models, services)
-- الملف حالياً 12,332 سطر ويحتاج تقسيم
+- الملف حالياً 12,600+ سطر ويحتاج تقسيم
 
 ### Frontend Refactoring
 - تقسيم `SaasAdminPage.js` إلى مكونات أصغر
 
 ### E2E Testing
 - إضافة اختبارات شاملة للمسارات الحرجة
+
+## Recent Fixes (Feb 14, 2026 - Session 2)
+
+### 1. إصلاح المساعد الذكي (AI Assistant) ✅
+- **المشكلة**: كان يظهر مرتين في صفحة SaaS Admin
+- **الحل**: إزالة المكون من `Layout.js` (كان يظهر لجميع الصفحات) وإبقاؤه فقط في تاب SaaS Admin
+- **النتيجة**: المساعد الذكي يظهر فقط للمدير الأعلى في تاب مخصص
+
+### 2. إزالة شارة "Made with Emergent" ✅
+- **الحل**: إزالة الكود من `/app/frontend/public/index.html`
+- **النتيجة**: لم تعد الشارة تظهر في أسفل يمين الصفحة
+
+### 3. إصلاح حقل "الموديلات المتوافقة" ✅
+- **المشكلة**: كان يضيف تلقائياً حروف اسم المنتج (c, ca, cab, cabl, cable)
+- **الحل**: إزالة useEffect من `AddProductPage.js` الذي كان يضيف الحروف تلقائياً
+- **النتيجة**: الحقل يبقى فارغاً والمستخدم يضيف ما يريد يدوياً
 
 ## Test Files
 - `/app/backend/tests/test_pos_redesign.py` - اختبارات POS redesign (6 tests - all passing)
