@@ -1166,13 +1166,65 @@ export default function POSPage() {
                     )}
                   </TableBody>
                 </Table>
+
+                {/* Mobile Cards View */}
+                <div className="sm:hidden space-y-2 p-2">
+                  {cart.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      <p className="text-sm">{language === 'ar' ? 'أضف منتجات' : 'Ajoutez des articles'}</p>
+                    </div>
+                  ) : (
+                    cart.map((item, index) => (
+                      <div 
+                        key={item.product_id} 
+                        className={`p-3 rounded-lg border ${item.is_return ? 'bg-red-50 border-red-200 dark:bg-red-950/20' : 'bg-muted/20'}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{item.name}</p>
+                            <p className="text-xs text-muted-foreground">{item.code}</p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-destructive shrink-0"
+                            onClick={() => removeFromCart(item.product_id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center justify-between mt-2 gap-2">
+                          <div className="flex items-center gap-1">
+                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, item.quantity - 1)}>
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <Input
+                              type="number"
+                              value={item.quantity}
+                              onChange={(e) => updateQuantity(item.product_id, parseInt(e.target.value) || 1)}
+                              className="w-12 h-7 text-center text-sm"
+                            />
+                            <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product_id, item.quantity + 1)}>
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <div className="text-end">
+                            <p className="text-xs text-muted-foreground">{formatCurrency(item.unit_price)} × {item.quantity}</p>
+                            <p className="font-bold text-sm">{formatCurrency(item.total)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
-              {/* Totals & Action Buttons */}
+              {/* Totals & Action Buttons - Responsive */}
               <div className="border-t p-2">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
                   {/* Totals */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto justify-center sm:justify-start">
                     <div className="text-center">
                       <p className="text-[10px] text-muted-foreground">{language === 'ar' ? 'الفرعي' : 'Sous-total'}</p>
                       <p className="text-sm font-bold">{formatCurrency(subtotal)}</p>
@@ -1183,35 +1235,35 @@ export default function POSPage() {
                         type="number"
                         value={discount || ''}
                         onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                        className="w-16 h-6 text-center text-sm"
+                        className="w-14 sm:w-16 h-6 text-center text-sm"
                       />
                     </div>
                     <div className="text-center">
                       <p className="text-[10px] text-muted-foreground">{language === 'ar' ? 'الإجمالي' : 'Total'}</p>
-                      <p className="text-lg font-bold text-primary">{formatCurrency(total)}</p>
+                      <p className="text-base sm:text-lg font-bold text-primary">{formatCurrency(total)}</p>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={completeSale}
-                      disabled={loading || cart.length === 0 || !hasOpenSession}
-                      className="h-9 px-4 gap-1"
-                      data-testid="vente-btn"
-                    >
-                      <Check className="h-4 w-4" />
-                      {language === 'ar' ? 'تأكيد' : 'Valider'}
-                      <Badge variant="secondary" className="text-[10px] ms-1">F10</Badge>
-                    </Button>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Button 
                       variant="outline"
                       onClick={clearCart}
-                      className="h-9 px-3 gap-1"
+                      className="h-9 px-3 gap-1 flex-1 sm:flex-none"
                       data-testid="annuler-btn"
                     >
                       <X className="h-4 w-4" />
                       {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                    </Button>
+                    <Button
+                      onClick={completeSale}
+                      disabled={loading || cart.length === 0 || !hasOpenSession}
+                      className="h-9 px-4 gap-1 flex-1 sm:flex-none"
+                      data-testid="vente-btn"
+                    >
+                      <Check className="h-4 w-4" />
+                      {language === 'ar' ? 'تأكيد' : 'Valider'}
+                      <Badge variant="secondary" className="text-[10px] ms-1 hidden sm:inline">F10</Badge>
                     </Button>
                   </div>
                 </div>
