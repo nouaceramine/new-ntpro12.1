@@ -1434,6 +1434,10 @@ export default function SaasAdminPage() {
               <Activity className="h-4 w-4" />
               المراقبة
             </TabsTrigger>
+            <TabsTrigger value="alerts" className="gap-2" data-testid="alerts-tab">
+              <Bug className="h-4 w-4" />
+              الأخطاء
+            </TabsTrigger>
           </TabsList>
 
           {/* Tenants Tab */}
