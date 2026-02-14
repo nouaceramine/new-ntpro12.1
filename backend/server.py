@@ -12291,6 +12291,289 @@ async def create_public_order(store_slug: str, order: StoreOrder):
     }
 
 
+# ============ DEFECTIVE PRODUCTS MANAGEMENT ============
+
+class DefectiveProductCreate(BaseModel):
+    product_id: str
+    quantity: int
+    reason: str  # manufacturing, shipping, storage, other
+    notes: Optional[str] = ""
+    supplier_id: Optional[str] = None
+    action: str = "pending"  # pending, return_to_supplier, dispose, repair, discount_sale
+    images: Optional[List[str]] = []
+
+@api_router.post("/defective-products")
+async def create_defective_product(data: DefectiveProductCreate, admin: dict = Depends(get_tenant_admin)):
+    """Register a defective product and deduct from inventory"""
+    db = await get_tenant_db(admin["tenant_id"])
+    
+    # Get product info
+    product = await db.products.find_one({"id": data.product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    # Check if enough quantity
+    if product.get("quantity", 0) < data.quantity:
+        raise HTTPException(status_code=400, detail="Not enough quantity in stock")
+    
+    # Get supplier info if provided
+    supplier_name = None
+    if data.supplier_id:
+        supplier = await db.suppliers.find_one({"id": data.supplier_id}, {"_id": 0, "name": 1})
+        supplier_name = supplier.get("name") if supplier else None
+    
+    # Create defective product record
+    defective_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    
+    defective_doc = {
+        "id": defective_id,
+        "product_id": data.product_id,
+        "product_name": product.get("name_ar") or product.get("name_en", ""),
+        "product_code": product.get("article_code", ""),
+        "quantity": data.quantity,
+        "reason": data.reason,
+        "notes": data.notes or "",
+        "supplier_id": data.supplier_id,
+        "supplier_name": supplier_name,
+        "action": data.action,
+        "status": "pending",
+        "return_request_id": None,
+        "created_at": now,
+        "updated_at": now,
+        "created_by": admin.get("name", admin.get("email", "")),
+        "images": data.images or [],
+        "unit_cost": product.get("purchase_price", 0),
+        "total_cost": product.get("purchase_price", 0) * data.quantity
+    }
+    
+    await db.defective_products.insert_one(defective_doc)
+    
+    # Deduct from main inventory
+    await db.products.update_one(
+        {"id": data.product_id},
+        {"$inc": {"quantity": -data.quantity}}
+    )
+    
+    # If action is return_to_supplier, create a return request
+    if data.action == "return_to_supplier" and data.supplier_id:
+        return_request_id = str(uuid.uuid4())
+        return_request = {
+            "id": return_request_id,
+            "defective_product_id": defective_id,
+            "supplier_id": data.supplier_id,
+            "supplier_name": supplier_name,
+            "product_id": data.product_id,
+            "product_name": defective_doc["product_name"],
+            "quantity": data.quantity,
+            "reason": data.reason,
+            "notes": data.notes,
+            "status": "pending",
+            "created_at": now,
+            "updated_at": now
+        }
+        await db.supplier_returns.insert_one(return_request)
+        await db.defective_products.update_one(
+            {"id": defective_id},
+            {"$set": {"return_request_id": return_request_id}}
+        )
+        defective_doc["return_request_id"] = return_request_id
+    
+    # Check defective rate and create alert if needed
+    total_products = await db.products.count_documents({})
+    total_defective = await db.defective_products.count_documents({"status": {"$ne": "completed"}})
+    defective_rate = (total_defective / total_products * 100) if total_products > 0 else 0
+    
+    if defective_rate > 5:
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "type": "defective_alert",
+            "title": "تنبيه: نسبة المنتجات المعطلة مرتفعة",
+            "message": f"نسبة المنتجات المعطلة وصلت إلى {defective_rate:.1f}%",
+            "read": False,
+            "created_at": now
+        })
+    
+    return {**defective_doc, "_id": None}
+
+@api_router.get("/defective-products")
+async def get_defective_products(
+    status: Optional[str] = None,
+    reason: Optional[str] = None,
+    supplier_id: Optional[str] = None,
+    admin: dict = Depends(get_tenant_admin)
+):
+    """Get all defective products with filters"""
+    db = await get_tenant_db(admin["tenant_id"])
+    
+    query = {}
+    if status:
+        query["status"] = status
+    if reason:
+        query["reason"] = reason
+    if supplier_id:
+        query["supplier_id"] = supplier_id
+    
+    defective_products = await db.defective_products.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return defective_products
+
+@api_router.get("/defective-products/stats")
+async def get_defective_stats(admin: dict = Depends(get_tenant_admin)):
+    """Get defective products statistics"""
+    db = await get_tenant_db(admin["tenant_id"])
+    
+    total = await db.defective_products.count_documents({})
+    pending = await db.defective_products.count_documents({"status": "pending"})
+    in_progress = await db.defective_products.count_documents({"status": "in_progress"})
+    completed = await db.defective_products.count_documents({"status": "completed"})
+    
+    by_reason = await db.defective_products.aggregate([
+        {"$group": {"_id": "$reason", "count": {"$sum": 1}, "total_qty": {"$sum": "$quantity"}}}
+    ]).to_list(10)
+    
+    by_action = await db.defective_products.aggregate([
+        {"$group": {"_id": "$action", "count": {"$sum": 1}, "total_qty": {"$sum": "$quantity"}}}
+    ]).to_list(10)
+    
+    cost_result = await db.defective_products.aggregate([
+        {"$group": {"_id": None, "total_cost": {"$sum": "$total_cost"}, "total_qty": {"$sum": "$quantity"}}}
+    ]).to_list(1)
+    
+    total_cost = cost_result[0]["total_cost"] if cost_result else 0
+    total_qty = cost_result[0]["total_qty"] if cost_result else 0
+    
+    by_supplier = await db.defective_products.aggregate([
+        {"$match": {"supplier_id": {"$ne": None}}},
+        {"$group": {"_id": "$supplier_id", "supplier_name": {"$first": "$supplier_name"}, "count": {"$sum": 1}, "total_qty": {"$sum": "$quantity"}}}
+    ]).to_list(20)
+    
+    return {
+        "total": total,
+        "pending": pending,
+        "in_progress": in_progress,
+        "completed": completed,
+        "total_cost": total_cost,
+        "total_quantity": total_qty,
+        "by_reason": {item["_id"]: {"count": item["count"], "quantity": item["total_qty"]} for item in by_reason if item["_id"]},
+        "by_action": {item["_id"]: {"count": item["count"], "quantity": item["total_qty"]} for item in by_action if item["_id"]},
+        "by_supplier": by_supplier
+    }
+
+@api_router.put("/defective-products/{defective_id}")
+async def update_defective_product(defective_id: str, data: dict, admin: dict = Depends(get_tenant_admin)):
+    """Update defective product status or action"""
+    db = await get_tenant_db(admin["tenant_id"])
+    
+    defective = await db.defective_products.find_one({"id": defective_id})
+    if not defective:
+        raise HTTPException(status_code=404, detail="Defective product not found")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc)}
+    
+    if "status" in data:
+        update_data["status"] = data["status"]
+    if "action" in data:
+        update_data["action"] = data["action"]
+    if "notes" in data:
+        update_data["notes"] = data["notes"]
+    
+    await db.defective_products.update_one({"id": defective_id}, {"$set": update_data})
+    
+    if data.get("action") == "return_to_supplier" and not defective.get("return_request_id") and defective.get("supplier_id"):
+        return_request_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc)
+        return_request = {
+            "id": return_request_id,
+            "defective_product_id": defective_id,
+            "supplier_id": defective["supplier_id"],
+            "supplier_name": defective.get("supplier_name"),
+            "product_id": defective["product_id"],
+            "product_name": defective["product_name"],
+            "quantity": defective["quantity"],
+            "reason": defective["reason"],
+            "notes": defective.get("notes", ""),
+            "status": "pending",
+            "created_at": now,
+            "updated_at": now
+        }
+        await db.supplier_returns.insert_one(return_request)
+        await db.defective_products.update_one(
+            {"id": defective_id},
+            {"$set": {"return_request_id": return_request_id}}
+        )
+    
+    updated = await db.defective_products.find_one({"id": defective_id}, {"_id": 0})
+    return updated
+
+@api_router.delete("/defective-products/{defective_id}")
+async def delete_defective_product(defective_id: str, restore_stock: bool = False, admin: dict = Depends(get_tenant_admin)):
+    """Delete defective product record, optionally restore stock"""
+    db = await get_tenant_db(admin["tenant_id"])
+    
+    defective = await db.defective_products.find_one({"id": defective_id})
+    if not defective:
+        raise HTTPException(status_code=404, detail="Defective product not found")
+    
+    if restore_stock:
+        await db.products.update_one(
+            {"id": defective["product_id"]},
+            {"$inc": {"quantity": defective["quantity"]}}
+        )
+    
+    if defective.get("return_request_id"):
+        await db.supplier_returns.delete_one({"id": defective["return_request_id"]})
+    
+    await db.defective_products.delete_one({"id": defective_id})
+    return {"message": "Deleted successfully", "stock_restored": restore_stock}
+
+@api_router.get("/supplier-returns")
+async def get_supplier_returns(
+    status: Optional[str] = None,
+    supplier_id: Optional[str] = None,
+    admin: dict = Depends(get_tenant_admin)
+):
+    """Get supplier return requests"""
+    db = await get_tenant_db(admin["tenant_id"])
+    
+    query = {}
+    if status:
+        query["status"] = status
+    if supplier_id:
+        query["supplier_id"] = supplier_id
+    
+    returns = await db.supplier_returns.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return returns
+
+@api_router.put("/supplier-returns/{return_id}")
+async def update_supplier_return(return_id: str, data: dict, admin: dict = Depends(get_tenant_admin)):
+    """Update supplier return status"""
+    db = await get_tenant_db(admin["tenant_id"])
+    
+    return_request = await db.supplier_returns.find_one({"id": return_id})
+    if not return_request:
+        raise HTTPException(status_code=404, detail="Return request not found")
+    
+    update_data = {"updated_at": datetime.now(timezone.utc)}
+    
+    if "status" in data:
+        update_data["status"] = data["status"]
+        if data["status"] == "refunded" and return_request.get("defective_product_id"):
+            await db.defective_products.update_one(
+                {"id": return_request["defective_product_id"]},
+                {"$set": {"status": "completed", "updated_at": datetime.now(timezone.utc)}}
+            )
+    
+    if "notes" in data:
+        update_data["notes"] = data["notes"]
+    if "refund_amount" in data:
+        update_data["refund_amount"] = data["refund_amount"]
+    
+    await db.supplier_returns.update_one({"id": return_id}, {"$set": update_data})
+    
+    updated = await db.supplier_returns.find_one({"id": return_id}, {"_id": 0})
+    return updated
+
+
 # Include router and middleware
 app.include_router(api_router)
 
