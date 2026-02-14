@@ -295,6 +295,7 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 ## Test Files
 - `/app/backend/tests/test_pos_redesign.py` - اختبارات POS redesign (6 tests - all passing)
 - `/app/test_reports/iteration_50.json` - Frontend tests for POS task menu (12 tests - all passing)
+- `/app/test_reports/iteration_52.json` - اختبارات دعم الباركود وصفحة POS (100% success)
 
 ---
-*Last Updated: February 13, 2026*
+*Last Updated: February 14, 2026*
