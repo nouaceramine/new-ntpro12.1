@@ -794,7 +794,7 @@ export default function SaasAdminPage() {
                     {payments.map(payment => (
                       <TableRow key={payment.id}>
                         <TableCell className="font-medium">{payment.tenant_name}</TableCell>
-                        <TableCell>{payment.amount.toLocaleString()} دج</TableCell>
+                        <TableCell>{(payment.amount || 0).toLocaleString()} دج</TableCell>
                         <TableCell>
                           <Badge variant="outline">
                             {payment.subscription_type === 'monthly' ? 'شهري' :
