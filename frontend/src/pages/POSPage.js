@@ -147,6 +147,10 @@ export default function POSPage() {
   // Calculator
   const [showCalculator, setShowCalculator] = useState(false);
 
+  // Search Results
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+
   // Sale Code
   const [saleCode, setSaleCode] = useState('');
 
