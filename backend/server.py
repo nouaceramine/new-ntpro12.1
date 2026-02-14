@@ -12847,7 +12847,6 @@ async def clear_ai_chat_history(session_id: Optional[str] = None, admin: dict = 
 
 # Include router and middleware
 app.include_router(api_router)
-app.include_router(saas_admin_router, prefix="/api")  # Refactored SaaS routes
 
 # Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
 @app.middleware("http")
