@@ -28,6 +28,10 @@ def create_access_token(data: dict) -> str:
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+def decode_token(token: str) -> dict:
+    """Decode and validate JWT token"""
+    return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """Get the current authenticated user from JWT token"""
     try:
