@@ -1567,7 +1567,8 @@ export default function POSPage() {
                 <Button
                   onClick={() => {
                     if (lastSaleId) {
-                      printThermalReceipt(lastSaleId);
+                      const printerSize = receiptSettings?.thermal_printer_size || '80mm';
+                      printThermalReceipt(lastSaleId, printerSize);
                     }
                     setShowPrintDialog(false);
                   }}
