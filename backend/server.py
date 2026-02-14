@@ -389,7 +389,15 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def verify_password(password: str, hashed: str) -> bool:
-    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    try:
+        logger.info(f"verify_password called - password length: {len(password)}, hash length: {len(hashed)}")
+        logger.info(f"Hash starts with: {hashed[:10]}")
+        result = bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+        logger.info(f"bcrypt.checkpw result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"verify_password error: {e}")
+        return False
 
 def create_access_token(data: dict) -> str:
     to_encode = data.copy()
