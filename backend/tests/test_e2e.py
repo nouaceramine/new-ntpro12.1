@@ -55,7 +55,7 @@ class TestAuthentication:
         response = await client.post("/api/auth/login", json=TENANT_USER)
         assert response.status_code == 200
         data = response.json()
-        assert "token" in data
+        assert "access_token" in data
         assert "user" in data
         
     @pytest.mark.asyncio
@@ -73,7 +73,7 @@ class TestAuthentication:
         response = await client.post("/api/auth/super-admin-login", json=SUPER_ADMIN)
         assert response.status_code == 200
         data = response.json()
-        assert "token" in data
+        assert "access_token" in data
 
 
 class TestProducts:
