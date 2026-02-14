@@ -226,8 +226,9 @@ export default function POSPage() {
     if (searchQuery.length >= 1) {
       const query = searchQuery.toLowerCase();
       const filtered = products.filter(p => 
-        p.name?.toLowerCase().includes(query) ||
-        p.code?.toLowerCase().includes(query) ||
+        p.name_ar?.toLowerCase().includes(query) ||
+        p.name_en?.toLowerCase().includes(query) ||
+        p.article_code?.toLowerCase().includes(query) ||
         p.barcode?.toLowerCase().includes(query)
       ).slice(0, 10);
       setSearchResults(filtered);
