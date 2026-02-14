@@ -465,6 +465,79 @@ export default function POSPage() {
     } catch (e) {}
   };
 
+  // Barcode Scanner Effect - must be after addToCart is defined
+  useEffect(() => {
+    const handleBarcodeInput = (e) => {
+      // Ignore if typing in an input field (except our search input)
+      const activeElement = document.activeElement;
+      const isInputField = activeElement.tagName === 'INPUT' || 
+                          activeElement.tagName === 'TEXTAREA' ||
+                          activeElement.isContentEditable;
+      
+      // Only process if not in a text input (to allow barcode scanning while not focused)
+      // OR if it's our search input
+      const isSearchInput = activeElement.getAttribute('data-testid') === 'pos-search-input';
+      
+      if (isInputField && !isSearchInput) return;
+      
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastKeyTimeRef.current;
+      lastKeyTimeRef.current = currentTime;
+      
+      // Scanner typically inputs faster than 50ms per character
+      const isScanner = timeDiff < 50;
+      
+      // Handle Enter key - search by barcode
+      if (e.key === 'Enter' && barcodeBuffer.length >= 3) {
+        e.preventDefault();
+        const barcode = barcodeBuffer.trim();
+        
+        // Search product by barcode
+        const product = products.find(p => 
+          p.barcode === barcode || 
+          p.article_code === barcode ||
+          p.article_code?.toLowerCase() === barcode.toLowerCase()
+        );
+        
+        if (product) {
+          addToCart(product);
+          toast.success(language === 'ar' 
+            ? `تمت إضافة: ${product.name_ar || product.name_en}` 
+            : `Ajouté: ${product.name_en || product.name_ar}`);
+        } else {
+          toast.error(language === 'ar' 
+            ? `المنتج غير موجود: ${barcode}` 
+            : `Produit introuvable: ${barcode}`);
+        }
+        
+        setBarcodeBuffer('');
+        setSearchQuery('');
+        return;
+      }
+      
+      // Build barcode buffer
+      if (e.key.length === 1 && (isScanner || barcodeBuffer.length === 0)) {
+        setBarcodeBuffer(prev => prev + e.key);
+        
+        // Clear buffer after 500ms of no input (typing ended)
+        if (barcodeTimeoutRef.current) {
+          clearTimeout(barcodeTimeoutRef.current);
+        }
+        barcodeTimeoutRef.current = setTimeout(() => {
+          setBarcodeBuffer('');
+        }, 500);
+      }
+    };
+    
+    document.addEventListener('keydown', handleBarcodeInput);
+    return () => {
+      document.removeEventListener('keydown', handleBarcodeInput);
+      if (barcodeTimeoutRef.current) {
+        clearTimeout(barcodeTimeoutRef.current);
+      }
+    };
+  }, [barcodeBuffer, products, language, addToCart]);
+
   const updateCartItemQuantity = (productId, newQty) => {
     if (newQty === 0) {
       removeFromCart(productId);
