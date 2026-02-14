@@ -62,7 +62,8 @@ import {
   DollarSign,
   Trash2,
   RotateCcw,
-  History
+  History,
+  Barcode
 } from 'lucide-react';
 import { Calculator } from '../components/Calculator';
 
