@@ -658,6 +658,13 @@ async def init_default_data(tenant_db):
             "updated_at": now
         })
 
+@api_router.post("/init-default-data")
+async def api_init_default_data(admin: dict = Depends(get_tenant_admin)):
+    """Initialize default data for existing tenant"""
+    tenant_db = get_tenant_db(admin["tenant_id"])
+    await init_default_data(tenant_db)
+    return {"message": "تم تهيئة البيانات الافتراضية بنجاح", "status": "success"}
+
 # ============ AUTH ROUTES ============
 
 @api_router.post("/auth/register", response_model=TokenResponse)
