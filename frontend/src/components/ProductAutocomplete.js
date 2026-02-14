@@ -88,6 +88,83 @@ export function ProductAutocomplete({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
+  // Barcode Scanner Support - detects rapid keyboard input
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      // Only process when input is focused
+      if (document.activeElement !== inputRef.current) return;
+      
+      // Ignore special keys
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastKeyTimeRef.current;
+      lastKeyTimeRef.current = currentTime;
+      
+      // Scanner typically inputs faster than 50ms per character
+      const isScanner = timeDiff < 50;
+      
+      // Handle Enter key - search by barcode
+      if (e.key === 'Enter' && barcodeBuffer.length >= 3) {
+        e.preventDefault();
+        const barcode = barcodeBuffer.trim();
+        
+        // Search and select product by barcode
+        setLoading(true);
+        axios.get(`${API}/products?search=${encodeURIComponent(barcode)}`)
+          .then(response => {
+            const products = response.data;
+            // Find exact barcode match first
+            const exactMatch = products.find(p => 
+              p.barcode === barcode || 
+              p.article_code === barcode ||
+              p.article_code?.toLowerCase() === barcode.toLowerCase()
+            );
+            
+            if (exactMatch) {
+              handleSelect(exactMatch);
+            } else if (products.length === 1) {
+              // If only one result, select it
+              handleSelect(products[0]);
+            } else if (products.length > 1) {
+              // Show results if multiple matches
+              setResults(products.slice(0, 10));
+              setIsOpen(true);
+            } else {
+              // No products found
+              console.log('Barcode not found:', barcode);
+            }
+          })
+          .catch(err => console.error('Barcode search error:', err))
+          .finally(() => setLoading(false));
+        
+        setBarcodeBuffer('');
+        return;
+      }
+      
+      // Build barcode buffer for scanner input
+      if (e.key.length === 1 && (isScanner || barcodeBuffer.length === 0)) {
+        setBarcodeBuffer(prev => prev + e.key);
+        
+        // Clear buffer after 500ms of no input
+        if (barcodeTimeoutRef.current) {
+          clearTimeout(barcodeTimeoutRef.current);
+        }
+        barcodeTimeoutRef.current = setTimeout(() => {
+          setBarcodeBuffer('');
+        }, 500);
+      }
+    };
+    
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+      if (barcodeTimeoutRef.current) {
+        clearTimeout(barcodeTimeoutRef.current);
+      }
+    };
+  }, [barcodeBuffer]);
+
   // Handle keyboard navigation
   const handleKeyDown = (e) => {
     if (!isOpen || results.length === 0) {
