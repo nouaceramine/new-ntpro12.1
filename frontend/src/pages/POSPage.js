@@ -1350,6 +1350,7 @@ export default function POSPage() {
                 <div className="grid grid-cols-2 gap-1">
                   {productShortcuts.slice(0, 10).map((shortcut, index) => {
                     const productName = getShortcutProductName(shortcut);
+                    const product = shortcut.productId ? products.find(p => p.id === shortcut.productId) : null;
                     const bgColor = shortcut.productId ? shortcut.color : undefined;
                     
                     return (
@@ -1364,7 +1365,7 @@ export default function POSPage() {
                           setShowShortcutDialog(true);
                         }}
                         style={{ backgroundColor: bgColor }}
-                        className={`py-2 px-1 rounded text-[10px] font-medium text-center leading-tight transition-all h-10 flex items-center justify-center ${
+                        className={`py-1.5 px-1 rounded text-[9px] font-medium text-center leading-tight transition-all h-12 flex flex-col items-center justify-center gap-0.5 ${
                           shortcut.productId 
                             ? 'text-white hover:opacity-90 shadow-sm' 
                             : 'bg-muted text-muted-foreground hover:bg-muted/80 border border-dashed'
@@ -1372,7 +1373,20 @@ export default function POSPage() {
                         title={productName}
                         data-testid={`shortcut-${index}`}
                       >
-                        <span className="line-clamp-2">{productName}</span>
+                        {shortcut.productId ? (
+                          <>
+                            <Package className="h-4 w-4 shrink-0" />
+                            <span className="line-clamp-1 w-full px-0.5">{productName.split(' ')[0]}</span>
+                            {product?.price && (
+                              <span className="text-[8px] opacity-80">{formatCurrency(product.price)}</span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4 opacity-40" />
+                            <span className="text-[8px] opacity-50">{index + 1}</span>
+                          </>
+                        )}
                       </button>
                     );
                   })}
