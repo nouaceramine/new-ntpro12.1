@@ -687,3 +687,154 @@ async def get_stats_extended(admin: dict = Depends(get_super_admin)):
         "monthly_revenue": monthly_revenue
     }
 
+
+# ============ AGENTS/RESELLERS ROUTES ============
+
+@router.get("/saas/agents", response_model=List[AgentResponse])
+async def get_agents(admin: dict = Depends(get_super_admin)):
+    """Get all agents"""
+    agents = await db.saas_agents.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    result = []
+    for agent in agents:
+        tenants_count = await db.saas_tenants.count_documents({"agent_id": agent["id"]})
+        agent_data = {k: v for k, v in agent.items() if k != "password"}
+        agent_data["tenants_count"] = tenants_count
+        result.append(AgentResponse(**agent_data))
+    return result
+
+@router.get("/saas/agents/{agent_id}", response_model=AgentResponse)
+async def get_agent(agent_id: str, admin: dict = Depends(get_super_admin)):
+    """Get a specific agent"""
+    agent = await db.saas_agents.find_one({"id": agent_id}, {"_id": 0})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    tenants_count = await db.saas_tenants.count_documents({"agent_id": agent_id})
+    agent_data = {k: v for k, v in agent.items() if k != "password"}
+    agent_data["tenants_count"] = tenants_count
+    return AgentResponse(**agent_data)
+
+@router.post("/saas/agents", response_model=AgentResponse)
+async def create_agent(agent: AgentCreate, admin: dict = Depends(get_super_admin)):
+    """Create a new agent"""
+    existing = await db.saas_agents.find_one({"email": agent.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="البريد الإلكتروني مستخدم بالفعل")
+    
+    hashed_password = bcrypt.hashpw(agent.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    agent_doc = {
+        "id": str(uuid.uuid4()),
+        "name": agent.name,
+        "email": agent.email,
+        "password": hashed_password,
+        "phone": agent.phone or "",
+        "commission_rate": agent.commission_rate,
+        "total_earnings": 0,
+        "pending_earnings": 0,
+        "paid_earnings": 0,
+        "notes": agent.notes or "",
+        "is_active": agent.is_active,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.saas_agents.insert_one(agent_doc)
+    return AgentResponse(**{k: v for k, v in agent_doc.items() if k not in ["_id", "password"]}, tenants_count=0)
+
+@router.put("/saas/agents/{agent_id}", response_model=AgentResponse)
+async def update_agent(agent_id: str, updates: AgentUpdate, admin: dict = Depends(get_super_admin)):
+    """Update an agent"""
+    agent = await db.saas_agents.find_one({"id": agent_id})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.saas_agents.update_one({"id": agent_id}, {"$set": update_data})
+    updated = await db.saas_agents.find_one({"id": agent_id}, {"_id": 0})
+    tenants_count = await db.saas_tenants.count_documents({"agent_id": agent_id})
+    
+    return AgentResponse(**{k: v for k, v in updated.items() if k != "password"}, tenants_count=tenants_count)
+
+@router.delete("/saas/agents/{agent_id}")
+async def delete_agent(agent_id: str, admin: dict = Depends(get_super_admin)):
+    """Delete an agent"""
+    result = await db.saas_agents.delete_one({"id": agent_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return {"message": "Agent deleted successfully"}
+
+@router.get("/saas/agents/{agent_id}/transactions")
+async def get_agent_transactions(agent_id: str, admin: dict = Depends(get_super_admin)):
+    """Get agent transactions"""
+    transactions = await db.saas_agent_transactions.find({"agent_id": agent_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return transactions
+
+@router.post("/saas/agents/{agent_id}/transactions", response_model=AgentTransactionResponse)
+async def create_agent_transaction(agent_id: str, transaction: AgentTransactionCreate, admin: dict = Depends(get_super_admin)):
+    """Create agent transaction"""
+    agent = await db.saas_agents.find_one({"id": agent_id})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    tenant_name = ""
+    if transaction.tenant_id:
+        tenant = await db.saas_tenants.find_one({"id": transaction.tenant_id}, {"_id": 0, "name": 1})
+        tenant_name = tenant.get("name", "") if tenant else ""
+    
+    transaction_doc = {
+        "id": str(uuid.uuid4()),
+        "agent_id": agent_id,
+        "type": transaction.type,
+        "amount": transaction.amount,
+        "tenant_id": transaction.tenant_id,
+        "tenant_name": tenant_name,
+        "notes": transaction.notes or "",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.saas_agent_transactions.insert_one(transaction_doc)
+    
+    if transaction.type == "commission":
+        await db.saas_agents.update_one({"id": agent_id}, {
+            "$inc": {"total_earnings": transaction.amount, "pending_earnings": transaction.amount}
+        })
+    elif transaction.type == "payout":
+        await db.saas_agents.update_one({"id": agent_id}, {
+            "$inc": {"pending_earnings": -transaction.amount, "paid_earnings": transaction.amount}
+        })
+    
+    return AgentTransactionResponse(**{k: v for k, v in transaction_doc.items() if k != "_id"})
+
+@router.get("/saas/agents/{agent_id}/tenants")
+async def get_agent_tenants(agent_id: str, admin: dict = Depends(get_super_admin)):
+    """Get tenants under an agent"""
+    tenants = await db.saas_tenants.find({"agent_id": agent_id}, {"_id": 0}).to_list(1000)
+    return tenants
+
+@router.post("/saas/agent-login")
+async def agent_login(login_data: AgentLoginRequest):
+    """Agent login"""
+    agent = await db.saas_agents.find_one({"email": login_data.email})
+    if not agent:
+        raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
+    
+    if not bcrypt.checkpw(login_data.password.encode('utf-8'), agent["password"].encode('utf-8')):
+        raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
+    
+    if not agent.get("is_active", True):
+        raise HTTPException(status_code=403, detail="الحساب معطل")
+    
+    access_token = create_access_token({
+        "sub": agent["id"],
+        "email": agent["email"],
+        "role": "agent",
+        "type": "agent"
+    })
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {k: v for k, v in agent.items() if k not in ["_id", "password"]}
+    }
+
