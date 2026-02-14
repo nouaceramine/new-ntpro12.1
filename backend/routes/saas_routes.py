@@ -316,3 +316,221 @@ async def delete_plan(plan_id: str, admin: dict = Depends(get_super_admin)):
         raise HTTPException(status_code=404, detail="Plan not found")
     return {"message": "Plan deleted successfully"}
 
+
+# ============ TENANTS ROUTES ============
+
+@router.get("/saas/tenants", response_model=List[TenantResponse])
+async def get_tenants(admin: dict = Depends(get_super_admin)):
+    """Get all tenants"""
+    tenants = await db.saas_tenants.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    
+    agents_list = await db.saas_agents.find({}, {"_id": 0, "id": 1, "name": 1}).to_list(1000)
+    agents_map = {a["id"]: a["name"] for a in agents_list}
+    
+    for tenant in tenants:
+        plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0, "name": 1, "name_ar": 1})
+        tenant["plan_name"] = plan.get("name_ar", "") if plan else ""
+        agent_id = tenant.get("agent_id")
+        tenant["agent_name"] = agents_map.get(agent_id, "") if agent_id else ""
+        
+        tenant_db = client[f"tenant_{tenant['id'].replace('-', '_')}"]
+        products_count = await tenant_db.products.count_documents({})
+        users_count = await tenant_db.users.count_documents({})
+        sales_count = await tenant_db.sales.count_documents({})
+        tenant["stats"] = {"products": products_count, "users": users_count, "sales": sales_count}
+    
+    return [TenantResponse(**t) for t in tenants]
+
+@router.get("/saas/tenants/{tenant_id}", response_model=TenantResponse)
+async def get_tenant(tenant_id: str, admin: dict = Depends(get_super_admin)):
+    """Get a specific tenant"""
+    tenant = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    plan = await db.saas_plans.find_one({"id": tenant.get("plan_id")}, {"_id": 0, "name_ar": 1})
+    tenant["plan_name"] = plan.get("name_ar", "") if plan else ""
+    
+    tenant_db = client[f"tenant_{tenant['id'].replace('-', '_')}"]
+    products_count = await tenant_db.products.count_documents({})
+    users_count = await tenant_db.users.count_documents({})
+    sales_count = await tenant_db.sales.count_documents({})
+    tenant["stats"] = {"products": products_count, "users": users_count, "sales": sales_count}
+    
+    return TenantResponse(**tenant)
+
+@router.post("/saas/impersonate/{tenant_id}")
+async def impersonate_tenant(tenant_id: str, admin: dict = Depends(get_super_admin)):
+    """Generate a login token to impersonate a tenant"""
+    tenant = await main_db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="المشترك غير موجود")
+    
+    if not tenant.get("is_active"):
+        raise HTTPException(status_code=400, detail="حساب المشترك معطل")
+    
+    access_token = create_access_token({
+        "sub": tenant_id,
+        "email": tenant["email"],
+        "role": "admin",
+        "type": "tenant",
+        "tenant_id": tenant_id
+    })
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "email": tenant["email"],
+        "name": tenant.get("name", ""),
+        "company_name": tenant.get("company_name", ""),
+        "tenant_id": tenant_id,
+        "user_type": "tenant",
+        "user": {
+            "id": tenant_id,
+            "email": tenant["email"],
+            "name": tenant.get("name", ""),
+            "role": "admin",
+            "tenant_id": tenant_id,
+            "company_name": tenant.get("company_name", ""),
+            "database_name": tenant.get("database_name", "")
+        }
+    }
+
+@router.post("/saas/tenants", response_model=TenantResponse)
+async def create_tenant(tenant: TenantCreate, admin: dict = Depends(get_super_admin)):
+    """Create a new tenant"""
+    existing = await db.saas_tenants.find_one({"email": tenant.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="البريد الإلكتروني مستخدم بالفعل")
+    
+    plan = await db.saas_plans.find_one({"id": tenant.plan_id}, {"_id": 0})
+    if not plan:
+        raise HTTPException(status_code=404, detail="الخطة غير موجودة")
+    
+    now = datetime.now(timezone.utc)
+    if tenant.subscription_type == "monthly":
+        ends_at = now + timedelta(days=30)
+    elif tenant.subscription_type == "6months":
+        ends_at = now + timedelta(days=180)
+    else:
+        ends_at = now + timedelta(days=365)
+    
+    tenant_id = str(uuid.uuid4())
+    hashed_password = bcrypt.hashpw(tenant.password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
+    tenant_doc = {
+        "id": tenant_id,
+        "name": tenant.name,
+        "email": tenant.email,
+        "phone": tenant.phone or "",
+        "company_name": tenant.company_name or "",
+        "password": hashed_password,
+        "plan_id": tenant.plan_id,
+        "agent_id": tenant.agent_id if hasattr(tenant, 'agent_id') else None,
+        "is_active": True,
+        "is_trial": False,
+        "trial_ends_at": None,
+        "subscription_type": tenant.subscription_type,
+        "subscription_starts_at": now.isoformat(),
+        "subscription_ends_at": ends_at.isoformat(),
+        "features_override": {},
+        "limits_override": {},
+        "notes": "",
+        "business_type": tenant.business_type if hasattr(tenant, 'business_type') else "retailer",
+        "database_initialized": False,
+        "created_at": now.isoformat()
+    }
+    
+    await db.saas_tenants.insert_one(tenant_doc)
+    await init_tenant_database(tenant_id)
+    await db.saas_tenants.update_one({"id": tenant_id}, {"$set": {"database_initialized": True}})
+    
+    tenant_doc["plan_name"] = plan.get("name_ar", "")
+    tenant_doc["agent_name"] = ""
+    tenant_doc["stats"] = {"products": 0, "users": 1, "sales": 0}
+    tenant_doc["database_initialized"] = True
+    
+    return TenantResponse(**{k: v for k, v in tenant_doc.items() if k not in ["_id", "password"]})
+
+@router.put("/saas/tenants/{tenant_id}", response_model=TenantResponse)
+async def update_tenant(tenant_id: str, updates: TenantUpdate, admin: dict = Depends(get_super_admin)):
+    """Update a tenant"""
+    tenant = await db.saas_tenants.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    update_data = {k: v for k, v in updates.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.saas_tenants.update_one({"id": tenant_id}, {"$set": update_data})
+    updated = await db.saas_tenants.find_one({"id": tenant_id}, {"_id": 0})
+    
+    plan = await db.saas_plans.find_one({"id": updated.get("plan_id")}, {"_id": 0, "name_ar": 1})
+    updated["plan_name"] = plan.get("name_ar", "") if plan else ""
+    updated["agent_name"] = ""
+    updated["stats"] = {"products": 0, "users": 0, "sales": 0}
+    
+    return TenantResponse(**{k: v for k, v in updated.items() if k != "password"})
+
+@router.delete("/saas/tenants/{tenant_id}")
+async def delete_tenant(tenant_id: str, admin: dict = Depends(get_super_admin)):
+    """Delete a tenant"""
+    result = await db.saas_tenants.delete_one({"id": tenant_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    return {"message": "Tenant deleted successfully"}
+
+@router.post("/saas/tenants/{tenant_id}/toggle-status")
+async def toggle_tenant_status(tenant_id: str, admin: dict = Depends(get_super_admin)):
+    """Toggle tenant active status"""
+    tenant = await db.saas_tenants.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    new_status = not tenant.get("is_active", True)
+    await db.saas_tenants.update_one({"id": tenant_id}, {"$set": {"is_active": new_status}})
+    return {"is_active": new_status}
+
+@router.post("/saas/tenants/{tenant_id}/extend-subscription")
+async def extend_subscription(tenant_id: str, payment: SubscriptionPayment, admin: dict = Depends(get_super_admin)):
+    """Extend tenant subscription"""
+    tenant = await db.saas_tenants.find_one({"id": tenant_id})
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    
+    current_end = datetime.fromisoformat(tenant.get("subscription_ends_at", datetime.now(timezone.utc).isoformat()).replace('Z', '+00:00'))
+    now = datetime.now(timezone.utc)
+    start_date = max(current_end, now)
+    
+    if payment.subscription_type == "monthly":
+        new_end = start_date + timedelta(days=30)
+    elif payment.subscription_type == "6months":
+        new_end = start_date + timedelta(days=180)
+    else:
+        new_end = start_date + timedelta(days=365)
+    
+    await db.saas_tenants.update_one({"id": tenant_id}, {"$set": {
+        "subscription_type": payment.subscription_type,
+        "subscription_ends_at": new_end.isoformat(),
+        "is_active": True,
+        "is_trial": False
+    }})
+    
+    payment_doc = {
+        "id": str(uuid.uuid4()),
+        "tenant_id": tenant_id,
+        "tenant_name": tenant.get("name", ""),
+        "amount": payment.amount,
+        "payment_method": payment.payment_method,
+        "subscription_type": payment.subscription_type,
+        "period_start": start_date.isoformat(),
+        "period_end": new_end.isoformat(),
+        "notes": payment.notes or "",
+        "transaction_id": payment.transaction_id or "",
+        "created_by": admin.get("id", ""),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.saas_payments.insert_one(payment_doc)
+    
+    return {"new_subscription_ends_at": new_end.isoformat()}
+
