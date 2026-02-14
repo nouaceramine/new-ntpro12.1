@@ -1,7 +1,3 @@
-/**
- * FinanceReportsSection - Comprehensive financial reporting component
- * Shows revenue, expenses, profit calculations, and payment methods breakdown
- */
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
@@ -22,9 +18,9 @@ import {
   SelectValue,
 } from '../../../components/ui/select';
 import { 
-  CreditCard, TrendingUp, DollarSign, Clock,
-  Calendar, ArrowUpRight, ArrowDownRight,
-  Wallet, PiggyBank, FileText, Calculator, Banknote
+  Building, CreditCard, TrendingUp, Clock,
+  DollarSign, Calendar, Banknote, Wallet, PiggyBank,
+  FileText, ArrowUpRight, ArrowDownRight, Calculator
 } from 'lucide-react';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -218,10 +214,10 @@ export const FinanceReportsSection = ({ tenants, payments }) => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="p-4 rounded-xl border bg-muted/30">
               <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 rounded-lg bg-yellow-100 dark:bg-yellow-900">
-                  <Banknote className="h-5 w-5 text-yellow-600" />
+                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900">
+                  <Banknote className="h-5 w-5 text-green-600" />
                 </div>
-                <span className="font-medium">CCP</span>
+                <span className="font-medium">نقدي (CCP)</span>
               </div>
               <p className="text-2xl font-bold">{financeData.payment_methods?.ccp?.amount?.toLocaleString() || 0} دج</p>
               <p className="text-sm text-muted-foreground">{financeData.payment_methods?.ccp?.count || 0} عملية</p>
@@ -229,7 +225,7 @@ export const FinanceReportsSection = ({ tenants, payments }) => {
             <div className="p-4 rounded-xl border bg-muted/30">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
+                  <Building className="h-5 w-5 text-blue-600" />
                 </div>
                 <span className="font-medium">تحويل بنكي</span>
               </div>
@@ -363,5 +359,3 @@ export const FinanceReportsSection = ({ tenants, payments }) => {
     </div>
   );
 };
-
-export default FinanceReportsSection;
