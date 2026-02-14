@@ -1,14 +1,14 @@
 """
-Database Configuration and Connection Module
-Multi-tenant database isolation using ContextVar and Proxy pattern
+Database configuration and connection management for NT Commerce
 """
 from motor.motor_asyncio import AsyncIOMotorClient
 from contextvars import ContextVar
 import os
-import logging
-from datetime import datetime, timezone
+from pathlib import Path
+from dotenv import load_dotenv
 
-logger = logging.getLogger(__name__)
+ROOT_DIR = Path(__file__).parent.parent
+load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -19,8 +19,7 @@ main_db = client[os.environ['DB_NAME']]
 _tenant_db_ctx: ContextVar = ContextVar('tenant_db')
 
 class _TenantDBProxy:
-    """Proxy that routes DB calls to tenant-specific DB when in tenant context, otherwise main DB.
-    This ensures data isolation: each tenant's requests automatically use their own database."""
+    """Proxy that routes DB calls to tenant-specific DB when in tenant context, otherwise main DB."""
     def __getattr__(self, name):
         try:
             return getattr(_tenant_db_ctx.get(), name)
@@ -33,7 +32,6 @@ class _TenantDBProxy:
         except LookupError:
             return main_db[name]
 
-# All existing code uses `db` - now routes to correct tenant DB automatically
 db = _TenantDBProxy()
 
 def get_tenant_db(tenant_id: str):
@@ -43,11 +41,16 @@ def get_tenant_db(tenant_id: str):
     db_name = f"tenant_{tenant_id.replace('-', '_')}"
     return client[db_name]
 
-def set_tenant_context(tenant_id: str):
-    """Set the tenant database context for the current request"""
-    if tenant_id:
-        tenant_specific_db = client[f"tenant_{tenant_id.replace('-', '_')}"]
-        _tenant_db_ctx.set(tenant_specific_db)
+def set_tenant_context(tenant_db):
+    """Set the tenant database context for current request"""
+    _tenant_db_ctx.set(tenant_db)
+
+def clear_tenant_context():
+    """Clear the tenant database context"""
+    try:
+        _tenant_db_ctx.set(main_db)
+    except:
+        pass
 
 async def init_tenant_database(tenant_id: str):
     """Initialize a new tenant database with default collections and data"""
@@ -60,32 +63,24 @@ async def init_tenant_database(tenant_id: str):
         {"id": "wallet", "name": "المحفظة الإلكترونية", "name_fr": "Portefeuille électronique", "type": "wallet", "balance": 0},
         {"id": "safe", "name": "الخزنة", "name_fr": "Coffre-fort", "type": "safe", "balance": 0}
     ]
+    
     for box in boxes:
         existing = await tenant_db.cash_boxes.find_one({"id": box["id"]})
         if not existing:
             await tenant_db.cash_boxes.insert_one(box)
     
-    # Initialize default warehouse
-    existing_warehouse = await tenant_db.warehouses.find_one({"id": "main"})
-    if not existing_warehouse:
-        await tenant_db.warehouses.insert_one({
-            "id": "main",
-            "name": "المخزن الرئيسي",
-            "location": "",
-            "is_main": True,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-    
-    # Initialize settings
-    existing_settings = await tenant_db.settings.find_one({"id": "general"})
+    # Initialize system settings
+    existing_settings = await tenant_db.system_settings.find_one({})
     if not existing_settings:
-        await tenant_db.settings.insert_one({
-            "id": "general",
-            "low_stock_threshold": 10,
-            "debt_reminder_days": 30,
-            "currency": "دج",
-            "language": "ar"
+        await tenant_db.system_settings.insert_one({
+            "company_name": "",
+            "company_address": "",
+            "company_phone": "",
+            "company_email": "",
+            "tax_rate": 0,
+            "currency": "DZD",
+            "language": "ar",
+            "created_at": None
         })
     
-    logger.info(f"Initialized database for tenant: {tenant_id}")
     return tenant_db
