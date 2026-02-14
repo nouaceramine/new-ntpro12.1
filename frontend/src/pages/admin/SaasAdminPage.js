@@ -45,9 +45,13 @@ import {
 } from 'lucide-react';
 import { DatabaseManager } from '../../components/DatabaseManager';
 import { AgentsDashboard } from './components/AgentsDashboard';
+import { SystemAlertsSection } from './components/SystemAlertsSection';
+import { MonitoringSection } from './components/MonitoringSection';
+import { FinanceReportsSection } from './components/FinanceReportsSection';
 
-// System Errors & Alerts Section Component
-const SystemAlertsSection = () => {
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+export default function SaasAdminPage() {
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [autoFixEnabled, setAutoFixEnabled] = useState(true);
