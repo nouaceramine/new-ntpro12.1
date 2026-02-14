@@ -25,6 +25,9 @@ import asyncio
 import shutil
 import base64
 
+# Load environment variables from .env file
+load_dotenv()
+
 # Try to import resend
 try:
     import resend
