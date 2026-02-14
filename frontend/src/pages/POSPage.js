@@ -155,10 +155,18 @@ export default function POSPage() {
   // Sale Code
   const [saleCode, setSaleCode] = useState('');
 
-  // Product Shortcuts (10 quick access boxes - reduced for single page)
+  // Product Shortcuts (18 quick access boxes)
   const [productShortcuts, setProductShortcuts] = useState(() => {
     const saved = localStorage.getItem('posProductShortcuts');
-    return saved ? JSON.parse(saved) : Array(10).fill({ productId: null, color: '#e5e7eb' });
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Extend to 18 if old data has fewer shortcuts
+      if (parsed.length < 18) {
+        return [...parsed, ...Array(18 - parsed.length).fill({ productId: null, color: '#e5e7eb' })];
+      }
+      return parsed;
+    }
+    return Array(18).fill({ productId: null, color: '#e5e7eb' });
   });
   const [showShortcutDialog, setShowShortcutDialog] = useState(false);
   const [editingShortcutIndex, setEditingShortcutIndex] = useState(null);
