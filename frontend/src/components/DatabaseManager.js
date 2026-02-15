@@ -474,6 +474,10 @@ export const DatabaseManager = ({ tenants = [], agents = [] }) => {
             <Database className="h-4 w-4" />
             قواعد البيانات
           </TabsTrigger>
+          <TabsTrigger value="import-export" className="gap-2" data-testid="import-export-tab">
+            <Upload className="h-4 w-4" />
+            استيراد/تصدير
+          </TabsTrigger>
           <TabsTrigger value="backups" className="gap-2">
             <Archive className="h-4 w-4" />
             النسخ الاحتياطية
