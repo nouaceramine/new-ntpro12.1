@@ -120,6 +120,17 @@ export const DatabaseManager = ({ tenants = [], agents = [] }) => {
   const [backups, setBackups] = useState([]);
   const [schedules, setSchedules] = useState([]);
   
+  // Import/Export State
+  const [availableExports, setAvailableExports] = useState([]);
+  const [importLogs, setImportLogs] = useState([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [convertingFile, setConvertingFile] = useState(false);
+  const [importingData, setImportingData] = useState(false);
+  const [selectedExportFile, setSelectedExportFile] = useState(null);
+  const [selectedImportTenant, setSelectedImportTenant] = useState('');
+  const [clearExistingData, setClearExistingData] = useState(false);
+  const [conversionResult, setConversionResult] = useState(null);
+  
   // Dialogs
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
@@ -129,6 +140,7 @@ export const DatabaseManager = ({ tenants = [], agents = [] }) => {
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   
   // Forms
   const [deleteConfirmCode, setDeleteConfirmCode] = useState('');
