@@ -817,6 +817,264 @@ export const DatabaseManager = ({ tenants = [], agents = [] }) => {
           </Card>
         </TabsContent>
 
+        {/* Import/Export Tab */}
+        <TabsContent value="import-export" className="space-y-6" data-testid="import-export-content">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Upload & Convert Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Upload className="h-5 w-5 text-primary" />
+                  تحويل قاعدة بيانات Access
+                </CardTitle>
+                <CardDescription>
+                  قم بتحميل ملف قاعدة بيانات Access (.mdb, .accdb, .dblx) لتحويله إلى صيغة JSON
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    id="access-file-input"
+                    accept=".mdb,.accdb,.dblx"
+                    className="hidden"
+                    onChange={(e) => handleConvertAccessDB(e.target.files?.[0])}
+                    disabled={convertingFile}
+                  />
+                  <label 
+                    htmlFor="access-file-input"
+                    className="cursor-pointer flex flex-col items-center gap-3"
+                  >
+                    <div className="p-4 rounded-full bg-primary/10">
+                      <CloudUpload className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-medium">اختر ملف قاعدة البيانات</p>
+                      <p className="text-sm text-muted-foreground">
+                        الصيغ المدعومة: .mdb, .accdb, .dblx
+                      </p>
+                    </div>
+                    {convertingFile && (
+                      <div className="flex items-center gap-2 text-primary">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        <span>جاري التحويل...</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {/* Conversion Result */}
+                {conversionResult && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-3">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <Check className="h-5 w-5" />
+                      <span className="font-medium">تم التحويل بنجاح!</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>الفئات: <strong>{conversionResult.statistics?.categories || 0}</strong></div>
+                      <div>المنتجات: <strong>{conversionResult.statistics?.products || 0}</strong></div>
+                      <div>العملاء: <strong>{conversionResult.statistics?.customers || 0}</strong></div>
+                      <div>الموردين: <strong>{conversionResult.statistics?.suppliers || 0}</strong></div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleDownloadExport(conversionResult.compressed_filename)}
+                      >
+                        <Download className="h-4 w-4 me-2" />
+                        تحميل ({conversionResult.compressed_size_mb} MB)
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Import to Tenant Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Database className="h-5 w-5 text-primary" />
+                  استيراد إلى مشترك
+                </CardTitle>
+                <CardDescription>
+                  اختر ملف تصدير وقم باستيراده إلى قاعدة بيانات مشترك معين
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>ملف التصدير</Label>
+                  <Select value={selectedExportFile || ''} onValueChange={setSelectedExportFile}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر ملف التصدير" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableExports.map(exp => (
+                        <SelectItem key={exp.filename} value={exp.filename}>
+                          {exp.filename} ({exp.size_mb} MB)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>المشترك المستهدف</Label>
+                  <Select value={selectedImportTenant} onValueChange={setSelectedImportTenant}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر المشترك" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tenants.filter(t => t.is_active).map(tenant => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.company_name || tenant.name} ({tenant.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div>
+                    <Label>مسح البيانات الموجودة</Label>
+                    <p className="text-xs text-muted-foreground">
+                      سيتم حذف جميع بيانات المشترك قبل الاستيراد
+                    </p>
+                  </div>
+                  <Switch
+                    checked={clearExistingData}
+                    onCheckedChange={setClearExistingData}
+                  />
+                </div>
+
+                <Button 
+                  className="w-full" 
+                  onClick={handleImportToTenant}
+                  disabled={!selectedExportFile || !selectedImportTenant || importingData}
+                >
+                  {importingData ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 me-2 animate-spin" />
+                      جاري الاستيراد...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 me-2" />
+                      استيراد البيانات
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Available Exports List */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">الملفات المتاحة للتحميل</CardTitle>
+                <CardDescription>قائمة بجميع ملفات التصدير المتاحة</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={fetchAvailableExports}>
+                <RefreshCw className="h-4 w-4 me-2" />
+                تحديث
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>اسم الملف</TableHead>
+                    <TableHead className="text-center">الحجم</TableHead>
+                    <TableHead className="text-center">تاريخ الإنشاء</TableHead>
+                    <TableHead className="text-center">الإجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {availableExports.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        لا توجد ملفات تصدير متاحة
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    availableExports.map(exp => (
+                      <TableRow key={exp.filename}>
+                        <TableCell className="font-mono text-sm">{exp.filename}</TableCell>
+                        <TableCell className="text-center">{exp.size_mb} MB</TableCell>
+                        <TableCell className="text-center">{formatDate(exp.created_at)}</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDownloadExport(exp.filename)}
+                              title="تحميل"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteExport(exp.filename)}
+                              title="حذف"
+                              className="text-red-500 hover:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Import Logs */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">سجل عمليات الاستيراد</CardTitle>
+              <CardDescription>تتبع جميع عمليات الاستيراد السابقة</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>المشترك</TableHead>
+                    <TableHead>الملف</TableHead>
+                    <TableHead className="text-center">الفئات</TableHead>
+                    <TableHead className="text-center">المنتجات</TableHead>
+                    <TableHead className="text-center">العملاء</TableHead>
+                    <TableHead className="text-center">التاريخ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {importLogs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        لا توجد عمليات استيراد سابقة
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    importLogs.map(log => (
+                      <TableRow key={log.id}>
+                        <TableCell>{log.tenant_name}</TableCell>
+                        <TableCell className="font-mono text-sm">{log.filename}</TableCell>
+                        <TableCell className="text-center">{log.statistics?.categories?.imported || 0}</TableCell>
+                        <TableCell className="text-center">{log.statistics?.products?.imported || 0}</TableCell>
+                        <TableCell className="text-center">{log.statistics?.customers?.imported || 0}</TableCell>
+                        <TableCell className="text-center">{formatDate(log.imported_at)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Backups Tab */}
         <TabsContent value="backups" className="space-y-4">
           <div className="flex items-center justify-between">
