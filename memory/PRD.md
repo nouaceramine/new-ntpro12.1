@@ -399,6 +399,37 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 - **المحتوى**: 82 فئة، 6,987 منتج، 121 عميل، 100 مورد، 31,624 عملية بيع
 - **رابط التحميل**: `https://data-archive-5.preview.emergentagent.com/api/static/downloads/BDV10_export.json.gz`
 
+## Updates (Feb 15, 2026 - Session 2)
+
+### 1. فتح/غلق الحصة من POS مباشرة ✅ (NEW)
+- **الميزة**: إضافة شريط معلومات الحصة في صفحة POS
+- **المحتوى**:
+  - عرض كود الحصة الحالية
+  - عرض إحصائيات مباشرة (نقدي، دين، إجمالي، عدد العمليات)
+  - زر "التفاصيل" لعرض كافة تفاصيل الحصة
+  - زر "غلق الحصة" لغلقها مباشرة من POS
+  - زر "فتح حصة" عندما لا توجد حصة مفتوحة
+- **الملف المعدل**: `/app/frontend/src/pages/POSPage.js`
+
+### 2. التحقق من حسابات "إجمالي النقد" ✅
+- **النتيجة**: الحساب صحيح
+- **الطريقة**: `total_cash = sum(balance for all cash_boxes)`
+- يجمع أرصدة جميع الصناديق: النقدي، البنكي، المحفظة الإلكترونية، الخزنة
+
+### 3. فحص اللغة الفرنسية ✅
+- **النتيجة**: تعمل بشكل ممتاز
+- **صفحة إضافة منتج**: جميع الحقول مترجمة (Nom du produit, Prix d'achat, Prix de gros, etc.)
+- **رسالة النجاح**: "Produit ajouté avec succès"
+- **لوحة التحكم**: Tableau de bord, Ventes du jour, Total caisse, etc.
+
+### 4. نسخ/استعادة قاعدة البيانات للمشترك ✅
+- **الميزة**: موجودة بالفعل في `/app/frontend/src/components/BackupSystem.js`
+- **الوظائف**:
+  - تصدير JSON/CSV
+  - استيراد من JSON
+  - إعدادات النسخ التلقائي
+  - تحديد تكرار النسخ (يومي/أسبوعي/شهري)
+
 ## Recent Fixes (Feb 14, 2026 - Session 2)
 
 ### 1. إصلاح المساعد الذكي (AI Assistant) ✅
@@ -414,6 +445,10 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 - **المشكلة**: كان يضيف تلقائياً حروف اسم المنتج (c, ca, cab, cabl, cable)
 - **الحل**: إزالة useEffect من `AddProductPage.js` الذي كان يضيف الحروف تلقائياً
 - **النتيجة**: الحقل يبقى فارغاً والمستخدم يضيف ما يريد يدوياً
+
+## Test Credentials
+- **Super Admin**: `admin@ntcommerce.com` / `Admin@2024`
+- **Tenant**: `ncr@ntcommerce.com` / `Test@123`
 
 ## Test Files
 - `/app/backend/tests/test_pos_redesign.py` - اختبارات POS redesign (6 tests - all passing)
