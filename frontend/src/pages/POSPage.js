@@ -203,6 +203,7 @@ export default function POSPage() {
     fetchWarehouses();
     fetchReceiptSettings();
     fetchSaleCode();
+    fetchCashBoxBalance();
   }, []);
 
   const checkOpenSession = async () => {
@@ -211,11 +212,127 @@ export default function POSPage() {
       const response = await axios.get(`${API}/daily-sessions/current`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setHasOpenSession(!!response.data && response.data.status === 'open');
+      const session = response.data;
+      if (session && session.status === 'open') {
+        setHasOpenSession(true);
+        setCurrentSession(session);
+        // Fetch session stats
+        fetchSessionStats(session.id);
+      } else {
+        setHasOpenSession(false);
+        setCurrentSession(null);
+        setSessionStats(null);
+      }
     } catch (error) {
       setHasOpenSession(false);
+      setCurrentSession(null);
+      setSessionStats(null);
     } finally {
       setCheckingSession(false);
+    }
+  };
+
+  const fetchSessionStats = async (sessionId) => {
+    try {
+      const token = localStorage.getItem('token');
+      // Fetch today's sales for current session stats
+      const salesRes = await axios.get(`${API}/sales`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const today = new Date().toISOString().split('T')[0];
+      const todaySales = (salesRes.data.sales || salesRes.data || []).filter(s => s.created_at?.startsWith(today));
+      
+      const cashSales = todaySales.filter(s => s.payment_type === 'cash').reduce((sum, s) => sum + (s.total || 0), 0);
+      const creditSales = todaySales.filter(s => s.payment_type === 'credit').reduce((sum, s) => sum + (s.total || 0), 0);
+      const totalSales = todaySales.reduce((sum, s) => sum + (s.total || 0), 0);
+      const salesCount = todaySales.length;
+      
+      setSessionStats({
+        cashSales,
+        creditSales,
+        totalSales,
+        salesCount,
+        todaySales
+      });
+    } catch (error) {
+      console.error('Error fetching session stats:', error);
+    }
+  };
+
+  const fetchCashBoxBalance = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${API}/cash-boxes`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const cashBox = response.data.find(b => b.id === 'cash');
+      if (cashBox) {
+        setCashBoxBalance(cashBox.balance || 0);
+        setOpeningCash(cashBox.balance || 0);
+        setClosingCash(cashBox.balance || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching cash box:', error);
+    }
+  };
+
+  const handleOpenSession = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // Generate session code
+      let code = '';
+      try {
+        const codeRes = await axios.get(`${API}/daily-sessions/generate-code`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        code = codeRes.data.code;
+      } catch (e) {}
+      
+      const session = {
+        code: code,
+        opening_cash: openingCash,
+        opened_at: new Date().toISOString(),
+        status: 'open'
+      };
+      
+      const response = await axios.post(`${API}/daily-sessions`, session, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setCurrentSession(response.data);
+      setHasOpenSession(true);
+      setShowSessionDialog(false);
+      setSessionStats({ cashSales: 0, creditSales: 0, totalSales: 0, salesCount: 0, todaySales: [] });
+      toast.success(language === 'ar' ? 'تم فتح الحصة بنجاح' : 'Session ouverte avec succès');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || (language === 'ar' ? 'حدث خطأ' : 'Une erreur s\'est produite'));
+    }
+  };
+
+  const handleCloseSession = async () => {
+    if (!currentSession) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const closingData = {
+        closing_cash: closingCash,
+        closed_at: new Date().toISOString(),
+        notes: closingNotes,
+        status: 'closed'
+      };
+      
+      await axios.put(`${API}/daily-sessions/${currentSession.id}/close`, closingData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setCurrentSession(null);
+      setHasOpenSession(false);
+      setSessionStats(null);
+      setShowCloseSessionDialog(false);
+      setClosingNotes('');
+      toast.success(language === 'ar' ? 'تم غلق الحصة بنجاح' : 'Session fermée avec succès');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || (language === 'ar' ? 'حدث خطأ' : 'Une erreur s\'est produite'));
     }
   };
 
