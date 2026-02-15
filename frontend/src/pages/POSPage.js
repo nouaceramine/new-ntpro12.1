@@ -63,7 +63,13 @@ import {
   Trash2,
   RotateCcw,
   History,
-  Barcode
+  Barcode,
+  Play,
+  StopCircle,
+  Banknote,
+  Eye,
+  TrendingUp,
+  CreditCard
 } from 'lucide-react';
 import { Calculator } from '../components/Calculator';
 
