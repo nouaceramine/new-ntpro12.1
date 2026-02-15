@@ -386,6 +386,154 @@ export const DatabaseManager = ({ tenants = [], agents = [] }) => {
     }
   };
 
+  // Import/Export Functions
+  const fetchAvailableExports = async () => {
+    try {
+      const response = await axios.get(`${API}/saas/database/exports`, { headers });
+      setAvailableExports(response.data.exports || []);
+    } catch (error) {
+      console.error('Error fetching exports:', error);
+    }
+  };
+
+  const fetchImportLogs = async () => {
+    try {
+      const response = await axios.get(`${API}/saas/database/import-logs`, { headers });
+      setImportLogs(response.data.logs || []);
+    } catch (error) {
+      console.error('Error fetching import logs:', error);
+    }
+  };
+
+  const handleConvertAccessDB = async (file) => {
+    if (!file) return;
+    
+    setConvertingFile(true);
+    setConversionResult(null);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await axios.post(`${API}/saas/database/convert-access`, formData, {
+        headers: {
+          ...headers,
+          'Content-Type': 'multipart/form-data'
+        },
+        timeout: 300000 // 5 minutes timeout
+      });
+      
+      setConversionResult(response.data);
+      toast.success('تم تحويل قاعدة البيانات بنجاح');
+      fetchAvailableExports();
+    } catch (error) {
+      console.error('Conversion error:', error);
+      toast.error(error.response?.data?.detail || 'حدث خطأ أثناء تحويل قاعدة البيانات');
+    } finally {
+      setConvertingFile(false);
+    }
+  };
+
+  const handleDownloadExport = async (filename) => {
+    try {
+      toast.loading('جاري تحميل الملف...');
+      const response = await axios.get(`${API}/saas/database/download/${filename}`, {
+        headers,
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.dismiss();
+      toast.success('تم تحميل الملف بنجاح');
+    } catch (error) {
+      toast.dismiss();
+      toast.error('حدث خطأ أثناء التحميل');
+    }
+  };
+
+  const handleDeleteExport = async (filename) => {
+    if (!window.confirm('هل أنت متأكد من حذف هذا الملف؟')) return;
+    
+    try {
+      await axios.delete(`${API}/saas/database/exports/${filename}`, { headers });
+      toast.success('تم حذف الملف بنجاح');
+      fetchAvailableExports();
+    } catch (error) {
+      toast.error('حدث خطأ أثناء الحذف');
+    }
+  };
+
+  const handleImportToTenant = async () => {
+    if (!selectedExportFile || !selectedImportTenant) {
+      toast.error('يرجى اختيار الملف والمشترك');
+      return;
+    }
+    
+    setImportingData(true);
+    
+    try {
+      // First download the export file
+      const downloadResponse = await axios.get(
+        `${API}/saas/database/download/${selectedExportFile}`,
+        { headers, responseType: 'blob' }
+      );
+      
+      // Create form data with the file
+      const formData = new FormData();
+      formData.append('file', downloadResponse.data, selectedExportFile);
+      formData.append('clear_existing', clearExistingData);
+      
+      // Import to tenant
+      const importResponse = await axios.post(
+        `${API}/saas/database/import/${selectedImportTenant}?clear_existing=${clearExistingData}`,
+        formData,
+        {
+          headers: {
+            ...headers,
+            'Content-Type': 'multipart/form-data'
+          },
+          timeout: 300000
+        }
+      );
+      
+      toast.success('تم استيراد البيانات بنجاح');
+      setImportDialogOpen(false);
+      setSelectedExportFile(null);
+      setSelectedImportTenant('');
+      fetchImportLogs();
+      
+      // Show import statistics
+      const stats = importResponse.data.statistics;
+      const statsMessage = `
+        الفئات: ${stats.categories?.imported || 0}
+        المنتجات: ${stats.products?.imported || 0}
+        العملاء: ${stats.customers?.imported || 0}
+        الموردين: ${stats.suppliers?.imported || 0}
+      `;
+      toast.info(statsMessage, { duration: 5000 });
+      
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error(error.response?.data?.detail || 'حدث خطأ أثناء الاستيراد');
+    } finally {
+      setImportingData(false);
+    }
+  };
+
+  // Fetch exports when tab changes
+  useEffect(() => {
+    fetchAvailableExports();
+    fetchImportLogs();
+  }, []);
+
   const formatSize = (mb) => {
     if (mb >= 1024) return `${(mb / 1024).toFixed(2)} GB`;
     return `${mb} MB`;
