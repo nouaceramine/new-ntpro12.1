@@ -62,12 +62,22 @@ async def verify_super_admin(credentials: HTTPAuthorizationCredentials = Depends
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("sub")
-        user_type = payload.get("type", "user")
+        user_role = payload.get("role", "")
         
-        if user_type != "super_admin":
+        # Allow super_admin role
+        if user_role not in ["super_admin", "saas_admin"]:
             raise HTTPException(status_code=403, detail="Super admin access required")
         
-        user = await main_db.super_admins.find_one({"id": user_id})
+        # Check in users collection
+        user = await main_db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        return user
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
         
