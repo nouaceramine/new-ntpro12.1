@@ -897,6 +897,10 @@ export default function POSPage() {
       
       clearCart();
       fetchProducts();
+      // Update session stats after sale
+      if (currentSession) {
+        fetchSessionStats(currentSession.id);
+      }
     } catch (error) {
       console.error('Sale error:', error);
       toast.error(error.response?.data?.detail || (language === 'ar' ? 'حدث خطا اثناء البيع' : 'Erreur lors de la vente'));
