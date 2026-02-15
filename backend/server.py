@@ -157,6 +157,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # ============ IMPORT REFACTORED ROUTES ============
 from routes.saas_routes import router as saas_router, get_super_admin
+from routes.database_routes import router as database_router
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
