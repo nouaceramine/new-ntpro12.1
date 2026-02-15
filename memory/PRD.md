@@ -355,6 +355,50 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
   - `/app/backend/scripts/reset_system.py` - لإعادة تهيئة النظام
   - `/app/backend/scripts/init_production.py` - لتهيئة الإنتاج
 
+## Recent Updates (Feb 15, 2026)
+
+### ميزة استيراد/تصدير قاعدة البيانات الخارجية ✅ (NEW)
+
+#### الوظائف المنفذة:
+1. **تحويل قاعدة بيانات Microsoft Access**:
+   - دعم صيغ `.mdb`, `.accdb`, `.dblx`
+   - تحويل تلقائي إلى JSON
+   - ضغط الملف الناتج (gzip)
+   - استخراج البيانات: الفئات، المنتجات، العملاء، الموردين، المبيعات
+
+2. **إدارة ملفات التصدير**:
+   - عرض قائمة الملفات المتاحة
+   - تحميل مباشر للملفات
+   - حذف الملفات غير المطلوبة
+   - رابط تحميل عام (بدون مصادقة)
+
+3. **استيراد البيانات إلى مشترك**:
+   - اختيار ملف التصدير والمشترك المستهدف
+   - خيار مسح البيانات الموجودة قبل الاستيراد
+   - تسجيل عمليات الاستيراد في سجل
+   - إحصائيات مفصلة بعد الاستيراد
+
+#### API Endpoints الجديدة:
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/saas/database/exports` | GET | SuperAdmin | قائمة ملفات التصدير |
+| `/api/saas/database/download/{filename}` | GET | SuperAdmin | تحميل ملف |
+| `/api/saas/database/exports/{filename}` | DELETE | SuperAdmin | حذف ملف |
+| `/api/saas/database/convert-access` | POST | SuperAdmin | تحويل ملف Access |
+| `/api/saas/database/import/{tenant_id}` | POST | SuperAdmin | استيراد لمشترك |
+| `/api/saas/database/import-logs` | GET | SuperAdmin | سجل الاستيراد |
+
+#### الملفات المنشأة/المعدلة:
+- `/app/backend/routes/database_routes.py` - Routes جديدة (350 سطر)
+- `/app/backend/scripts/convert_access_db.py` - سكريبت التحويل (280 سطر)
+- `/app/frontend/src/components/DatabaseManager.js` - تحديث الواجهة
+
+#### ملف التصدير المتاح:
+- **اسم الملف**: `BDV10_export.json.gz`
+- **الحجم**: 2.08 MB (مضغوط)
+- **المحتوى**: 82 فئة، 6,987 منتج، 121 عميل، 100 مورد، 31,624 عملية بيع
+- **رابط التحميل**: `https://data-archive-5.preview.emergentagent.com/api/static/downloads/BDV10_export.json.gz`
+
 ## Recent Fixes (Feb 14, 2026 - Session 2)
 
 ### 1. إصلاح المساعد الذكي (AI Assistant) ✅
