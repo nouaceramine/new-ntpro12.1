@@ -104,6 +104,15 @@ export default function POSPage() {
   // Session state
   const [hasOpenSession, setHasOpenSession] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [currentSession, setCurrentSession] = useState(null);
+  const [sessionStats, setSessionStats] = useState(null);
+  const [showSessionDialog, setShowSessionDialog] = useState(false);
+  const [showCloseSessionDialog, setShowCloseSessionDialog] = useState(false);
+  const [showSessionDetailsDialog, setShowSessionDetailsDialog] = useState(false);
+  const [openingCash, setOpeningCash] = useState(0);
+  const [closingCash, setClosingCash] = useState(0);
+  const [closingNotes, setClosingNotes] = useState('');
+  const [cashBoxBalance, setCashBoxBalance] = useState(0);
   
   // Left sidebar state
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
