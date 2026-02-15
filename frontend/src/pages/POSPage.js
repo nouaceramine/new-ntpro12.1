@@ -2083,6 +2083,227 @@ export default function POSPage() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Open Session Dialog */}
+        <Dialog open={showSessionDialog} onOpenChange={setShowSessionDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Play className="h-5 w-5 text-emerald-600" />
+                {language === 'ar' ? 'فتح حصة جديدة' : 'Ouvrir une nouvelle session'}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">
+                  {language === 'ar' ? 'رصيد الصندوق الحالي' : 'Solde actuel de la caisse'}
+                </p>
+                <p className="text-2xl font-bold text-emerald-600">
+                  {formatCurrency(cashBoxBalance)} {t.currency}
+                </p>
+              </div>
+              <div>
+                <Label>{language === 'ar' ? 'رصيد الافتتاح' : 'Solde d\'ouverture'}</Label>
+                <div className="relative mt-1">
+                  <Banknote className="absolute start-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    value={openingCash}
+                    onChange={(e) => setOpeningCash(parseFloat(e.target.value) || 0)}
+                    className="ps-10 text-lg"
+                    placeholder="0.00"
+                    data-testid="pos-opening-cash"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowSessionDialog(false)} className="flex-1">
+                  {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                </Button>
+                <Button
+                  onClick={handleOpenSession}
+                  className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  data-testid="confirm-open-session"
+                >
+                  <Play className="h-4 w-4" />
+                  {language === 'ar' ? 'فتح الحصة' : 'Ouvrir'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Close Session Dialog */}
+        <Dialog open={showCloseSessionDialog} onOpenChange={setShowCloseSessionDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <StopCircle className="h-5 w-5 text-red-600" />
+                {language === 'ar' ? 'غلق الحصة' : 'Fermer la session'}
+              </DialogTitle>
+            </DialogHeader>
+            {currentSession && sessionStats && (
+              <div className="space-y-4 py-4">
+                {/* Session Summary */}
+                <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span>{language === 'ar' ? 'رصيد الافتتاح' : 'Ouverture'}</span>
+                    <span className="font-semibold">{formatCurrency(currentSession.opening_cash || 0)} {t.currency}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-600">
+                    <span>{language === 'ar' ? '+ المبيعات النقدية' : '+ Ventes espèces'}</span>
+                    <span className="font-semibold">{formatCurrency(sessionStats.cashSales)} {t.currency}</span>
+                  </div>
+                  <div className="flex justify-between text-amber-600">
+                    <span>{language === 'ar' ? 'البيع بالدين' : 'Ventes crédit'}</span>
+                    <span className="font-semibold">{formatCurrency(sessionStats.creditSales)} {t.currency}</span>
+                  </div>
+                  <div className="flex justify-between pt-2 border-t font-bold">
+                    <span>{language === 'ar' ? 'المتوقع في الصندوق' : 'Attendu'}</span>
+                    <span>{formatCurrency((currentSession.opening_cash || 0) + sessionStats.cashSales)} {t.currency}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>{language === 'ar' ? 'المبلغ الفعلي في الصندوق' : 'Montant réel en caisse'}</Label>
+                  <Input
+                    type="number"
+                    value={closingCash}
+                    onChange={(e) => setClosingCash(parseFloat(e.target.value) || 0)}
+                    className="mt-1 text-lg"
+                    data-testid="pos-closing-cash"
+                  />
+                </div>
+
+                {/* Difference */}
+                {(() => {
+                  const expected = (currentSession.opening_cash || 0) + sessionStats.cashSales;
+                  const diff = closingCash - expected;
+                  if (Math.abs(diff) > 0.01) {
+                    return (
+                      <div className={`p-3 rounded-lg ${diff > 0 ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700'}`}>
+                        <p className="font-semibold">
+                          {language === 'ar' ? 'الفرق' : 'Différence'}: {diff > 0 ? '+' : ''}{formatCurrency(diff)} {t.currency}
+                        </p>
+                        <p className="text-sm">
+                          {diff > 0 
+                            ? (language === 'ar' ? 'فائض في الصندوق' : 'Excédent')
+                            : (language === 'ar' ? 'عجز في الصندوق' : 'Déficit')}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                <div>
+                  <Label>{language === 'ar' ? 'ملاحظات (اختياري)' : 'Notes (optionnel)'}</Label>
+                  <Input
+                    value={closingNotes}
+                    onChange={(e) => setClosingNotes(e.target.value)}
+                    placeholder={language === 'ar' ? 'ملاحظات...' : 'Notes...'}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowCloseSessionDialog(false)} className="flex-1">
+                    {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                  </Button>
+                  <Button
+                    onClick={handleCloseSession}
+                    variant="destructive"
+                    className="flex-1 gap-2"
+                    data-testid="confirm-close-session"
+                  >
+                    <StopCircle className="h-4 w-4" />
+                    {language === 'ar' ? 'تأكيد الغلق' : 'Confirmer'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Session Details Dialog */}
+        <Dialog open={showSessionDetailsDialog} onOpenChange={setShowSessionDetailsDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                {language === 'ar' ? 'تفاصيل الحصة الحالية' : 'Détails de la session'}
+              </DialogTitle>
+            </DialogHeader>
+            {currentSession && sessionStats && (
+              <div className="space-y-4 py-4">
+                {/* Session Code & Time */}
+                <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg">
+                  <div>
+                    <p className="text-xs text-muted-foreground">{language === 'ar' ? 'كود الحصة' : 'Code session'}</p>
+                    <p className="font-mono font-bold text-lg">{currentSession.code || '#---'}</p>
+                  </div>
+                  <div className="text-end">
+                    <p className="text-xs text-muted-foreground">{language === 'ar' ? 'وقت الفتح' : 'Ouverture'}</p>
+                    <p className="font-semibold">
+                      {new Date(currentSession.opened_at).toLocaleTimeString(language === 'ar' ? 'ar-DZ' : 'fr-FR')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-center">
+                    <p className="text-xs text-muted-foreground">{language === 'ar' ? 'رصيد الافتتاح' : 'Ouverture'}</p>
+                    <p className="text-xl font-bold text-blue-600">{formatCurrency(currentSession.opening_cash || 0)}</p>
+                    <p className="text-xs text-muted-foreground">{t.currency}</p>
+                  </div>
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg text-center">
+                    <p className="text-xs text-muted-foreground">{language === 'ar' ? 'المبيعات النقدية' : 'Ventes espèces'}</p>
+                    <p className="text-xl font-bold text-emerald-600">{formatCurrency(sessionStats.cashSales)}</p>
+                    <p className="text-xs text-muted-foreground">{t.currency}</p>
+                  </div>
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg text-center">
+                    <p className="text-xs text-muted-foreground">{language === 'ar' ? 'البيع بالدين' : 'Ventes crédit'}</p>
+                    <p className="text-xl font-bold text-amber-600">{formatCurrency(sessionStats.creditSales)}</p>
+                    <p className="text-xs text-muted-foreground">{t.currency}</p>
+                  </div>
+                  <div className="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg text-center">
+                    <p className="text-xs text-muted-foreground">{language === 'ar' ? 'إجمالي المبيعات' : 'Total ventes'}</p>
+                    <p className="text-xl font-bold text-purple-600">{formatCurrency(sessionStats.totalSales)}</p>
+                    <p className="text-xs text-muted-foreground">{t.currency}</p>
+                  </div>
+                </div>
+
+                {/* Expected in Cash Box */}
+                <div className="p-4 bg-primary/5 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">{language === 'ar' ? 'المتوقع في الصندوق' : 'Attendu en caisse'}</span>
+                    <span className="text-xl font-bold text-primary">
+                      {formatCurrency((currentSession.opening_cash || 0) + sessionStats.cashSales)} {t.currency}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Sales Count */}
+                <div className="flex items-center justify-center gap-2 p-3 bg-muted/50 rounded-lg">
+                  <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-muted-foreground">{language === 'ar' ? 'عدد المبيعات:' : 'Nombre de ventes:'}</span>
+                  <Badge variant="secondary" className="text-lg px-3">
+                    {sessionStats.salesCount}
+                  </Badge>
+                </div>
+
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowSessionDetailsDialog(false)} 
+                  className="w-full"
+                >
+                  {language === 'ar' ? 'إغلاق' : 'Fermer'}
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
