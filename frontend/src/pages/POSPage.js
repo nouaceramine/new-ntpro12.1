@@ -1174,22 +1174,99 @@ export default function POSPage() {
           </div>
         </div>
 
-        {/* Session Warning */}
-        {!checkingSession && !hasOpenSession && (
-          <Card className="border-amber-500 bg-amber-50 dark:bg-amber-950/20 mb-2">
-            <CardContent className="flex items-center justify-between p-3">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-amber-600" />
-                <span className="font-medium text-amber-800 dark:text-amber-200 text-sm">
-                  {language === 'ar' ? 'لا توجد حصة مفتوحة' : 'Aucune session ouverte'}
-                </span>
-              </div>
-              <Link to="/daily-sessions">
-                <Button size="sm" variant="outline" className="gap-1 border-amber-500 text-amber-700">
-                  <Clock className="h-4 w-4" />
-                  {language === 'ar' ? 'فتح حصة' : 'Ouvrir'}
-                </Button>
-              </Link>
+        {/* Session Section - Open/Close directly from POS */}
+        {!checkingSession && (
+          <Card className={`mb-2 ${hasOpenSession ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/20' : 'border-amber-500 bg-amber-50 dark:bg-amber-950/20'}`}>
+            <CardContent className="p-3">
+              {hasOpenSession && currentSession ? (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  {/* Session Info */}
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-emerald-500 text-white">
+                        <Clock className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">{language === 'ar' ? 'الحصة الحالية' : 'Session en cours'}</p>
+                        <p className="font-semibold text-emerald-700 text-sm">
+                          {currentSession.code || '#---'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {sessionStats && (
+                      <>
+                        <div className="h-8 w-px bg-border hidden sm:block" />
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1">
+                            <Banknote className="h-4 w-4 text-emerald-600" />
+                            <span className="text-muted-foreground">{language === 'ar' ? 'نقدي:' : 'Cash:'}</span>
+                            <span className="font-bold text-emerald-600">{formatCurrency(sessionStats.cashSales)}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <CreditCard className="h-4 w-4 text-amber-600" />
+                            <span className="text-muted-foreground">{language === 'ar' ? 'دين:' : 'Crédit:'}</span>
+                            <span className="font-bold text-amber-600">{formatCurrency(sessionStats.creditSales)}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="h-4 w-4 text-blue-600" />
+                            <span className="text-muted-foreground">{language === 'ar' ? 'إجمالي:' : 'Total:'}</span>
+                            <span className="font-bold text-blue-600">{formatCurrency(sessionStats.totalSales)}</span>
+                          </div>
+                          <Badge variant="secondary" className="text-xs">
+                            {sessionStats.salesCount} {language === 'ar' ? 'عملية' : 'ventes'}
+                          </Badge>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  
+                  {/* Session Actions */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 text-xs"
+                      onClick={() => setShowSessionDetailsDialog(true)}
+                      data-testid="session-details-btn"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      {language === 'ar' ? 'التفاصيل' : 'Détails'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="gap-1 text-xs"
+                      onClick={() => {
+                        setClosingCash(cashBoxBalance);
+                        setShowCloseSessionDialog(true);
+                      }}
+                      data-testid="close-session-pos-btn"
+                    >
+                      <StopCircle className="h-3.5 w-3.5" />
+                      {language === 'ar' ? 'غلق الحصة' : 'Fermer'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5 text-amber-600" />
+                    <span className="font-medium text-amber-800 dark:text-amber-200 text-sm">
+                      {language === 'ar' ? 'لا توجد حصة مفتوحة - يجب فتح حصة قبل البيع' : 'Aucune session - Ouvrez une session pour vendre'}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="gap-1 bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => setShowSessionDialog(true)}
+                    data-testid="open-session-pos-btn"
+                  >
+                    <Play className="h-4 w-4" />
+                    {language === 'ar' ? 'فتح حصة' : 'Ouvrir session'}
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
