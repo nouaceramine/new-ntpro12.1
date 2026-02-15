@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"}],"uuid":"b53bc6ecf75b4d95a5da812fc6758d3c","collectionName":"cash_boxes","type":"collection"}
