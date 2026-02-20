@@ -397,7 +397,7 @@ NT Commerce هو نظام SaaS متكامل لإدارة المبيعات وال
 - **اسم الملف**: `BDV10_export.json.gz`
 - **الحجم**: 2.08 MB (مضغوط)
 - **المحتوى**: 82 فئة، 6,987 منتج، 121 عميل، 100 مورد، 31,624 عملية بيع
-- **رابط التحميل**: `https://data-archive-5.preview.emergentagent.com/api/static/downloads/BDV10_export.json.gz`
+- **رابط التحميل**: `https://french-localization.preview.emergentagent.com/api/static/downloads/BDV10_export.json.gz`
 
 ## Updates (Feb 15, 2026 - Session 2)
 

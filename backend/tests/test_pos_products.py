@@ -6,7 +6,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://data-archive-5.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://french-localization.preview.emergentagent.com')
 
 # Test credentials
 TEST_EMAIL = "demo@demo.com"
