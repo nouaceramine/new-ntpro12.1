@@ -11,7 +11,7 @@ import os
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL').rstrip('/')
 
 # Test credentials
-TENANT_EMAIL = "ncr@ntcommerce.com"
+TENANT_EMAIL = "test@tenant.com"
 TENANT_PASSWORD = "Test@123"
 SUPER_ADMIN_EMAIL = "admin@ntcommerce.com"
 SUPER_ADMIN_PASSWORD = "Admin@2024"
