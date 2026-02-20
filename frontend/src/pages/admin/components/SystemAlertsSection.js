@@ -83,9 +83,11 @@ export const SystemAlertsSection = () => {
       });
       toast.success('تم تنفيذ الإصلاح التلقائي');
       setErrors(prev => prev.map(e => e.id === errorId ? { ...e, status: 'resolved' } : e));
+      // Refresh stats
+      fetchErrors();
     } catch (err) {
-      setErrors(prev => prev.map(e => e.id === errorId ? { ...e, status: 'resolved' } : e));
-      toast.success('تم تنفيذ الإصلاح التلقائي');
+      toast.error('فشل في تنفيذ الإصلاح');
+      console.error('Auto fix error:', err);
     }
   };
 
@@ -97,23 +99,27 @@ export const SystemAlertsSection = () => {
       });
       toast.success('تم وضع علامة محلول');
       setErrors(prev => prev.map(e => e.id === errorId ? { ...e, status: 'resolved' } : e));
+      // Refresh stats
+      fetchErrors();
     } catch (err) {
-      setErrors(prev => prev.map(e => e.id === errorId ? { ...e, status: 'resolved' } : e));
-      toast.success('تم وضع علامة محلول');
+      toast.error('فشل في تحديث حالة الخطأ');
+      console.error('Manual fix error:', err);
     }
   };
 
   const handleClearResolved = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${API}/saas/system-errors/resolved`, {
+      const response = await axios.delete(`${API}/saas/system-errors/resolved`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setErrors(prev => prev.filter(e => e.status !== 'resolved'));
-      toast.success('تم مسح الأخطاء المحلولة');
+      toast.success(`تم مسح ${response.data.deleted_count || 0} خطأ محلول`);
+      // Refresh stats
+      fetchErrors();
     } catch (err) {
-      setErrors(prev => prev.filter(e => e.status !== 'resolved'));
-      toast.success('تم مسح الأخطاء المحلولة');
+      toast.error('فشل في مسح الأخطاء المحلولة');
+      console.error('Clear resolved error:', err);
     }
   };
 
