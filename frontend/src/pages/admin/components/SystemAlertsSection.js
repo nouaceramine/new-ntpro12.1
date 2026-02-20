@@ -48,66 +48,27 @@ export const SystemAlertsSection = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setErrors(response.data.errors || []);
-      setStats(response.data.stats || stats);
+      setStats(response.data.stats || {
+        total: 0,
+        critical: 0,
+        warning: 0,
+        info: 0,
+        resolved: 0,
+        today: 0,
+        active: 0
+      });
     } catch (err) {
-      // Generate mock data for demo
-      const mockErrors = [
-        {
-          id: '1',
-          type: 'api',
-          severity: 'critical',
-          message: 'فشل الاتصال بقاعدة البيانات للمستأجر tenant_123',
-          tenant_id: 'tenant_123',
-          tenant_name: 'متجر الأمل',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-          status: 'active',
-          auto_fixable: true,
-          fix_action: 'reconnect_db'
-        },
-        {
-          id: '2',
-          type: 'payment',
-          severity: 'warning',
-          message: 'فشل معالجة دفعة Stripe - خطأ في البطاقة',
-          tenant_id: 'tenant_456',
-          tenant_name: 'سوبرماركت النجاح',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-          status: 'active',
-          auto_fixable: false
-        },
-        {
-          id: '3',
-          type: 'auth',
-          severity: 'info',
-          message: 'محاولات تسجيل دخول فاشلة متعددة',
-          tenant_id: 'tenant_789',
-          tenant_name: 'مكتبة المعرفة',
-          timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-          status: 'resolved',
-          auto_fixable: true,
-          fix_action: 'clear_sessions'
-        },
-        {
-          id: '4',
-          type: 'system',
-          severity: 'warning',
-          message: 'استخدام الذاكرة مرتفع (85%)',
-          tenant_id: null,
-          tenant_name: 'النظام',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          status: 'active',
-          auto_fixable: true,
-          fix_action: 'clear_cache'
-        }
-      ];
-      setErrors(mockErrors);
+      console.error('Error fetching system errors:', err);
+      // Set empty state on error
+      setErrors([]);
       setStats({
-        total: mockErrors.length,
-        critical: mockErrors.filter(e => e.severity === 'critical').length,
-        warning: mockErrors.filter(e => e.severity === 'warning').length,
-        info: mockErrors.filter(e => e.severity === 'info').length,
-        resolved: mockErrors.filter(e => e.status === 'resolved').length,
-        today: mockErrors.length
+        total: 0,
+        critical: 0,
+        warning: 0,
+        info: 0,
+        resolved: 0,
+        today: 0,
+        active: 0
       });
     } finally {
       setLoading(false);
