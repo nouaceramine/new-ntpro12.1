@@ -740,7 +740,7 @@ class CashBoxResponse(BaseModel):
     name_fr: str = ""
     type: str  # cash, bank, wallet
     balance: float
-    updated_at: str
+    updated_at: Optional[str] = None
 
 class TransactionCreate(BaseModel):
     cash_box_id: str
