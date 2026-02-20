@@ -10,8 +10,8 @@ import os
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL').rstrip('/')
 
-# Test credentials
-TENANT_EMAIL = "test@tenant.com"
+# Test credentials - Tenant uses unified-login to get proper tenant context
+TENANT_EMAIL = "ncr@ntcommerce.com"
 TENANT_PASSWORD = "Test@123"
 SUPER_ADMIN_EMAIL = "admin@ntcommerce.com"
 SUPER_ADMIN_PASSWORD = "Admin@2024"
@@ -21,16 +21,16 @@ class TestAuthentication:
     """Authentication tests"""
     
     def test_tenant_login(self):
-        """Test tenant login"""
-        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+        """Test tenant login using unified-login endpoint"""
+        response = requests.post(f"{BASE_URL}/api/auth/unified-login", json={
             "email": TENANT_EMAIL,
             "password": TENANT_PASSWORD
         })
-        assert response.status_code == 200, f"Login failed: {response.text}"
+        assert response.status_code == 200, f"Tenant login failed: {response.text}"
         data = response.json()
         assert "access_token" in data, "No access_token in response"
-        print(f"Tenant login successful, token received")
-        return data["access_token"]
+        assert data.get("user_type") == "tenant", f"Expected tenant user type, got {data.get('user_type')}"
+        print(f"Tenant login successful, user_type: {data.get('user_type')}")
     
     def test_super_admin_login(self):
         """Test super admin login"""
@@ -42,7 +42,6 @@ class TestAuthentication:
         data = response.json()
         assert "access_token" in data, "No access_token in response"
         print(f"Super admin login successful")
-        return data["access_token"]
 
 
 class TestDashboardStats:
