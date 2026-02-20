@@ -11374,6 +11374,10 @@ app.include_router(api_router)
 app.include_router(saas_router, prefix="/api")  # Refactored SaaS routes
 app.include_router(database_router, prefix="/api/saas")  # Database import/export routes
 
+# Initialize and include system errors routes
+system_errors_routes.init_routes(main_db, get_super_admin)
+app.include_router(system_errors_routes.router, prefix="/api")  # System errors routes
+
 # Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
 @app.middleware("http")
 async def tenant_context_middleware(request: Request, call_next):
