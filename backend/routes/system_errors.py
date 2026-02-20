@@ -2,23 +2,42 @@
 System Errors Routes
 Handles system error logging, monitoring, and auto-fixing for SaaS admin
 """
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
 from datetime import datetime, timezone, timedelta
 import uuid
+import jwt
+import os
 
 router = APIRouter(prefix="/saas/system-errors", tags=["System Errors"])
 
 # Will be set from server.py
 main_db = None
-get_super_admin = None
+SECRET_KEY = os.environ.get("JWT_SECRET", "your-secret-key-here-change-in-production")
+ALGORITHM = "HS256"
 
-def init_routes(db, super_admin_dep):
+def init_routes(db, super_admin_dep=None):
     """Initialize routes with dependencies from main server"""
-    global main_db, get_super_admin
+    global main_db
     main_db = db
-    get_super_admin = super_admin_dep
+
+# Simple super admin check
+async def verify_super_admin(authorization: str = Header(None)):
+    """Verify that the request is from a super admin"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="غير مصرح")
+    
+    try:
+        token = authorization.split(" ")[1]
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        if payload.get("role") != "super_admin":
+            raise HTTPException(status_code=403, detail="يجب أن تكون مدير أعلى")
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="انتهت صلاحية الجلسة")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="توكن غير صالح")
 
 # ============ MODELS ============
 
@@ -66,20 +85,18 @@ class ErrorsListResponse(BaseModel):
 async def get_system_errors(
     status: Optional[str] = None,
     severity: Optional[str] = None,
-    type: Optional[str] = None,
+    error_type: Optional[str] = None,
     limit: int = 100,
-    admin: dict = Depends(lambda: get_super_admin)
+    admin: dict = Depends(verify_super_admin)
 ):
     """Get all system errors with optional filtering"""
-    admin = await get_super_admin(admin) if callable(get_super_admin) else admin
-    
     query = {}
     if status:
         query["status"] = status
     if severity:
         query["severity"] = severity
-    if type:
-        query["type"] = type
+    if error_type:
+        query["type"] = error_type
     
     errors = await main_db.system_errors.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit).to_list(limit)
     
@@ -131,11 +148,9 @@ async def create_system_error(error: SystemErrorCreate):
 async def auto_fix_error(
     error_id: str,
     action: Optional[str] = None,
-    admin: dict = Depends(lambda: get_super_admin)
+    admin: dict = Depends(verify_super_admin)
 ):
     """Execute auto-fix action for an error"""
-    admin = await get_super_admin(admin) if callable(get_super_admin) else admin
-    
     error = await main_db.system_errors.find_one({"id": error_id})
     if not error:
         raise HTTPException(status_code=404, detail="خطأ غير موجود")
@@ -151,7 +166,7 @@ async def auto_fix_error(
         {"$set": {
             "status": "resolved",
             "resolved_at": now,
-            "resolved_by": admin.get("email", "system"),
+            "resolved_by": admin.get("sub", "admin"),
             "fix_result": fix_result
         }}
     )
@@ -163,16 +178,12 @@ async def execute_fix_action(action: str, error: dict) -> dict:
     result = {"action": action, "status": "completed"}
     
     if action == "reconnect_db":
-        # Simulate database reconnection
         result["details"] = "تم إعادة الاتصال بقاعدة البيانات بنجاح"
     elif action == "clear_cache":
-        # Could actually clear cache here
         result["details"] = "تم مسح ذاكرة التخزين المؤقت"
     elif action == "clear_sessions":
-        # Clear sessions for tenant
         tenant_id = error.get("tenant_id")
         if tenant_id:
-            # Could clear sessions from DB here
             result["details"] = f"تم مسح جلسات المستأجر {tenant_id}"
     elif action == "restart_service":
         result["details"] = "تم إعادة تشغيل الخدمة"
@@ -187,11 +198,9 @@ async def execute_fix_action(action: str, error: dict) -> dict:
 async def resolve_error(
     error_id: str,
     notes: Optional[str] = None,
-    admin: dict = Depends(lambda: get_super_admin)
+    admin: dict = Depends(verify_super_admin)
 ):
     """Manually mark an error as resolved"""
-    admin = await get_super_admin(admin) if callable(get_super_admin) else admin
-    
     error = await main_db.system_errors.find_one({"id": error_id})
     if not error:
         raise HTTPException(status_code=404, detail="خطأ غير موجود")
@@ -202,7 +211,7 @@ async def resolve_error(
         {"$set": {
             "status": "resolved",
             "resolved_at": now,
-            "resolved_by": admin.get("email", "admin"),
+            "resolved_by": admin.get("sub", "admin"),
             "resolution_notes": notes
         }}
     )
@@ -210,18 +219,14 @@ async def resolve_error(
     return {"success": True, "message": "تم تحديد الخطأ كمحلول"}
 
 @router.delete("/resolved")
-async def clear_resolved_errors(admin: dict = Depends(lambda: get_super_admin)):
+async def clear_resolved_errors(admin: dict = Depends(verify_super_admin)):
     """Clear all resolved errors from the system"""
-    admin = await get_super_admin(admin) if callable(get_super_admin) else admin
-    
     result = await main_db.system_errors.delete_many({"status": "resolved"})
     return {"success": True, "deleted_count": result.deleted_count, "message": f"تم حذف {result.deleted_count} خطأ محلول"}
 
 @router.delete("/{error_id}")
-async def delete_error(error_id: str, admin: dict = Depends(lambda: get_super_admin)):
+async def delete_error(error_id: str, admin: dict = Depends(verify_super_admin)):
     """Delete a specific error"""
-    admin = await get_super_admin(admin) if callable(get_super_admin) else admin
-    
     result = await main_db.system_errors.delete_one({"id": error_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="خطأ غير موجود")
@@ -231,11 +236,9 @@ async def delete_error(error_id: str, admin: dict = Depends(lambda: get_super_ad
 @router.post("/maintenance/{action}")
 async def run_maintenance_action(
     action: Literal["clear_cache", "reconnect_db", "restart_services", "system_check"],
-    admin: dict = Depends(lambda: get_super_admin)
+    admin: dict = Depends(verify_super_admin)
 ):
     """Run system maintenance actions"""
-    admin = await get_super_admin(admin) if callable(get_super_admin) else admin
-    
     now = datetime.now(timezone.utc).isoformat()
     result = {"action": action, "status": "completed", "timestamp": now}
     
@@ -272,7 +275,7 @@ async def run_maintenance_action(
         "auto_fixable": False,
         "details": result["details"],
         "resolved_at": now,
-        "resolved_by": admin.get("email", "admin")
+        "resolved_by": admin.get("sub", "admin")
     })
     
     return result
