@@ -14,7 +14,7 @@ router = APIRouter(prefix="/saas/system-errors", tags=["System Errors"])
 
 # Will be set from server.py
 main_db = None
-SECRET_KEY = os.environ.get("JWT_SECRET", "your-secret-key-here-change-in-production")
+SECRET_KEY = os.environ.get("JWT_SECRET", "screenguard-secret-key-2024")
 ALGORITHM = "HS256"
 
 def init_routes(db, super_admin_dep=None):
