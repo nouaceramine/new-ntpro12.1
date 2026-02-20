@@ -334,19 +334,60 @@ export const SystemAlertsSection = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => toast.success('تم مسح الكاش')}>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={async () => {
+              try {
+                const token = localStorage.getItem('token');
+                const res = await axios.post(`${API}/saas/system-errors/maintenance/clear_cache`, {}, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                toast.success(res.data.message || 'تم مسح الكاش');
+              } catch (err) {
+                toast.error('فشل في مسح الكاش');
+              }
+            }}>
               <Database className="h-6 w-6 text-blue-500" />
               <span>مسح الكاش</span>
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => toast.success('تم إعادة الاتصال')}>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={async () => {
+              try {
+                const token = localStorage.getItem('token');
+                const res = await axios.post(`${API}/saas/system-errors/maintenance/reconnect_db`, {}, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                toast.success(res.data.message || 'تم إعادة الاتصال');
+              } catch (err) {
+                toast.error('فشل في إعادة الاتصال');
+              }
+            }}>
               <Server className="h-6 w-6 text-green-500" />
               <span>إعادة اتصال DB</span>
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => toast.success('تم إعادة تشغيل الخدمات')}>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={async () => {
+              try {
+                const token = localStorage.getItem('token');
+                const res = await axios.post(`${API}/saas/system-errors/maintenance/restart_services`, {}, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                toast.success(res.data.message || 'تم إعادة تشغيل الخدمات');
+              } catch (err) {
+                toast.error('فشل في إعادة التشغيل');
+              }
+            }}>
               <RefreshCw className="h-6 w-6 text-purple-500" />
               <span>إعادة تشغيل</span>
             </Button>
-            <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => toast.success('تم فحص النظام')}>
+            <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={async () => {
+              try {
+                const token = localStorage.getItem('token');
+                const res = await axios.post(`${API}/saas/system-errors/maintenance/system_check`, {}, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                const details = res.data.details || {};
+                toast.success(`${res.data.message || 'تم فحص النظام'}\nCPU: ${details.cpu_usage || 'N/A'} | RAM: ${details.memory_usage || 'N/A'}`);
+              } catch (err) {
+                toast.error('فشل في فحص النظام');
+              }
+            }}>
               <Shield className="h-6 w-6 text-amber-500" />
               <span>فحص النظام</span>
             </Button>
