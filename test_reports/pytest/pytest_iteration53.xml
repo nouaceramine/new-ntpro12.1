@@ -1,41 +1,37 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="12" failures="1" skipped="0" tests="14" time="2.470" timestamp="2026-02-20T22:33:18.939994+00:00" hostname="agent-env-7a1d7e24-8bef-4375-865d-33316542ff0f"><testcase classname="backend.tests.test_iteration53_features.TestAuthentication" name="test_tenant_login" time="0.151"><failure message="AssertionError: Login failed: {&quot;detail&quot;:&quot;Invalid email or password&quot;}&#10;assert 401 == 200&#10; +  where 401 = &lt;Response [401]&gt;.status_code">backend/tests/test_iteration53_features.py:29: in test_tenant_login
-    assert response.status_code == 200, f"Login failed: {response.text}"
-E   AssertionError: Login failed: {"detail":"Invalid email or password"}
-E   assert 401 == 200
-E    +  where 401 = &lt;Response [401]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestAuthentication" name="test_super_admin_login" time="0.346" /><testcase classname="backend.tests.test_iteration53_features.TestDashboardStats" name="test_stats_endpoint" time="0.136"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:58: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestDashboardStats" name="test_cash_boxes_endpoint" time="0.135"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:58: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestPOSSessions" name="test_get_current_session" time="0.139"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:100: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestPOSSessions" name="test_generate_session_code" time="0.148"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:100: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestPOSSessions" name="test_list_daily_sessions" time="0.138"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:100: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestBackupSystem" name="test_get_auto_backup_settings" time="0.131"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:137: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestBackupSystem" name="test_save_auto_backup_settings" time="0.144"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:137: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestBackupSystem" name="test_run_auto_backup" time="0.116"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:137: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestProductsAPI" name="test_products_list" time="0.109"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:180: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestProductsAPI" name="test_product_families" time="0.355"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:180: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestProductsAPI" name="test_generate_article_code" time="0.145"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:180: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase><testcase classname="backend.tests.test_iteration53_features.TestProductsAPI" name="test_generate_barcode" time="0.141"><error message="failed on setup with &quot;KeyError: 'access_token'&quot;">backend/tests/test_iteration53_features.py:180: in auth_token
-    return response.json()["access_token"]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E   KeyError: 'access_token'</error></testcase></testsuite></testsuites>
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="9" skipped="0" tests="14" time="7.097" timestamp="2026-02-20T22:33:58.208785+00:00" hostname="agent-env-7a1d7e24-8bef-4375-865d-33316542ff0f"><testcase classname="backend.tests.test_iteration53_features.TestAuthentication" name="test_tenant_login" time="0.397" /><testcase classname="backend.tests.test_iteration53_features.TestAuthentication" name="test_super_admin_login" time="0.370" /><testcase classname="backend.tests.test_iteration53_features.TestDashboardStats" name="test_stats_endpoint" time="0.520"><failure message="AssertionError: Stats failed: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration53_features.py:64: in test_stats_endpoint
+    assert response.status_code == 200, f"Stats failed: {response.text}"
+E   AssertionError: Stats failed: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestDashboardStats" name="test_cash_boxes_endpoint" time="0.460"><failure message="AssertionError: Cash boxes failed: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration53_features.py:85: in test_cash_boxes_endpoint
+    assert response.status_code == 200, f"Cash boxes failed: {response.text}"
+E   AssertionError: Cash boxes failed: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestPOSSessions" name="test_get_current_session" time="0.562"><failure message="AssertionError: Current session failed: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 in [200, 404]&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration53_features.py:107: in test_get_current_session
+    assert response.status_code in [200, 404], f"Current session failed: {response.text}"
+E   AssertionError: Current session failed: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 in [200, 404]
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestPOSSessions" name="test_generate_session_code" time="0.475" /><testcase classname="backend.tests.test_iteration53_features.TestPOSSessions" name="test_list_daily_sessions" time="0.583"><failure message="AssertionError: List sessions failed: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration53_features.py:123: in test_list_daily_sessions
+    assert response.status_code == 200, f"List sessions failed: {response.text}"
+E   AssertionError: List sessions failed: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestBackupSystem" name="test_get_auto_backup_settings" time="0.534"><failure message="AssertionError: Auto-backup settings failed: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 in [200, 404]&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration53_features.py:144: in test_get_auto_backup_settings
+    assert response.status_code in [200, 404], f"Auto-backup settings failed: {response.text}"
+E   AssertionError: Auto-backup settings failed: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 in [200, 404]
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestBackupSystem" name="test_save_auto_backup_settings" time="0.520"><failure message="AssertionError: Save auto-backup settings failed: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 in [200, 201]&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration53_features.py:158: in test_save_auto_backup_settings
+    assert response.status_code in [200, 201], f"Save auto-backup settings failed: {response.text}"
+E   AssertionError: Save auto-backup settings failed: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 in [200, 201]
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestBackupSystem" name="test_run_auto_backup" time="0.567"><failure message="AssertionError: Run auto backup failed: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 in [200, 201]&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration53_features.py:166: in test_run_auto_backup
+    assert response.status_code in [200, 201], f"Run auto backup failed: {response.text}"
+E   AssertionError: Run auto backup failed: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 in [200, 201]
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestProductsAPI" name="test_products_list" time="0.477"><failure message="AssertionError: Products list failed: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration53_features.py:186: in test_products_list
+    assert response.status_code == 200, f"Products list failed: {response.text}"
+E   AssertionError: Products list failed: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestProductsAPI" name="test_product_families" time="0.507"><failure message="AssertionError: Product families failed: {&quot;detail&quot;:&quot;هذا الإجراء متاح فقط لمشتركي المنصة&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403]&gt;.status_code">backend/tests/test_iteration53_features.py:194: in test_product_families
+    assert response.status_code == 200, f"Product families failed: {response.text}"
+E   AssertionError: Product families failed: {"detail":"هذا الإجراء متاح فقط لمشتركي المنصة"}
+E   assert 403 == 200
+E    +  where 403 = &lt;Response [403]&gt;.status_code</failure></testcase><testcase classname="backend.tests.test_iteration53_features.TestProductsAPI" name="test_generate_article_code" time="0.516" /><testcase classname="backend.tests.test_iteration53_features.TestProductsAPI" name="test_generate_barcode" time="0.487" /></testsuite></testsuites>
