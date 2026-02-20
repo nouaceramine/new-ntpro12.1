@@ -1710,8 +1710,8 @@ export default function POSPage() {
                           <>
                             <Package className="h-4 w-4 shrink-0" />
                             <span className="line-clamp-1 w-full px-0.5">{productName.split(' ')[0]}</span>
-                            {product?.price && (
-                              <span className="text-[8px] opacity-80">{formatCurrency(product.price)}</span>
+                            {product?.retail_price && (
+                              <span className="text-[8px] opacity-80">{formatCurrency(product.retail_price)}</span>
                             )}
                           </>
                         ) : (
