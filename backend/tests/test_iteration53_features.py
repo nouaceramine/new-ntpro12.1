@@ -49,8 +49,8 @@ class TestDashboardStats:
     
     @pytest.fixture
     def auth_token(self):
-        """Get auth token for tenant"""
-        response = requests.post(f"{BASE_URL}/api/auth/login", json={
+        """Get auth token for tenant using unified-login"""
+        response = requests.post(f"{BASE_URL}/api/auth/unified-login", json={
             "email": TENANT_EMAIL,
             "password": TENANT_PASSWORD
         })
