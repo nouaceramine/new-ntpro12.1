@@ -3287,17 +3287,40 @@ async def get_profit_stats(user: dict = Depends(require_tenant)):
     sales_result = await db.sales.aggregate(sales_pipeline).to_list(1)
     monthly_revenue = sales_result[0]["total"] if sales_result else 0
     
-    # Monthly purchase cost (from sales items)
-    # Calculate total purchase cost based on sold items
-    sales_items_pipeline = [
-        {"$match": {"created_at": {"$gte": month_start}, "status": {"$ne": "returned"}}},
-        {"$unwind": "$items"},
-        {"$group": {"_id": None, "total_cost": {"$sum": {"$multiply": ["$items.quantity", "$items.purchase_price"]}}}}
-    ]
+    # Monthly purchase cost - Calculate from sales items by looking up product purchase prices
+    monthly_purchase_cost = 0
     try:
-        sales_cost_result = await db.sales.aggregate(sales_items_pipeline).to_list(1)
-        monthly_purchase_cost = sales_cost_result[0]["total_cost"] if sales_cost_result else 0
-    except:
+        # Get all sales for this month
+        monthly_sales = await db.sales.find({
+            "created_at": {"$gte": month_start},
+            "status": {"$ne": "returned"}
+        }, {"_id": 0, "items": 1}).to_list(1000)
+        
+        # Build a cache of product purchase prices
+        product_ids = set()
+        for sale in monthly_sales:
+            for item in sale.get("items", []):
+                product_ids.add(item.get("product_id"))
+        
+        # Fetch all products at once
+        products_cache = {}
+        if product_ids:
+            products = await db.products.find(
+                {"id": {"$in": list(product_ids)}},
+                {"_id": 0, "id": 1, "purchase_price": 1}
+            ).to_list(len(product_ids))
+            products_cache = {p["id"]: p.get("purchase_price", 0) for p in products}
+        
+        # Calculate total purchase cost
+        for sale in monthly_sales:
+            for item in sale.get("items", []):
+                product_id = item.get("product_id")
+                quantity = item.get("quantity", 0)
+                # Use purchase_price from item if available, otherwise from product cache
+                purchase_price = item.get("purchase_price") or products_cache.get(product_id, 0)
+                monthly_purchase_cost += quantity * purchase_price
+    except Exception as e:
+        print(f"Error calculating purchase cost: {e}")
         monthly_purchase_cost = 0
     
     # Monthly expenses
