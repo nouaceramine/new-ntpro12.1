@@ -2574,11 +2574,21 @@ async def create_sale(sale: SaleCreate, user: dict = Depends(require_tenant)):
     debt_amount = remaining if sale.payment_type in ["credit", "partial"] else 0
     status = "paid" if remaining <= 0 else ("partial" if sale.paid_amount > 0 else "unpaid")
     
+    # Enrich items with purchase_price from products for profit calculation
+    enriched_items = []
+    for item in sale.items:
+        item_dict = item.model_dump()
+        # Fetch purchase_price from product if not already included
+        if "purchase_price" not in item_dict or item_dict.get("purchase_price") is None:
+            product = await db.products.find_one({"id": item.product_id}, {"_id": 0, "purchase_price": 1})
+            item_dict["purchase_price"] = product.get("purchase_price", 0) if product else 0
+        enriched_items.append(item_dict)
+    
     sale_doc = {
         "id": sale_id, "invoice_number": invoice_number,
         "code": sale.code or "",  # كود البيع
         "customer_id": sale.customer_id, "customer_name": customer_name,
-        "items": [item.model_dump() for item in sale.items],
+        "items": enriched_items,
         "subtotal": sale.subtotal, "discount": sale.discount,
         "delivery_fee": delivery_fee, "delivery": delivery_info,
         "total": final_total,
