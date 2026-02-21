@@ -41,7 +41,7 @@ class TestAuthentication:
         data = response.json()
         assert "access_token" in data
         assert data["user_type"] == "tenant"
-        assert "tenant_id" in data["user"]["database_name"]
+        assert data["user"]["database_name"].startswith("tenant_")
         print(f"✓ Tenant login successful - company: {data['user']['company_name']}")
 
     def test_invalid_login(self):
