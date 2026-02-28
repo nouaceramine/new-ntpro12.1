@@ -2,7 +2,7 @@
 Pydantic Models for NT Commerce API
 All data models used across the application
 """
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import List, Optional, Literal
 
 # ============ USER MODELS ============
