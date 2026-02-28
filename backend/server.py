@@ -1754,10 +1754,19 @@ async def log_price_change(
 
 # ============ CUSTOMER ROUTES ============
 
-@api_router.post("/customers", response_model=CustomerResponse)
+@api_router.post("/customers", response_model=CustomerResponse, status_code=201)
 async def create_customer(customer: CustomerCreate, user: dict = Depends(require_tenant)):
     customer_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
+    
+    # Check for duplicate customer by phone
+    if customer.phone:
+        existing = await db.customers.find_one({"phone": customer.phone})
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"زبون برقم الهاتف هذا موجود مسبقاً: {existing.get('name')}"
+            )
     
     # Get family name if exists
     family_name = ""
