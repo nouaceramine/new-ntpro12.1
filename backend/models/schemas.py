@@ -528,6 +528,46 @@ class ProductCreate(BaseModel):
     article_code: Optional[str] = ""  # كود المنتج AR00001
     family_id: Optional[str] = None  # عائلة المنتج
     use_average_price: Optional[bool] = False  # حساب السعر المتوسط
+    
+    @field_validator('name_en')
+    @classmethod
+    def validate_name_en(cls, v):
+        if not v or not v.strip():
+            raise ValueError('اسم المنتج مطلوب')
+        # Remove HTML tags
+        import re
+        v = re.sub(r'<[^>]+>', '', v)
+        v = v.strip()
+        if len(v) > 255:
+            raise ValueError('اسم المنتج يجب ألا يتجاوز 255 حرف')
+        if len(v) < 2:
+            raise ValueError('اسم المنتج يجب أن يكون حرفين على الأقل')
+        return v
+    
+    @field_validator('name_ar')
+    @classmethod
+    def validate_name_ar(cls, v):
+        if v:
+            import re
+            v = re.sub(r'<[^>]+>', '', v)
+            v = v.strip()
+            if len(v) > 255:
+                raise ValueError('الاسم العربي يجب ألا يتجاوز 255 حرف')
+        return v or ""
+    
+    @field_validator('purchase_price', 'wholesale_price', 'retail_price', 'super_wholesale_price')
+    @classmethod
+    def validate_prices(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('السعر يجب أن يكون صفر أو أكثر')
+        return v or 0
+    
+    @field_validator('quantity', 'low_stock_threshold')
+    @classmethod
+    def validate_quantity(cls, v):
+        if v is not None and v < 0:
+            raise ValueError('الكمية يجب أن تكون صفر أو أكثر')
+        return v or 0
 
 class ProductUpdate(BaseModel):
     name_en: Optional[str] = None
