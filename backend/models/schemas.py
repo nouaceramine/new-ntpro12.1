@@ -689,6 +689,18 @@ class SupplierCreate(BaseModel):
     notes: Optional[str] = ""
     family_id: Optional[str] = None
     code: Optional[str] = ""  # كود المورد FR00001
+    
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v):
+        if not v or not v.strip():
+            raise ValueError('اسم المورد مطلوب')
+        import re
+        v = re.sub(r'<[^>]+>', '', v)
+        v = v.strip()
+        if len(v) > 255:
+            raise ValueError('الاسم يجب ألا يتجاوز 255 حرف')
+        return v
 
 class SupplierUpdate(BaseModel):
     name: Optional[str] = None
