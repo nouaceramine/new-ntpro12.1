@@ -1007,15 +1007,21 @@ async def update_user_password(user_id: str, password_data: PasswordUpdate, admi
 
 # ============ PRODUCT ROUTES ============
 
-@api_router.post("/products", response_model=ProductResponse)
+@api_router.post("/products", response_model=ProductResponse, status_code=201)
 async def create_product(product: ProductCreate, admin: dict = Depends(get_tenant_admin)):
     product_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
-    # Check if product with same name existed before (for restock alert)
+    # Check for duplicate product by name
     existing = await db.products.find_one({
         "$or": [{"name_en": product.name_en}, {"name_ar": product.name_ar}]
     })
+    
+    if existing:
+        raise HTTPException(
+            status_code=409, 
+            detail=f"منتج بنفس الاسم موجود مسبقاً: {existing.get('name_ar') or existing.get('name_en')}"
+        )
     
     # Get family name if exists
     family_name = ""
