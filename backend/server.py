@@ -2300,10 +2300,19 @@ async def delete_inventory_session(session_id: str, admin: dict = Depends(get_te
 
 # ============ SUPPLIER ROUTES ============
 
-@api_router.post("/suppliers", response_model=SupplierResponse)
+@api_router.post("/suppliers", response_model=SupplierResponse, status_code=201)
 async def create_supplier(supplier: SupplierCreate, admin: dict = Depends(get_tenant_admin)):
     supplier_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
+    
+    # Check for duplicate supplier
+    if supplier.phone:
+        existing = await db.suppliers.find_one({"phone": supplier.phone})
+        if existing:
+            raise HTTPException(
+                status_code=409,
+                detail=f"مورد برقم الهاتف هذا موجود مسبقاً: {existing.get('name')}"
+            )
     
     # Get family name if exists
     family_name = ""
