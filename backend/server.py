@@ -2558,7 +2558,7 @@ async def pay_supplier_debt(payment: SupplierDebtPayment, user: dict = Depends(r
 
 # ============ SALES ROUTES ============
 
-@api_router.post("/sales", response_model=SaleResponse)
+@api_router.post("/sales", response_model=SaleResponse, status_code=201)
 async def create_sale(sale: SaleCreate, user: dict = Depends(require_tenant)):
     sale_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
