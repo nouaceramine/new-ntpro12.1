@@ -132,7 +132,7 @@ async def init_tenant_database(tenant_id: str):
     return tenant_db
 
 # JWT Settings
-SECRET_KEY = os.environ.get('JWT_SECRET', 'screenguard-secret-key-2024')
+SECRET_KEY = os.environ.get('JWT_SECRET', 'nt-commerce-super-secure-jwt-key-2024-production')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
@@ -1099,25 +1099,39 @@ async def get_products(search: Optional[str] = None, model: Optional[str] = None
     
     products = await db.products.find(query, {"_id": 0}).to_list(1000)
     
-    # Add family names and last purchase date for products
+    # Pre-fetch all family names in one query (optimize N+1)
+    family_ids = list(set(p.get("family_id") for p in products if p.get("family_id") and not p.get("family_name")))
+    families_map = {}
+    if family_ids:
+        families = await db.product_families.find({"id": {"$in": family_ids}}, {"_id": 0, "id": 1, "name_ar": 1}).to_list(len(family_ids))
+        families_map = {f["id"]: f.get("name_ar", "") for f in families}
+    
+    # Pre-fetch last purchase dates in one aggregation (optimize N+1)
+    product_ids = [p["id"] for p in products if not p.get("last_purchase_date")]
+    last_purchases_map = {}
+    if product_ids:
+        pipeline = [
+            {"$match": {"items.product_id": {"$in": product_ids}}},
+            {"$sort": {"created_at": -1}},
+            {"$unwind": "$items"},
+            {"$match": {"items.product_id": {"$in": product_ids}}},
+            {"$group": {"_id": "$items.product_id", "last_date": {"$first": "$created_at"}}}
+        ]
+        last_purchases = await db.purchases.aggregate(pipeline).to_list(len(product_ids))
+        last_purchases_map = {lp["_id"]: lp["last_date"] for lp in last_purchases}
+    
+    # Apply data to products
     for product in products:
         if product.get("family_id") and not product.get("family_name"):
-            family = await db.product_families.find_one({"id": product["family_id"]}, {"_id": 0, "name_ar": 1})
-            product["family_name"] = family["name_ar"] if family else ""
+            product["family_name"] = families_map.get(product["family_id"], "")
         elif not product.get("family_name"):
             product["family_name"] = ""
         if not product.get("article_code"):
             product["article_code"] = ""
         
-        # Get last purchase date for this product
-        if not product.get("last_purchase_date"):
-            last_purchase = await db.purchases.find_one(
-                {"items.product_id": product["id"]},
-                {"_id": 0, "created_at": 1},
-                sort=[("created_at", -1)]
-            )
-            if last_purchase:
-                product["last_purchase_date"] = last_purchase["created_at"]
+        # Set last purchase date from pre-fetched data
+        if not product.get("last_purchase_date") and product["id"] in last_purchases_map:
+            product["last_purchase_date"] = last_purchases_map[product["id"]]
     
     return [ProductResponse(**p) for p in products]
 
@@ -2769,8 +2783,13 @@ async def return_sale(sale_id: str, user: dict = Depends(require_tenant)):
             {"$inc": {"total_purchases": -sale["total"], "balance": -sale.get("remaining", 0)}}
         )
     
-    # Deduct from cash box
+    # Deduct from cash box (with balance check)
     if sale.get("paid_amount", 0) > 0:
+        cash_box = await db.cash_boxes.find_one({"id": sale["payment_method"]})
+        if cash_box and cash_box.get("balance", 0) < sale["paid_amount"]:
+            # Log warning but proceed (refund must happen)
+            print(f"Warning: Cash box {sale['payment_method']} balance ({cash_box.get('balance', 0)}) is less than refund amount ({sale['paid_amount']})")
+        
         await db.cash_boxes.update_one(
             {"id": sale["payment_method"]},
             {"$inc": {"balance": -sale["paid_amount"]}, "$set": {"updated_at": now}}
@@ -11467,6 +11486,28 @@ app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="
 @app.on_event("startup")
 async def startup():
     await init_cash_boxes()
+    # Create indexes for better performance
+    try:
+        await db.products.create_index("id", unique=True)
+        await db.products.create_index("family_id")
+        await db.products.create_index("barcode")
+        await db.products.create_index("article_code")
+        await db.customers.create_index("id", unique=True)
+        await db.customers.create_index("phone")
+        await db.suppliers.create_index("id", unique=True)
+        await db.sales.create_index("id", unique=True)
+        await db.sales.create_index("created_at")
+        await db.sales.create_index("customer_id")
+        await db.purchases.create_index("id", unique=True)
+        await db.purchases.create_index("created_at")
+        await db.purchases.create_index("items.product_id")
+        await db.daily_sessions.create_index("id", unique=True)
+        await db.daily_sessions.create_index("status")
+        await db.transactions.create_index("created_at")
+        await db.transactions.create_index("cash_box_id")
+        print("✅ Database indexes created successfully")
+    except Exception as e:
+        print(f"⚠️ Index creation warning: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
