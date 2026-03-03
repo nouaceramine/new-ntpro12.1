@@ -1353,7 +1353,7 @@ async def generate_barcode(article_code: Optional[str] = None):
         try:
             num = article_code.replace("AR", "").lstrip("0") or "1"
             num = int(num)
-        except:
+        except (ValueError, AttributeError):
             num = random.randint(1, 99999)
         
         prefix = "213"  # Algeria
@@ -2063,7 +2063,7 @@ async def get_pending_debt_reminders(user: dict = Depends(require_tenant)):
                     sale_date = datetime.fromisoformat(sale_date_str.replace('Z', '+00:00'))
                 else:
                     sale_date = datetime.strptime(sale_date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-            except:
+            except (ValueError, TypeError):
                 sale_date = now
             
             days_since = (now - sale_date).days
@@ -8348,7 +8348,7 @@ async def get_expense_reminders(user: dict = Depends(require_tenant)):
             else:
                 # Date only (no time) - treat as midnight UTC
                 last_date = datetime.strptime(date_str, '%Y-%m-%d').replace(tzinfo=timezone.utc)
-        except:
+        except Exception:
             last_date = now
         
         period = expense.get("recurring_period", "monthly")
@@ -9281,7 +9281,7 @@ async def get_employee_sales_report(
                 by_hour[hour] = {"count": 0, "total": 0}
             by_hour[hour]["count"] += 1
             by_hour[hour]["total"] += sale.get("total", 0)
-        except:
+        except Exception:
             pass
     
     return {
@@ -9319,7 +9319,7 @@ async def get_peak_hours_report(
                 hour = sale["created_at"].split("T")[1][:2]
                 by_hour[hour]["count"] += 1
                 by_hour[hour]["total"] += sale.get("total", 0)
-        except:
+        except Exception:
             pass
     
     # Group by day of week
@@ -9337,7 +9337,7 @@ async def get_peak_hours_report(
             weekday = date.weekday()
             by_day[weekday]["count"] += 1
             by_day[weekday]["total"] += sale.get("total", 0)
-        except:
+        except Exception:
             pass
     
     return {
@@ -10130,7 +10130,7 @@ async def export_tenant_data(current_user: dict = Depends(require_tenant)):
             try:
                 docs = await tenant_db[col].find({}, {"_id": 0}).to_list(100000)
                 export_data[col] = docs
-            except:
+            except Exception:
                 export_data[col] = []
         
         export_data["exported_at"] = datetime.now(timezone.utc).isoformat()
@@ -10741,7 +10741,7 @@ async def create_payment_record(payment: PaymentRecord, admin: dict = Depends(ge
             if current_end:
                 try:
                     end_date = datetime.fromisoformat(current_end.replace('Z', '+00:00'))
-                except:
+                except Exception:
                     end_date = datetime.now(timezone.utc)
             else:
                 end_date = datetime.now(timezone.utc)
