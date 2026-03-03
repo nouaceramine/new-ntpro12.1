@@ -3076,6 +3076,77 @@ async def transfer_between_boxes(
     
     return {"message": "Transfer completed successfully"}
 
+
+@api_router.put("/cash-boxes/{box_id}/adjust")
+async def adjust_cash_box_balance(
+    box_id: str,
+    new_balance: float,
+    reason: str = "تعديل يدوي",
+    admin: dict = Depends(get_tenant_admin)
+):
+    """Adjust cash box balance (admin only) - useful for corrections"""
+    box = await db.cash_boxes.find_one({"id": box_id})
+    if not box:
+        raise HTTPException(status_code=404, detail="صندوق غير موجود")
+    
+    old_balance = box.get("balance", 0)
+    difference = new_balance - old_balance
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Update balance
+    await db.cash_boxes.update_one(
+        {"id": box_id},
+        {"$set": {"balance": new_balance, "updated_at": now}}
+    )
+    
+    # Log the adjustment as a transaction
+    await db.transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "cash_box_id": box_id,
+        "type": "adjustment",
+        "amount": abs(difference),
+        "description": f"{reason} (من {old_balance} إلى {new_balance})",
+        "reference_type": "manual_adjustment",
+        "reference_id": None,
+        "created_at": now,
+        "created_by": admin["name"]
+    })
+    
+    return {
+        "message": "تم تعديل الرصيد بنجاح",
+        "old_balance": old_balance,
+        "new_balance": new_balance,
+        "difference": difference
+    }
+
+@api_router.post("/cash-boxes/reset-all")
+async def reset_all_cash_boxes(admin: dict = Depends(get_tenant_admin)):
+    """Reset all cash boxes to zero (admin only)"""
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get current balances for logging
+    boxes = await db.cash_boxes.find({}, {"_id": 0}).to_list(100)
+    
+    # Reset all to zero
+    await db.cash_boxes.update_many({}, {"$set": {"balance": 0, "updated_at": now}})
+    
+    # Log each reset
+    for box in boxes:
+        if box.get("balance", 0) != 0:
+            await db.transactions.insert_one({
+                "id": str(uuid.uuid4()),
+                "cash_box_id": box["id"],
+                "type": "adjustment",
+                "amount": abs(box.get("balance", 0)),
+                "description": f"إعادة تعيين الرصيد (كان {box.get('balance', 0)})",
+                "reference_type": "reset",
+                "reference_id": None,
+                "created_at": now,
+                "created_by": admin["name"]
+            })
+    
+    return {"message": "تم إعادة تعيين جميع الصناديق إلى صفر"}
+
 @api_router.get("/transactions", response_model=List[TransactionResponse])
 async def get_transactions(
     cash_box_id: Optional[str] = None,

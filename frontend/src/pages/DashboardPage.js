@@ -325,15 +325,41 @@ export default function DashboardPage() {
         {/* Cash Boxes */}
         {isWidgetVisible('cashBoxes') && stats.cash_boxes?.length > 0 && (
           <Card>
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-4 flex flex-row items-center justify-between">
               <CardTitle className="text-xl">{t.cashManagement}</CardTitle>
+              {isAdmin && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={async () => {
+                    if (window.confirm('هل تريد إعادة تعيين جميع الصناديق إلى صفر؟')) {
+                      try {
+                        const token = localStorage.getItem('token');
+                        await axios.post(`${API}/cash-boxes/reset-all`, {}, {
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                        toast.success('تم إعادة تعيين الصناديق');
+                        window.location.reload();
+                      } catch (err) {
+                        toast.error('فشل في إعادة التعيين');
+                      }
+                    }
+                  }}
+                  data-testid="reset-cash-boxes-btn"
+                >
+                  إعادة تعيين
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {stats.cash_boxes.map(box => (
-                  <div key={box.id} className="p-4 rounded-xl bg-muted/50 border">
+                  <div key={box.id} className={`p-4 rounded-xl border ${box.balance < 0 ? 'bg-red-50 border-red-200' : 'bg-muted/50'}`}>
                     <p className="text-sm text-muted-foreground">{language === 'fr' ? (box.name_fr || box.name) : box.name}</p>
-                    <p className="text-xl font-bold mt-1">{box.balance?.toFixed(2)} {t.currency}</p>
+                    <p className={`text-xl font-bold mt-1 ${box.balance < 0 ? 'text-red-600' : ''}`}>
+                      {box.balance?.toFixed(2)} {t.currency}
+                      {box.balance < 0 && <span className="text-xs mr-1">⚠️</span>}
+                    </p>
                   </div>
                 ))}
               </div>
