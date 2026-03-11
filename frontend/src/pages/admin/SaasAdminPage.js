@@ -50,6 +50,7 @@ import { MonitoringSection } from './components/MonitoringSection';
 import { FinanceReportsSection } from './components/FinanceReportsSection';
 import { AIAssistant } from '../../components/AIAssistant';
 import { Bot } from 'lucide-react';
+import { formatShortDate, convertToWesternNumerals } from '../../utils/globalDateFormatter';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -669,7 +670,7 @@ export default function SaasAdminPage() {
                             isExpired(tenant.subscription_ends_at) ? 'text-red-600' :
                             isExpiringSoon(tenant.subscription_ends_at) ? 'text-amber-600' : ''
                           }`}>
-                            {new Date(tenant.subscription_ends_at).toLocaleDateString('ar-SA')}
+                            {formatShortDate(tenant.subscription_ends_at)}
                             {isExpired(tenant.subscription_ends_at) && (
                               <Badge variant="destructive" className="mr-1 text-xs">منتهي</Badge>
                             )}
@@ -806,10 +807,10 @@ export default function SaasAdminPage() {
                            payment.payment_method === 'stripe' ? 'Stripe' : payment.payment_method}
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {new Date(payment.period_start).toLocaleDateString('ar-SA')} - {new Date(payment.period_end).toLocaleDateString('ar-SA')}
+                          {formatShortDate(payment.period_start)} - {formatShortDate(payment.period_end)}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {new Date(payment.created_at).toLocaleDateString('ar-SA')}
+                          {formatShortDate(payment.created_at)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1169,7 +1170,7 @@ export default function SaasAdminPage() {
               <TableBody>
                 {agentTransactions.map(tx => (
                   <TableRow key={tx.id}>
-                    <TableCell className="text-sm">{new Date(tx.created_at).toLocaleDateString('ar-DZ')}</TableCell>
+                    <TableCell className="text-sm">{formatShortDate(tx.created_at)}</TableCell>
                     <TableCell>
                       <Badge variant={tx.transaction_type === 'payment' ? 'default' : tx.transaction_type === 'commission' ? 'secondary' : 'outline'}>
                         {tx.transaction_type === 'payment' ? 'دفعة' : tx.transaction_type === 'commission' ? 'عمولة' : tx.transaction_type === 'subscription_sale' ? 'بيع' : tx.transaction_type}

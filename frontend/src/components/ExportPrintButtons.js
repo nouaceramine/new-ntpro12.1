@@ -1,5 +1,6 @@
 import { Button } from './ui/button';
 import { Download, FileSpreadsheet, FileText, Printer } from 'lucide-react';
+import { formatShortDate } from '../utils/globalDateFormatter';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -121,7 +122,7 @@ export function ExportPrintButtons({
       </head>
       <body>
         <h1>${title}</h1>
-        <p style="text-align:center;color:#666;">${new Date().toLocaleDateString(language === 'ar' ? 'ar-DZ' : 'fr-FR')}</p>
+        <p style="text-align:center;color:#666;">${formatShortDate(new Date())}</p>
         <table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>
         <div class="footer">${language === 'ar' ? 'تم الطباعة من نظام NT' : 'Imprimé depuis NT System'}</div>
       </body>

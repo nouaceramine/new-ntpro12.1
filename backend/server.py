@@ -164,6 +164,10 @@ from routes import system_errors as system_errors_routes
 from routes.ai.chat_routes import create_ai_routes
 from routes.accounting.accounting_routes import create_accounting_routes
 from routes.settings_routes import create_settings_routes
+from routes.whatsapp_routes import create_whatsapp_routes
+from routes.tax_routes import create_tax_routes
+from routes.notification_routes import create_notification_routes
+from routes.currency_routes import create_currency_routes
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
@@ -11544,6 +11548,22 @@ app.include_router(accounting_router, prefix="/api")  # Accounting routes
 settings_router = create_settings_routes(db, get_current_user)
 app.include_router(settings_router, prefix="/api")  # Settings routes
 
+# Initialize and include WhatsApp routes
+whatsapp_router = create_whatsapp_routes(db, get_current_user)
+app.include_router(whatsapp_router, prefix="/api")  # WhatsApp routes
+
+# Initialize and include Tax routes
+tax_router = create_tax_routes(db, get_current_user)
+app.include_router(tax_router, prefix="/api")  # Tax routes
+
+# Initialize and include Notification routes
+notification_router = create_notification_routes(db, get_current_user)
+app.include_router(notification_router, prefix="/api")  # Notification routes
+
+# Initialize and include Currency routes
+currency_router = create_currency_routes(db, get_current_user)
+app.include_router(currency_router, prefix="/api")  # Currency routes
+
 # Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
 @app.middleware("http")
 async def tenant_context_middleware(request: Request, call_next):
@@ -11644,6 +11664,25 @@ async def startup():
         await db.whatsapp_messages.create_index("id", unique=True)
         await db.whatsapp_messages.create_index("from_number")
         await db.whatsapp_messages.create_index("processed")
+        await db.whatsapp_messages.create_index("tenant_id")
+        await db.whatsapp_config.create_index("tenant_id", unique=True)
+        
+        # Tax indexes
+        await db.tax_rates.create_index("id", unique=True)
+        await db.tax_rates.create_index("type")
+        await db.tax_declarations.create_index("id", unique=True)
+        await db.tax_declarations.create_index("year")
+        
+        # Push notification indexes
+        await db.push_notifications.create_index("id", unique=True)
+        await db.push_notifications.create_index("tenant_id")
+        await db.push_notifications.create_index("created_at")
+        await db.notification_preferences.create_index("user_id", unique=True)
+        
+        # Currency indexes
+        await db.currencies.create_index("code", unique=True)
+        await db.currency_settings.create_index("tenant_id")
+        await db.currency_rate_history.create_index("code")
         
         print("✅ Database indexes created successfully (including accounting & AI)")
     except Exception as e:

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { formatDateTime } from '../utils/globalDateFormatter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -541,13 +542,7 @@ export const DatabaseManager = ({ tenants = [], agents = [] }) => {
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'غير محدد';
-    return new Date(dateStr).toLocaleDateString('ar-DZ', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDateTime(dateStr);
   };
 
   if (loading) {

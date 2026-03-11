@@ -77,6 +77,11 @@ import AIChatPage from "./pages/AIChatPage";
 import AIAgentsPage from "./pages/AIAgentsPage";
 import DateTimeSettingsPage from "./pages/DateTimeSettingsPage";
 
+// New Feature Pages
+import WhatsAppPage from "./pages/WhatsAppPage";
+import TaxReportsPage from "./pages/TaxReportsPage";
+import CurrenciesPage from "./pages/CurrenciesPage";
+
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
 import SaasRegisterPage from "./pages/landing/RegisterPage";
@@ -204,6 +209,30 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <DateTimeSettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/whatsapp"
+        element={
+          <ProtectedRoute>
+            <WhatsAppPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tax-reports"
+        element={
+          <ProtectedRoute>
+            <TaxReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/currencies"
+        element={
+          <ProtectedRoute>
+            <CurrenciesPage />
           </ProtectedRoute>
         }
       />

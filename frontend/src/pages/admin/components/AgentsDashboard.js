@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import { formatShortDate } from '../../../utils/globalDateFormatter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
@@ -850,7 +851,7 @@ export const AgentsDashboard = () => {
                   <TableCell className="text-sm">{tx.description}</TableCell>
                   <TableCell className="font-medium">{tx.balance_after?.toLocaleString()} دج</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(tx.created_at).toLocaleDateString('ar-SA')}
+                    {formatShortDate(tx.created_at)}
                   </TableCell>
                 </TableRow>
               ))}

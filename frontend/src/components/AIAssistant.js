@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
+import { formatTime as globalFormatTime } from '../utils/globalDateFormatter';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -130,10 +131,7 @@ export function AIAssistant() {
   };
 
   const formatTime = (date) => {
-    return new Date(date).toLocaleTimeString(language === 'ar' ? 'ar-DZ' : 'fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return globalFormatTime(date);
   };
 
   return (

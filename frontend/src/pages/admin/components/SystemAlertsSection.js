@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { formatShortDate } from '../../../utils/globalDateFormatter';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
@@ -167,7 +168,7 @@ export const SystemAlertsSection = () => {
     if (diff < 60000) return 'الآن';
     if (diff < 3600000) return `منذ ${Math.floor(diff / 60000)} دقيقة`;
     if (diff < 86400000) return `منذ ${Math.floor(diff / 3600000)} ساعة`;
-    return date.toLocaleDateString('ar-SA');
+    return formatShortDate(date);
   };
 
   if (loading) return <div className="text-center py-12 text-muted-foreground">جاري التحميل...</div>;

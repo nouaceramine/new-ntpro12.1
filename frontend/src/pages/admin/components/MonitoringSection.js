@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { formatDateTime } from '../../../utils/globalDateFormatter';
 import { Card, CardContent } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
@@ -55,7 +56,7 @@ export const MonitoringSection = () => {
 
   const formatDate = (d) => {
     if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('ar-DZ', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+    try { return formatDateTime(d); }
     catch { return '—'; }
   };
 

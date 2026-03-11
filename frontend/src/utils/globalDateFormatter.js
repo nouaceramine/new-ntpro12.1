@@ -54,8 +54,8 @@ export function convertToArabicNumerals(str) {
  * الإعدادات الافتراضية - الأرقام الغربية مفعلة
  */
 const DEFAULT_CONFIG = {
-  shortDateFormat: 'dd/MM/yyyy',
-  longDateFormat: 'dd/MM/yyyy',
+  shortDateFormat: 'yyyy-MM-dd',
+  longDateFormat: 'yyyy-MM-dd',
   timeFormat: 'HH:mm:ss',
   useWesternNumerals: true, // الأرقام الغربية افتراضياً
   language: 'ar'

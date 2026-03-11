@@ -23,8 +23,8 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 // القيم الافتراضية
 const defaultSettings = {
-  shortDateFormat: 'dd/MM/yyyy',
-  longDateFormat: 'dd/MM/yyyy',
+  shortDateFormat: 'yyyy-MM-dd',
+  longDateFormat: 'yyyy-MM-dd',
   timeFormat: 'HH:mm:ss',
   useWesternNumerals: true,
   language: 'ar'
@@ -57,8 +57,8 @@ export function DateFormatProvider({ children }) {
     try {
       const res = await axios.get(`${API}/settings/datetime`);
       const serverSettings = {
-        shortDateFormat: res.data.short_date_format || 'dd/MM/yyyy',
-        longDateFormat: res.data.long_date_format || 'dd/MM/yyyy',
+        shortDateFormat: res.data.short_date_format || 'yyyy-MM-dd',
+        longDateFormat: res.data.long_date_format || 'yyyy-MM-dd',
         timeFormat: res.data.time_format || 'HH:mm:ss',
         useWesternNumerals: res.data.use_western_numerals !== false, // افتراضي true
         language: res.data.language || 'ar'

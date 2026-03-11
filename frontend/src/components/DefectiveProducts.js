@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
+import { formatShortDate } from '../utils/globalDateFormatter';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -364,7 +365,7 @@ export function DefectiveProducts() {
                       </TableCell>
                       <TableCell>{item.supplier_name || '-'}</TableCell>
                       <TableCell>
-                        {new Date(item.created_at).toLocaleDateString(language === 'ar' ? 'ar-DZ' : 'fr-FR')}
+                        {formatShortDate(item.created_at)}
                       </TableCell>
                       <TableCell>
                         <Button variant="ghost" size="sm">

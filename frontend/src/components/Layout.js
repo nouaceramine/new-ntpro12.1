@@ -51,7 +51,10 @@ import {
   Sparkles,
   History,
   Building,
-  Mail
+  Mail,
+  MessageSquare,
+  Coins,
+  FileText
 } from 'lucide-react';
 import { UnifiedSearch } from './UnifiedSearch';
 
@@ -317,6 +320,25 @@ export const Layout = ({ children }) => {
         { path: '/smart-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'لوحة التحكم الذكية' : 'Dashboard Intelligent' },
         { path: '/ai-chat', icon: Sparkles, label: language === 'ar' ? 'المحاسب الذكي' : 'Comptable IA' },
         { path: '/ai-agents', icon: Zap, label: language === 'ar' ? 'الوكلاء الذكيين' : 'Agents IA' },
+      ]
+    },
+    {
+      id: 'finance',
+      featureKey: null,
+      title: language === 'ar' ? 'المالية والضرائب' : 'Finance & Taxes',
+      icon: FileText,
+      items: [
+        { path: '/tax-reports', icon: FileText, label: language === 'ar' ? 'التقارير الضريبية' : 'Tax Reports' },
+        { path: '/currencies', icon: Coins, label: language === 'ar' ? 'العملات' : 'Currencies' },
+      ]
+    },
+    {
+      id: 'integrations',
+      featureKey: null,
+      title: language === 'ar' ? 'التكاملات' : 'Integrations',
+      icon: MessageSquare,
+      items: [
+        { path: '/whatsapp', icon: MessageSquare, label: language === 'ar' ? 'WhatsApp Business' : 'WhatsApp Business' },
       ]
     },
     {
