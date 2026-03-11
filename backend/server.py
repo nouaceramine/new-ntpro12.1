@@ -168,6 +168,7 @@ from routes.whatsapp_routes import create_whatsapp_routes
 from routes.tax_routes import create_tax_routes
 from routes.notification_routes import create_notification_routes
 from routes.currency_routes import create_currency_routes
+from routes.performance_routes import create_performance_routes, record_request_time
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
@@ -11564,6 +11565,10 @@ app.include_router(notification_router, prefix="/api")  # Notification routes
 currency_router = create_currency_routes(db, get_current_user)
 app.include_router(currency_router, prefix="/api")  # Currency routes
 
+# Initialize and include Performance routes
+performance_router = create_performance_routes(db, get_current_user)
+app.include_router(performance_router, prefix="/api")  # Performance routes
+
 # Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
 @app.middleware("http")
 async def tenant_context_middleware(request: Request, call_next):
@@ -11580,6 +11585,21 @@ async def tenant_context_middleware(request: Request, call_next):
         except Exception:
             pass  # Invalid/expired token - no tenant context, falls back to main_db
     response = await call_next(request)
+    # Record request timing for performance monitoring
+    import time as _time
+    return response
+
+# Performance timing middleware
+@app.middleware("http")
+async def performance_timing_middleware(request: Request, call_next):
+    """Track request timing for performance monitoring"""
+    import time as _time
+    start = _time.time()
+    response = await call_next(request)
+    duration = _time.time() - start
+    if request.url.path.startswith("/api/"):
+        record_request_time(duration, request.url.path)
+    response.headers["X-Response-Time"] = f"{duration*1000:.0f}ms"
     return response
 
 app.add_middleware(
