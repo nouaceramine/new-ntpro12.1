@@ -132,7 +132,7 @@ async def init_tenant_database(tenant_id: str):
     return tenant_db
 
 # JWT Settings
-SECRET_KEY = os.environ.get('JWT_SECRET', 'nt-commerce-super-secure-jwt-key-2024-production')
+SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'nt_commerce_super_secure_jwt_secret_key_2024_v3_hardened')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
