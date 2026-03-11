@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useDateFormat } from '../contexts/DateFormatContext';
 import { Layout } from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -33,6 +34,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 export default function DashboardPage() {
   const { t, isRTL, language } = useLanguage();
   const { isAdmin } = useAuth();
+  const { formatCurrency, formatNumber, formatDate } = useDateFormat();
   const { widgets, setWidgets, isWidgetVisible, getWidgetOrder } = useDashboardWidgets();
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [stats, setStats] = useState({

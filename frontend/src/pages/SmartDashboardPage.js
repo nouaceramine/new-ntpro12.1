@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useDateFormat } from '../contexts/DateFormatContext';
 import { Layout } from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -53,6 +54,7 @@ const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 export default function SmartDashboardPage() {
   const { t, isRTL, language } = useLanguage();
   const { user } = useAuth();
+  const { formatCurrency, formatNumber, formatDate, formatPercent } = useDateFormat();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -117,14 +119,6 @@ export default function SmartDashboardPage() {
     if (score >= 60) return 'bg-yellow-500';
     if (score >= 40) return 'bg-orange-500';
     return 'bg-red-500';
-  };
-  
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat(language === 'ar' ? 'ar-DZ' : 'fr-DZ', {
-      style: 'decimal',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount || 0) + ' دج';
   };
 
   if (loading) {

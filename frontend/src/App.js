@@ -4,6 +4,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { DateFormatProvider } from "./contexts/DateFormatContext";
+
+// Import global date formatter to apply Western numerals system-wide
+import './utils/globalDateFormatter';
 
 // Pages
 import RegisterPage from "./pages/RegisterPage";
@@ -690,12 +694,14 @@ function App() {
   return (
     <ThemeProvider>
       <LanguageProvider>
-        <AuthProvider>
-          <BrowserRouter>
-            <AppRoutes />
-            <Toaster position="top-center" richColors />
-          </BrowserRouter>
-        </AuthProvider>
+        <DateFormatProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <AppRoutes />
+              <Toaster position="top-center" richColors />
+            </BrowserRouter>
+          </AuthProvider>
+        </DateFormatProvider>
       </LanguageProvider>
     </ThemeProvider>
   );

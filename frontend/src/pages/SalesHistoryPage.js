@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useDateFormat } from '../contexts/DateFormatContext';
 import { Layout } from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -30,6 +31,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function SalesHistoryPage() {
   const { t, language } = useLanguage();
+  const { formatDate, formatDateTime, formatCurrency } = useDateFormat();
   
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,16 +97,7 @@ export default function SalesHistoryPage() {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
-  };
+  // formatDate is now imported from useDateFormat context
 
   const getStatusBadge = (status) => {
     switch (status) {
