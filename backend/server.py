@@ -163,6 +163,7 @@ from routes import system_errors as system_errors_routes
 # ============ IMPORT NEW AI & ACCOUNTING ROUTES ============
 from routes.ai.chat_routes import create_ai_routes
 from routes.accounting.accounting_routes import create_accounting_routes
+from routes.settings_routes import create_settings_routes
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
@@ -11538,6 +11539,10 @@ app.include_router(ai_router, prefix="/api")  # AI chat and insights routes
 # Initialize and include accounting routes
 accounting_router = create_accounting_routes(db, get_current_user)
 app.include_router(accounting_router, prefix="/api")  # Accounting routes
+
+# Initialize and include settings routes
+settings_router = create_settings_routes(db, get_current_user)
+app.include_router(settings_router, prefix="/api")  # Settings routes
 
 # Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
 @app.middleware("http")

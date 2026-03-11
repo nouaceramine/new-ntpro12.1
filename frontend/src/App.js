@@ -71,6 +71,7 @@ import PaymentsPage from "./pages/PaymentsPage";
 import SmartDashboardPage from "./pages/SmartDashboardPage";
 import AIChatPage from "./pages/AIChatPage";
 import AIAgentsPage from "./pages/AIAgentsPage";
+import DateTimeSettingsPage from "./pages/DateTimeSettingsPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
@@ -191,6 +192,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <AIAgentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/datetime"
+        element={
+          <ProtectedRoute>
+            <DateTimeSettingsPage />
           </ProtectedRoute>
         }
       />
