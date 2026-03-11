@@ -309,6 +309,17 @@ export const Layout = ({ children }) => {
       ]
     },
     {
+      id: 'ai',
+      featureKey: null, // Always visible - AI features
+      title: language === 'ar' ? 'الذكاء الاصطناعي' : 'Intelligence Artificielle',
+      icon: Sparkles,
+      items: [
+        { path: '/smart-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'لوحة التحكم الذكية' : 'Dashboard Intelligent' },
+        { path: '/ai-chat', icon: Sparkles, label: language === 'ar' ? 'المحاسب الذكي' : 'Comptable IA' },
+        { path: '/ai-agents', icon: Zap, label: language === 'ar' ? 'الوكلاء الذكيين' : 'Agents IA' },
+      ]
+    },
+    {
       id: 'notifications',
       featureKey: 'notifications',
       title: language === 'ar' ? 'الإشعارات' : 'Notifications',

@@ -67,6 +67,11 @@ import TenantDashboardPage from "./pages/TenantDashboardPage";
 import EmailNotificationsPage from "./pages/EmailNotificationsPage";
 import PaymentsPage from "./pages/PaymentsPage";
 
+// AI & Smart Accounting Pages
+import SmartDashboardPage from "./pages/SmartDashboardPage";
+import AIChatPage from "./pages/AIChatPage";
+import AIAgentsPage from "./pages/AIAgentsPage";
+
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
 import SaasRegisterPage from "./pages/landing/RegisterPage";
@@ -163,6 +168,32 @@ function AppRoutes() {
 
       {/* Tenant Dashboard */}
       <Route path="/tenant/dashboard" element={<TenantDashboardPage />} />
+
+      {/* AI & Smart Accounting Routes */}
+      <Route
+        path="/smart-dashboard"
+        element={
+          <ProtectedRoute>
+            <SmartDashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai-chat"
+        element={
+          <ProtectedRoute>
+            <AIChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/ai-agents"
+        element={
+          <ProtectedRoute>
+            <AIAgentsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* SaaS Admin Dashboard */}
       <Route

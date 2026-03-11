@@ -160,8 +160,14 @@ from routes.saas_routes import router as saas_router, get_super_admin
 from routes.database_routes import router as database_router
 from routes import system_errors as system_errors_routes
 
+# ============ IMPORT NEW AI & ACCOUNTING ROUTES ============
+from routes.ai.chat_routes import create_ai_routes
+from routes.accounting.accounting_routes import create_accounting_routes
+
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
+from models.accounting.schemas import *
+from models.ai.schemas import *
 
 
 # ============ ADDITIONAL MODELS (Not in schemas.py yet) ============
@@ -8886,7 +8892,7 @@ class AIMessage(BaseModel):
 
 class AIChatRequest(BaseModel):
     message: str
-    session_id: str
+    session_id: str = ""
     context: Optional[str] = None  # e.g., "sales", "inventory", "products"
 
 class AIChatResponse(BaseModel):
@@ -8941,7 +8947,7 @@ async def ai_chat(request: AIChatRequest, user: dict = Depends(require_tenant)):
     
     try:
         # Get or create chat session
-        session_id = f"{user['id']}_{request.session_id}"
+        session_id = f"{user['id']}_{request.session_id}" if request.session_id else f"{user['id']}_default"
         
         # Load chat history from database
         chat_history = await db.ai_chat_history.find_one({"session_id": session_id}, {"_id": 0})
@@ -9007,7 +9013,7 @@ async def ai_chat(request: AIChatRequest, user: dict = Depends(require_tenant)):
             upsert=True
         )
         
-        return AIChatResponse(response=response, session_id=request.session_id)
+        return AIChatResponse(response=response, session_id=session_id)
     
     except Exception as e:
         logger.error(f"AI chat error: {str(e)}")
@@ -11525,6 +11531,14 @@ app.include_router(database_router, prefix="/api/saas")  # Database import/expor
 system_errors_routes.init_routes(main_db, get_super_admin)
 app.include_router(system_errors_routes.router, prefix="/api")  # System errors routes
 
+# Initialize and include AI routes
+ai_router = create_ai_routes(db, get_current_user)
+app.include_router(ai_router, prefix="/api")  # AI chat and insights routes
+
+# Initialize and include accounting routes
+accounting_router = create_accounting_routes(db, get_current_user)
+app.include_router(accounting_router, prefix="/api")  # Accounting routes
+
 # Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
 @app.middleware("http")
 async def tenant_context_middleware(request: Request, call_next):
@@ -11559,6 +11573,7 @@ async def startup():
     await init_cash_boxes()
     # Create indexes for better performance
     try:
+        # Existing indexes
         await db.products.create_index("id", unique=True)
         await db.products.create_index("family_id")
         await db.products.create_index("barcode")
@@ -11576,7 +11591,56 @@ async def startup():
         await db.daily_sessions.create_index("status")
         await db.transactions.create_index("created_at")
         await db.transactions.create_index("cash_box_id")
-        print("✅ Database indexes created successfully")
+        
+        # New accounting indexes
+        await db.accounts.create_index("id", unique=True)
+        await db.accounts.create_index("code", unique=True)
+        await db.accounts.create_index("account_type")
+        await db.journal_entries.create_index("id", unique=True)
+        await db.journal_entries.create_index("entry_number", unique=True)
+        await db.journal_entries.create_index("date")
+        await db.journal_entries.create_index("status")
+        await db.invoices.create_index("id", unique=True)
+        await db.invoices.create_index("invoice_number", unique=True)
+        await db.invoices.create_index("invoice_type")
+        await db.invoices.create_index("status")
+        await db.invoices.create_index("issue_date")
+        await db.invoices.create_index("due_date")
+        await db.invoices.create_index("customer_id")
+        await db.invoices.create_index("supplier_id")
+        await db.payments.create_index("id", unique=True)
+        await db.payments.create_index("payment_number", unique=True)
+        await db.payments.create_index("payment_type")
+        await db.payments.create_index("payment_date")
+        await db.expenses.create_index("id", unique=True)
+        await db.expenses.create_index("expense_number", unique=True)
+        await db.expenses.create_index("category")
+        await db.expenses.create_index("expense_date")
+        
+        # AI indexes
+        await db.ai_insights.create_index("id", unique=True)
+        await db.ai_insights.create_index("insight_type")
+        await db.ai_insights.create_index("priority")
+        await db.ai_insights.create_index("is_dismissed")
+        await db.chat_sessions.create_index("id", unique=True)
+        await db.chat_sessions.create_index("user_id")
+        await db.agent_tasks.create_index("id", unique=True)
+        await db.agent_tasks.create_index("agent_type")
+        await db.fraud_alerts.create_index("id", unique=True)
+        await db.fraud_alerts.create_index("is_resolved")
+        await db.daily_reports.create_index("id", unique=True)
+        await db.daily_reports.create_index("date", unique=True)
+        await db.audit_logs.create_index("id", unique=True)
+        await db.audit_logs.create_index("entity_type")
+        await db.audit_logs.create_index("entity_id")
+        await db.audit_logs.create_index("created_at")
+        
+        # WhatsApp indexes
+        await db.whatsapp_messages.create_index("id", unique=True)
+        await db.whatsapp_messages.create_index("from_number")
+        await db.whatsapp_messages.create_index("processed")
+        
+        print("✅ Database indexes created successfully (including accounting & AI)")
     except Exception as e:
         print(f"⚠️ Index creation warning: {e}")
 
