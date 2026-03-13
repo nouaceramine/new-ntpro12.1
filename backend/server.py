@@ -158,6 +158,12 @@ logger = logging.getLogger(__name__)
 UPLOAD_DIR = ROOT_DIR / "static" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
+# ============ IMPORT ROBOT & SERVICES ============
+from robots.robot_manager import RobotManager
+from services.notification_service import NotificationService
+from services.sms_service import SMSService
+from services.email_service import EmailService
+
 # ============ IMPORT REFACTORED ROUTES ============
 from routes.saas_routes import router as saas_router, get_super_admin
 from routes.database_routes import router as database_router
@@ -178,6 +184,12 @@ from routes.banking_routes import create_banking_routes
 from models.schemas import *
 from models.accounting.schemas import *
 from models.ai.schemas import *
+
+# ============ INITIALIZE SERVICES & ROBOT MANAGER ============
+notification_service = NotificationService(main_db)
+sms_service = SMSService(main_db)
+email_service = EmailService()
+robot_manager = RobotManager(main_db, client, notification_service, sms_service, email_service)
 
 
 # ============ ADDITIONAL MODELS (Not in schemas.py yet) ============
@@ -11577,6 +11589,39 @@ app.include_router(performance_router, prefix="/api")  # Performance routes
 banking_router = create_banking_routes(db, get_current_user)
 app.include_router(banking_router, prefix="/api")  # Banking routes
 
+# ============ ROBOT API ENDPOINTS ============
+robot_router = APIRouter(prefix="/robots", tags=["robots"])
+
+@robot_router.get("/status")
+async def get_robot_status(admin: dict = Depends(get_super_admin)):
+    return robot_manager.get_status()
+
+@robot_router.post("/restart/{robot_name}")
+async def restart_robot(robot_name: str, admin: dict = Depends(get_super_admin)):
+    success = await robot_manager.restart_robot(robot_name)
+    if success:
+        return {"message": f"تم اعادة تشغيل روبوت {robot_name}"}
+    raise HTTPException(status_code=404, detail="الروبوت غير موجود")
+
+@robot_router.post("/run/{robot_name}")
+async def run_robot_once(robot_name: str, admin: dict = Depends(get_super_admin)):
+    result = await robot_manager.run_robot_once(robot_name)
+    if result is not None:
+        return {"message": f"تم تشغيل {robot_name} بنجاح", "stats": result}
+    raise HTTPException(status_code=404, detail="الروبوت غير موجود")
+
+@robot_router.post("/stop-all")
+async def stop_all_robots(admin: dict = Depends(get_super_admin)):
+    await robot_manager.stop_all()
+    return {"message": "تم ايقاف جميع الروبوتات"}
+
+@robot_router.post("/start-all")
+async def start_all_robots(admin: dict = Depends(get_super_admin)):
+    asyncio.create_task(robot_manager.start_all())
+    return {"message": "تم بدء تشغيل جميع الروبوتات"}
+
+app.include_router(robot_router, prefix="/api")  # Robot management routes
+
 # Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
 @app.middleware("http")
 async def tenant_context_middleware(request: Request, call_next):
@@ -11670,6 +11715,10 @@ app.mount("/api/static", StaticFiles(directory=str(ROOT_DIR / "static")), name="
 @app.on_event("startup")
 async def startup():
     await init_cash_boxes()
+    # Start robots in background
+    robot_manager.initialize()
+    asyncio.create_task(robot_manager.start_all())
+    logger.info("Robots initialized and starting in background")
     # Create indexes for better performance
     try:
         # Existing indexes
@@ -11764,4 +11813,5 @@ async def startup():
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    await robot_manager.stop_all()
     client.close()

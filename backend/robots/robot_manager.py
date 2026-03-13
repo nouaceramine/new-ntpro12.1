@@ -13,24 +13,32 @@ logger = logging.getLogger(__name__)
 
 
 class RobotManager:
-    def __init__(self, main_db, client):
+    def __init__(self, main_db, client, notification_service, sms_service, email_service):
         self.db = main_db
         self.client = client
+        self.notification = notification_service
+        self.sms = sms_service
+        self.email = email_service
         self.robots = {}
         self.tasks = {}
         self.started_at = None
+        self.is_running = False
 
     def initialize(self):
         self.robots = {
-            "inventory": InventoryRobot(self.db, self.client),
-            "debt": DebtRobot(self.db, self.client),
-            "report": ReportRobot(self.db, self.client),
+            "inventory": InventoryRobot(self.db, self.client, self.notification),
+            "debt": DebtRobot(self.db, self.client, self.notification, self.sms),
+            "report": ReportRobot(self.db, self.client, self.notification, self.email),
         }
         logger.info(f"Initialized {len(self.robots)} robots")
 
     async def start_all(self):
+        if self.is_running:
+            logger.warning("Robots already running")
+            return
         if not self.robots:
             self.initialize()
+        self.is_running = True
         self.started_at = datetime.now(timezone.utc).isoformat()
         for name, robot in self.robots.items():
             task = asyncio.create_task(robot.start(), name=f"robot_{name}")
@@ -43,6 +51,7 @@ class RobotManager:
             if name in self.tasks:
                 self.tasks[name].cancel()
         self.tasks.clear()
+        self.is_running = False
         logger.info("All robots stopped")
 
     async def restart_robot(self, name: str) -> bool:
@@ -66,6 +75,7 @@ class RobotManager:
     def get_status(self) -> dict:
         status = {
             "started_at": self.started_at,
+            "is_running": self.is_running,
             "robots": {},
         }
         for name, robot in self.robots.items():
