@@ -56,7 +56,8 @@ import {
   MessageSquare,
   Coins,
   FileText,
-  Landmark
+  Landmark,
+  Bot
 } from 'lucide-react';
 import { UnifiedSearch } from './UnifiedSearch';
 
@@ -76,7 +77,7 @@ const getAIContext = (pathname) => {
 const iconMap = {
   LayoutDashboard, Package, ShoppingCart, Truck, Users, CreditCard, Wallet,
   BarChart3, Settings, Bell, Wrench, Receipt, FolderTree, Warehouse,
-  ClipboardList, QrCode, DollarSign, ShoppingBag, Clock, Smartphone, Store, Shield, Key, Award, Zap, Mail
+  ClipboardList, QrCode, DollarSign, ShoppingBag, Clock, Smartphone, Store, Shield, Key, Award, Zap, Mail, Bot
 };
 
 export const Layout = ({ children }) => {
@@ -322,6 +323,7 @@ export const Layout = ({ children }) => {
         { path: '/smart-dashboard', icon: LayoutDashboard, label: language === 'ar' ? 'لوحة التحكم الذكية' : 'Dashboard Intelligent' },
         { path: '/ai-chat', icon: Sparkles, label: language === 'ar' ? 'المحاسب الذكي' : 'Comptable IA' },
         { path: '/ai-agents', icon: Zap, label: language === 'ar' ? 'الوكلاء الذكيين' : 'Agents IA' },
+        { path: '/robots', icon: Bot, label: language === 'ar' ? 'الروبوتات الذكية' : 'Smart Robots' },
       ]
     },
     {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Layout } from '../../components/Layout';
@@ -56,6 +57,7 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function SaasAdminPage() {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({});
@@ -459,6 +461,15 @@ export default function SaasAdminPage() {
             </h1>
             <p className="text-muted-foreground mt-1">إدارة المشتركين والخطط والاشتراكات</p>
           </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/robots')}
+            className="gap-2"
+            data-testid="go-to-robots-btn"
+          >
+            <Bot className="h-4 w-4" />
+            الروبوتات الذكية
+          </Button>
         </div>
 
         {/* Stats */}
