@@ -22,10 +22,20 @@ class PerformanceStats(BaseModel):
     db_connections: int = 0
 
 
-# Simple in-memory cache for frequently accessed data
+# Simple in-memory cache with size limit and auto-cleanup
 _cache = {}
 _cache_ttl = {}
 DEFAULT_TTL = 60  # seconds
+MAX_CACHE_SIZE = 500  # maximum number of cached entries
+
+
+def _cleanup_expired():
+    """Remove expired entries to prevent memory growth"""
+    now = time.time()
+    expired = [k for k, ttl in _cache_ttl.items() if now >= ttl]
+    for k in expired:
+        _cache.pop(k, None)
+        _cache_ttl.pop(k, None)
 
 
 def get_cached(key: str):
@@ -40,7 +50,15 @@ def get_cached(key: str):
 
 
 def set_cached(key: str, value, ttl: int = DEFAULT_TTL):
-    """Cache a value with TTL"""
+    """Cache a value with TTL, auto-cleanup when size exceeded"""
+    if len(_cache) >= MAX_CACHE_SIZE:
+        _cleanup_expired()
+        # If still over limit, remove oldest 20%
+        if len(_cache) >= MAX_CACHE_SIZE:
+            sorted_keys = sorted(_cache_ttl, key=_cache_ttl.get)
+            for k in sorted_keys[:MAX_CACHE_SIZE // 5]:
+                _cache.pop(k, None)
+                _cache_ttl.pop(k, None)
     _cache[key] = value
     _cache_ttl[key] = time.time() + ttl
 

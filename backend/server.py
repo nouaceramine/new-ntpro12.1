@@ -58,6 +58,9 @@ if RESEND_AVAILABLE:
     resend.api_key = os.environ.get('RESEND_API_KEY', '')
 
 # MongoDB connection
+# NOTE: config/database.py is the canonical source for DB config.
+# These definitions are kept here because 11,000+ lines reference them directly.
+# Future refactoring should import from config.database instead.
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 main_db = client[os.environ['DB_NAME']]  # Main SaaS database (plans, tenants, agents, super admin users)
@@ -11607,10 +11610,56 @@ async def performance_timing_middleware(request: Request, call_next):
     response.headers["X-Response-Time"] = f"{duration*1000:.0f}ms"
     return response
 
+# Rate limiting - simple in-memory per-IP tracker
+_rate_limit_store = {}
+RATE_LIMIT_WINDOW = 60  # seconds
+RATE_LIMIT_MAX = 120  # max requests per window
+
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    """Basic rate limiting per IP address"""
+    import time as _time
+    if not request.url.path.startswith("/api/"):
+        return await call_next(request)
+
+    client_ip = request.client.host if request.client else "unknown"
+    now = _time.time()
+
+    if client_ip in _rate_limit_store:
+        window_start, count = _rate_limit_store[client_ip]
+        if now - window_start > RATE_LIMIT_WINDOW:
+            _rate_limit_store[client_ip] = (now, 1)
+        elif count >= RATE_LIMIT_MAX:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many requests. Please try again later."},
+                headers={"Retry-After": str(int(RATE_LIMIT_WINDOW - (now - window_start)))}
+            )
+        else:
+            _rate_limit_store[client_ip] = (window_start, count + 1)
+    else:
+        _rate_limit_store[client_ip] = (now, 1)
+
+    # Cleanup old entries periodically
+    if len(_rate_limit_store) > 10000:
+        cutoff = now - RATE_LIMIT_WINDOW * 2
+        _rate_limit_store.clear()
+
+    return await call_next(request)
+
+# CORS Configuration - secure origins
+_cors_env = os.environ.get('CORS_ORIGINS', '')
+_cors_origins = [o.strip() for o in _cors_env.split(',') if o.strip()] if _cors_env else []
+# Always allow preview URL in development
+_preview_url = os.environ.get('PREVIEW_URL', '')
+if _preview_url and _preview_url not in _cors_origins:
+    _cors_origins.append(_preview_url)
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=_cors_origins if _cors_origins else ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
