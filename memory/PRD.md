@@ -1,58 +1,118 @@
 # NT Commerce - منصة محاسبة ذكية مدعومة بالذكاء الاصطناعي
 
 ## نظرة عامة
-NT Commerce هي منصة محاسبة سحابية احترافية مدعومة بالذكاء الاصطناعي.
+NT Commerce هي منصة محاسبة سحابية احترافية مدعومة بالذكاء الاصطناعي. تجمع بين إدارة نقاط البيع، التحليلات المالية المتقدمة، والتكامل البنكي.
 
 ## المعمارية التقنية
 
-### قاعدة البيانات
-- **الاسم**: `ntbass` (تم إعادة التهيئة في 13 مارس 2026)
-- **النوع**: MongoDB
-- **المجموعات الرئيسية**: accounts, agent_tasks, ai_chat_history, ai_insights, audit_logs, cash_boxes, chat_sessions, currencies, currency_rate_history, users, subscriptions, payments, invoices, products, inventory, sales, expenses, reports, system_logs, error_logs, saas_tenants, saas_plans, tax_rates, settings
-- **قواعد بيانات المستأجرين**: `tenant_{uuid}` لكل مستأجر
+### قاعدة البيانات: `ntbass` (MongoDB)
+- المجموعات: accounts, agent_tasks, ai_chat_history, ai_insights, audit_logs, cash_boxes, chat_sessions, currencies, currency_rate_history, users, subscriptions, payments, invoices, products, inventory, sales, expenses, reports, system_logs, error_logs, saas_tenants, saas_plans, tax_rates, settings, bank_accounts, bank_transactions, bank_reconciliations, push_notifications, notification_preferences, whatsapp_config, whatsapp_messages
 
-### البيئة
+### Backend (FastAPI)
 ```
-MONGO_URL="mongodb://localhost:27017"
-DB_NAME="ntbass"
-CORS_ORIGINS="*,https://nt-commerce.net,https://www.nt-commerce.net"
+/app/backend/
+├── server.py (~11,700 سطر - Legacy monolith)
+├── routes/
+│   ├── ai/chat_routes.py           # AI Chat & Insights
+│   ├── accounting/accounting_routes.py  # Full Accounting
+│   ├── saas_routes.py              # SaaS Management
+│   ├── whatsapp_routes.py          # WhatsApp Business (MOCKED)
+│   ├── tax_routes.py               # Tax Reports & Declarations
+│   ├── currency_routes.py          # Multi-Currency
+│   ├── notification_routes.py      # Push Notifications
+│   ├── performance_routes.py       # Performance Monitoring
+│   ├── banking_routes.py           # Bank Integration
+│   ├── settings_routes.py          # Date/Time Settings
+│   └── route_registry.py          # API Structure Documentation
+├── utils/auth_helpers.py           # Shared Auth Functions
+└── models/schemas.py               # Pydantic Models
 ```
 
-### النطاقات
-- **Preview**: ai-accounting-mvp.preview.emergentagent.com
-- **إنتاج**: nt-commerce.net (مخصص)
+### Frontend (React + Tailwind + Shadcn)
+```
+/app/frontend/
+├── public/
+│   ├── manifest.json               # PWA Manifest
+│   └── service-worker.js           # Service Worker (Offline + Push)
+└── src/
+    ├── pages/
+    │   ├── SmartDashboardPage.js    # AI Dashboard
+    │   ├── AIChatPage.js            # AI Chat
+    │   ├── AIAgentsPage.js          # 8 AI Agents
+    │   ├── TaxReportsPage.js        # Tax Reports
+    │   ├── WhatsAppPage.js          # WhatsApp Integration
+    │   ├── CurrenciesPage.js        # Multi-Currency
+    │   ├── BankingPage.js           # Bank Integration
+    │   └── DateTimeSettingsPage.js  # Settings
+    ├── components/
+    │   ├── NotificationBell.js      # Notification Bell UI
+    │   └── Layout.js                # Main Layout + Sidebar
+    └── utils/globalDateFormatter.js # YYYY-MM-DD Format
+```
+
+## الميزات المنجزة (الكل)
+
+### البنية التحتية
+- [x] قاعدة بيانات `ntbass` مع 30+ مجموعة
+- [x] نظام SaaS متعدد المستأجرين
+- [x] 60+ فهرس لقاعدة البيانات
+- [x] CORS لـ nt-commerce.net
+- [x] JWT مـوحد عبر جميع الملفات
+
+### الذكاء الاصطناعي
+- [x] لوحة تحكم ذكية مع مؤشر الصحة المالية
+- [x] محادثة AI مع GPT-4o
+- [x] 8 وكلاء ذكاء اصطناعي
+
+### المحاسبة
+- [x] دليل حسابات، قيود، فواتير، مدفوعات
+
+### التقارير الضريبية
+- [x] TVA, IRG, TAP مع حسابات تلقائية
+- [x] تصريحات ضريبية + ملخص سنوي
+
+### العملات المتعددة
+- [x] 10 عملات + محول تفاعلي
+
+### WhatsApp Business
+- [x] بنية كاملة + webhook + أوامر محاسبية (MOCKED)
+
+### الإشعارات
+- [x] API كامل + NotificationBell في الـ header
+- [x] تفضيلات لكل مستخدم
+
+### التكامل البنكي
+- [x] حسابات بنكية (CRUD) + عمليات إيداع/سحب
+- [x] مطابقة بنكية + سجل العمليات
+
+### PWA (Progressive Web App)
+- [x] manifest.json للتثبيت على الهاتف
+- [x] Service Worker للعمل بدون إنترنت + Push
+
+### الأداء
+- [x] Performance timing middleware + كاش
+- [x] X-Response-Time headers
+
+### تنسيق التاريخ
+- [x] YYYY-MM-DD بأرقام غربية في كامل النظام
 
 ## بيانات الاختبار
-- **مدير عام**: admin@ntcommerce.com / Admin@2024 (يفتح /saas-admin)
-- **مستأجر**: ncr@ntcommerce.com / Test@123 (يفتح /tenant/dashboard)
-- **Tenant ID**: 3d345aba-b832-4151-a2de-2554ce11c184
-- **Tenant DB**: tenant_3d345aba_b832_4151_a2de_2554ce11c184
+- **مدير عام**: admin@ntcommerce.com / Admin@2024
+- **مستأجر**: ncr@ntcommerce.com / Test@123
 
-## الميزات المنجزة
-- [x] إعادة تهيئة قاعدة البيانات (ntbass) - 13 مارس 2026
-- [x] تكامل WhatsApp Business (MOCKED)
-- [x] التقارير الضريبية (TVA, IRG, TAP)
-- [x] العملات المتعددة (5 عملات)
-- [x] نظام الإشعارات
-- [x] تحسين الأداء
-- [x] إصلاح تنسيق التاريخ (YYYY-MM-DD)
-- [x] توحيد JWT secrets
-- [x] إصلاح CORS للنطاق الجديد
-- [x] إصلاح Pydantic validation errors (ProductResponse, PlanResponse)
+## المهام المتبقية (Backlog)
 
-## المهام القادمة (Backlog)
-- [ ] تقسيم server.py (~11,700 سطر) إلى modules
+### P1
+- [ ] تقسيم server.py إلى modules أصغر (بدأ بـ route_registry.py)
+
+### P2
 - [ ] ربط WhatsApp مع Meta API الحقيقي
-- [ ] إشعارات push (Service Worker)
-- [ ] تطبيق PWA
-- [ ] تكامل بنكي
+- [ ] إشعارات push فعلية عبر Service Worker
 
-## التكاملات
-- **OpenAI GPT-4o**: عبر Emergent LLM Key
-- **MongoDB**: ntbass (محلي)
-- **Stripe**: مفتاح اختبار
-- **WhatsApp Business API**: MOCKED
+### P3
+- [ ] استيراد بيانات Access
+- [ ] تكامل بنكي حقيقي مع API بنوك جزائرية
 
 ---
 *آخر تحديث: 13 مارس 2026*
-*الإصدار: 3.1 - Database Reset + Domain Migration*
+*الإصدار: 4.0 - Full Featured + PWA + Banking*
