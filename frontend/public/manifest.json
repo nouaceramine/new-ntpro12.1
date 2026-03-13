@@ -1,16 +1,21 @@
 {
-  "short_name": "NT POS",
-  "name": "NT - نظام نقاط البيع",
-  "description": "نظام متكامل لإدارة المبيعات والمخزون والصيانة",
+  "short_name": "NT Commerce",
+  "name": "NT Commerce - منصة محاسبة ذكية",
+  "description": "منصة محاسبة سحابية مدعومة بالذكاء الاصطناعي",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "logo512.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any maskable"
@@ -18,10 +23,23 @@
   ],
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#3b82f6",
+  "orientation": "any",
+  "theme_color": "#1e40af",
   "background_color": "#ffffff",
-  "orientation": "portrait-primary",
-  "categories": ["business", "productivity"],
+  "dir": "rtl",
   "lang": "ar",
-  "dir": "rtl"
+  "categories": ["business", "finance", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "لوحة التحكم",
+      "url": "/dashboard",
+      "icons": [{"src": "favicon.ico", "sizes": "96x96"}]
+    },
+    {
+      "name": "نقطة البيع",
+      "url": "/pos",
+      "icons": [{"src": "favicon.ico", "sizes": "96x96"}]
+    }
+  ]
 }

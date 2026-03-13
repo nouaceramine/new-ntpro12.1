@@ -1,51 +1,72 @@
-const CACHE_NAME = 'nt-pos-v1';
-const urlsToCache = [
+/* eslint-disable no-restricted-globals */
+
+const CACHE_NAME = 'nt-commerce-v3';
+const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/static/js/bundle.js',
-  '/manifest.json'
+  '/manifest.json',
 ];
 
-// Install event
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-      .catch((error) => {
-        console.log('Cache install failed:', error);
-      })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
   );
   self.skipWaiting();
 });
 
-// Fetch event
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((names) =>
+      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
+    )
+  );
+  self.clients.claim();
+});
+
 self.addEventListener('fetch', (event) => {
+  if (event.request.url.includes('/api/') || event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request)
       .then((response) => {
-        if (response) {
-          return response;
+        if (response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
-        return fetch(event.request);
+        return response;
       })
+      .catch(() =>
+        caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') return caches.match('/index.html');
+          return new Response('Offline', { status: 503 });
+        })
+      )
   );
 });
 
-// Activate event
-self.addEventListener('activate', (event) => {
+self.addEventListener('push', (event) => {
+  let data = { title: 'NT Commerce', body: 'لديك إشعار جديد', icon: '/logo192.png' };
+  if (event.data) {
+    try { data = event.data.json(); } catch (e) { data.body = event.data.text(); }
+  }
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
+    self.registration.showNotification(data.title, {
+      body: data.body, icon: data.icon || '/logo192.png', badge: '/favicon.ico',
+      dir: 'rtl', lang: 'ar', tag: data.tag || 'default',
+      data: data.url ? { url: data.url } : undefined,
     })
   );
-  self.clients.claim();
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((clients) => {
+      for (const c of clients) {
+        if (c.url.includes(url) && 'focus' in c) return c.focus();
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });

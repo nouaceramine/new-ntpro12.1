@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { NotificationBell } from './NotificationBell';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { 
@@ -54,7 +55,8 @@ import {
   Mail,
   MessageSquare,
   Coins,
-  FileText
+  FileText,
+  Landmark
 } from 'lucide-react';
 import { UnifiedSearch } from './UnifiedSearch';
 
@@ -330,6 +332,7 @@ export const Layout = ({ children }) => {
       items: [
         { path: '/tax-reports', icon: FileText, label: language === 'ar' ? 'التقارير الضريبية' : 'Tax Reports' },
         { path: '/currencies', icon: Coins, label: language === 'ar' ? 'العملات' : 'Currencies' },
+        { path: '/banking', icon: Landmark, label: language === 'ar' ? 'التكامل البنكي' : 'Banking' },
       ]
     },
     {
@@ -736,55 +739,7 @@ export const Layout = ({ children }) => {
 
           <div className="flex items-center gap-4 ms-6">
             {/* Notifications */}
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 hover:bg-muted rounded-lg relative"
-                data-testid="notifications-btn"
-              >
-                <Bell className="h-5 w-5" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-0 right-0 h-5 w-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                    {notifications.length}
-                  </span>
-                )}
-              </button>
-              
-              {showNotifications && (
-                <div className={`absolute top-12 ${isRTL ? 'left-0' : 'right-0'} w-80 bg-card border rounded-xl shadow-lg z-50`}>
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <h3 className="font-semibold">{t.notifications}</h3>
-                    {notifications.length > 0 && (
-                      <button
-                        onClick={markAllRead}
-                        className="text-sm text-primary hover:underline"
-                      >
-                        {t.markAllRead}
-                      </button>
-                    )}
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <p className="p-4 text-center text-muted-foreground">{t.noNotifications}</p>
-                    ) : (
-                      notifications.map(notif => (
-                        <div key={notif.id} className="p-4 border-b hover:bg-muted/50">
-                          <p className="font-medium text-sm mb-1">
-                            {language === 'ar' ? (notif.title || notif.title_ar) : (notif.title_fr || notif.title_en || notif.title)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {language === 'ar' ? (notif.message || notif.message_ar) : (notif.message_fr || notif.message_en || notif.message)}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(notif.created_at).toLocaleString()}
-                          </p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <NotificationBell />
 
             {/* Language Toggle */}
             <div className="flex items-center gap-2">

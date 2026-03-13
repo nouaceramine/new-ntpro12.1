@@ -81,6 +81,7 @@ import DateTimeSettingsPage from "./pages/DateTimeSettingsPage";
 import WhatsAppPage from "./pages/WhatsAppPage";
 import TaxReportsPage from "./pages/TaxReportsPage";
 import CurrenciesPage from "./pages/CurrenciesPage";
+import BankingPage from "./pages/BankingPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
@@ -233,6 +234,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CurrenciesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/banking"
+        element={
+          <ProtectedRoute>
+            <BankingPage />
           </ProtectedRoute>
         }
       />

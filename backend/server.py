@@ -169,6 +169,7 @@ from routes.tax_routes import create_tax_routes
 from routes.notification_routes import create_notification_routes
 from routes.currency_routes import create_currency_routes
 from routes.performance_routes import create_performance_routes, record_request_time
+from routes.banking_routes import create_banking_routes
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
@@ -11568,6 +11569,10 @@ app.include_router(currency_router, prefix="/api")  # Currency routes
 # Initialize and include Performance routes
 performance_router = create_performance_routes(db, get_current_user)
 app.include_router(performance_router, prefix="/api")  # Performance routes
+
+# Initialize and include Banking routes
+banking_router = create_banking_routes(db, get_current_user)
+app.include_router(banking_router, prefix="/api")  # Banking routes
 
 # Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
 @app.middleware("http")
