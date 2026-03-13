@@ -8,7 +8,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ai-accounting-mvp.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://ai-accounting-saas.preview.emergentagent.com')
 
 # Test credentials
 SUPER_ADMIN = {"email": "admin@ntcommerce.com", "password": "Admin@2024"}

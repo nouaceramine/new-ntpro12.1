@@ -1,146 +1,391 @@
 <analysis>**original_problem_statement**:
-The user's initial goal was to build and stabilize a comprehensive Point of Sale (POS) SaaS application. Throughout the session, the user requested a wide range of tasks, including:
-1.  **Feature Development**: Implementing POS session management, a system for importing data from a Microsoft Access database (), and a real-time System Alerts dashboard.
-2.  **Bug Fixing**: The user reported several bugs, including an incorrect profit calculation and numerous API vulnerabilities detailed in a PDF file ().
-3.  **System Hardening**: The user, acting as a technical lead, prompted the agent multiple times to perform a full system analysis to find and fix any underlying issues related to performance, security, and data integrity.
-4.  **Custom Domain Setup**: The user has been trying to connect their custom domain  (hosted on Cloudflare) to the application, facing multiple errors.
-5.  **Competitive Analysis**: The user provided a desktop POS application () and its database, requesting a feature comparison and data analysis.
-6.  **The user's most recent and pressing request is for a final solution to a recurring Data loading error that occurs after logging in on their custom domain.**
+The user's project is a massive pivot to create a fully professional AI-powered SaaS Accounting Platform named NT Commerce. The scope has expanded significantly throughout the session.
+
+Initial goals included system refactoring, a UI/UX overhaul, and building several AI agents. This evolved into a series of critical tasks:
+1.  **Database Migration**: The user requested a complete database wipe and migration from the old  DB to a new one named .
+2.  **Critical Bug Fixing**: After the migration and other changes, the user reported critical login and data loading errors, which became the top priority.
+3.  **Code Review Implementation**: The user provided a detailed code review and professional prompt, outlining issues with database connection handling, CORS, caching, and lack of rate limiting, and requested immediate implementation of the fixes.
+4.  **Massive Feature Expansion (Robots)**: The latest and largest request is to transform the application into an intelligent, automated system by building a suite of robots for inventory management, debt collection, and automated reporting. This was provided in an exhaustive markdown document containing all the required code and a multi-phase development plan.
 
 **User's preferred language**: Arabic (العربية)
 
 **what currently exists?**
-A full-stack POS SaaS application with a React frontend, FastAPI backend, and MongoDB database. The agent has successfully implemented and fixed a vast number of features and issues, bringing the application to a near-production-ready state.
-
-Key achievements include:
-- A complete, hardened API with robust input validation (sanitization, length/type checks), proper HTTP status codes (201 for create, 409 for duplicate), and security fixes (stronger JWT secret).
-- Significant performance improvements by resolving N+1 queries with MongoDB aggregations and adding over 15 database indexes.
-- A data integrity feature for admins to adjust/reset cash box balances, which resolved a negative balance bug.
-- A functional System Alerts dashboard connected to a live backend instead of mock data.
-- A script to analyze and extract data from Microsoft Access database files.
-- Newly created documentation: , , and .
-
-The application is stable and well-tested on its  environment. The primary issue lies in the configuration for the custom domain.
+The agent has successfully executed a series of complex and critical tasks, stabilizing the application and starting a major feature expansion.
+-   **Database**: The old database was completely dropped, and a new database named  was created, configured, and seeded with the necessary data for both SaaS admin () and a tenant ().
+-   **Core Functionality**: All critical bugs related to the database migration have been fixed. Both admin and tenant login flows are fully functional, and all pages load data correctly.
+-   **System-Wide Fixes**:
+    -   Date formatting has been standardized to  across the frontend.
+    -   Security and performance have been enhanced by implementing a rate limiter, secure CORS policies, and improved in-memory caching logic.
+-   **New Features**: The application is now a Progressive Web App (PWA), a notification bell icon has been added to the UI, and the foundation for a Banking page has been laid.
+-   **Backend Refactoring**: The process of modularizing the monolithic  has continued, with wrappers, new middleware, and a route index being created.
+-   **Robot Implementation (Started)**: The directory structure (, , , ) for the new Intelligent Robots feature has been created, and the agent was in the process of creating the individual Python files.
 
 **Last working item**:
--   **Last item agent was working**: The agent was responding to the user's critical and recurring complaint: خطأ في تحميل البيانات لماذا دائما يضهر هل من حل نهائي (Data loading error, why does it always appear, is there a final solution?). This error occurs on their custom domain  after logging in. The agent had previously diagnosed this as a DNS/CORS issue stemming from using a temporary  URL with Cloudflare.
+-   **Last item agent was working**: Executing the user's comprehensive plan to build a suite of Intelligent Robots (for Inventory, Debt, and Reporting). The agent was in the middle of a large, parallel file creation operation to set up the entire structure for this new feature, as specified in the user's detailed markdown prompt.
 -   **Status**: IN PROGRESS
--   **Agent Testing Done**: Y
--   **Which testing method agent to use?**: troubleshoot_agent. The agent needs to guide the user to solve a complex DNS configuration issue that is preventing the custom domain from connecting to the correct backend. The steps should be: 1. Confirm the user has Deployed the app to get a permanent URL. 2. Guide the user to update their Cloudflare CNAME record to this permanent URL.
--   **User Testing Done**: N (User is blocked by the error).
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: . This is a massive backend feature implementation that requires comprehensive integration testing. After implementation, the agent should also run the ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app
+plugins: asyncio-1.3.0, anyio-4.12.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 555 items / 3 errors
+
+==================================== ERRORS ====================================
+_________ ERROR collecting backend/tests/test_iteration53_features.py __________
+backend/tests/test_iteration53_features.py:11: in <module>
+    BASE_URL = os.environ.get('REACT_APP_BACKEND_URL').rstrip('/')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'rstrip'
+_____________ ERROR collecting backend/tests/test_pos_features.py ______________
+backend/tests/test_pos_features.py:14: in <module>
+    assert BASE_URL, "REACT_APP_BACKEND_URL must be set"
+E   AssertionError: REACT_APP_BACKEND_URL must be set
+E   assert ''
+____________ ERROR collecting backend/tests/test_purchases_crud.py _____________
+backend/tests/test_purchases_crud.py:19: in <module>
+    raise ValueError("REACT_APP_BACKEND_URL environment variable not set")
+E   ValueError: REACT_APP_BACKEND_URL environment variable not set
+=============================== warnings summary ===============================
+../root/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /root/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:24
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:24: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('amount')
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:30
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:30: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('quantity')
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:36
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:36: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('stripe_price_id')
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:44
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:44: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('payment_methods')
+
+backend/routes/saas_routes.py:130
+  /app/backend/tests/../routes/saas_routes.py:130: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TenantResponse(BaseModel):
+
+backend/server.py:11670
+  /app/backend/tests/../server.py:11670: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+../root/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495
+../root/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495
+  /root/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+backend/server.py:11765
+  /app/backend/tests/../server.py:11765: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR backend/tests/test_iteration53_features.py - AttributeError: 'NoneType'...
+ERROR backend/tests/test_pos_features.py - AssertionError: REACT_APP_BACKEND_...
+ERROR backend/tests/test_purchases_crud.py - ValueError: REACT_APP_BACKEND_UR...
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+======================== 10 warnings, 3 errors in 5.23s ======================== command provided by the user.
+-   **User Testing Done**: N
 
 **All Pending/In progress Issue list**:
--   **Issue 1: Critical - Data loading error on Custom Domain  (Priority: P0)**
-    -   This is the user's main blocker and source of frustration. The frontend on  successfully loads the login page, but after authentication, it fails to fetch data from the backend.
-    -   **Attempted fixes**: The agent correctly identified a series of Cloudflare errors (1016, 1034, 1014) and concluded the root cause is pointing a Cloudflare-proxied domain to a temporary, restricted  URL. The agent advised the user to use a permanent Deploy URL and to try setting the proxy status to DNS Only. The issue persists, indicating the user has not yet successfully configured their DNS to point to a permanent deployment URL.
-    -   **Next debug checklist**:
-        1.  **Clarify Deploy vs. Preview**: Re-explain to the user that they **must** press the **Deploy** button in the Emergent platform to generate a permanent, public-facing URL. The  URL is temporary and cannot be used with an external domain on Cloudflare.
-        2.  **Get New URL**: Ask the user to provide the new, permanent URL they receive after deployment.
-        3.  **Guide DNS Update**: Instruct the user to go to their Cloudflare DNS settings for  and update the CNAME records for  and  to point to the new permanent URL.
-        4.  **Verify Proxy Setting**: For initial setup, advise setting the Cloudflare Proxy status to DNS Only (grey cloud) to eliminate any potential proxy-related conflicts. It can be enabled later.
-    -   **Why fix this issue?**: This is the final step to make the application accessible on the user's professional domain. It is essential for user satisfaction and moving the project to production.
-    -   **Status**: IN PROGRESS
-    -   **Is recurring issue?**: Y
-    -   **Should Test frontend/backend/both after fix?**: Both (E2E testing via the custom domain is required).
-    -   **Blocked on other issue**: User action is required (clicking Deploy and updating DNS).
+There are no outstanding bugs. The only pending item is the large, in-progress task below.
 
 **In progress Task List**:
--   **Task 1: Deeper Analysis and JSON Export of  (Priority: P1)**
-    -   The user requested a deeper analysis of the  database and a full export to JSON files.
-    -   **Where to resume**: The agent has already analyzed the table structures and record counts. The next step is to process each major table (Item, Customer, Receipt, Supplier, etc.), convert its contents to a JSON format, and save each as a separate file in a new directory like .
-    -   **What will be achieved with this?**: Fulfills a direct user request, provides a data backup, and prepares for a potential future import feature.
+-   **Task 1: Complete Intelligent Robots Feature Implementation (Priority: P0)**
+    -   **Description**: This is the current, all-encompassing task. The user has provided all the necessary code and a detailed plan in message #437. The agent must complete the implementation.
+    -   **Where to resume**: The agent has already created the directory structure. The next step is to populate all the newly created empty files (, , etc.) with the exact code snippets provided by the user. Then, it must integrate the  into 's startup event and add the new API endpoints for controlling the robots.
+    -   **What will be achieved with this?**: The application will gain powerful, autonomous capabilities for inventory management, debt collection, and reporting, fulfilling the user's vision for an intelligent system.
     -   **Status**: IN PROGRESS
-    -   **Should Test frontend/backend/both after fix?**: N/A (Backend data processing task).
-    -   **Blocked on something**: Blocked by the P0 custom domain issue. The agent must resolve the user's primary blocker first.
+    -   **Should Test frontend/backend/both after fix?**: Backend.
+    -   **Blocked on something**: No.
 
 **Upcoming and Future Tasks**
--   **Upcoming Tasks:**
-    -   **P1: Refactor monolithic **: The file is over 11,000 lines long. It must be broken down by functionality into separate files within the  directory (e.g., , , , ).
--   **Future Tasks:**
-    -   **P2: Implement Data Import**: Create a feature to import the JSON files generated from the  database into the NT Commerce application for a specific tenant.
-    -   **P2: Frontend Performance for Large Datasets**: The product page will be slow with 7,000+ items. Implement frontend virtualization (e.g.,  or ) to handle large lists efficiently.
+These tasks are derived from the user's detailed plan in message #437.
+**Upcoming Tasks:**
+-   **P0: Install New Dependencies**: After creating the robot files, the agent must update  and install the new libraries (, , , , , , ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app
+plugins: asyncio-1.3.0, anyio-4.12.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 555 items / 3 errors
+
+==================================== ERRORS ====================================
+_________ ERROR collecting backend/tests/test_iteration53_features.py __________
+backend/tests/test_iteration53_features.py:11: in <module>
+    BASE_URL = os.environ.get('REACT_APP_BACKEND_URL').rstrip('/')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'rstrip'
+_____________ ERROR collecting backend/tests/test_pos_features.py ______________
+backend/tests/test_pos_features.py:14: in <module>
+    assert BASE_URL, "REACT_APP_BACKEND_URL must be set"
+E   AssertionError: REACT_APP_BACKEND_URL must be set
+E   assert ''
+____________ ERROR collecting backend/tests/test_purchases_crud.py _____________
+backend/tests/test_purchases_crud.py:19: in <module>
+    raise ValueError("REACT_APP_BACKEND_URL environment variable not set")
+E   ValueError: REACT_APP_BACKEND_URL environment variable not set
+=============================== warnings summary ===============================
+../root/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /root/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:24
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:24: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('amount')
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:30
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:30: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('quantity')
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:36
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:36: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('stripe_price_id')
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:44
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:44: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('payment_methods')
+
+backend/routes/saas_routes.py:130
+  /app/backend/tests/../routes/saas_routes.py:130: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TenantResponse(BaseModel):
+
+backend/server.py:11670
+  /app/backend/tests/../server.py:11670: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+../root/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495
+../root/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495
+  /root/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+backend/server.py:11765
+  /app/backend/tests/../server.py:11765: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR backend/tests/test_iteration53_features.py - AttributeError: 'NoneType'...
+ERROR backend/tests/test_pos_features.py - AssertionError: REACT_APP_BACKEND_...
+ERROR backend/tests/test_purchases_crud.py - ValueError: REACT_APP_BACKEND_UR...
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+======================== 10 warnings, 3 errors in 3.51s ========================, etc.).
+-   **P1: Implement Test Suite**: Populate the  directory with the unit and integration tests outlined by the user to achieve >80% test coverage.
+-   **P1: Implement Utility Modules**: Create the code for  and  as planned.
+
+**Future Tasks:**
+-   **P2: Frontend for Robots**: Create UI pages for users to view robot status, see generated reports, and interact with the recommendations (e.g., from the Inventory Robot).
+-   **P2: Advanced Security**: Implement brute-force protection, stricter password policies, and Two-Factor Authentication (2FA).
+-   **P3: Expand Robot Fleet**: Build the additional robots mentioned in the user's vision diagram (Customer Robot, Pricing Robot, Maintenance Robot).
 
 **Completed work in this session**
--   **System Hardening**: Performed a full system audit and fixed critical security, performance, and data integrity issues.
--   **API Validation**: Implemented robust input validation and sanitization for all major API creation endpoints (Products, Customers, Suppliers) based on user feedback.
--   **Bug Fix**: Corrected the profit calculation logic on the dashboard.
--   **Performance Tuning**: Eliminated N+1 query issues using MongoDB aggregations and added over 15 database indexes on application startup.
--   **Data Integrity**: Fixed a negative cash balance by adding an admin feature to adjust/reset cash box funds.
--   **Feature Enhancement**: Converted the System Alerts page from using mock data to a live backend API.
--   **Documentation**: Created , , and  to document the project.
--   **Data Analysis**: Performed an initial analysis of the user-provided  Access database.
-
-**Known issue recurrence from previous fork**
--   **Custom Domain/Deployment Issues**: The user has consistently struggled with connecting their custom domain. This points to a persistent knowledge gap that requires very clear, simple, and direct instructions.
+-   **Database Migration & Stabilization**: Successfully migrated to the new  database and fixed all subsequent critical login, authentication, and data loading errors.
+-   **Code Review Implementation**: Addressed all major points from a user-provided code review, including fixing CORS policies, unifying DB connection logic, adding a rate limiter, and creating a safe wrapper for .
+-   **PWA Conversion**: Successfully converted the application into a Progressive Web App with a manifest and service worker.
+-   **System-Wide Date Format Fix**: Corrected date rendering issues across multiple frontend components.
+-   **UI & Performance Enhancements**: Added a notification bell UI, a request timing middleware, and improved caching logic.
+-   **File & Code Cleanup**: Removed ~100MB of unnecessary files () and began refactoring .
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
--   **API Hardening**: Using Pydantic  for robust input validation, sanitization, and returning correct HTTP status codes (201, 409, 422).
--   **Database Performance**: Optimizing MongoDB by creating indexes on startup and using aggregation pipelines () to solve N+1 query problems.
--   **External File Processing**: Using  via Python's  to read schema and data from Microsoft Access files.
--   **Deployment & DNS**: Understanding of Cloudflare DNS configuration (CNAME records, Proxy status) and the critical difference between a platform's  and  environments.
+-   **Background Task Processing**: Using  (and planned ) to run autonomous, long-running robot tasks for business automation.
+-   **Data-Driven Automation**: Leveraging , , and  for predictive analytics (e.g., stockout prediction) to drive robot actions.
+-   **Dynamic Document Generation**: Using  to create PDF reports on the fly.
+-   **Progressive Web App (PWA)**: Making the web app installable and capable of offline functionalities via a  and a service worker.
+-   **Systematic Refactoring & Debugging**: Methodically executing user-provided code reviews and debugging complex, interconnected issues across the full stack (auth, database, frontend state, CORS).
+
+**key DB schema**
+The application now uses the  database. Key collections include:
+-   ,  (For the main SaaS platform)
+-   Tenant-specific collections (in  databases): , , , , .
+-   **New collections to be created by robots**: , , , .
+
+**changes in tech stack**
+-   **New Backend Dependencies**: ,  (for caching middleware).
+-   **Planned Dependencies**: , , , , , , ============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-9.0.2, pluggy-1.6.0
+rootdir: /app
+plugins: asyncio-1.3.0, anyio-4.12.1
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 555 items / 3 errors
+
+==================================== ERRORS ====================================
+_________ ERROR collecting backend/tests/test_iteration53_features.py __________
+backend/tests/test_iteration53_features.py:11: in <module>
+    BASE_URL = os.environ.get('REACT_APP_BACKEND_URL').rstrip('/')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'NoneType' object has no attribute 'rstrip'
+_____________ ERROR collecting backend/tests/test_pos_features.py ______________
+backend/tests/test_pos_features.py:14: in <module>
+    assert BASE_URL, "REACT_APP_BACKEND_URL must be set"
+E   AssertionError: REACT_APP_BACKEND_URL must be set
+E   assert ''
+____________ ERROR collecting backend/tests/test_purchases_crud.py _____________
+backend/tests/test_purchases_crud.py:19: in <module>
+    raise ValueError("REACT_APP_BACKEND_URL environment variable not set")
+E   ValueError: REACT_APP_BACKEND_URL environment variable not set
+=============================== warnings summary ===============================
+../root/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /root/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:24
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:24: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('amount')
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:30
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:30: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('quantity')
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:36
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:36: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('stripe_price_id')
+
+../root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:44
+  /root/.venv/lib/python3.11/site-packages/emergentintegrations/payments/stripe/checkout.py:44: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('payment_methods')
+
+backend/routes/saas_routes.py:130
+  /app/backend/tests/../routes/saas_routes.py:130: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class TenantResponse(BaseModel):
+
+backend/server.py:11670
+  /app/backend/tests/../server.py:11670: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+../root/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495
+../root/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495
+  /root/.venv/lib/python3.11/site-packages/fastapi/applications.py:4495: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+backend/server.py:11765
+  /app/backend/tests/../server.py:11765: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("shutdown")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR backend/tests/test_iteration53_features.py - AttributeError: 'NoneType'...
+ERROR backend/tests/test_pos_features.py - AssertionError: REACT_APP_BACKEND_...
+ERROR backend/tests/test_purchases_crud.py - ValueError: REACT_APP_BACKEND_UR...
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+======================== 10 warnings, 3 errors in 3.00s ========================.
 
 **All files of reference**
--   **Heavily Modified**:
-    -   : Numerous fixes for security, performance, validation, and data integrity. New APIs added.
-    -   : Added s to , , and .
-    -   : UI for system alerts and cash box management.
--   **Created**:
-    -   : New router for the system alerts feature.
-    -   , , : New documentation files.
--   **Referenced**:
-    -   : User-provided Access database for analysis.
-    -   : User-provided PDF describing API vulnerabilities.
+-   **/app/backend/robots/**: Entire new directory structure being created.
+-   **/app/backend/tests/**, **/app/backend/utils/**, **/app/backend/docs/**: New directories to be populated.
+-   : Refactored for error handling and to be the single DB definition source.
+-   : Updated with new middleware (rate limiter, CORS) and to-be-added robot lifecycle management.
+-   : Fixed to use the correct login endpoint.
+-   , : New files for PWA functionality.
 
 **Areas that need refactoring**:
--   : This is the highest priority. The monolithic file is a major technical debt and hinders maintainability. It must be broken down into smaller, feature-specific route files.
+-   : While improved, it remains a large file. The user's plan to extract logic into robots, services, and utils is the primary refactoring path forward.
 
 **key api endpoints**
--   : (New) Admin-only endpoint to set a specific cash box balance.
--   : (New) Admin-only endpoint to reset all cash box balances to zero.
--   : (Hardened) Now returns 201 on success, 409 on duplicate, and 422 on validation error.
--   : (Hardened) Same improvements as products.
--   : (Hardened) Same improvements as products.
+-   : The correct, consolidated login endpoint for both admins and tenants.
+-   **New planned endpoints**:
+    -   
+    -   
 
 **Critical Info for New Agent**
 -   **Language**: You **MUST** communicate with the user in **Arabic (العربية)**.
--   **Top Priority**: Your first and only priority is to solve the user's recurring **Data loading error** on their  domain. Do not work on any other task until this is resolved.
--   **The Solution Path**: The core problem is the user's Cloudflare DNS points to a temporary  URL. You must guide the user to:
-    1.  Press the **Deploy** button on the Emergent platform.
-    2.  Copy the **new, permanent URL** that is generated.
-    3.  Update the **CNAME record** in Cloudflare to point to this new URL.
--   **User Communication**: The user is frustrated with this recurring issue. Be confident, direct, and clear in your instructions. Frame it as the final step to get their professional domain working.
+-   **Follow the User's Plan**: Your primary goal is to execute the user's latest, highly detailed implementation plan (from message #437) for the Intelligent Robots. Do not deviate. All required code is provided in that message.
+-   **Execution Order**: First, create and populate all the new files for the robots, utils, and tests. Second, update  to integrate the . Third, install all new dependencies. Finally, run the tests as specified by the user.
+-   **No New Logic Needed**: This phase of the task is about precise execution of a given plan, not creative problem-solving. Copy the code provided by the user into the corresponding files.
 
 **documents and test reports created in this job**
 -   
 -   
 -   
--   Multiple test reports in , all indicating successful tests on the preview environment.
+-   
+-   
+-    (Continuously updated)
 
 **Last 10 User Messages and any pending HUMAN messages**
-The user provided a new database file from a competitor's software (). The agent analyzed it and found a large amount of data (7k products, 32k receipts). The user asked for a deeper analysis and a JSON export of this data. However, the user's very next message was a complaint about the recurring Data loading error on their custom domain, asking for a final solution, which has now become the top priority.
+1.  **User (Msg 437)**: Provided an extremely detailed, final, and comprehensive development plan to implement Intelligent Robots for inventory, debt, and reporting, including all Python code, new dependencies, and integration instructions. (Status: **In Progress**)
+2.  **User (Msg 440)**: Start implementing now, yes. (Status: **Completed**)
+3.  **User (Msg 443)**: Continue. (Status: **Completed**)
+4.  **User (Msg 403)**: Provided a detailed code review and a professional prompt to fix multiple issues (DB connection, CORS, caching, rate limiting) and add enhancements. (Status: **Completed**)
+5.  **User (Msg 397)**: Requested to delete the  files from the system. (Status: **Completed**)
+6.  **User (Msg 337)**: Reported a critical bug: There is an error in loading the data and the tenant also cannot enter. (Status: **Completed**)
+7.  **User (Msg 335)**: Asked for the new login credentials after the database reset. (Status: **Completed**)
+8.  **User (Msg 268)**: Execute all. (Confirmed the plan to add PWA, notifications, and banking features). (Status: **Completed**)
+9.  **User (Msg 263)**: Complete your tasks. (Confirmed the plan to fix bugs after database reset). (Status: **Completed**)
+10. **User (Msg 182)**: Yes, delete everything. (Confirmed the request to wipe the database). (Status: **Completed**)
 
 **Project Health Check:**
--   **Broken**: The application on the custom domain  is non-functional due to a DNS configuration issue.
--   **Mocked**: None.
+-   **Broken**: No features are currently broken.
+-   **Mocked**:
+    -   The  is a UI stub without backend logic.
+    -   The core feature of the session, the **Intelligent Robots**, is currently being built and is not yet functional.
 
 **3rd Party Integrations**
--   **OpenAI GPT-4o**: Uses Emergent LLM Key.
--   **SendGrid**: For emails.
--   **Stripe**: For payments.
--   **mdbtools**: System-level dependency for reading Microsoft Access files.
+-   **OpenAI GPT-4o**: Used for AI features. Requires Emergent LLM Key.
+-   **SendGrid**: Integrated for email.
+-   **Stripe**: Integrated for payments.
+-   **Planned Libraries**:  (PDFs), // (Data Analysis/ML).
 
 **Testing status**
--   **Testing agent used after significant changes**: YES. Multiple successful test runs have been executed.
--   **Test files created**: None, but the agent has used the testing agent extensively.
--   **Known regressions**: None. The application is stable on the preview URL.
+-   **Testing agent used after significant changes**: YES. The agent used testing multiple times to verify critical bug fixes after the database migration.
+-   **Test files created**: The structure  exists, but the test files themselves are yet to be populated as part of the current task.
+-   **Known regressions**: None.
 
 **Credentials to test flow:**
+-   **Database**: 
 -   **Super Admin**:  / 
 -   **Tenant**:  / 
 
 **What agent forgot to execute**
--   The primary un-executed task is successfully guiding the user to fix their custom domain setup. While the agent has correctly diagnosed the problem, the user is still stuck, indicating the guidance was not sufficient or the user did not follow the steps.
--   The task to perform a deep analysis and JSON export of the  database was started but interrupted.</analysis>
+The agent is in the middle of a large, user-directed implementation. It has not forgotten any tasks; it is actively working on the highest priority item.</analysis>
