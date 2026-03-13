@@ -608,8 +608,8 @@ class ProductResponse(BaseModel):
     family_name: str = ""
     use_average_price: bool = False
     last_purchase_date: Optional[str] = None  # تاريخ آخر شراء
-    created_at: str
-    updated_at: str
+    created_at: str = ""
+    updated_at: str = ""
 
 # ============ CUSTOMER MODELS ============
 
