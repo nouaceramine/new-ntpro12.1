@@ -782,7 +782,7 @@ async def unified_login(credentials: UserLogin):
             return {
                 "access_token": access_token,
                 "user_type": "admin",
-                "redirect_to": "/",
+                "redirect_to": "/saas-admin",
                 "user": {
                     "id": user["id"],
                     "email": user["email"],
@@ -825,7 +825,7 @@ async def unified_login(credentials: UserLogin):
             pass
     
     # 3. Check Tenants
-    tenant = await db.saas_tenants.find_one({"email": email})
+    tenant = await db.saas_tenants.find_one({"email": email}, {"_id": 0})
     if tenant:
         stored_password = tenant.get("password", "")
         try:

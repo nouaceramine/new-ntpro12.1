@@ -53,17 +53,19 @@ export const AuthProvider = ({ children }) => {
   }, [token]);
   
   const login = async (email, password) => {
-    const response = await axios.post(`${API}/auth/login`, { email, password });
-    const { access_token, user: userData } = response.data;
+    const response = await axios.post(`${API}/auth/unified-login`, { email, password });
+    const { access_token, user: userData, user_type, redirect_to } = response.data;
     
     localStorage.setItem('token', access_token);
+    localStorage.setItem('user_type', user_type || 'admin');
+    localStorage.setItem('redirect_to', redirect_to || '/');
     setToken(access_token);
     setUser(userData);
     // Set features and limits from login response
     setFeatures(userData.features || null);
     setLimits(userData.limits || null);
     
-    return userData;
+    return { ...userData, user_type, redirect_to };
   };
   
   const register = async (email, password, name, role = 'user') => {

@@ -50,7 +50,7 @@ export default function UnifiedLoginPage() {
         // Also set token for Layout compatibility
         localStorage.setItem('token', access_token);
         localStorage.setItem('user', JSON.stringify({ ...user, role: 'admin', user_type: 'tenant' }));
-        setLoginSuccess({ type: 'tenant', name: user.name, redirect: '/' });
+        setLoginSuccess({ type: 'tenant', name: user.name, redirect: '/dashboard' });
       }
       
       toast.success(`مرحباً ${user.name}!`);
@@ -59,7 +59,7 @@ export default function UnifiedLoginPage() {
       setTimeout(() => {
         // Use window.location for full page reload to update AuthContext
         const redirectPath = user_type === 'admin' ? '/saas-admin' : 
-                            user_type === 'agent' ? '/agent/dashboard' : '/';
+                            user_type === 'agent' ? '/agent/dashboard' : '/dashboard';
         window.location.href = redirectPath;
       }, 1500);
       
