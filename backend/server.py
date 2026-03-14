@@ -11712,6 +11712,49 @@ async def get_system_info():
     }
 
 # Include router and middleware
+# ============ LEGENDARY BUILD - NEW ROUTES (registered BEFORE api_router to avoid conflicts) ============
+
+# Repair System (16 collections)
+repair_router = create_repair_routes(db, get_current_user, get_tenant_admin)
+app.include_router(repair_router, prefix="/api")
+
+# Printing & Barcode System
+printing_router = create_printing_routes(db, get_current_user, get_tenant_admin)
+app.include_router(printing_router, prefix="/api")
+barcode_router = create_barcode_routes(db, get_current_user, get_tenant_admin)
+app.include_router(barcode_router, prefix="/api")
+
+# Defective Goods System (11 collections)
+defective_router = create_defective_routes(db, get_current_user, get_tenant_admin)
+app.include_router(defective_router, prefix="/api")
+
+# Backup System (5 collections)
+backup_router = create_backup_routes(db, main_db, get_current_user, get_tenant_admin, get_super_admin)
+app.include_router(backup_router, prefix="/api")
+
+# Advanced Security (9 collections)
+security_router = create_security_routes(db, main_db, get_current_user, get_super_admin)
+app.include_router(security_router, prefix="/api")
+
+# Wallet & Payments
+wallet_router = create_wallet_routes(db, main_db, get_current_user, get_tenant_admin, get_super_admin)
+app.include_router(wallet_router, prefix="/api")
+
+# Supplier Tracking
+supplier_tracking_router = create_supplier_tracking_routes(db, get_current_user, get_tenant_admin)
+app.include_router(supplier_tracking_router, prefix="/api")
+
+# Ultra Search
+search_router = create_search_routes(db, get_current_user)
+app.include_router(search_router, prefix="/api")
+
+# Task Management & Internal Chat
+task_router = create_task_routes(db, get_current_user, get_tenant_admin)
+app.include_router(task_router, prefix="/api")
+chat_router = create_chat_routes(db, get_current_user)
+app.include_router(chat_router, prefix="/api")
+
+# ============ LEGACY ROUTES ============
 app.include_router(api_router)
 app.include_router(saas_router, prefix="/api")  # Refactored SaaS routes
 app.include_router(database_router, prefix="/api/saas")  # Database import/export routes
@@ -11755,48 +11798,6 @@ app.include_router(performance_router, prefix="/api")  # Performance routes
 # Initialize and include Banking routes
 banking_router = create_banking_routes(db, get_current_user)
 app.include_router(banking_router, prefix="/api")  # Banking routes
-
-# ============ LEGENDARY BUILD - NEW ROUTES ============
-
-# Repair System (16 collections)
-repair_router = create_repair_routes(db, get_current_user, get_tenant_admin)
-app.include_router(repair_router, prefix="/api")
-
-# Printing & Barcode System
-printing_router = create_printing_routes(db, get_current_user, get_tenant_admin)
-app.include_router(printing_router, prefix="/api")
-barcode_router = create_barcode_routes(db, get_current_user, get_tenant_admin)
-app.include_router(barcode_router, prefix="/api")
-
-# Defective Goods System (11 collections)
-defective_router = create_defective_routes(db, get_current_user, get_tenant_admin)
-app.include_router(defective_router, prefix="/api")
-
-# Backup System (5 collections)
-backup_router = create_backup_routes(db, main_db, get_current_user, get_tenant_admin, get_super_admin)
-app.include_router(backup_router, prefix="/api")
-
-# Advanced Security (9 collections)
-security_router = create_security_routes(db, main_db, get_current_user, get_super_admin)
-app.include_router(security_router, prefix="/api")
-
-# Wallet & Payments
-wallet_router = create_wallet_routes(db, main_db, get_current_user, get_tenant_admin, get_super_admin)
-app.include_router(wallet_router, prefix="/api")
-
-# Supplier Tracking
-supplier_tracking_router = create_supplier_tracking_routes(db, get_current_user, get_tenant_admin)
-app.include_router(supplier_tracking_router, prefix="/api")
-
-# Ultra Search
-search_router = create_search_routes(db, get_current_user)
-app.include_router(search_router, prefix="/api")
-
-# Task Management & Internal Chat
-task_router = create_task_routes(db, get_current_user, get_tenant_admin)
-app.include_router(task_router, prefix="/api")
-chat_router = create_chat_routes(db, get_current_user)
-app.include_router(chat_router, prefix="/api")
 
 # ============ ROBOT API ENDPOINTS ============
 robot_router = APIRouter(prefix="/robots", tags=["robots"])
