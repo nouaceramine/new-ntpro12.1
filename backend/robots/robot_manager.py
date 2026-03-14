@@ -11,6 +11,11 @@ from .report_robot import ReportRobot
 from .customer_robot import CustomerRobot
 from .pricing_robot import PricingRobot
 from .maintenance_robot import MaintenanceRobot
+from .profit_robot import ProfitRobot
+from .repair_robot import RepairRobot
+from .prediction_robot import PredictionRobot
+from .notification_robot import NotificationRobot
+from .supplier_robot import SupplierRobot
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +40,11 @@ class RobotManager:
             "customer": CustomerRobot(self.db, self.client, self.notification),
             "pricing": PricingRobot(self.db, self.client, self.notification),
             "maintenance": MaintenanceRobot(self.db, self.client, self.notification),
+            "profit": ProfitRobot(self.db, self.client, self.notification),
+            "repair": RepairRobot(self.db, self.client, self.notification),
+            "prediction": PredictionRobot(self.db, self.client, self.notification),
+            "notification_bot": NotificationRobot(self.db, self.client, self.notification),
+            "supplier": SupplierRobot(self.db, self.client, self.notification),
         }
         logger.info(f"Initialized {len(self.robots)} robots")
 

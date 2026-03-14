@@ -93,6 +93,7 @@ import WalletPage from "./pages/WalletPage";
 import TaskManagementPage from "./pages/TaskManagementPage";
 import InternalChatPage from "./pages/InternalChatPage";
 import SupplierTrackingPage from "./pages/SupplierTrackingPage";
+import TwoFactorPage from "./pages/TwoFactorPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
@@ -281,6 +282,7 @@ function AppRoutes() {
       <Route path="/task-management" element={<ProtectedRoute><TaskManagementPage /></ProtectedRoute>} />
       <Route path="/internal-chat" element={<ProtectedRoute><InternalChatPage /></ProtectedRoute>} />
       <Route path="/supplier-tracking" element={<ProtectedRoute><SupplierTrackingPage /></ProtectedRoute>} />
+      <Route path="/two-factor" element={<ProtectedRoute><TwoFactorPage /></ProtectedRoute>} />
 
       {/* SaaS Admin Dashboard */}
       <Route

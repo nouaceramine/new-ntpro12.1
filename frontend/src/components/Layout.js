@@ -445,6 +445,7 @@ export const Layout = ({ children }) => {
       items: [
         { path: '/backup-system', icon: Database, label: language === 'ar' ? 'النسخ الاحتياطي' : 'Sauvegardes' },
         { path: '/wallet-management', icon: Wallet, label: language === 'ar' ? 'المحفظة' : 'Portefeuille' },
+        { path: '/two-factor', icon: Shield, label: language === 'ar' ? 'المصادقة الثنائية' : '2FA' },
       ]
     },
     {
