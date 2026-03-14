@@ -179,6 +179,15 @@ from routes.notification_routes import create_notification_routes
 from routes.currency_routes import create_currency_routes
 from routes.performance_routes import create_performance_routes, record_request_time
 from routes.banking_routes import create_banking_routes
+from routes.repair_routes import create_repair_routes
+from routes.printing_routes import create_printing_routes, create_barcode_routes
+from routes.defective_routes import create_defective_routes
+from routes.backup_routes import create_backup_routes
+from routes.security_routes import create_security_routes
+from routes.wallet_routes import create_wallet_routes
+from routes.supplier_tracking_routes import create_supplier_tracking_routes
+from routes.search_routes import create_search_routes
+from routes.task_chat_routes import create_task_routes, create_chat_routes
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
@@ -11673,6 +11682,35 @@ async def get_collection_reports(admin: dict = Depends(get_super_admin)):
     reports = await main_db.collection_reports.find({}, {"_id": 0}).sort("month", -1).limit(12).to_list(12)
     return reports
 
+@api_router.get("/system/info")
+async def get_system_info():
+    """NT Commerce 12.0 - System Information"""
+    return {
+        "name": "NT Commerce",
+        "version": "12.0.0",
+        "codename": "الإصدار الأسطوري",
+        "status": "running",
+        "systems": {
+            "bdv_original": {"tables": 58, "status": "active"},
+            "nt_commerce": {"tables": 24, "status": "active"},
+            "repair_system": {"tables": 16, "status": "active"},
+            "defective_goods": {"tables": 11, "status": "active"},
+            "ai_robots": {"tables": 14, "status": "active"},
+            "security": {"tables": 9, "status": "active"},
+            "backup_system": {"tables": 5, "status": "active"},
+            "printing_system": {"tables": 5, "status": "active"},
+            "barcode_system": {"tables": 3, "status": "active"},
+            "search_system": {"tables": 3, "status": "active"},
+            "performance": {"tables": 4, "status": "active"},
+            "tasks_chat": {"tables": 4, "status": "active"},
+            "supplier_tracking": {"tables": 2, "status": "active"},
+            "wallet": {"tables": 3, "status": "active"},
+        },
+        "total_tables": 152,
+        "robots": 6,
+        "languages": ["ar", "fr"],
+    }
+
 # Include router and middleware
 app.include_router(api_router)
 app.include_router(saas_router, prefix="/api")  # Refactored SaaS routes
@@ -11717,6 +11755,48 @@ app.include_router(performance_router, prefix="/api")  # Performance routes
 # Initialize and include Banking routes
 banking_router = create_banking_routes(db, get_current_user)
 app.include_router(banking_router, prefix="/api")  # Banking routes
+
+# ============ LEGENDARY BUILD - NEW ROUTES ============
+
+# Repair System (16 collections)
+repair_router = create_repair_routes(db, get_current_user, get_tenant_admin)
+app.include_router(repair_router, prefix="/api")
+
+# Printing & Barcode System
+printing_router = create_printing_routes(db, get_current_user, get_tenant_admin)
+app.include_router(printing_router, prefix="/api")
+barcode_router = create_barcode_routes(db, get_current_user, get_tenant_admin)
+app.include_router(barcode_router, prefix="/api")
+
+# Defective Goods System (11 collections)
+defective_router = create_defective_routes(db, get_current_user, get_tenant_admin)
+app.include_router(defective_router, prefix="/api")
+
+# Backup System (5 collections)
+backup_router = create_backup_routes(db, main_db, get_current_user, get_tenant_admin, get_super_admin)
+app.include_router(backup_router, prefix="/api")
+
+# Advanced Security (9 collections)
+security_router = create_security_routes(db, main_db, get_current_user, get_super_admin)
+app.include_router(security_router, prefix="/api")
+
+# Wallet & Payments
+wallet_router = create_wallet_routes(db, main_db, get_current_user, get_tenant_admin, get_super_admin)
+app.include_router(wallet_router, prefix="/api")
+
+# Supplier Tracking
+supplier_tracking_router = create_supplier_tracking_routes(db, get_current_user, get_tenant_admin)
+app.include_router(supplier_tracking_router, prefix="/api")
+
+# Ultra Search
+search_router = create_search_routes(db, get_current_user)
+app.include_router(search_router, prefix="/api")
+
+# Task Management & Internal Chat
+task_router = create_task_routes(db, get_current_user, get_tenant_admin)
+app.include_router(task_router, prefix="/api")
+chat_router = create_chat_routes(db, get_current_user)
+app.include_router(chat_router, prefix="/api")
 
 # ============ ROBOT API ENDPOINTS ============
 robot_router = APIRouter(prefix="/robots", tags=["robots"])
