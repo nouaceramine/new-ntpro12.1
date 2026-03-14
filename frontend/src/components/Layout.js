@@ -361,6 +361,7 @@ export const Layout = ({ children }) => {
       icon: Bell,
       items: [
         { path: '/notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات' : 'Notifications', subFeature: 'push_notifications' },
+        { path: '/smart-notifications', icon: Bell, label: language === 'ar' ? 'الإشعارات الذكية' : 'Smart Notifications' },
         { path: '/email-notifications', icon: Mail, label: language === 'ar' ? 'إشعارات البريد' : 'Email Notifications', subFeature: 'email_notifications' },
       ]
     },

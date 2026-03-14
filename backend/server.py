@@ -190,6 +190,10 @@ from routes.search_routes import create_search_routes
 from routes.task_chat_routes import create_task_routes, create_chat_routes
 from routes.permissions_routes import create_permissions_routes
 from routes.smart_notifications_routes import create_smart_notifications_routes
+from routes.products_routes import create_products_routes
+from routes.customers_routes import create_customers_routes
+from routes.sales_routes import create_sales_routes
+from routes.purchases_routes import create_purchases_routes
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
@@ -11796,6 +11800,16 @@ app.include_router(permissions_router, prefix="/api")
 # Smart Notifications
 smart_notif_router = create_smart_notifications_routes(db, main_db, get_current_user)
 app.include_router(smart_notif_router, prefix="/api")
+
+# Core Business Routes (Extracted from server.py)
+products_router = create_products_routes(db, get_current_user, get_tenant_admin, require_tenant)
+app.include_router(products_router, prefix="/api")
+customers_router = create_customers_routes(db, get_current_user, get_tenant_admin, require_tenant)
+app.include_router(customers_router, prefix="/api")
+sales_extracted_router = create_sales_routes(db, get_current_user, get_tenant_admin, require_tenant)
+app.include_router(sales_extracted_router, prefix="/api")
+purchases_extracted_router = create_purchases_routes(db, get_current_user, get_tenant_admin, require_tenant)
+app.include_router(purchases_extracted_router, prefix="/api")
 
 # ============ LEGACY ROUTES ============
 app.include_router(api_router)

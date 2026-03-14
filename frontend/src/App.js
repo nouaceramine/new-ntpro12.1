@@ -94,6 +94,7 @@ import TaskManagementPage from "./pages/TaskManagementPage";
 import InternalChatPage from "./pages/InternalChatPage";
 import SupplierTrackingPage from "./pages/SupplierTrackingPage";
 import TwoFactorPage from "./pages/TwoFactorPage";
+import SmartNotificationsPage from "./pages/SmartNotificationsPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
@@ -556,6 +557,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute adminOnly>
             <EmailNotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/smart-notifications"
+        element={
+          <ProtectedRoute>
+            <SmartNotificationsPage />
           </ProtectedRoute>
         }
       />
