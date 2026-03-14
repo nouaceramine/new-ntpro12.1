@@ -194,6 +194,7 @@ from routes.products_routes import create_products_routes
 from routes.customers_routes import create_customers_routes
 from routes.sales_routes import create_sales_routes
 from routes.purchases_routes import create_purchases_routes
+from routes.stats_routes import create_stats_routes
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
@@ -11810,6 +11811,8 @@ sales_extracted_router = create_sales_routes(db, get_current_user, get_tenant_ad
 app.include_router(sales_extracted_router, prefix="/api")
 purchases_extracted_router = create_purchases_routes(db, get_current_user, get_tenant_admin, require_tenant)
 app.include_router(purchases_extracted_router, prefix="/api")
+stats_router = create_stats_routes(db, get_current_user, get_tenant_admin, require_tenant, init_cash_boxes, CURRENCY)
+app.include_router(stats_router, prefix="/api")
 
 # ============ LEGACY ROUTES ============
 app.include_router(api_router)
