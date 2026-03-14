@@ -19,8 +19,13 @@ import {
   Zap,
   TrendingUp,
   ShieldAlert,
-  RefreshCw
+  RefreshCw,
+  Users,
+  Tag,
+  Wrench,
+  BarChart3,
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -45,6 +50,27 @@ const ROBOT_CONFIG = {
     bg: 'bg-emerald-500/10',
     border: 'border-emerald-500/20',
     gradient: 'from-emerald-500 to-teal-500',
+  },
+  customer: {
+    icon: Users,
+    color: 'text-violet-500',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/20',
+    gradient: 'from-violet-500 to-purple-500',
+  },
+  pricing: {
+    icon: Tag,
+    color: 'text-rose-500',
+    bg: 'bg-rose-500/10',
+    border: 'border-rose-500/20',
+    gradient: 'from-rose-500 to-pink-500',
+  },
+  maintenance: {
+    icon: Wrench,
+    color: 'text-slate-500',
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/20',
+    gradient: 'from-slate-500 to-gray-500',
   },
 };
 
@@ -98,28 +124,27 @@ function RobotCard({ name, robot, config, onRestart, onRun, loading }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-2">
-          {name === 'inventory' && (
-            <>
-              <StatBox label="الفحوصات" value={stats.checks || 0} icon={Activity} color="bg-blue-500/10" />
-              <StatBox label="التنبيهات" value={stats.alerts_sent || 0} icon={AlertTriangle} color="bg-amber-500/10" />
-              <StatBox label="التوصيات" value={stats.recommendations || 0} icon={TrendingUp} color="bg-emerald-500/10" />
-              <StatBox label="التوقعات" value={stats.predictions || 0} icon={Zap} color="bg-purple-500/10" />
-            </>
-          )}
-          {name === 'debt' && (
-            <>
-              <StatBox label="الفحوصات" value={stats.checks || 0} icon={Activity} color="bg-blue-500/10" />
-              <StatBox label="التذكيرات" value={stats.reminders_sent || 0} icon={ShieldAlert} color="bg-amber-500/10" />
-              <StatBox label="ديون متأخرة" value={stats.overdue_found || 0} icon={AlertTriangle} color="bg-red-500/10" />
-              <StatBox label="SMS" value={stats.sms_sent || 0} icon={Zap} color="bg-purple-500/10" />
-            </>
-          )}
-          {name === 'report' && (
-            <>
-              <StatBox label="الفحوصات" value={stats.checks || 0} icon={Activity} color="bg-blue-500/10" />
-              <StatBox label="التقارير" value={stats.reports_generated || 0} icon={FileText} color="bg-emerald-500/10" />
-            </>
-          )}
+          {Object.entries(stats).map(([key, val]) => {
+            const labels = {
+              checks: 'الفحوصات', alerts_sent: 'التنبيهات', recommendations: 'التوصيات',
+              predictions: 'التوقعات', reminders_sent: 'التذكيرات', overdue_found: 'ديون متأخرة',
+              sms_sent: 'SMS', reports_generated: 'التقارير', segments_updated: 'شرائح',
+              inactive_found: 'غير نشط', vip_found: 'VIP', slow_movers: 'بطيء البيع',
+              margin_alerts: 'تنبيه هامش', records_cleaned: 'سجلات محذوفة',
+              indexes_created: 'فهارس', health_checks: 'فحص صحة',
+            };
+            const icons = {
+              checks: Activity, alerts_sent: AlertTriangle, recommendations: TrendingUp,
+              predictions: Zap, reminders_sent: ShieldAlert, overdue_found: AlertTriangle,
+              sms_sent: Zap, reports_generated: FileText, segments_updated: Users,
+              inactive_found: AlertTriangle, vip_found: CheckCircle2, slow_movers: AlertTriangle,
+              margin_alerts: AlertTriangle, records_cleaned: Activity,
+              indexes_created: Zap, health_checks: CheckCircle2,
+            };
+            return (
+              <StatBox key={key} label={labels[key] || key} value={val} icon={icons[key] || Activity} color="bg-primary/10" />
+            );
+          })}
         </div>
         <div className="flex gap-2 pt-1">
           <Button
@@ -153,6 +178,7 @@ export default function RobotsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const navigate = useNavigate();
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -259,6 +285,14 @@ export default function RobotsPage() {
         <div className="flex items-center gap-2">
           <Button
             size="sm"
+            variant="outline"
+            onClick={() => navigate('/auto-reports')}
+            data-testid="go-to-reports-btn"
+          >
+            <BarChart3 className="h-3.5 w-3.5 mr-1" /> التقارير
+          </Button>
+          <Button
+            size="sm"
             variant="ghost"
             onClick={() => { setAutoRefresh(!autoRefresh); }}
             className={`text-xs ${autoRefresh ? 'text-emerald-600' : 'text-muted-foreground'}`}
@@ -352,7 +386,7 @@ export default function RobotsPage() {
       </div>
 
       {/* Robot Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Object.entries(robots).map(([name, robot]) => (
           <RobotCard
             key={name}

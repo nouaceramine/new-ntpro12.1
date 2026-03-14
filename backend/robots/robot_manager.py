@@ -8,6 +8,9 @@ from datetime import datetime, timezone
 from .inventory_robot import InventoryRobot
 from .debt_robot import DebtRobot
 from .report_robot import ReportRobot
+from .customer_robot import CustomerRobot
+from .pricing_robot import PricingRobot
+from .maintenance_robot import MaintenanceRobot
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +32,9 @@ class RobotManager:
             "inventory": InventoryRobot(self.db, self.client, self.notification),
             "debt": DebtRobot(self.db, self.client, self.notification, self.sms),
             "report": ReportRobot(self.db, self.client, self.notification, self.email),
+            "customer": CustomerRobot(self.db, self.client, self.notification),
+            "pricing": PricingRobot(self.db, self.client, self.notification),
+            "maintenance": MaintenanceRobot(self.db, self.client, self.notification),
         }
         logger.info(f"Initialized {len(self.robots)} robots")
 

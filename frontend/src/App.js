@@ -83,6 +83,7 @@ import TaxReportsPage from "./pages/TaxReportsPage";
 import CurrenciesPage from "./pages/CurrenciesPage";
 import BankingPage from "./pages/BankingPage";
 import RobotsPage from "./pages/RobotsPage";
+import AutoReportsPage from "./pages/AutoReportsPage";
 
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
@@ -109,8 +110,8 @@ const ProtectedRoute = ({ children, adminOnly = false, tenantOnly = false }) => 
     return <Navigate to="/portal" replace />;
   }
 
-  // Super Admin should only access /saas-admin, /system-updates, and /robots
-  if (isSuperAdmin && !window.location.pathname.startsWith('/saas-admin') && !window.location.pathname.startsWith('/system-updates') && !window.location.pathname.startsWith('/robots')) {
+  // Super Admin should only access /saas-admin, /system-updates, /robots, and /auto-reports
+  if (isSuperAdmin && !window.location.pathname.startsWith('/saas-admin') && !window.location.pathname.startsWith('/system-updates') && !window.location.pathname.startsWith('/robots') && !window.location.pathname.startsWith('/auto-reports')) {
     return <Navigate to="/saas-admin" replace />;
   }
 
@@ -251,6 +252,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <RobotsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/auto-reports"
+        element={
+          <ProtectedRoute>
+            <AutoReportsPage />
           </ProtectedRoute>
         }
       />

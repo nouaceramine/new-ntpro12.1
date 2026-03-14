@@ -470,6 +470,15 @@ export default function SaasAdminPage() {
             <Bot className="h-4 w-4" />
             الروبوتات الذكية
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/auto-reports')}
+            className="gap-2"
+            data-testid="go-to-reports-btn"
+          >
+            <BarChart3 className="h-4 w-4" />
+            التقارير التلقائية
+          </Button>
         </div>
 
         {/* Stats */}

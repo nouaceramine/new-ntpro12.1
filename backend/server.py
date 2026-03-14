@@ -777,6 +777,34 @@ class UnifiedLoginResponse(BaseModel):
     redirect_to: str
     user: dict
 
+# ============ BRUTE FORCE PROTECTION ============
+_login_attempts = {}  # {email: {"count": int, "locked_until": str}}
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_MINUTES = 15
+
+def _check_brute_force(email: str):
+    """Check if account is locked due to too many failed attempts"""
+    info = _login_attempts.get(email)
+    if not info:
+        return
+    if info.get("locked_until"):
+        locked = datetime.fromisoformat(info["locked_until"])
+        if datetime.now(timezone.utc) < locked:
+            remaining = int((locked - datetime.now(timezone.utc)).total_seconds() / 60) + 1
+            raise HTTPException(status_code=429, detail=f"الحساب مقفل. حاول بعد {remaining} دقيقة")
+        else:
+            _login_attempts.pop(email, None)
+
+def _record_failed_login(email: str):
+    info = _login_attempts.get(email, {"count": 0})
+    info["count"] = info.get("count", 0) + 1
+    if info["count"] >= MAX_LOGIN_ATTEMPTS:
+        info["locked_until"] = (datetime.now(timezone.utc) + timedelta(minutes=LOCKOUT_MINUTES)).isoformat()
+    _login_attempts[email] = info
+
+def _clear_failed_login(email: str):
+    _login_attempts.pop(email, None)
+
 @api_router.post("/auth/unified-login")
 async def unified_login(credentials: UserLogin):
     """
@@ -788,11 +816,15 @@ async def unified_login(credentials: UserLogin):
     email = credentials.email
     password = credentials.password
     
+    # Brute force protection
+    _check_brute_force(email)
+    
     # 1. Check Admin/Employee users first
     user = await db.users.find_one({"email": email}, {"_id": 0})
     if user:
         stored_password = user.get("hashed_password") or user.get("password")
         if stored_password and verify_password(password, stored_password):
+            _clear_failed_login(email)
             access_token = create_access_token({"sub": user["id"], "role": user["role"]})
             return {
                 "access_token": access_token,
@@ -815,6 +847,7 @@ async def unified_login(credentials: UserLogin):
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                 if not agent.get("is_active", True):
                     raise HTTPException(status_code=403, detail="الحساب معطل")
+                _clear_failed_login(email)
                 
                 token_data = {
                     "sub": agent["id"],
@@ -847,6 +880,7 @@ async def unified_login(credentials: UserLogin):
             if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
                 if not tenant.get("is_active", True):
                     raise HTTPException(status_code=403, detail="الحساب معطل")
+                _clear_failed_login(email)
                 
                 # Check subscription
                 if tenant.get("subscription_ends_at"):
@@ -922,6 +956,7 @@ async def unified_login(credentials: UserLogin):
             pass
     
     # No user found
+    _record_failed_login(email)
     raise HTTPException(status_code=401, detail="بيانات الدخول غير صحيحة")
 
 @api_router.get("/auth/me", response_model=UserResponse)
@@ -11543,6 +11578,31 @@ async def clear_ai_chat_history(session_id: Optional[str] = None, admin: dict = 
     result = await db.ai_chat_history.delete_many(query)
     return {"deleted": result.deleted_count}
 
+
+# ============ AUTO REPORTS API ============
+@api_router.get("/auto-reports")
+async def get_auto_reports(
+    report_type: str = None,
+    limit: int = 50,
+    admin: dict = Depends(get_super_admin)
+):
+    query = {}
+    if report_type:
+        query["type"] = report_type
+    reports = await main_db.auto_reports.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return reports
+
+@api_router.get("/auto-reports/{report_id}")
+async def get_auto_report_detail(report_id: str, admin: dict = Depends(get_super_admin)):
+    report = await main_db.auto_reports.find_one({"id": report_id}, {"_id": 0})
+    if not report:
+        raise HTTPException(status_code=404, detail="التقرير غير موجود")
+    return report
+
+@api_router.get("/collection-reports")
+async def get_collection_reports(admin: dict = Depends(get_super_admin)):
+    reports = await main_db.collection_reports.find({}, {"_id": 0}).sort("month", -1).limit(12).to_list(12)
+    return reports
 
 # Include router and middleware
 app.include_router(api_router)
