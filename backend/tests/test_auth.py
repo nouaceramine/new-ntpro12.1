@@ -4,7 +4,7 @@ Tests for authentication and core endpoints
 import pytest
 import httpx
 
-API_URL = "https://unified-platform-45.preview.emergentagent.com"
+API_URL = "https://ai-robot-commerce.preview.emergentagent.com"
 
 
 class TestAuth:

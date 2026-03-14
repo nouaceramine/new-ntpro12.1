@@ -18,7 +18,7 @@ Robots under test:
 import pytest
 import httpx
 
-API_URL = "https://unified-platform-45.preview.emergentagent.com"
+API_URL = "https://ai-robot-commerce.preview.emergentagent.com"
 
 # ============ CREDENTIALS ============
 SUPER_ADMIN_EMAIL = "admin@ntcommerce.com"

@@ -188,6 +188,8 @@ from routes.wallet_routes import create_wallet_routes
 from routes.supplier_tracking_routes import create_supplier_tracking_routes
 from routes.search_routes import create_search_routes
 from routes.task_chat_routes import create_task_routes, create_chat_routes
+from routes.permissions_routes import create_permissions_routes
+from routes.smart_notifications_routes import create_smart_notifications_routes
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
@@ -11786,6 +11788,14 @@ task_router = create_task_routes(db, get_current_user, get_tenant_admin)
 app.include_router(task_router, prefix="/api")
 chat_router = create_chat_routes(db, get_current_user)
 app.include_router(chat_router, prefix="/api")
+
+# Permissions System (500+ permissions)
+permissions_router = create_permissions_routes(db, main_db, get_current_user, get_tenant_admin)
+app.include_router(permissions_router, prefix="/api")
+
+# Smart Notifications
+smart_notif_router = create_smart_notifications_routes(db, main_db, get_current_user)
+app.include_router(smart_notif_router, prefix="/api")
 
 # ============ LEGACY ROUTES ============
 app.include_router(api_router)
