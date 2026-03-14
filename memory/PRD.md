@@ -2,112 +2,78 @@
 # منصة محاسبة ذكية مدعومة بالذكاء الاصطناعي
 
 ## نظرة عامة
-NT Commerce هي منصة SaaS متكاملة لإدارة المبيعات والمخزون والمحاسبة وتصليح الهواتف مع روبوتات ذكية تعمل تلقائياً 24/7. هدف المشروع هو بناء 152 جدول وأكثر من 50 ميزة.
+NT Commerce هي منصة SaaS متكاملة لإدارة المبيعات والمخزون والمحاسبة وتصليح الهواتف مع روبوتات ذكية تعمل تلقائياً 24/7.
 
-## المعمارية التقنية
+## المعمارية
 - **Stack**: FastAPI + MongoDB + React + Tailwind + Shadcn/UI
 - **Database**: `ntbass`
-- **Auth**: JWT (HS256)
-- **Languages**: Arabic / French (bilingual)
+- **Auth**: JWT (HS256) + 2FA (TOTP)
+- **Languages**: Arabic / French
 
-### Backend Structure
-```
-/app/backend/
-├── server.py              # الخادم الرئيسي (~12,000 سطر)
-├── robots/                # 6 روبوتات ذكية (inventory, debt, report, customer, pricing, maintenance)
-├── routes/                # 22+ ملف مسارات
-│   ├── repair_routes.py       # نظام الإصلاح ✅
-│   ├── defective_routes.py    # البضائع المعيبة ✅
-│   ├── printing_routes.py     # الطباعة والباركود ✅
-│   ├── backup_routes.py       # النسخ الاحتياطي ✅
-│   ├── security_routes.py     # الأمان المتقدم ✅
-│   ├── wallet_routes.py       # المحافظ والدفع ✅
-│   ├── supplier_tracking_routes.py  # تتبع الموردين ✅
-│   ├── search_routes.py       # البحث الشامل ✅
-│   ├── task_chat_routes.py    # المهام والدردشة ✅
-│   ├── performance_routes.py  # الأداء ✅
-│   ├── banking_routes.py      # البنوك ✅
-│   ├── settings_routes.py     # الإعدادات ✅
-│   ├── ai/chat_routes.py      # الذكاء الاصطناعي ✅
-│   ├── accounting/            # المحاسبة ✅
-│   └── ...
-├── services/, utils/, tests/, config/
-```
+## الإنجازات الحالية
 
-### Frontend Pages (المنجزة)
-```
-/app/frontend/src/pages/
-├── DashboardPage.js         ✅
-├── DefectiveGoodsPage.js    ✅ NEW
-├── BackupSystemPage.js      ✅ NEW
-├── SecurityDashboardPage.js ✅ NEW
-├── WalletPage.js            ✅ NEW
-├── TaskManagementPage.js    ✅ NEW
-├── InternalChatPage.js      ✅ NEW
-├── SupplierTrackingPage.js  ✅ NEW
-├── RobotsPage.js            ✅
-├── AutoReportsPage.js       ✅
-├── RepairReceptionPage.js   ✅
-├── RepairTrackingPage.js    ✅
-├── SparePartsPage.js        ✅
-├── POSPage.js, ProductsPage.js, CustomersPage.js, ...
-└── (40+ total pages)
-```
+### 10 أنظمة Backend (60+ API) ✅
+| النظام | المجموعات | Backend | Frontend |
+|--------|-----------|---------|----------|
+| نظام الإصلاح | 16 | ✅ | ✅ |
+| البضائع المعيبة | 11 | ✅ | ✅ |
+| الطباعة والباركود | 8 | ✅ | ✅ |
+| النسخ الاحتياطي | 5 | ✅ | ✅ |
+| الأمان المتقدم | 9 | ✅ | ✅ |
+| المحافظ والدفع | 3 | ✅ | ✅ |
+| تتبع الموردين | 2 | ✅ | ✅ |
+| البحث الشامل | 3 | ✅ | ✅ |
+| المهام والتواصل | 4 | ✅ | ✅ |
+| المصادقة الثنائية | - | ✅ | ✅ |
 
-## الأنظمة المنجزة (Backend + Frontend)
+### 11 روبوت ذكي يعمل ✅
+| الروبوت | الوظيفة |
+|---------|---------|
+| المخزون | مراقبة + توصيات + توقع نفاد |
+| الديون | متابعة + تذكيرات + تحليل |
+| التقارير | يومي/أسبوعي/شهري + PDF |
+| العملاء | تقسيم + VIP + غير نشطين |
+| التسعير | هوامش ربح + توصيات |
+| الصيانة | تنظيف + فهارس + صحة |
+| **الأرباح** | تحليل ربح يومي/شهري + منتجات منخفضة الهامش |
+| **الإصلاح** | تذاكر متأخرة + قطع غيار + حمل العمل |
+| **التوقعات** | توقع مبيعات 7/30 يوم + اتجاهات |
+| **الإشعارات** | اشتراكات + ديون + إصلاحات + مهام |
+| **الموردين** | تقييم أداء + مقارنة أسعار |
 
-| النظام | المجموعات | Backend | Frontend | حالة |
-|--------|-----------|---------|----------|------|
-| نظام الإصلاح | 16 | ✅ | ✅ | مكتمل |
-| البضائع المعيبة | 11 | ✅ | ✅ | مكتمل |
-| الطباعة والباركود | 8 | ✅ | ✅ | مكتمل |
-| النسخ الاحتياطي | 5 | ✅ | ✅ | مكتمل |
-| الأمان المتقدم | 9 | ✅ | ✅ | مكتمل |
-| المحافظ والدفع | 3 | ✅ | ✅ | مكتمل |
-| تتبع الموردين | 2 | ✅ | ✅ | مكتمل |
-| البحث الشامل | 3 | ✅ | ✅ (متكامل) | مكتمل |
-| المهام والتواصل | 4 | ✅ | ✅ | مكتمل |
-| الروبوتات الذكية | 6 | ✅ | ✅ | مكتمل |
+### 152 نموذج Pydantic ✅
+- `/app/backend/models/bdv.py` - 58 نموذج BDV
+- `/app/backend/models/commerce.py` - 17 نموذج تجارة
+- `/app/backend/models/repair.py` - 11 نموذج إصلاح
+- `/app/backend/models/defective.py` - 8 نماذج معيبة
+- `/app/backend/models/systems.py` - باقي الأنظمة (أمان، طباعة، نسخ احتياطي، إلخ)
 
-## الروبوتات الذكية (6 روبوتات عاملة)
-| الروبوت | الوظيفة | الدورية |
-|---------|---------|---------|
-| المخزون | مراقبة + توصيات + توقع نفاد | كل ساعة |
-| الديون | متابعة + تذكيرات + تحليل تحصيل | كل 6 ساعات |
-| التقارير | يومي/أسبوعي/شهري + PDF | يومي |
-| العملاء | تقسيم + VIP + غير نشطين | كل 12 ساعة |
-| التسعير | هوامش ربح + بطيء البيع | يومي |
-| الصيانة | تنظيف + فهارس + صحة النظام | يومي |
+### 8 صفحات Frontend جديدة ✅
+- DefectiveGoodsPage, BackupSystemPage, SecurityDashboardPage
+- WalletPage, TaskManagementPage, InternalChatPage
+- SupplierTrackingPage, TwoFactorPage
 
 ## نتائج الاختبارات
-- **Testing Agent #63**: Backend 36/36 ✅ (100%)
-- **Testing Agent #64**: Frontend + Backend 100% ✅ (7 pages fully tested)
+- **#63**: Backend 36/36 ✅
+- **#64**: Frontend+Backend 100% ✅
+- **#65**: Robots+2FA 100% ✅ (17/17 backend, 95% frontend)
 
 ## بيانات الاختبار
 - **مدير عام**: admin@ntcommerce.com / Admin@2024
 - **مستأجر**: ncr@ntcommerce.com / Test@123
 
-## MOCKED Services
-- SMS, Email (SendGrid), WhatsApp
-
 ## المهام المتبقية
 
-### P0 - أولوية قصوى
-- [ ] إنشاء نماذج Pydantic المفصلة (models/bdv.py, commerce.py, repair.py, etc.)
-- [ ] إعادة هيكلة server.py إلى main.py (تقسيم 12,000 سطر)
-
 ### P1 - أولوية عالية
-- [ ] توسيع الروبوتات (ProfitRobot, RepairRobot, PredictionRobot, NotificationRobot, SupplierRobot)
-- [ ] واجهة 2FA في الفرونت إند
+- [ ] إعادة هيكلة server.py (12,000 سطر) إلى وحدات منظمة
 - [ ] نظام الصلاحيات الكامل (500+ صلاحية)
 
 ### P2 - أولوية متوسطة
 - [ ] تكامل Stripe للدفع
 - [ ] تكامل Yalidine للشحن
 - [ ] تكامل WhatsApp مع Meta API
-- [ ] تكامل Twilio SMS
-- [ ] إشعارات Push حقيقية
 - [ ] PWA كامل
+- [ ] إشعارات Push
 
 ### P3 - أولوية منخفضة
 - [ ] Multi-tenancy الكامل وتسلسل الوكلاء
@@ -117,4 +83,4 @@ NT Commerce هي منصة SaaS متكاملة لإدارة المبيعات وا
 
 ---
 *آخر تحديث: 14 مارس 2026*
-*الإصدار: 12.0 - Legendary Build Phase 2 Complete*
+*الإصدار: 12.0 - Legendary Build Phase 3*

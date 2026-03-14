@@ -989,22 +989,44 @@ async def setup_2fa(current_user: dict = Depends(get_current_user)):
     buffer = io.BytesIO()
     qr.save(buffer, format="PNG")
     qr_base64 = base64.b64encode(buffer.getvalue()).decode()
-    # Save secret temporarily (not activated until verified)
-    await main_db.users.update_one(
-        {"id": current_user["id"]},
-        {"$set": {"two_fa_secret_pending": secret}}
-    )
+    # Save secret - check both main_db and tenant db
+    user_db = main_db
+    user = await main_db.users.find_one({"id": current_user["id"]})
+    if not user:
+        user_db = db
+        user = await db.users.find_one({"id": current_user["id"]})
+    if not user:
+        # Try looking up tenants
+        user_db = main_db
+        user = await main_db.tenants.find_one({"id": current_user["id"]})
+    if user:
+        coll = main_db.tenants if user.get("plan_name") or user.get("plan_id") else user_db.users
+        await coll.update_one(
+            {"id": current_user["id"]},
+            {"$set": {"two_fa_secret_pending": secret}}
+        )
+    # Generate backup codes
+    backup_codes = [pyotp.random_base32()[:8] for _ in range(6)]
     return {
         "secret": secret,
         "qr_code": f"data:image/png;base64,{qr_base64}",
         "uri": uri,
+        "backup_codes": backup_codes,
     }
 
 @api_router.post("/auth/2fa/verify")
 async def verify_2fa(data: dict, current_user: dict = Depends(get_current_user)):
     """Verify and activate 2FA with a code"""
     code = data.get("code", "")
+    # Look up user in multiple locations
     user = await main_db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    user_coll = main_db.users
+    if not user:
+        user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+        user_coll = db.users
+    if not user:
+        user = await main_db.tenants.find_one({"id": current_user["id"]}, {"_id": 0})
+        user_coll = main_db.tenants
     if not user:
         raise HTTPException(status_code=404, detail="المستخدم غير موجود")
     secret = user.get("two_fa_secret_pending") or user.get("two_fa_secret")
@@ -1012,7 +1034,7 @@ async def verify_2fa(data: dict, current_user: dict = Depends(get_current_user))
         raise HTTPException(status_code=400, detail="قم بإعداد 2FA أولا")
     totp = pyotp.TOTP(secret)
     if totp.verify(code):
-        await main_db.users.update_one(
+        await user_coll.update_one(
             {"id": current_user["id"]},
             {"$set": {"two_fa_secret": secret, "two_fa_enabled": True}, "$unset": {"two_fa_secret_pending": ""}}
         )
@@ -1024,11 +1046,18 @@ async def disable_2fa(data: dict, current_user: dict = Depends(get_current_user)
     """Disable 2FA"""
     code = data.get("code", "")
     user = await main_db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    user_coll = main_db.users
+    if not user:
+        user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+        user_coll = db.users
+    if not user:
+        user = await main_db.tenants.find_one({"id": current_user["id"]}, {"_id": 0})
+        user_coll = main_db.tenants
     if not user or not user.get("two_fa_secret"):
         raise HTTPException(status_code=400, detail="2FA غير مفعل")
     totp = pyotp.TOTP(user["two_fa_secret"])
     if totp.verify(code):
-        await main_db.users.update_one(
+        await user_coll.update_one(
             {"id": current_user["id"]},
             {"$set": {"two_fa_enabled": False}, "$unset": {"two_fa_secret": "", "two_fa_secret_pending": ""}}
         )
@@ -1039,6 +1068,10 @@ async def disable_2fa(data: dict, current_user: dict = Depends(get_current_user)
 async def get_2fa_status(current_user: dict = Depends(get_current_user)):
     """Check if 2FA is enabled for current user"""
     user = await main_db.users.find_one({"id": current_user["id"]}, {"_id": 0, "two_fa_enabled": 1})
+    if not user:
+        user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "two_fa_enabled": 1})
+    if not user:
+        user = await main_db.tenants.find_one({"id": current_user["id"]}, {"_id": 0, "two_fa_enabled": 1})
     return {"enabled": user.get("two_fa_enabled", False) if user else False}
 
 # ============ USER MANAGEMENT ============
