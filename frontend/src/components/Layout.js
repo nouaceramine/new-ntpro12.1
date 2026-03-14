@@ -57,7 +57,11 @@ import {
   Coins,
   FileText,
   Landmark,
-  Bot
+  Bot,
+  PackageX,
+  Database,
+  CheckSquare,
+  MessageCircle
 } from 'lucide-react';
 import { UnifiedSearch } from './UnifiedSearch';
 
@@ -77,7 +81,8 @@ const getAIContext = (pathname) => {
 const iconMap = {
   LayoutDashboard, Package, ShoppingCart, Truck, Users, CreditCard, Wallet,
   BarChart3, Settings, Bell, Wrench, Receipt, FolderTree, Warehouse,
-  ClipboardList, QrCode, DollarSign, ShoppingBag, Clock, Smartphone, Store, Shield, Key, Award, Zap, Mail, Bot
+  ClipboardList, QrCode, DollarSign, ShoppingBag, Clock, Smartphone, Store, Shield, Key, Award, Zap, Mail, Bot,
+  PackageX, Database, CheckSquare, MessageCircle, Download
 };
 
 export const Layout = ({ children }) => {
@@ -238,6 +243,9 @@ export const Layout = ({ children }) => {
         { path: '/saas-admin', icon: Building, label: language === 'ar' ? 'لوحة تحكم SaaS' : 'SaaS Dashboard' },
         { path: '/saas-admin/feature-flags', icon: Shield, label: language === 'ar' ? 'إدارة الميزات' : 'Feature Flags' },
         { path: '/system-updates', icon: Bell, label: language === 'ar' ? 'تحديثات النظام' : 'Mises à jour système' },
+        { path: '/security-dashboard', icon: Shield, label: language === 'ar' ? 'لوحة الأمان' : 'Sécurité' },
+        { path: '/backup-system', icon: Database, label: language === 'ar' ? 'النسخ الاحتياطي' : 'Sauvegardes' },
+        { path: '/wallet-management', icon: Wallet, label: language === 'ar' ? 'المحافظ' : 'Portefeuilles' },
       ]
     }
   ];
@@ -407,6 +415,36 @@ export const Layout = ({ children }) => {
       items: [
         { path: '/repairs', icon: ClipboardList, label: language === 'ar' ? 'تتبع الصيانة' : 'Suivi réparations', subFeature: 'repair_tickets' },
         { path: '/repairs/new', icon: Smartphone, label: language === 'ar' ? 'استقبال جهاز' : 'Réception appareil' },
+        { path: '/defective-goods', icon: PackageX, label: language === 'ar' ? 'البضائع المعيبة' : 'Produits défectueux' },
+      ]
+    },
+    {
+      id: 'supplier-tracking',
+      featureKey: null,
+      title: language === 'ar' ? 'تتبع الموردين' : 'Suivi Fournisseurs',
+      icon: Truck,
+      items: [
+        { path: '/supplier-tracking', icon: Truck, label: language === 'ar' ? 'تتبع الموردين' : 'Suivi fournisseurs' },
+      ]
+    },
+    {
+      id: 'tasks-chat',
+      featureKey: null,
+      title: language === 'ar' ? 'المهام والتواصل' : 'Tâches & Communication',
+      icon: CheckSquare,
+      items: [
+        { path: '/task-management', icon: CheckSquare, label: language === 'ar' ? 'إدارة المهام' : 'Gestion tâches' },
+        { path: '/internal-chat', icon: MessageCircle, label: language === 'ar' ? 'الدردشة الداخلية' : 'Chat interne' },
+      ]
+    },
+    {
+      id: 'system-tools',
+      featureKey: null,
+      title: language === 'ar' ? 'أدوات النظام' : 'Outils Système',
+      icon: Database,
+      items: [
+        { path: '/backup-system', icon: Database, label: language === 'ar' ? 'النسخ الاحتياطي' : 'Sauvegardes' },
+        { path: '/wallet-management', icon: Wallet, label: language === 'ar' ? 'المحفظة' : 'Portefeuille' },
       ]
     },
     {

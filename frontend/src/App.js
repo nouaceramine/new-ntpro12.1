@@ -85,6 +85,15 @@ import BankingPage from "./pages/BankingPage";
 import RobotsPage from "./pages/RobotsPage";
 import AutoReportsPage from "./pages/AutoReportsPage";
 
+// Legendary Build Pages
+import DefectiveGoodsPage from "./pages/DefectiveGoodsPage";
+import BackupSystemPage from "./pages/BackupSystemPage";
+import SecurityDashboardPage from "./pages/SecurityDashboardPage";
+import WalletPage from "./pages/WalletPage";
+import TaskManagementPage from "./pages/TaskManagementPage";
+import InternalChatPage from "./pages/InternalChatPage";
+import SupplierTrackingPage from "./pages/SupplierTrackingPage";
+
 // Landing & SaaS Pages
 import LandingPage from "./pages/landing/LandingPage";
 import SaasRegisterPage from "./pages/landing/RegisterPage";
@@ -110,8 +119,8 @@ const ProtectedRoute = ({ children, adminOnly = false, tenantOnly = false }) => 
     return <Navigate to="/portal" replace />;
   }
 
-  // Super Admin should only access /saas-admin, /system-updates, /robots, and /auto-reports
-  if (isSuperAdmin && !window.location.pathname.startsWith('/saas-admin') && !window.location.pathname.startsWith('/system-updates') && !window.location.pathname.startsWith('/robots') && !window.location.pathname.startsWith('/auto-reports')) {
+  // Super Admin should only access /saas-admin, /system-updates, /robots, /auto-reports, and legendary build admin pages
+  if (isSuperAdmin && !window.location.pathname.startsWith('/saas-admin') && !window.location.pathname.startsWith('/system-updates') && !window.location.pathname.startsWith('/robots') && !window.location.pathname.startsWith('/auto-reports') && !window.location.pathname.startsWith('/security-dashboard') && !window.location.pathname.startsWith('/backup-system') && !window.location.pathname.startsWith('/wallet-management')) {
     return <Navigate to="/saas-admin" replace />;
   }
 
@@ -263,6 +272,15 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* Legendary Build Routes */}
+      <Route path="/defective-goods" element={<ProtectedRoute><DefectiveGoodsPage /></ProtectedRoute>} />
+      <Route path="/backup-system" element={<ProtectedRoute><BackupSystemPage /></ProtectedRoute>} />
+      <Route path="/security-dashboard" element={<ProtectedRoute><SecurityDashboardPage /></ProtectedRoute>} />
+      <Route path="/wallet-management" element={<ProtectedRoute><WalletPage /></ProtectedRoute>} />
+      <Route path="/task-management" element={<ProtectedRoute><TaskManagementPage /></ProtectedRoute>} />
+      <Route path="/internal-chat" element={<ProtectedRoute><InternalChatPage /></ProtectedRoute>} />
+      <Route path="/supplier-tracking" element={<ProtectedRoute><SupplierTrackingPage /></ProtectedRoute>} />
 
       {/* SaaS Admin Dashboard */}
       <Route
