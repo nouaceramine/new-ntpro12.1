@@ -8,7 +8,7 @@ import pytest
 from datetime import datetime
 
 # Test configuration
-BASE_URL = "https://ai-robot-commerce.preview.emergentagent.com/api"
+BASE_URL = "https://legendary-build-1.preview.emergentagent.com/api"
 SUPER_ADMIN = {"email": "test@test.com", "password": "test123"}
 
 
@@ -87,7 +87,7 @@ class TestPOSFrontendIntegration:
         """Test POS page loads (via HTML response check)"""
         # This is a basic connectivity test
         response = requests.get(
-            "https://ai-robot-commerce.preview.emergentagent.com/pos",
+            "https://legendary-build-1.preview.emergentagent.com/pos",
             allow_redirects=True
         )
         assert response.status_code == 200
