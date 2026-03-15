@@ -79,6 +79,7 @@ import DateTimeSettingsPage from "./pages/DateTimeSettingsPage";
 
 // New Feature Pages
 import WhatsAppPage from "./pages/WhatsAppPage";
+import IntegrationStatusPage from "./pages/IntegrationStatusPage";
 import TaxReportsPage from "./pages/TaxReportsPage";
 import CurrenciesPage from "./pages/CurrenciesPage";
 import BankingPage from "./pages/BankingPage";
@@ -231,6 +232,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <WhatsAppPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/integrations/status"
+        element={
+          <ProtectedRoute>
+            <IntegrationStatusPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/integrations/yalidine"
+        element={
+          <ProtectedRoute>
+            <IntegrationStatusPage />
           </ProtectedRoute>
         }
       />

@@ -352,6 +352,8 @@ export const Layout = ({ children }) => {
       icon: MessageSquare,
       items: [
         { path: '/whatsapp', icon: MessageSquare, label: language === 'ar' ? 'WhatsApp Business' : 'WhatsApp Business' },
+        { path: '/integrations/yalidine', icon: Truck, label: language === 'ar' ? 'Yalidine شحن' : 'Yalidine Shipping' },
+        { path: '/integrations/status', icon: Settings, label: language === 'ar' ? 'حالة التكاملات' : 'Integration Status' },
       ]
     },
     {

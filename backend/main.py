@@ -209,6 +209,10 @@ from routes.online_store_routes import create_online_store_routes
 from routes.sendgrid_email_routes import create_sendgrid_email_routes
 from routes.sms_marketing_routes import create_sms_marketing_routes
 from routes.stripe_routes import create_stripe_routes
+from routes.sendgrid_integration_routes import create_sendgrid_integration_routes
+from routes.whatsapp_integration_routes import create_whatsapp_integration_routes
+from routes.yalidine_integration_routes import create_yalidine_integration_routes
+from routes.push_notification_routes import create_push_notification_routes
 from utils.permissions import create_permission_checker
 
 # ============ IMPORT MODELS FROM MODULES ============
@@ -867,6 +871,22 @@ app.include_router(sms_marketing_router, prefix="/api")
 # Stripe Payments (extracted)
 stripe_payment_router = create_stripe_routes(db, main_db, get_current_user, get_tenant_admin, require_tenant, get_super_admin)
 app.include_router(stripe_payment_router, prefix="/api")
+
+# SendGrid Integration
+sendgrid_integration_router = create_sendgrid_integration_routes(db, get_current_user, get_tenant_admin, require_tenant)
+app.include_router(sendgrid_integration_router, prefix="/api")
+
+# WhatsApp Integration
+whatsapp_integration_router = create_whatsapp_integration_routes(db, get_current_user, get_tenant_admin, require_tenant)
+app.include_router(whatsapp_integration_router, prefix="/api")
+
+# Yalidine Shipping Integration
+yalidine_integration_router = create_yalidine_integration_routes(db, get_current_user, get_tenant_admin, require_tenant)
+app.include_router(yalidine_integration_router, prefix="/api")
+
+# Push Notifications
+push_notification_router = create_push_notification_routes(db, get_current_user, get_tenant_admin, require_tenant)
+app.include_router(push_notification_router, prefix="/api")
 
 # ============ MODULAR ROUTES (from legacy extraction) ============
 app.include_router(auth_users_router, prefix="/api")
