@@ -1,119 +1,101 @@
 # NT Commerce 12.0 - Legendary Build PRD
 
 ## Original Problem Statement
-Build "NT Commerce" Legendary Version - all-encompassing SaaS platform with 152 database collections, 11 AI robots, repair system, defective goods management, multi-tenancy, and advanced analytics.
+Build "NT Commerce" Legendary Version - SaaS platform with 152 collections, 11 AI robots, multi-tenancy, RBAC permissions, external integrations, and PWA support.
 
 ## Tech Stack
-- **Frontend**: React + Shadcn/UI + Tailwind CSS (RTL Arabic)
+- **Frontend**: React + Shadcn/UI + Tailwind CSS (RTL Arabic) + PWA
 - **Backend**: FastAPI + MongoDB (Motor async)
 - **AI**: OpenAI GPT-4o via Emergent LLM Key
 - **Scheduling**: APScheduler (11 robots)
-- **Auth**: JWT + bcrypt + TOTP (2FA) + RBAC permissions
+- **Auth**: JWT + bcrypt + TOTP (2FA) + RBAC
+- **Payments**: Stripe (test key active)
+- **Email**: SendGrid (ready for API key)
+- **Messaging**: WhatsApp Business API (ready for API key)
+- **Shipping**: Yalidine (ready for API key)
+- **Push**: Web Push Notifications (ready for VAPID key)
 
 ---
 
-## Architecture (Final State)
+## Architecture
 
 ### File Structure
 ```
 /app/backend/
-├── server.py          # 6 lines - thin wrapper (supervisor entry point)
-├── main.py            # 1,150 lines - app orchestrator
-├── config/
-│   ├── database.py    # DB connections, tenant management
-│   └── settings.py    # App settings
-├── utils/
-│   ├── auth.py        # Authentication utilities
-│   ├── permissions.py # Permission enforcement (require_permission factory)
-│   ├── dependencies.py
-│   ├── errors.py
-│   └── pagination.py
-├── models/            # 152 Pydantic models
-├── robots/            # 11 AI robots
-├── routes/            # 61 modular route files
-│   ├── auth_users_routes.py
+├── server.py              # 6 lines (supervisor entry)
+├── main.py                # ~1,160 lines (orchestrator)
+├── config/                # database.py, settings.py
+├── utils/                 # auth.py, permissions.py, dependencies.py
+├── models/                # 152 Pydantic models
+├── robots/                # 11 AI robots
+├── routes/                # 65 modular route files
+│   ├── auth_users_routes.py (permission-protected)
 │   ├── products_routes.py (permission-protected)
 │   ├── sales_routes.py (permission-protected)
-│   ├── customers_routes.py (permission-protected)
-│   ├── purchases_routes.py (permission-protected)
-│   ├── expenses_routes.py (permission-protected)
-│   ├── employees_routes.py (permission-protected)
-│   ├── debts_routes.py (permission-protected)
-│   ├── cashbox_routes.py (permission-protected)
-│   ├── daily_sessions_routes.py (permission-protected)
-│   ├── suppliers_core_routes.py (permission-protected)
-│   ├── warehouse_core_routes.py (permission-protected)
-│   ├── online_store_routes.py
-│   ├── sendgrid_email_routes.py
-│   ├── sms_marketing_routes.py
-│   ├── stripe_routes.py
-│   ├── utility_routes.py
-│   ├── notifications_routes.py
-│   ├── ocr_invoice_routes.py
-│   ├── recharge_sim_routes.py
-│   ├── shipping_loyalty_routes.py
-│   ├── families_permissions_routes.py
-│   ├── system_sync_routes.py
-│   └── ... (61 total)
+│   ├── ... (11 permission-protected files)
+│   ├── stripe_routes.py (LIVE)
+│   ├── sendgrid_integration_routes.py (ready for key)
+│   ├── whatsapp_integration_routes.py (ready for key)
+│   ├── yalidine_integration_routes.py (ready for key)
+│   ├── push_notification_routes.py
+│   └── ... (65 total)
 └── frontend/
-    └── ... (27+ pages)
+    ├── public/manifest.json (PWA)
+    ├── public/service-worker.js (offline + push)
+    └── src/pages/IntegrationStatusPage.jsx
 ```
 
+### External Integration APIs
+| Integration | Status | Env Variable | Endpoints |
+|-------------|--------|-------------|-----------|
+| Stripe | LIVE (test key) | STRIPE_API_KEY | /api/payments/* |
+| SendGrid | Ready | SENDGRID_API_KEY | /api/integrations/email/* |
+| WhatsApp | Ready | WHATSAPP_API_TOKEN, WHATSAPP_PHONE_NUMBER_ID | /api/integrations/whatsapp/* |
+| Yalidine | Ready | YALIDINE_API_ID, YALIDINE_API_TOKEN | /api/integrations/yalidine/* |
+| Push | Ready | VAPID_PRIVATE_KEY, VAPID_EMAIL | /api/push/* |
+
 ### Permission System
-- **utils/permissions.py**: `create_permission_checker(db, get_current_user)` factory
-- **require_permission()**: Dependency for route-level access control
-- Admin roles (admin, tenant_admin, super_admin, manager, owner) bypass all checks
-- Non-admin users checked against role permissions from `db.roles`
 - 73 permission-protected endpoints across 11 route files
-- Permission format: `module.action` (e.g., `products.create`, `sales.view`)
+- Admin roles bypass all checks
+- `utils/permissions.py`: `require_permission("module.action")`
 
 ---
 
-## Test Results History
-| Iteration | Backend | Frontend | Notes |
-|-----------|---------|----------|-------|
-| 67 | 25/25 (100%) | 100% | First 5 modules extracted |
-| 68 | 32/32 (100%) | 100% | 9 modules verified |
-| 69 | 34/34 (100%) | 100% | 3,735 line removal |
-| 70 | 27/27 (100%) | 100% | 16 modules, 42% reduction |
-| 71 | 25/25 (100%) | 100% | main.py migration |
-| 72 | 30/32 (93.75%) | 100% | Legacy routes extraction |
-| 73 | 35/35 (100%) | 100% | 8 new route files + permission system, 0 regressions |
+## Test Results
+| Iter | Backend | Frontend | Notes |
+|------|---------|----------|-------|
+| 71 | 25/25 | 100% | main.py migration |
+| 72 | 30/32 | 100% | Legacy routes extraction |
+| 73 | 35/35 | 100% | 8 route files + permission system |
+| 74 | 23/23 | 100% | P2 integrations (Stripe, SendGrid, WhatsApp, Yalidine, Push, PWA) |
 
 ---
 
-## Completed P0/P1 Tasks
-- [x] Create main.py entry point
-- [x] Extract ALL inline routes from server.py/main.py
-- [x] server.py: 12,099 → 6 lines (thin wrapper)
-- [x] main.py: 7,076 → 1,150 lines (orchestrator only)
-- [x] 61 modular route files
-- [x] Permission system (utils/permissions.py)
-- [x] 73 permission-protected endpoints
-- [x] ObjectId serialization fixes
-- [x] 8 new route files from legacy split
+## Completed Tasks
+- [x] P0: main.py entry point migration
+- [x] P0: 65 modular route files
+- [x] P1: Permission system (73 endpoints)
+- [x] P2: Stripe integration (LIVE with test key)
+- [x] P2: SendGrid integration (ready for key)
+- [x] P2: WhatsApp Business API (ready for key)
+- [x] P2: Yalidine shipping (ready for key)
+- [x] P2: PWA (manifest + service worker)
+- [x] P2: Push Notifications backend
+- [x] P2: Integration Status Dashboard page
 
-## Prioritized Backlog
-
-### P2 - Medium Priority
-- [ ] Stripe payment integration (real keys)
-- [ ] Yalidine shipping integration
-- [ ] WhatsApp Meta API integration
-- [ ] SendGrid real integration
-- [ ] PWA support + Push notifications
-
-### P3 - Lower Priority
+## Remaining Backlog
+### P3
 - [ ] Full multi-tenancy agent hierarchy
 - [ ] Worker mobile app
-- [ ] Docker deployment setup
+- [ ] Docker deployment
 - [ ] Data import/export tools
 
 ---
 
-## Test Credentials
+## Credentials
 - **Super Admin**: admin@ntcommerce.com / Admin@2024
 - **Tenant**: ncr@ntcommerce.com / Test@123
-- **Database**: ntbass
+- **DB**: ntbass
 
 *Last updated: 2026-03-15*
-*Version: 12.0 - Legendary Build Phase 6 Complete (Full Modular Architecture + Permissions)*
+*Version: 12.0 - Legendary Build Phase 7 (P2 Integrations + PWA)*
