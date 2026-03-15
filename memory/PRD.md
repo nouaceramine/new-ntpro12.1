@@ -14,12 +14,15 @@ Build "NT Commerce" Legendary Version - all-encompassing SaaS platform with 152 
 
 ## Architecture Achievement
 
-### server.py Refactoring
-- **Before**: 12,099 lines (monolithic)
-- **After**: 7,056 lines (42% reduction)
-- **16 modular route files** extracted
+### server.py to main.py Migration (COMPLETE)
+- **Before**: 12,099 lines (monolithic server.py)
+- **After**: server.py = 6 lines (thin wrapper), main.py = 5,219 lines
+- **20+ modular route files** extracted
+- **1,875 duplicate lines** removed during final extraction phase
+- **main.py** is now the canonical application entry point
+- **server.py** is just `from main import app` (supervisor compatibility)
 
-### Extracted Route Modules (16 files)
+### Extracted Route Modules (20+ files)
 | # | File | Routes | Status |
 |---|------|--------|--------|
 | 1 | products_routes.py | /products | LIVE |
@@ -38,6 +41,10 @@ Build "NT Commerce" Legendary Version - all-encompassing SaaS platform with 152 
 | 14 | ai_assistant_routes.py | /ai/chat, /ai/analyze | LIVE |
 | 15 | advanced_sales_routes.py | /sales/advanced-report, /sales/peak-hours, /sales/returns-report | LIVE |
 | 16 | repair_routes.py | /repairs | LIVE |
+| 17 | online_store_routes.py | /store/*, /shop/*, /woocommerce/* | LIVE (NEW) |
+| 18 | sendgrid_email_routes.py | /notifications/sendgrid/*, /email/*, /smart-reports/* | LIVE (NEW) |
+| 19 | sms_marketing_routes.py | /marketing/sms/*, /sms/* | LIVE (NEW) |
+| 20 | stripe_routes.py | /payments/*, /webhook/stripe | LIVE (NEW) |
 | + | defective, backup, wallet, permissions, security, notifications, etc. | various | LIVE |
 
 ### Config Directory
@@ -45,8 +52,8 @@ Build "NT Commerce" Legendary Version - all-encompassing SaaS platform with 152 
 - `config/settings.py` - Application settings, defaults
 
 ### Entry Points
-- `main.py` - New canonical entry point (re-exports from server.py)
-- `server.py` - Legacy entry point (still in use by supervisor)
+- `main.py` - Canonical entry point (5,219 lines - all application logic)
+- `server.py` - Thin wrapper (6 lines - `from main import app`)
 
 ### Frontend Pages (27+)
 All live and connected to real APIs: Dashboard, POS, Products, Customers, Suppliers, Sales, Purchases, Expenses, Cash Boxes, Debts, Employees, Warehouses, Notifications, Smart Notifications, AI Agents, Reports, Analytics, Settings, Repairs, Defective Goods, Backup, Wallet, Tasks, Chat, Permissions, Security, 2FA
@@ -60,27 +67,36 @@ All live and connected to real APIs: Dashboard, POS, Products, Customers, Suppli
 | 68 | 32/32 (100%) | 100% | 9 modules verified |
 | 69 | 34/34 (100%) | 100% | Regression test after 3,735 line removal |
 | 70 | 27/27 (100%) | 100% | 16 modules, 42% reduction, 0 regressions |
+| 71 | 25/25 (100%) | 100% | main.py migration + 4 new route modules, 0 regressions |
 
 ---
 
 ## Prioritized Backlog
 
-### P0 - Critical (Done in this session)
+### P0 - Critical (ALL COMPLETE)
 - [x] Create main.py entry point
-- [x] Extract 16 route modules from server.py
-- [x] Reduce server.py by 42% (12,099 → 7,056)
+- [x] Extract 16+ route modules from server.py
+- [x] Reduce server.py (12,099 -> 6 lines thin wrapper)
 - [x] Create config/ directory
+- [x] Switch to main.py as canonical entry point
+- [x] Extract Online Store + WooCommerce routes
+- [x] Extract SendGrid + Email routes
+- [x] Extract SMS Marketing routes
+- [x] Extract Stripe Payment routes
+- [x] Remove 1,875 duplicate lines
+- [x] Full regression test (25/25 pass, 0 regressions)
 
 ### P1 - High Priority
-- [ ] Continue extracting remaining sections (Stripe, SendGrid, Online Store, etc.)
-- [ ] Switch supervisor to use main.py instead of server.py
 - [ ] Full permissions enforcement across all routes
+- [ ] Extract remaining inline routes from main.py into dedicated files (auth, notifications, recharges, shipping, loyalty, invoices, etc.)
+- [ ] Create utils module for shared helper functions
 
 ### P2 - Medium Priority
-- [ ] Stripe payment integration (fully functional)
+- [ ] Stripe payment integration (fully functional with real keys)
 - [ ] Yalidine shipping integration
 - [ ] WhatsApp Meta API integration
 - [ ] PWA support + Push notifications
+- [ ] SendGrid real integration
 
 ### P3 - Lower Priority
 - [ ] Full multi-tenancy agent hierarchy
@@ -96,4 +112,4 @@ All live and connected to real APIs: Dashboard, POS, Products, Customers, Suppli
 - **Database**: ntbass
 
 *Last updated: 2026-03-15*
-*Version: 12.0 - Legendary Build Phase 4 Complete*
+*Version: 12.0 - Legendary Build Phase 5 Complete (main.py Migration)*
