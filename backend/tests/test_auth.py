@@ -4,7 +4,7 @@ Tests for authentication and core endpoints
 import pytest
 import httpx
 
-API_URL = "https://legendary-build-1.preview.emergentagent.com"
+API_URL = "https://nt-commerce-refactor.preview.emergentagent.com"
 
 
 class TestAuth:

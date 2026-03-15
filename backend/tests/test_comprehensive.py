@@ -6,7 +6,7 @@ import pytest
 import httpx
 import pyotp
 
-API_URL = "https://legendary-build-1.preview.emergentagent.com"
+API_URL = "https://nt-commerce-refactor.preview.emergentagent.com"
 ADMIN = {"email": "admin@ntcommerce.com", "password": "Admin@2024"}
 TENANT = {"email": "ncr@ntcommerce.com", "password": "Test@123"}
 

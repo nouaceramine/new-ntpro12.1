@@ -10,7 +10,7 @@ import os
 
 # Add backend to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-from server import app
+from main import app
 
 # Test configuration
 BASE_URL = "http://test"
