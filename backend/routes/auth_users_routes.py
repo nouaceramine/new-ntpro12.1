@@ -1,7 +1,7 @@
 """
 Auth Users Routes - Extracted from legacy_inline_routes.py
 """
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Literal
@@ -19,7 +19,7 @@ import jwt
 logger = logging.getLogger(__name__)
 
 
-def create_auth_users_routes(db, main_db, get_current_user, get_admin_user, get_tenant_admin, require_tenant, get_tenant_db, hash_password, verify_password, create_access_token, init_tenant_database, init_default_data, init_cash_boxes, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_HOURS, security, UserCreate, UserLogin, UserUpdate, UserResponse, TokenResponse, PasswordUpdate):
+def create_auth_users_routes(db, main_db, get_current_user, get_admin_user, get_tenant_admin, require_tenant, get_tenant_db, hash_password, verify_password, create_access_token, init_tenant_database, init_default_data, init_cash_boxes, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_HOURS, security, UserCreate, UserLogin, UserUpdate, UserResponse, TokenResponse, PasswordUpdate, limiter=None):
     """Create auth users routes"""
     router = APIRouter()
 
@@ -33,7 +33,8 @@ def create_auth_users_routes(db, main_db, get_current_user, get_admin_user, get_
     # ============ AUTH ROUTES ============
 
     @router.post("/auth/register", response_model=TokenResponse)
-    async def register(user: UserCreate):
+    @limiter.limit("10/minute")
+    async def register(request: Request, user: UserCreate):
         existing = await db.users.find_one({"email": user.email})
         if existing:
             raise HTTPException(status_code=400, detail="Email already registered")
@@ -63,21 +64,17 @@ def create_auth_users_routes(db, main_db, get_current_user, get_admin_user, get_
         )
 
     @router.post("/auth/login", response_model=TokenResponse)
-    async def login(credentials: UserLogin):
-        logger.info(f"Login attempt for: {credentials.email}")
+    @limiter.limit("20/minute")
+    async def login(request: Request, credentials: UserLogin):
         user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
-        logger.info(f"User found: {user is not None}")
         if not user:
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
         # Support both password and hashed_password fields
         stored_password = user.get("hashed_password") or user.get("password")
-        logger.info(f"Password field exists: {stored_password is not None}")
         if not stored_password or not verify_password(credentials.password, stored_password):
-            logger.info("Password verification failed")
             raise HTTPException(status_code=401, detail="Invalid email or password")
 
-        logger.info("Login successful")
         access_token = create_access_token({"sub": user["id"], "role": user["role"]})
         return TokenResponse(
             access_token=access_token,
@@ -120,7 +117,8 @@ def create_auth_users_routes(db, main_db, get_current_user, get_admin_user, get_
         _login_attempts.pop(email, None)
 
     @router.post("/auth/unified-login")
-    async def unified_login(credentials: UserLogin):
+    @limiter.limit("20/minute")
+    async def unified_login(request: Request, credentials: UserLogin):
         """
         Unified login endpoint that auto-detects user type:
         1. Check if user is an admin/employee

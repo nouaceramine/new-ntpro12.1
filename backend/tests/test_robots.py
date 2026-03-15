@@ -5,7 +5,7 @@ import pytest
 import httpx
 import asyncio
 
-API_URL = "https://nt-commerce-refactor.preview.emergentagent.com"
+API_URL = "https://nt-commerce-v12.preview.emergentagent.com"
 ADMIN_EMAIL = "admin@ntcommerce.com"
 ADMIN_PASSWORD = "Admin@2024"
 

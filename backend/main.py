@@ -24,6 +24,9 @@ import requests as http_requests
 import asyncio
 import shutil
 import base64
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Load environment variables from .env file
 load_dotenv()
@@ -135,7 +138,7 @@ async def init_tenant_database(tenant_id: str):
     return tenant_db
 
 # JWT Settings
-SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'nt_commerce_super_secure_jwt_secret_key_2024_v3_hardened')
+SECRET_KEY = os.environ['JWT_SECRET_KEY']
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
@@ -144,6 +147,11 @@ CURRENCY = "دج"  # Algerian Dinar
 
 # Create the main app
 app = FastAPI(title="NT API")
+
+# Initialize rate limiter (slowapi)
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -458,13 +466,8 @@ def hash_password(password: str) -> str:
 
 def verify_password(password: str, hashed: str) -> bool:
     try:
-        logger.info(f"verify_password called - password length: {len(password)}, hash length: {len(hashed)}")
-        logger.info(f"Hash starts with: {hashed[:10]}")
-        result = bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-        logger.info(f"bcrypt.checkpw result: {result}")
-        return result
-    except Exception as e:
-        logger.error(f"verify_password error: {e}")
+        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    except Exception:
         return False
 
 def create_access_token(data: dict) -> str:
@@ -580,6 +583,10 @@ async def get_tenant_user(credentials: HTTPAuthorizationCredentials = Depends(se
 async def get_admin_user(current_user: dict = Depends(get_current_user)):
     if current_user.get("role") not in ["admin", "super_admin"]:
         raise HTTPException(status_code=403, detail="Admin access required")
+    if not current_user.get("id"):
+        raise HTTPException(status_code=403, detail="Invalid admin identity")
+    if current_user.get("is_active") is False:
+        raise HTTPException(status_code=403, detail="Account is deactivated")
     return current_user
 
 async def get_tenant_admin(current_user: dict = Depends(get_current_user)):
@@ -763,7 +770,8 @@ auth_users_router = create_auth_users_routes(
     get_tenant_db, hash_password, verify_password, create_access_token,
     init_tenant_database, init_default_data, init_cash_boxes,
     SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_HOURS, security,
-    UserCreate, UserLogin, UserUpdate, UserResponse, TokenResponse, PasswordUpdate
+    UserCreate, UserLogin, UserUpdate, UserResponse, TokenResponse, PasswordUpdate,
+    limiter=limiter
 )
 utility_router = create_utility_routes(db, require_tenant, get_tenant_admin, PriceHistoryResponse)
 notifications_router = create_notifications_routes(db, require_tenant, get_tenant_admin, get_current_user, DEFAULT_PERMISSIONS)
@@ -1008,51 +1016,16 @@ async def performance_timing_middleware(request: Request, call_next):
     response.headers["X-Response-Time"] = f"{duration*1000:.0f}ms"
     return response
 
-# Rate limiting - simple in-memory per-IP tracker
-_rate_limit_store = {}
-RATE_LIMIT_WINDOW = 60  # seconds
-RATE_LIMIT_MAX = 120  # max requests per window
-
-@app.middleware("http")
-async def rate_limit_middleware(request: Request, call_next):
-    """Basic rate limiting per IP address"""
-    import time as _time
-    if not request.url.path.startswith("/api/"):
-        return await call_next(request)
-
-    client_ip = request.client.host if request.client else "unknown"
-    now = _time.time()
-
-    if client_ip in _rate_limit_store:
-        window_start, count = _rate_limit_store[client_ip]
-        if now - window_start > RATE_LIMIT_WINDOW:
-            _rate_limit_store[client_ip] = (now, 1)
-        elif count >= RATE_LIMIT_MAX:
-            from fastapi.responses import JSONResponse
-            return JSONResponse(
-                status_code=429,
-                content={"detail": "Too many requests. Please try again later."},
-                headers={"Retry-After": str(int(RATE_LIMIT_WINDOW - (now - window_start)))}
-            )
-        else:
-            _rate_limit_store[client_ip] = (window_start, count + 1)
-    else:
-        _rate_limit_store[client_ip] = (now, 1)
-
-    # Cleanup old entries periodically
-    if len(_rate_limit_store) > 10000:
-        cutoff = now - RATE_LIMIT_WINDOW * 2
-        _rate_limit_store.clear()
-
-    return await call_next(request)
-
-# CORS Configuration - secure origins
+# CORS Configuration - secure origins (no wildcard fallback)
 _cors_env = os.environ.get('CORS_ORIGINS', '')
 _cors_origins = [o.strip() for o in _cors_env.split(',') if o.strip()] if _cors_env else []
 # Always allow preview URL in development
 _preview_url = os.environ.get('PREVIEW_URL', '')
 if _preview_url and _preview_url not in _cors_origins:
     _cors_origins.append(_preview_url)
+
+if not _cors_origins:
+    logger.warning("CORS_ORIGINS is empty - CORS will block all cross-origin requests")
 
 app.add_middleware(
     CORSMiddleware,

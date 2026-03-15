@@ -9,7 +9,7 @@ import httpx
 import time
 import uuid
 
-API_URL = "https://nt-commerce-refactor.preview.emergentagent.com"
+API_URL = "https://nt-commerce-v12.preview.emergentagent.com"
 
 # ============ CREDENTIALS ============
 SUPER_ADMIN_EMAIL = "admin@ntcommerce.com"

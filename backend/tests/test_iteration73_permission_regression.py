@@ -14,7 +14,7 @@ from datetime import datetime
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 if not BASE_URL:
-    BASE_URL = "https://nt-commerce-refactor.preview.emergentagent.com"
+    BASE_URL = "https://nt-commerce-v12.preview.emergentagent.com"
 
 # Test credentials
 TENANT_EMAIL = "ncr@ntcommerce.com"
