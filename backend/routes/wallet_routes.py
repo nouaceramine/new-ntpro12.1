@@ -159,9 +159,32 @@ def create_wallet_routes(db, main_db, get_current_user, get_tenant_admin, get_su
             query["transaction_type"] = transaction_type
         return await main_db.wallet_transactions.find(query, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
 
+    @router.get("/transactions/paginated")
+    async def get_transactions_paginated(
+        entity_id: Optional[str] = None,
+        transaction_type: Optional[str] = None,
+        page: int = 1, page_size: int = 20,
+        user: dict = Depends(get_current_user)
+    ):
+        from utils.pagination import paginate
+        if not entity_id:
+            entity_id = user.get("tenant_id", user.get("id", ""))
+        wallet = await main_db.wallets.find_one({"entity_id": entity_id}, {"_id": 0})
+        if not wallet:
+            return {"items": [], "total": 0, "page": 1, "per_page": page_size, "total_pages": 0}
+        query = {"wallet_id": wallet["id"]}
+        if transaction_type:
+            query["transaction_type"] = transaction_type
+        return await paginate(main_db.wallet_transactions, query, page, page_size)
+
     @router.get("/transfers")
     async def get_transfers(limit: int = 50, admin: dict = Depends(get_super_admin)):
         return await main_db.wallet_transfers.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+
+    @router.get("/all")
+    async def get_all_wallets(admin: dict = Depends(get_super_admin)):
+        """List all wallets (admin only)"""
+        return await main_db.wallets.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
 
     # ── Stats ──
     @router.get("/stats")

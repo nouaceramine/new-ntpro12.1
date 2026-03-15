@@ -82,6 +82,16 @@ def create_backup_routes(db, main_db, get_current_user, get_tenant_admin, get_su
         backup = await main_db.backups.find_one({"id": backup_id}, {"_id": 0})
         if not backup:
             raise HTTPException(status_code=404, detail="النسخة الاحتياطية غير موجودة")
+
+        # Re-generate backup data for download
+        target_db = db
+        all_collections = await target_db.list_collection_names()
+        backup_data = {}
+        for coll_name in all_collections:
+            docs = await target_db[coll_name].find({}, {"_id": 0}).to_list(None)
+            backup_data[coll_name] = docs
+
+        content = json.dumps(backup_data, ensure_ascii=False, default=str)
         await main_db.backup_downloads.insert_one({
             "id": str(uuid.uuid4()),
             "backup_id": backup_id,
@@ -90,7 +100,62 @@ def create_backup_routes(db, main_db, get_current_user, get_tenant_admin, get_su
             "downloaded_by": user.get("name", user.get("email", "")),
             "downloaded_at": datetime.now(timezone.utc).isoformat(),
         })
-        return {"message": "تم تسجيل التحميل", "backup": backup}
+        return StreamingResponse(
+            io.BytesIO(content.encode("utf-8")),
+            media_type="application/json",
+            headers={"Content-Disposition": f"attachment; filename={backup.get('file_name', 'backup.json')}"}
+        )
+
+    # ── Restore Backup ──
+    @router.post("/restore")
+    async def restore_backup(data: dict, admin: dict = Depends(get_tenant_admin)):
+        """Restore database from backup JSON data"""
+        backup_data = data.get("backup_data")
+        if not backup_data or not isinstance(backup_data, dict):
+            raise HTTPException(status_code=400, detail="بيانات النسخة الاحتياطية غير صالحة")
+
+        target_db = db
+        restored_collections = 0
+        restored_records = 0
+
+        for coll_name, docs in backup_data.items():
+            if not isinstance(docs, list):
+                continue
+            # Skip system collections
+            if coll_name.startswith("system."):
+                continue
+            try:
+                # Clear existing data
+                await target_db[coll_name].delete_many({})
+                if docs:
+                    await target_db[coll_name].insert_many(docs)
+                    restored_records += len(docs)
+                restored_collections += 1
+            except Exception as e:
+                logger.error(f"Restore error for {coll_name}: {e}")
+
+        # Log the restore
+        await main_db.backups.insert_one({
+            "id": str(uuid.uuid4()),
+            "backup_number": f"RST-{await main_db.backups.count_documents({}) + 1:05d}",
+            "entity_type": "tenant",
+            "entity_id": admin.get("tenant_id", admin.get("id", "")),
+            "entity_name": admin.get("company_name", admin.get("name", "")),
+            "backup_type": "restore",
+            "format": "json",
+            "status": "completed",
+            "file_name": "restore_operation",
+            "file_size": 0,
+            "tables_count": restored_collections,
+            "records_count": restored_records,
+            "is_encrypted": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        return {
+            "message": "تم استعادة النسخة الاحتياطية بنجاح",
+            "restored_collections": restored_collections,
+            "restored_records": restored_records,
+        }
 
     # ── Backup Schedules ──
     @router.post("/schedules")

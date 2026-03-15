@@ -94,6 +94,28 @@ def create_repair_routes(db, get_current_user, get_tenant_admin):
         tickets = await db.repair_tickets.find(query, {"_id": 0}).sort("created_at", -1).to_list(500)
         return tickets
 
+    @router.get("/tickets/paginated")
+    async def get_tickets_paginated(
+        status: Optional[str] = None, priority: Optional[str] = None,
+        search: Optional[str] = None,
+        page: int = 1, page_size: int = 20,
+        user: dict = Depends(get_current_user)
+    ):
+        from utils.pagination import paginate
+        query = {}
+        if status:
+            query["status"] = status
+        if priority:
+            query["priority"] = priority
+        if search:
+            query["$or"] = [
+                {"ticket_number": {"$regex": search, "$options": "i"}},
+                {"customer_name": {"$regex": search, "$options": "i"}},
+                {"customer_phone": {"$regex": search, "$options": "i"}},
+                {"imei": {"$regex": search, "$options": "i"}},
+            ]
+        return await paginate(db.repair_tickets, query, page, page_size)
+
     @router.get("/tickets/{ticket_id}")
     async def get_ticket(ticket_id: str, user: dict = Depends(get_current_user)):
         ticket = await db.repair_tickets.find_one({"id": ticket_id}, {"_id": 0})
@@ -132,7 +154,8 @@ def create_repair_routes(db, get_current_user, get_tenant_admin):
                 "created_at": now,
             })
         await db.repair_tickets.update_one({"id": ticket_id}, {"$set": updates})
-        return {**ticket, **updates}
+        updated = await db.repair_tickets.find_one({"id": ticket_id}, {"_id": 0})
+        return updated
 
     @router.delete("/tickets/{ticket_id}")
     async def delete_ticket(ticket_id: str, admin: dict = Depends(get_tenant_admin)):

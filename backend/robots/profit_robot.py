@@ -102,12 +102,15 @@ class ProfitRobot:
             for db_name in [d for d in dbs if d.startswith("tenant_")]:
                 tdb = self.client[db_name]
                 products = await tdb.products.find(
-                    {"purchase_price": {"$gt": 0}}, {"_id": 0, "id": 1, "name": 1, "purchase_price": 1, "selling_price": 1}
+                    {"purchase_price": {"$gt": 0}}, {"_id": 0, "id": 1, "name_ar": 1, "name_en": 1, "purchase_price": 1, "retail_price": 1, "wholesale_price": 1}
                 ).to_list(1000)
                 for p in products:
-                    margin = ((p.get("selling_price", 0) - p.get("purchase_price", 0)) / p.get("purchase_price", 1)) * 100
+                    sell_price = p.get("retail_price", 0) or p.get("wholesale_price", 0)
+                    if sell_price <= 0:
+                        continue
+                    margin = ((sell_price - p.get("purchase_price", 0)) / p.get("purchase_price", 1)) * 100
                     if margin < 10:
-                        results.append({"id": p["id"], "name": p.get("name", ""), "margin": round(margin, 2)})
+                        results.append({"id": p["id"], "name": p.get("name_ar", p.get("name_en", "")), "margin": round(margin, 2)})
         except Exception:
             pass
         return results[:20]
@@ -119,11 +122,12 @@ class ProfitRobot:
             for db_name in [d for d in dbs if d.startswith("tenant_")]:
                 tdb = self.client[db_name]
                 products = await tdb.products.find(
-                    {"purchase_price": {"$gt": 0}}, {"_id": 0, "id": 1, "name": 1, "purchase_price": 1, "selling_price": 1}
+                    {"purchase_price": {"$gt": 0}}, {"_id": 0, "id": 1, "name_ar": 1, "name_en": 1, "purchase_price": 1, "retail_price": 1, "wholesale_price": 1}
                 ).to_list(1000)
                 for p in products:
-                    profit = p.get("selling_price", 0) - p.get("purchase_price", 0)
-                    results.append({"id": p["id"], "name": p.get("name", ""), "profit_per_unit": profit})
+                    sell_price = p.get("retail_price", 0) or p.get("wholesale_price", 0)
+                    profit = sell_price - p.get("purchase_price", 0)
+                    results.append({"id": p["id"], "name": p.get("name_ar", p.get("name_en", "")), "profit_per_unit": profit})
                 results.sort(key=lambda x: x["profit_per_unit"], reverse=True)
         except Exception:
             pass
