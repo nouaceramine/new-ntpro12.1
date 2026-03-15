@@ -11,6 +11,8 @@ import bcrypt
 
 
 def create_employees_routes(db, get_current_user, get_tenant_admin, require_tenant, DEFAULT_PERMISSIONS):
+    from utils.permissions import create_permission_checker
+    require_permission = create_permission_checker(db, get_current_user)
     router = APIRouter(prefix="/employees", tags=["employees"])
 
     class EmployeeAccountCreate(BaseModel):
@@ -20,7 +22,7 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
 
     # ── CRUD ──
     @router.post("")
-    async def create_employee(employee: dict, admin: dict = Depends(get_tenant_admin)):
+    async def create_employee(employee: dict, admin: dict = Depends(require_permission("employees.edit"))):
         from models.schemas import EmployeeCreate, EmployeeResponse
         e = EmployeeCreate(**employee)
         eid = str(uuid.uuid4())
@@ -36,11 +38,11 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
         return doc
 
     @router.get("")
-    async def get_employees(admin: dict = Depends(get_tenant_admin)):
+    async def get_employees(admin: dict = Depends(require_permission("employees.edit"))):
         return await db.employees.find({}, {"_id": 0}).to_list(1000)
 
     @router.get("/salary-report")
-    async def get_salary_report(month: Optional[str] = None, user: dict = Depends(require_tenant)):
+    async def get_salary_report(month: Optional[str] = None, user: dict = Depends(require_permission("employees.view"))):
         if not month:
             month = datetime.now(timezone.utc).strftime("%Y-%m")
         year, month_num = map(int, month.split("-"))
@@ -67,7 +69,7 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
         return report
 
     @router.get("/alerts/active")
-    async def get_active_alerts(admin: dict = Depends(get_tenant_admin)):
+    async def get_active_alerts(admin: dict = Depends(require_permission("employees.edit"))):
         alerts = []
         employees = await db.employees.find({"$or": [{"max_discount_percent": {"$gt": 0}}, {"max_debt_amount": {"$gt": 0}}]}, {"_id": 0}).to_list(100)
         today = datetime.now(timezone.utc).date()
@@ -95,14 +97,14 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
         return alerts
 
     @router.get("/{employee_id}")
-    async def get_employee(employee_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def get_employee(employee_id: str, admin: dict = Depends(require_permission("employees.edit"))):
         emp = await db.employees.find_one({"id": employee_id}, {"_id": 0})
         if not emp:
             raise HTTPException(status_code=404, detail="Employee not found")
         return emp
 
     @router.put("/{employee_id}")
-    async def update_employee(employee_id: str, updates: dict, admin: dict = Depends(get_tenant_admin)):
+    async def update_employee(employee_id: str, updates: dict, admin: dict = Depends(require_permission("employees.edit"))):
         emp = await db.employees.find_one({"id": employee_id})
         if not emp:
             raise HTTPException(status_code=404, detail="Employee not found")
@@ -113,7 +115,7 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
         return updated
 
     @router.delete("/{employee_id}")
-    async def delete_employee(employee_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def delete_employee(employee_id: str, admin: dict = Depends(require_permission("employees.edit"))):
         result = await db.employees.delete_one({"id": employee_id})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Employee not found")
@@ -121,7 +123,7 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
 
     # ── Account Management ──
     @router.post("/{employee_id}/create-account")
-    async def create_employee_account(employee_id: str, account: EmployeeAccountCreate, admin: dict = Depends(get_tenant_admin)):
+    async def create_employee_account(employee_id: str, account: EmployeeAccountCreate, admin: dict = Depends(require_permission("employees.edit"))):
         emp = await db.employees.find_one({"id": employee_id}, {"_id": 0})
         if not emp:
             raise HTTPException(status_code=404, detail="Employee not found")
@@ -138,7 +140,7 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
         return {"success": True, "user_id": user_id, "email": account.email, "role": account.role}
 
     @router.delete("/{employee_id}/delete-account")
-    async def delete_employee_account(employee_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def delete_employee_account(employee_id: str, admin: dict = Depends(require_permission("employees.edit"))):
         emp = await db.employees.find_one({"id": employee_id}, {"_id": 0})
         if not emp:
             raise HTTPException(status_code=404, detail="Employee not found")
@@ -150,7 +152,7 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
 
     # ── Attendance ──
     @router.post("/attendance")
-    async def record_attendance(attendance: dict, admin: dict = Depends(get_tenant_admin)):
+    async def record_attendance(attendance: dict, admin: dict = Depends(require_permission("employees.edit"))):
         from models.schemas import AttendanceCreate
         a = AttendanceCreate(**attendance)
         emp = await db.employees.find_one({"id": a.employee_id}, {"_id": 0, "name": 1})
@@ -162,7 +164,7 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
         return doc
 
     @router.get("/{employee_id}/attendance")
-    async def get_attendance(employee_id: str, month: Optional[str] = None, admin: dict = Depends(get_tenant_admin)):
+    async def get_attendance(employee_id: str, month: Optional[str] = None, admin: dict = Depends(require_permission("employees.edit"))):
         query = {"employee_id": employee_id}
         if month:
             query["date"] = {"$regex": f"^{month}"}
@@ -170,7 +172,7 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
 
     # ── Advances ──
     @router.post("/advances")
-    async def create_advance(advance: dict, admin: dict = Depends(get_tenant_admin)):
+    async def create_advance(advance: dict, admin: dict = Depends(require_permission("employees.edit"))):
         from models.schemas import AdvanceCreate
         a = AdvanceCreate(**advance)
         emp = await db.employees.find_one({"id": a.employee_id}, {"_id": 0, "name": 1})
@@ -184,17 +186,17 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
         return doc
 
     @router.get("/{employee_id}/advances")
-    async def get_advances(employee_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def get_advances(employee_id: str, admin: dict = Depends(require_permission("employees.edit"))):
         return await db.advances.find({"employee_id": employee_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
 
     # ── Alert Settings ──
     @router.get("/{employee_id}/alert-settings")
-    async def get_alert_settings(employee_id: str, user: dict = Depends(require_tenant)):
+    async def get_alert_settings(employee_id: str, user: dict = Depends(require_permission("employees.view"))):
         settings = await db.employee_alerts.find_one({"employee_id": employee_id}, {"_id": 0})
         return settings or {"employee_id": employee_id, "enable_discount_alert": True, "enable_debt_alert": True, "discount_threshold_percent": 80, "debt_threshold_percent": 80}
 
     @router.put("/{employee_id}/alert-settings")
-    async def update_alert_settings(employee_id: str, settings: dict, admin: dict = Depends(get_tenant_admin)):
+    async def update_alert_settings(employee_id: str, settings: dict, admin: dict = Depends(require_permission("employees.edit"))):
         await db.employee_alerts.update_one({"employee_id": employee_id}, {"$set": {**settings, "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
         return {"success": True}
 

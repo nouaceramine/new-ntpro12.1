@@ -10,6 +10,8 @@ import uuid
 
 
 def create_daily_sessions_routes(db, get_current_user, get_tenant_admin, require_tenant):
+    from utils.permissions import create_permission_checker
+    require_permission = create_permission_checker(db, get_current_user)
     router = APIRouter(prefix="/daily-sessions", tags=["daily-sessions"])
 
     class DailySessionCreate(BaseModel):
@@ -49,7 +51,7 @@ def create_daily_sessions_routes(db, get_current_user, get_tenant_admin, require
             s["user_name"] = s.get("created_by", fallback_name)
 
     @router.post("")
-    async def create_daily_session(session: DailySessionCreate, user: dict = Depends(require_tenant)):
+    async def create_daily_session(session: DailySessionCreate, user: dict = Depends(require_permission("daily_sessions.view"))):
         existing = await db.daily_sessions.find_one({"user_id": user["id"], "status": "open"})
         if existing:
             raise HTTPException(status_code=400, detail="لديك حصة مفتوحة بالفعل")
@@ -68,7 +70,7 @@ def create_daily_sessions_routes(db, get_current_user, get_tenant_admin, require
         return DailySessionResponse(**doc)
 
     @router.get("")
-    async def get_daily_sessions(all_users: bool = False, user: dict = Depends(require_tenant)):
+    async def get_daily_sessions(all_users: bool = False, user: dict = Depends(require_permission("daily_sessions.view"))):
         query = {}
         if not all_users or user.get("role") != "admin":
             query["user_id"] = user["id"]
@@ -78,7 +80,7 @@ def create_daily_sessions_routes(db, get_current_user, get_tenant_admin, require
         return [DailySessionResponse(**s) for s in sessions]
 
     @router.get("/current")
-    async def get_current_session(user: dict = Depends(require_tenant)):
+    async def get_current_session(user: dict = Depends(require_permission("daily_sessions.view"))):
         session = await db.daily_sessions.find_one({"user_id": user["id"], "status": "open"}, {"_id": 0})
         if not session:
             return None
@@ -86,7 +88,7 @@ def create_daily_sessions_routes(db, get_current_user, get_tenant_admin, require
         return DailySessionResponse(**session)
 
     @router.get("/summary")
-    async def get_sessions_summary(days: int = 7, admin: dict = Depends(get_tenant_admin)):
+    async def get_sessions_summary(days: int = 7, admin: dict = Depends(require_permission("daily_sessions.edit"))):
         start_date = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
         sessions = await db.daily_sessions.find({"status": "closed", "closed_at": {"$gte": start_date}}, {"_id": 0}).to_list(500)
         user_stats = {}
@@ -112,7 +114,7 @@ def create_daily_sessions_routes(db, get_current_user, get_tenant_admin, require
         return {"period_days": days, "overall": overall, "by_user": list(user_stats.values())}
 
     @router.put("/{session_id}/close")
-    async def close_daily_session(session_id: str, closing_data: DailySessionClose, user: dict = Depends(require_tenant)):
+    async def close_daily_session(session_id: str, closing_data: DailySessionClose, user: dict = Depends(require_permission("daily_sessions.view"))):
         session = await db.daily_sessions.find_one({"id": session_id})
         if not session:
             raise HTTPException(status_code=404, detail="الحصة غير موجودة")
@@ -165,7 +167,7 @@ def create_daily_sessions_routes(db, get_current_user, get_tenant_admin, require
         return DailySessionResponse(**updated)
 
     @router.delete("/{session_id}")
-    async def delete_daily_session(session_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def delete_daily_session(session_id: str, admin: dict = Depends(require_permission("daily_sessions.edit"))):
         session = await db.daily_sessions.find_one({"id": session_id})
         if not session:
             raise HTTPException(status_code=404, detail="الحصة غير موجودة")

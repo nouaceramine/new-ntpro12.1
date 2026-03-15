@@ -9,10 +9,12 @@ import uuid
 
 
 def create_debts_routes(db, get_current_user, get_tenant_admin, require_tenant):
+    from utils.permissions import create_permission_checker
+    require_permission = create_permission_checker(db, get_current_user)
     router = APIRouter(prefix="/debts", tags=["debts"])
 
     @router.post("")
-    async def create_debt(debt: dict, admin: dict = Depends(get_tenant_admin)):
+    async def create_debt(debt: dict, admin: dict = Depends(require_permission("debts.edit"))):
         from models.schemas import DebtCreate
         d = DebtCreate(**debt)
         if d.party_type == "customer":
@@ -35,7 +37,7 @@ def create_debts_routes(db, get_current_user, get_tenant_admin, require_tenant):
         return doc
 
     @router.get("")
-    async def get_debts(type: Optional[str] = None, party_type: Optional[str] = None, status: Optional[str] = None, admin: dict = Depends(get_tenant_admin)):
+    async def get_debts(type: Optional[str] = None, party_type: Optional[str] = None, status: Optional[str] = None, admin: dict = Depends(require_permission("debts.edit"))):
         query = {}
         if type: query["type"] = type
         if party_type: query["party_type"] = party_type
@@ -49,7 +51,7 @@ def create_debts_routes(db, get_current_user, get_tenant_admin, require_tenant):
         return debts
 
     @router.post("/{debt_id}/pay")
-    async def pay_debt(debt_id: str, payment: dict, admin: dict = Depends(get_tenant_admin)):
+    async def pay_debt(debt_id: str, payment: dict, admin: dict = Depends(require_permission("debts.edit"))):
         from models.schemas import DebtPaymentCreate
         p = DebtPaymentCreate(**payment)
         debt = await db.debts.find_one({"id": debt_id})
@@ -73,7 +75,7 @@ def create_debts_routes(db, get_current_user, get_tenant_admin, require_tenant):
         return payment_doc
 
     @router.get("/{debt_id}/payments")
-    async def get_debt_payments(debt_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def get_debt_payments(debt_id: str, admin: dict = Depends(require_permission("debts.edit"))):
         return await db.debt_payments.find({"debt_id": debt_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
 
     return router

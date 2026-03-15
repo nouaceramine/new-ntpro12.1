@@ -10,6 +10,8 @@ import uuid
 
 
 def create_suppliers_routes(db, get_current_user, get_tenant_admin, require_tenant):
+    from utils.permissions import create_permission_checker
+    require_permission = create_permission_checker(db, get_current_user)
     router = APIRouter(prefix="/suppliers", tags=["suppliers"])
 
     class SupplierAdvancePayment(BaseModel):
@@ -18,7 +20,7 @@ def create_suppliers_routes(db, get_current_user, get_tenant_admin, require_tena
         notes: str = ""
 
     @router.post("", status_code=201)
-    async def create_supplier(supplier: dict, admin: dict = Depends(get_tenant_admin)):
+    async def create_supplier(supplier: dict, admin: dict = Depends(require_permission("suppliers.edit"))):
         from models.schemas import SupplierCreate, SupplierResponse
         s = SupplierCreate(**supplier)
         sid = str(uuid.uuid4())
@@ -38,7 +40,7 @@ def create_suppliers_routes(db, get_current_user, get_tenant_admin, require_tena
         return doc
 
     @router.get("")
-    async def get_suppliers(search: Optional[str] = None, family_id: Optional[str] = None, admin: dict = Depends(get_tenant_admin)):
+    async def get_suppliers(search: Optional[str] = None, family_id: Optional[str] = None, admin: dict = Depends(require_permission("suppliers.edit"))):
         query = {}
         if search:
             query["$or"] = [{"name": {"$regex": search, "$options": "i"}}, {"phone": {"$regex": search, "$options": "i"}}, {"code": {"$regex": search, "$options": "i"}}]
@@ -62,7 +64,7 @@ def create_suppliers_routes(db, get_current_user, get_tenant_admin, require_tena
         return {"code": f"FR{str(next_num).zfill(4)}"}
 
     @router.get("/{supplier_id}")
-    async def get_supplier(supplier_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def get_supplier(supplier_id: str, admin: dict = Depends(require_permission("suppliers.edit"))):
         s = await db.suppliers.find_one({"id": supplier_id}, {"_id": 0})
         if not s:
             raise HTTPException(status_code=404, detail="Supplier not found")
@@ -72,7 +74,7 @@ def create_suppliers_routes(db, get_current_user, get_tenant_admin, require_tena
         return s
 
     @router.put("/{supplier_id}")
-    async def update_supplier(supplier_id: str, updates: dict, admin: dict = Depends(get_tenant_admin)):
+    async def update_supplier(supplier_id: str, updates: dict, admin: dict = Depends(require_permission("suppliers.edit"))):
         s = await db.suppliers.find_one({"id": supplier_id})
         if not s:
             raise HTTPException(status_code=404, detail="Supplier not found")
@@ -89,14 +91,14 @@ def create_suppliers_routes(db, get_current_user, get_tenant_admin, require_tena
         return updated
 
     @router.delete("/{supplier_id}")
-    async def delete_supplier(supplier_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def delete_supplier(supplier_id: str, admin: dict = Depends(require_permission("suppliers.edit"))):
         result = await db.suppliers.delete_one({"id": supplier_id})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Supplier not found")
         return {"message": "Supplier deleted successfully"}
 
     @router.post("/{supplier_id}/advance-payment")
-    async def add_supplier_advance_payment(supplier_id: str, payment: SupplierAdvancePayment, user: dict = Depends(require_tenant)):
+    async def add_supplier_advance_payment(supplier_id: str, payment: SupplierAdvancePayment, user: dict = Depends(require_permission("suppliers.view"))):
         supplier = await db.suppliers.find_one({"id": supplier_id})
         if not supplier:
             raise HTTPException(status_code=404, detail="Supplier not found")
@@ -109,7 +111,7 @@ def create_suppliers_routes(db, get_current_user, get_tenant_admin, require_tena
         return {"message": "Advance payment recorded", "new_advance_balance": new_advance}
 
     @router.get("/{supplier_id}/advance-payments")
-    async def get_supplier_advance_payments(supplier_id: str, user: dict = Depends(require_tenant)):
+    async def get_supplier_advance_payments(supplier_id: str, user: dict = Depends(require_permission("suppliers.view"))):
         return await db.supplier_advance_payments.find({"supplier_id": supplier_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
 
     return router

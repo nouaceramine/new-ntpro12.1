@@ -10,6 +10,8 @@ import uuid
 
 
 def create_products_routes(db, get_current_user, get_tenant_admin, require_tenant):
+    from utils.permissions import create_permission_checker
+    require_permission = create_permission_checker(db, get_current_user)
     router = APIRouter(prefix="/products", tags=["products"])
 
     # ── Inline Models ──
@@ -41,7 +43,7 @@ def create_products_routes(db, get_current_user, get_tenant_admin, require_tenan
 
     # ── Create Product ──
     @router.post("", status_code=201)
-    async def create_product(product: dict, admin: dict = Depends(get_tenant_admin)):
+    async def create_product(product: dict, admin: dict = Depends(require_permission("products.create"))):
         from models.schemas import ProductCreate, ProductResponse
         p = ProductCreate(**product)
         product_id = str(uuid.uuid4())
@@ -85,7 +87,7 @@ def create_products_routes(db, get_current_user, get_tenant_admin, require_tenan
 
     # ── Get Products ──
     @router.get("")
-    async def get_products(search: Optional[str] = None, model: Optional[str] = None, barcode: Optional[str] = None, family_id: Optional[str] = None, user: dict = Depends(require_tenant)):
+    async def get_products(search: Optional[str] = None, model: Optional[str] = None, barcode: Optional[str] = None, family_id: Optional[str] = None, user: dict = Depends(require_permission("products.view"))):
         query = {}
         if barcode:
             query["barcode"] = barcode
@@ -320,7 +322,7 @@ def create_products_routes(db, get_current_user, get_tenant_admin, require_tenan
 
     # ── Low Stock Alert ──
     @router.get("/alerts/low-stock")
-    async def get_low_stock_products(admin: dict = Depends(get_tenant_admin)):
+    async def get_low_stock_products(admin: dict = Depends(require_permission("products.view"))):
         pipeline = [
             {"$match": {"$expr": {"$lt": ["$quantity", {"$ifNull": ["$low_stock_threshold", 10]}]}}},
             {"$project": {"_id": 0}}
@@ -329,7 +331,7 @@ def create_products_routes(db, get_current_user, get_tenant_admin, require_tenan
 
     # ── Get Single Product ──
     @router.get("/{product_id}")
-    async def get_product(product_id: str, user: dict = Depends(require_tenant)):
+    async def get_product(product_id: str, user: dict = Depends(require_permission("products.view"))):
         product = await db.products.find_one({"id": product_id}, {"_id": 0})
         if not product:
             raise HTTPException(status_code=404, detail="المنتج غير موجود")
@@ -341,7 +343,7 @@ def create_products_routes(db, get_current_user, get_tenant_admin, require_tenan
 
     # ── Update Product ──
     @router.put("/{product_id}")
-    async def update_product(product_id: str, updates: dict, admin: dict = Depends(get_tenant_admin)):
+    async def update_product(product_id: str, updates: dict, admin: dict = Depends(require_permission("products.edit"))):
         product = await db.products.find_one({"id": product_id})
         if not product:
             raise HTTPException(status_code=404, detail="المنتج غير موجود")
@@ -370,7 +372,7 @@ def create_products_routes(db, get_current_user, get_tenant_admin, require_tenan
 
     # ── Delete Product ──
     @router.delete("/{product_id}")
-    async def delete_product(product_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def delete_product(product_id: str, admin: dict = Depends(require_permission("products.delete"))):
         result = await db.products.delete_one({"id": product_id})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="المنتج غير موجود")

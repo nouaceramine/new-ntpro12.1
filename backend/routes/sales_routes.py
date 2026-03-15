@@ -10,6 +10,8 @@ import uuid
 
 
 def create_sales_routes(db, get_current_user, get_tenant_admin, require_tenant):
+    from utils.permissions import create_permission_checker
+    require_permission = create_permission_checker(db, get_current_user)
     router = APIRouter(prefix="/sales", tags=["sales"])
 
     async def _generate_invoice_number(prefix: str) -> str:
@@ -24,7 +26,7 @@ def create_sales_routes(db, get_current_user, get_tenant_admin, require_tenant):
 
     # ── Create Sale ──
     @router.post("", status_code=201)
-    async def create_sale(sale: dict, user: dict = Depends(require_tenant)):
+    async def create_sale(sale: dict, user: dict = Depends(require_permission("sales.view"))):
         from models.schemas import SaleCreate, SaleResponse
         s = SaleCreate(**sale)
         sale_id = str(uuid.uuid4())
@@ -172,7 +174,7 @@ def create_sales_routes(db, get_current_user, get_tenant_admin, require_tenant):
 
     # ── Get Single Sale ──
     @router.get("/{sale_id}")
-    async def get_sale(sale_id: str, user: dict = Depends(require_tenant)):
+    async def get_sale(sale_id: str, user: dict = Depends(require_permission("sales.view"))):
         sale = await db.sales.find_one({"id": sale_id}, {"_id": 0})
         if not sale:
             raise HTTPException(status_code=404, detail="Sale not found")
@@ -180,7 +182,7 @@ def create_sales_routes(db, get_current_user, get_tenant_admin, require_tenant):
 
     # ── Return Sale ──
     @router.post("/{sale_id}/return")
-    async def return_sale(sale_id: str, user: dict = Depends(require_tenant)):
+    async def return_sale(sale_id: str, user: dict = Depends(require_permission("sales.view"))):
         sale = await db.sales.find_one({"id": sale_id})
         if not sale:
             raise HTTPException(status_code=404, detail="Sale not found")

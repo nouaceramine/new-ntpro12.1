@@ -10,11 +10,13 @@ import uuid
 
 
 def create_customers_routes(db, get_current_user, get_tenant_admin, require_tenant):
+    from utils.permissions import create_permission_checker
+    require_permission = create_permission_checker(db, get_current_user)
     router = APIRouter(prefix="/customers", tags=["customers"])
 
     # ── Create Customer ──
     @router.post("", status_code=201)
-    async def create_customer(customer: dict, user: dict = Depends(require_tenant)):
+    async def create_customer(customer: dict, user: dict = Depends(require_permission("customers.view"))):
         from models.schemas import CustomerCreate, CustomerResponse
         c = CustomerCreate(**customer)
         customer_id = str(uuid.uuid4())
@@ -45,7 +47,7 @@ def create_customers_routes(db, get_current_user, get_tenant_admin, require_tena
 
     # ── Get Customers ──
     @router.get("")
-    async def get_customers(search: Optional[str] = None, family_id: Optional[str] = None, user: dict = Depends(require_tenant)):
+    async def get_customers(search: Optional[str] = None, family_id: Optional[str] = None, user: dict = Depends(require_permission("customers.view"))):
         query = {}
         if search:
             query["$or"] = [
@@ -119,7 +121,7 @@ def create_customers_routes(db, get_current_user, get_tenant_admin, require_tena
 
     # ── Get Single Customer ──
     @router.get("/{customer_id}")
-    async def get_customer(customer_id: str, user: dict = Depends(require_tenant)):
+    async def get_customer(customer_id: str, user: dict = Depends(require_permission("customers.view"))):
         customer = await db.customers.find_one({"id": customer_id}, {"_id": 0})
         if not customer:
             raise HTTPException(status_code=404, detail="Customer not found")
@@ -134,7 +136,7 @@ def create_customers_routes(db, get_current_user, get_tenant_admin, require_tena
 
     # ── Update Customer ──
     @router.put("/{customer_id}")
-    async def update_customer(customer_id: str, updates: dict, user: dict = Depends(require_tenant)):
+    async def update_customer(customer_id: str, updates: dict, user: dict = Depends(require_permission("customers.view"))):
         customer = await db.customers.find_one({"id": customer_id})
         if not customer:
             raise HTTPException(status_code=404, detail="Customer not found")
@@ -156,7 +158,7 @@ def create_customers_routes(db, get_current_user, get_tenant_admin, require_tena
 
     # ── Delete Customer ──
     @router.delete("/{customer_id}")
-    async def delete_customer(customer_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def delete_customer(customer_id: str, admin: dict = Depends(require_permission("customers.edit"))):
         result = await db.customers.delete_one({"id": customer_id})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Customer not found")

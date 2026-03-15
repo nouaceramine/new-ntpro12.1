@@ -209,6 +209,7 @@ from routes.online_store_routes import create_online_store_routes
 from routes.sendgrid_email_routes import create_sendgrid_email_routes
 from routes.sms_marketing_routes import create_sms_marketing_routes
 from routes.stripe_routes import create_stripe_routes
+from utils.permissions import create_permission_checker
 
 # ============ IMPORT MODELS FROM MODULES ============
 from models.schemas import *
@@ -740,38 +741,33 @@ async def init_default_data(tenant_db):
         })
 
 
-# ============ LEGACY ROUTES (extracted to routes/legacy_inline_routes.py) ============
-from routes.legacy_inline_routes import create_legacy_routes
-legacy_router = create_legacy_routes(
-    db=db, main_db=main_db, client=client,
-    get_current_user=get_current_user, get_admin_user=get_admin_user,
-    get_tenant_admin=get_tenant_admin, require_tenant=require_tenant,
-    get_super_admin=get_super_admin, get_tenant_db=get_tenant_db,
-    hash_password=hash_password, verify_password=verify_password,
-    create_access_token=create_access_token,
-    generate_invoice_number=generate_invoice_number,
-    init_cash_boxes=init_cash_boxes, init_default_data=init_default_data,
-    init_tenant_database=init_tenant_database,
-    SECRET_KEY=SECRET_KEY, ALGORITHM=ALGORITHM,
-    ACCESS_TOKEN_EXPIRE_HOURS=ACCESS_TOKEN_EXPIRE_HOURS,
-    CURRENCY=CURRENCY, UPLOAD_DIR=UPLOAD_DIR,
-    DEFAULT_PERMISSIONS=DEFAULT_PERMISSIONS,
-    ROLE_DESCRIPTIONS=ROLE_DESCRIPTIONS,
-    PERMISSION_CATEGORIES=PERMISSION_CATEGORIES,
-    RECHARGE_CONFIG=RECHARGE_CONFIG, app_logger=logger,
-    security=security,
-    UserCreate=UserCreate, UserLogin=UserLogin,
-    UserUpdate=UserUpdate, UserResponse=UserResponse,
-    TokenResponse=TokenResponse, PasswordUpdate=PasswordUpdate,
-    PriceHistoryResponse=PriceHistoryResponse,
-    ProductFamilyCreate=ProductFamilyCreate,
-    ProductFamilyUpdate=ProductFamilyUpdate,
-    ProductFamilyResponse=ProductFamilyResponse,
-    ProductResponse=ProductResponse,
-    RechargeCreate=RechargeCreate, RechargeResponse=RechargeResponse,
-    ApiKeyCreate=ApiKeyCreate, ApiKeyResponse=ApiKeyResponse,
-    ImageOCRRequest=ImageOCRRequest, OCRResponse=OCRResponse
+# ============ PERMISSION SYSTEM ============
+require_permission = create_permission_checker(db, get_current_user)
+
+# ============ MODULAR ROUTES (extracted from legacy inline routes) ============
+from routes.auth_users_routes import create_auth_users_routes
+from routes.utility_routes import create_utility_routes
+from routes.notifications_routes import create_notifications_routes
+from routes.ocr_invoice_routes import create_ocr_invoice_routes
+from routes.recharge_sim_routes import create_recharge_sim_routes
+from routes.shipping_loyalty_routes import create_shipping_loyalty_routes
+from routes.families_permissions_routes import create_families_permissions_routes
+from routes.system_sync_routes import create_system_sync_routes
+
+auth_users_router = create_auth_users_routes(
+    db, main_db, get_current_user, get_admin_user, get_tenant_admin, require_tenant,
+    get_tenant_db, hash_password, verify_password, create_access_token,
+    init_tenant_database, init_default_data, init_cash_boxes,
+    SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_HOURS, security,
+    UserCreate, UserLogin, UserUpdate, UserResponse, TokenResponse, PasswordUpdate
 )
+utility_router = create_utility_routes(db, require_tenant, get_tenant_admin, PriceHistoryResponse)
+notifications_router = create_notifications_routes(db, require_tenant, get_tenant_admin, get_current_user, DEFAULT_PERMISSIONS)
+ocr_invoice_router = create_ocr_invoice_routes(db, require_tenant, get_tenant_admin, CURRENCY, ApiKeyCreate, ApiKeyResponse, ImageOCRRequest, OCRResponse, generate_invoice_number)
+recharge_sim_router = create_recharge_sim_routes(db, require_tenant, get_tenant_admin, RECHARGE_CONFIG, RechargeCreate, RechargeResponse)
+shipping_loyalty_router = create_shipping_loyalty_routes(db, require_tenant, get_tenant_admin, CURRENCY)
+families_permissions_router = create_families_permissions_routes(db, require_tenant, get_tenant_admin, get_admin_user, DEFAULT_PERMISSIONS, ROLE_DESCRIPTIONS, PERMISSION_CATEGORIES, UPLOAD_DIR, ProductFamilyCreate, ProductFamilyUpdate, ProductFamilyResponse, ProductResponse)
+system_sync_router = create_system_sync_routes(db, main_db, client, require_tenant, get_tenant_admin, get_current_user, get_super_admin, logger)
 
 # Include router and middleware
 # ============ LEGENDARY BUILD - NEW ROUTES (registered BEFORE api_router to avoid conflicts) ============
@@ -872,8 +868,16 @@ app.include_router(sms_marketing_router, prefix="/api")
 stripe_payment_router = create_stripe_routes(db, main_db, get_current_user, get_tenant_admin, require_tenant, get_super_admin)
 app.include_router(stripe_payment_router, prefix="/api")
 
-# ============ LEGACY ROUTES ============
-app.include_router(legacy_router, prefix="/api")  # Legacy inline routes (extracted)
+# ============ MODULAR ROUTES (from legacy extraction) ============
+app.include_router(auth_users_router, prefix="/api")
+app.include_router(utility_router, prefix="/api")
+app.include_router(notifications_router, prefix="/api")
+app.include_router(ocr_invoice_router, prefix="/api")
+app.include_router(recharge_sim_router, prefix="/api")
+app.include_router(shipping_loyalty_router, prefix="/api")
+app.include_router(families_permissions_router, prefix="/api")
+app.include_router(system_sync_router, prefix="/api")
+
 app.include_router(api_router)
 app.include_router(saas_router, prefix="/api")  # Refactored SaaS routes
 app.include_router(database_router, prefix="/api/saas")  # Database import/export routes

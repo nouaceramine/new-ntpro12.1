@@ -8,11 +8,13 @@ import uuid
 
 
 def create_warehouse_routes(db, get_current_user, get_tenant_admin, require_tenant):
+    from utils.permissions import create_permission_checker
+    require_permission = create_permission_checker(db, get_current_user)
     router = APIRouter(tags=["warehouses"])
 
     # ── Warehouses CRUD ──
     @router.post("/warehouses", status_code=201)
-    async def create_warehouse(warehouse: dict, admin: dict = Depends(get_tenant_admin)):
+    async def create_warehouse(warehouse: dict, admin: dict = Depends(require_permission("warehouses.edit"))):
         from models.schemas import WarehouseCreate
         w = WarehouseCreate(**warehouse)
         wid = str(uuid.uuid4())
@@ -25,11 +27,11 @@ def create_warehouse_routes(db, get_current_user, get_tenant_admin, require_tena
         return doc
 
     @router.get("/warehouses")
-    async def get_warehouses(user: dict = Depends(require_tenant)):
+    async def get_warehouses(user: dict = Depends(require_permission("warehouses.view"))):
         return await db.warehouses.find({}, {"_id": 0}).to_list(100)
 
     @router.put("/warehouses/{warehouse_id}")
-    async def update_warehouse(warehouse_id: str, updates: dict, admin: dict = Depends(get_tenant_admin)):
+    async def update_warehouse(warehouse_id: str, updates: dict, admin: dict = Depends(require_permission("warehouses.edit"))):
         wh = await db.warehouses.find_one({"id": warehouse_id})
         if not wh:
             raise HTTPException(status_code=404, detail="Warehouse not found")
@@ -41,7 +43,7 @@ def create_warehouse_routes(db, get_current_user, get_tenant_admin, require_tena
         return await db.warehouses.find_one({"id": warehouse_id}, {"_id": 0})
 
     @router.delete("/warehouses/{warehouse_id}")
-    async def delete_warehouse(warehouse_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def delete_warehouse(warehouse_id: str, admin: dict = Depends(require_permission("warehouses.edit"))):
         wh = await db.warehouses.find_one({"id": warehouse_id})
         if not wh:
             raise HTTPException(status_code=404, detail="Warehouse not found")
@@ -52,7 +54,7 @@ def create_warehouse_routes(db, get_current_user, get_tenant_admin, require_tena
 
     # ── Stock Transfers ──
     @router.post("/stock-transfers")
-    async def create_stock_transfer(transfer: dict, admin: dict = Depends(get_tenant_admin)):
+    async def create_stock_transfer(transfer: dict, admin: dict = Depends(require_permission("warehouses.edit"))):
         from models.schemas import StockTransferCreate
         t = StockTransferCreate(**transfer)
         from_wh = await db.warehouses.find_one({"id": t.from_warehouse})
@@ -70,12 +72,12 @@ def create_warehouse_routes(db, get_current_user, get_tenant_admin, require_tena
         return doc
 
     @router.get("/stock-transfers")
-    async def get_stock_transfers(user: dict = Depends(require_tenant)):
+    async def get_stock_transfers(user: dict = Depends(require_permission("warehouses.view"))):
         return await db.stock_transfers.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
 
     # ── Inventory Sessions ──
     @router.post("/inventory-sessions")
-    async def create_inventory_session(session: dict, admin: dict = Depends(get_tenant_admin)):
+    async def create_inventory_session(session: dict, admin: dict = Depends(require_permission("warehouses.edit"))):
         from models.schemas import InventorySessionCreate
         s = InventorySessionCreate(**session)
         existing = await db.inventory_sessions.find_one({"status": "active"})
@@ -87,11 +89,11 @@ def create_warehouse_routes(db, get_current_user, get_tenant_admin, require_tena
         return doc
 
     @router.get("/inventory-sessions")
-    async def get_inventory_sessions(user: dict = Depends(require_tenant)):
+    async def get_inventory_sessions(user: dict = Depends(require_permission("warehouses.view"))):
         return await db.inventory_sessions.find({}, {"_id": 0}).sort("started_at", -1).to_list(100)
 
     @router.put("/inventory-sessions/{session_id}")
-    async def update_inventory_session(session_id: str, updates: dict, admin: dict = Depends(get_tenant_admin)):
+    async def update_inventory_session(session_id: str, updates: dict, admin: dict = Depends(require_permission("warehouses.edit"))):
         session = await db.inventory_sessions.find_one({"id": session_id})
         if not session:
             raise HTTPException(status_code=404, detail="Inventory session not found")
@@ -101,7 +103,7 @@ def create_warehouse_routes(db, get_current_user, get_tenant_admin, require_tena
         return await db.inventory_sessions.find_one({"id": session_id}, {"_id": 0})
 
     @router.delete("/inventory-sessions/{session_id}")
-    async def delete_inventory_session(session_id: str, admin: dict = Depends(get_tenant_admin)):
+    async def delete_inventory_session(session_id: str, admin: dict = Depends(require_permission("warehouses.edit"))):
         result = await db.inventory_sessions.delete_one({"id": session_id})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Inventory session not found")

@@ -10,6 +10,8 @@ import uuid
 
 
 def create_expenses_routes(db, get_current_user, get_tenant_admin, require_tenant):
+    from utils.permissions import create_permission_checker
+    require_permission = create_permission_checker(db, get_current_user)
     router = APIRouter(prefix="/expenses", tags=["expenses"])
 
     class ExpenseCreate(BaseModel):
@@ -35,12 +37,12 @@ def create_expenses_routes(db, get_current_user, get_tenant_admin, require_tenan
         code: Optional[str] = None
 
     @router.get("")
-    async def get_expenses(category: Optional[str] = None, user: dict = Depends(require_tenant)):
+    async def get_expenses(category: Optional[str] = None, user: dict = Depends(require_permission("expenses.view"))):
         query = {"category": category} if category else {}
         return await db.expenses.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
 
     @router.get("/stats")
-    async def get_expenses_stats(user: dict = Depends(require_tenant)):
+    async def get_expenses_stats(user: dict = Depends(require_permission("expenses.view"))):
         total_result = await db.expenses.aggregate([{"$group": {"_id": None, "total": {"$sum": "$amount"}}}]).to_list(1)
         total = total_result[0]["total"] if total_result else 0
         now = datetime.now(timezone.utc)
@@ -55,7 +57,7 @@ def create_expenses_routes(db, get_current_user, get_tenant_admin, require_tenan
         return {"total": total, "thisMonth": this_month, "lastMonth": last_month, "byCategory": [{"category": c["_id"], "total": c["total"]} for c in categories if c["_id"]]}
 
     @router.get("/reminders")
-    async def get_reminders(user: dict = Depends(require_tenant)):
+    async def get_reminders(user: dict = Depends(require_permission("expenses.view"))):
         now = datetime.now(timezone.utc)
         recurring = await db.expenses.find({"recurring": True}, {"_id": 0}).to_list(100)
         reminders = []
@@ -88,7 +90,7 @@ def create_expenses_routes(db, get_current_user, get_tenant_admin, require_tenan
         return reminders
 
     @router.post("")
-    async def create_expense(expense: ExpenseCreate, user: dict = Depends(require_tenant)):
+    async def create_expense(expense: ExpenseCreate, user: dict = Depends(require_permission("expenses.view"))):
         data = expense.model_dump()
         data["id"] = str(uuid.uuid4())
         data["date"] = data["date"] or datetime.now(timezone.utc).isoformat()
@@ -100,7 +102,7 @@ def create_expenses_routes(db, get_current_user, get_tenant_admin, require_tenan
         return data
 
     @router.put("/{expense_id}")
-    async def update_expense(expense_id: str, expense: ExpenseUpdate, user: dict = Depends(require_tenant)):
+    async def update_expense(expense_id: str, expense: ExpenseUpdate, user: dict = Depends(require_permission("expenses.view"))):
         if not await db.expenses.find_one({"id": expense_id}):
             raise HTTPException(status_code=404, detail="التكلفة غير موجودة")
         update_data = {k: v for k, v in expense.model_dump().items() if v is not None}
@@ -109,14 +111,14 @@ def create_expenses_routes(db, get_current_user, get_tenant_admin, require_tenan
         return await db.expenses.find_one({"id": expense_id}, {"_id": 0})
 
     @router.delete("/{expense_id}")
-    async def delete_expense(expense_id: str, user: dict = Depends(require_tenant)):
+    async def delete_expense(expense_id: str, user: dict = Depends(require_permission("expenses.view"))):
         result = await db.expenses.delete_one({"id": expense_id})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="التكلفة غير موجودة")
         return {"message": "تم حذف التكلفة بنجاح"}
 
     @router.post("/{expense_id}/mark-paid")
-    async def mark_paid(expense_id: str, user: dict = Depends(require_tenant)):
+    async def mark_paid(expense_id: str, user: dict = Depends(require_permission("expenses.view"))):
         if not await db.expenses.find_one({"id": expense_id}):
             raise HTTPException(status_code=404, detail="التكلفة غير موجودة")
         now = datetime.now(timezone.utc).isoformat()
