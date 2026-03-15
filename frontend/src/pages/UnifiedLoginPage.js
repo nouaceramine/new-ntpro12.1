@@ -131,7 +131,7 @@ export default function UnifiedLoginPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     required
-                    className="h-11"
+                    className="h-11 text-black bg-white font-medium"
                     data-testid="unified-email-input"
                   />
                 </div>
@@ -145,7 +145,7 @@ export default function UnifiedLoginPage() {
                       value={formData.password}
                       onChange={(e) => setFormData({...formData, password: e.target.value})}
                       required
-                      className="h-11 pe-10"
+                      className="h-11 pe-10 text-black bg-white font-medium"
                       data-testid="unified-password-input"
                     />
                     <button
