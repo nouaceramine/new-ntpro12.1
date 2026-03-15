@@ -171,6 +171,7 @@ from robots.robot_manager import RobotManager
 from services.notification_service import NotificationService
 from services.sms_service import SMSService
 from services.email_service import EmailService
+from services.cache_service import cache
 
 # ============ IMPORT REFACTORED ROUTES ============
 from routes.saas_routes import router as saas_router, get_super_admin
@@ -982,6 +983,25 @@ async def start_all_robots(admin: dict = Depends(get_super_admin)):
     return {"message": "تم بدء تشغيل جميع الروبوتات"}
 
 app.include_router(robot_router, prefix="/api")  # Robot management routes
+
+# ============ CACHE API ENDPOINTS ============
+cache_router = APIRouter(prefix="/cache", tags=["cache"])
+
+@cache_router.get("/stats")
+async def get_cache_stats(admin: dict = Depends(get_super_admin)):
+    return cache.get_stats()
+
+@cache_router.post("/flush")
+async def flush_cache(admin: dict = Depends(get_super_admin)):
+    cache.flush_all()
+    return {"message": "تم مسح ذاكرة التخزين المؤقت"}
+
+@cache_router.delete("/{pattern}")
+async def delete_cache_pattern(pattern: str, admin: dict = Depends(get_super_admin)):
+    cache.delete_pattern(f"{pattern}:*")
+    return {"message": f"تم مسح مفاتيح {pattern}"}
+
+app.include_router(cache_router, prefix="/api")  # Cache management routes
 
 # Tenant context middleware - extracts tenant_id from JWT and sets ContextVar
 @app.middleware("http")

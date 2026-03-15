@@ -13,6 +13,13 @@ def create_stats_routes(db, get_current_user, get_tenant_admin, require_tenant, 
     # ── Main Dashboard Stats ──
     @router.get("/stats")
     async def get_stats(admin: dict = Depends(get_tenant_admin)):
+        from services.cache_service import cache
+        tenant_id = admin.get("tenant_id", "main")
+        cache_key = f"stats:dashboard:{tenant_id}"
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+
         await init_cash_boxes()
         total_products = await db.products.count_documents({})
         total_customers = await db.customers.count_documents({})
@@ -45,7 +52,7 @@ def create_stats_routes(db, get_current_user, get_tenant_admin, require_tenant, 
             {"$group": {"_id": None, "total": {"$sum": "$remaining_amount"}}}
         ]).to_list(1)
 
-        return {
+        response = {
             "total_products": total_products, "total_customers": total_customers,
             "total_suppliers": total_suppliers, "total_employees": total_employees,
             "low_stock_count": low_stock,
@@ -57,6 +64,8 @@ def create_stats_routes(db, get_current_user, get_tenant_admin, require_tenant, 
             "total_payables": total_payables[0]["total"] if total_payables else 0,
             "currency": CURRENCY
         }
+        cache.set(cache_key, response, ttl=60)  # Cache for 1 minute
+        return response
 
     # ── Dashboard Sales Stats ──
     @router.get("/dashboard/sales-stats")

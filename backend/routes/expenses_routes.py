@@ -41,6 +41,26 @@ def create_expenses_routes(db, get_current_user, get_tenant_admin, require_tenan
         query = {"category": category} if category else {}
         return await db.expenses.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
 
+    @router.get("/paginated")
+    async def get_expenses_paginated(
+        category: Optional[str] = None,
+        start_date: Optional[str] = None, end_date: Optional[str] = None,
+        page: int = 1, page_size: int = 20,
+        user: dict = Depends(require_permission("expenses.view"))
+    ):
+        from utils.pagination import paginate
+        query = {}
+        if category:
+            query["category"] = category
+        if start_date:
+            query["date"] = {"$gte": start_date}
+        if end_date:
+            if "date" in query:
+                query["date"]["$lte"] = end_date
+            else:
+                query["date"] = {"$lte": end_date}
+        return await paginate(db.expenses, query, page, page_size, sort_field="date")
+
     @router.get("/stats")
     async def get_expenses_stats(user: dict = Depends(require_permission("expenses.view"))):
         total_result = await db.expenses.aggregate([{"$group": {"_id": None, "total": {"$sum": "$amount"}}}]).to_list(1)

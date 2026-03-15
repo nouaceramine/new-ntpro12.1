@@ -47,14 +47,49 @@ def create_suppliers_routes(db, get_current_user, get_tenant_admin, require_tena
         if family_id:
             query["family_id"] = family_id
         suppliers = await db.suppliers.find(query, {"_id": 0}).to_list(1000)
+
+        # Batch fetch families to avoid N+1
+        fam_ids = list(set(s.get("family_id") for s in suppliers if s.get("family_id") and not s.get("family_name")))
+        fam_map = {}
+        if fam_ids:
+            fams = await db.supplier_families.find({"id": {"$in": fam_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(len(fam_ids))
+            fam_map = {f["id"]: f.get("name", "") for f in fams}
+
         for s in suppliers:
             if s.get("family_id") and not s.get("family_name"):
-                family = await db.supplier_families.find_one({"id": s["family_id"]}, {"_id": 0, "name": 1})
-                s["family_name"] = family["name"] if family else ""
+                s["family_name"] = fam_map.get(s["family_id"], "")
             for field in ["family_name", "family_id", "code"]:
                 if not s.get(field):
                     s[field] = ""
         return suppliers
+
+    @router.get("/paginated")
+    async def get_suppliers_paginated(
+        search: Optional[str] = None, family_id: Optional[str] = None,
+        page: int = 1, page_size: int = 20,
+        admin: dict = Depends(require_permission("suppliers.edit"))
+    ):
+        from utils.pagination import paginate
+        query = {}
+        if search:
+            query["$or"] = [{"name": {"$regex": search, "$options": "i"}}, {"phone": {"$regex": search, "$options": "i"}}, {"code": {"$regex": search, "$options": "i"}}]
+        if family_id:
+            query["family_id"] = family_id
+        result = await paginate(db.suppliers, query, page, page_size)
+
+        # Batch fetch families
+        fam_ids = list(set(s.get("family_id") for s in result["items"] if s.get("family_id") and not s.get("family_name")))
+        fam_map = {}
+        if fam_ids:
+            fams = await db.supplier_families.find({"id": {"$in": fam_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(len(fam_ids))
+            fam_map = {f["id"]: f.get("name", "") for f in fams}
+        for s in result["items"]:
+            if s.get("family_id") and not s.get("family_name"):
+                s["family_name"] = fam_map.get(s["family_id"], "")
+            for field in ["family_name", "family_id", "code"]:
+                if not s.get(field):
+                    s[field] = ""
+        return result
 
     @router.get("/generate-code")
     async def generate_supplier_code():

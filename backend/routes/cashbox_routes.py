@@ -70,4 +70,23 @@ def create_cashbox_routes(db, get_current_user, get_tenant_admin, require_tenant
             t["balance_after"] = 0
         return transactions
 
+    @router.get("/transactions/paginated")
+    async def get_transactions_paginated(
+        cash_box_id: Optional[str] = None, type: Optional[str] = None,
+        page: int = 1, page_size: int = 20,
+        admin: dict = Depends(require_permission("cash_boxes.edit"))
+    ):
+        from utils.pagination import paginate
+        query = {}
+        if cash_box_id:
+            query["cash_box_id"] = cash_box_id
+        if type:
+            query["type"] = type
+        result = await paginate(db.transactions, query, page, page_size)
+        cash_boxes = {b["id"]: b["name"] for b in await db.cash_boxes.find({}, {"_id": 0}).to_list(100)}
+        for t in result["items"]:
+            t["cash_box_name"] = cash_boxes.get(t.get("cash_box_id"), t.get("cash_box_id", ""))
+            t["balance_after"] = 0
+        return result
+
     return router

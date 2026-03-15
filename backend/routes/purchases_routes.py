@@ -95,6 +95,27 @@ def create_purchases_routes(db, get_current_user, get_tenant_admin, require_tena
         query = {"supplier_id": supplier_id} if supplier_id else {}
         return await db.purchases.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
 
+    # ── Paginated Purchases ──
+    @router.get("/paginated")
+    async def get_purchases_paginated(
+        supplier_id: Optional[str] = None,
+        start_date: Optional[str] = None, end_date: Optional[str] = None,
+        page: int = 1, page_size: int = 20,
+        admin: dict = Depends(require_permission("purchases.edit"))
+    ):
+        from utils.pagination import paginate
+        query = {}
+        if supplier_id:
+            query["supplier_id"] = supplier_id
+        if start_date:
+            query["created_at"] = {"$gte": start_date}
+        if end_date:
+            if "created_at" in query:
+                query["created_at"]["$lte"] = end_date
+            else:
+                query["created_at"] = {"$lte": end_date}
+        return await paginate(db.purchases, query, page, page_size)
+
     # ── Generate Purchase Code ──
     @router.get("/generate-code")
     async def generate_purchase_code():

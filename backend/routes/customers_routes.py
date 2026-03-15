@@ -59,10 +59,17 @@ def create_customers_routes(db, get_current_user, get_tenant_admin, require_tena
             query["family_id"] = family_id
 
         customers = await db.customers.find(query, {"_id": 0}).to_list(1000)
+
+        # Batch fetch families to avoid N+1
+        family_ids = list(set(c.get("family_id") for c in customers if c.get("family_id") and not c.get("family_name")))
+        families_map = {}
+        if family_ids:
+            families = await db.customer_families.find({"id": {"$in": family_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(len(family_ids))
+            families_map = {f["id"]: f.get("name", "") for f in families}
+
         for customer in customers:
             if customer.get("family_id") and not customer.get("family_name"):
-                family = await db.customer_families.find_one({"id": customer["family_id"]}, {"_id": 0, "name": 1})
-                customer["family_name"] = family["name"] if family else ""
+                customer["family_name"] = families_map.get(customer["family_id"], "")
             elif not customer.get("family_name"):
                 customer["family_name"] = ""
             if not customer.get("family_id"):
@@ -93,10 +100,16 @@ def create_customers_routes(db, get_current_user, get_tenant_admin, require_tena
         skip = (page - 1) * page_size
         customers = await db.customers.find(query, {"_id": 0}).skip(skip).limit(page_size).to_list(page_size)
 
+        # Batch fetch families to avoid N+1
+        family_ids = list(set(c.get("family_id") for c in customers if c.get("family_id") and not c.get("family_name")))
+        families_map = {}
+        if family_ids:
+            families = await db.customer_families.find({"id": {"$in": family_ids}}, {"_id": 0, "id": 1, "name": 1}).to_list(len(family_ids))
+            families_map = {f["id"]: f.get("name", "") for f in families}
+
         for customer in customers:
             if customer.get("family_id") and not customer.get("family_name"):
-                family = await db.customer_families.find_one({"id": customer["family_id"]}, {"_id": 0, "name": 1})
-                customer["family_name"] = family["name"] if family else ""
+                customer["family_name"] = families_map.get(customer["family_id"], "")
             elif not customer.get("family_name"):
                 customer["family_name"] = ""
             if not customer.get("family_id"):

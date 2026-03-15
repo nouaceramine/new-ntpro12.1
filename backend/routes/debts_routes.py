@@ -50,6 +50,20 @@ def create_debts_routes(db, get_current_user, get_tenant_admin, require_tenant):
                 debt["status"] = "overdue"
         return debts
 
+    @router.get("/paginated")
+    async def get_debts_paginated(
+        type: Optional[str] = None, party_type: Optional[str] = None,
+        status: Optional[str] = None,
+        page: int = 1, page_size: int = 20,
+        admin: dict = Depends(require_permission("debts.edit"))
+    ):
+        from utils.pagination import paginate
+        query = {}
+        if type: query["type"] = type
+        if party_type: query["party_type"] = party_type
+        if status: query["status"] = status
+        return await paginate(db.debts, query, page, page_size)
+
     @router.post("/{debt_id}/pay")
     async def pay_debt(debt_id: str, payment: dict, admin: dict = Depends(require_permission("debts.edit"))):
         from models.schemas import DebtPaymentCreate

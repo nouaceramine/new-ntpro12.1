@@ -41,6 +41,14 @@ def create_employees_routes(db, get_current_user, get_tenant_admin, require_tena
     async def get_employees(admin: dict = Depends(require_permission("employees.edit"))):
         return await db.employees.find({}, {"_id": 0}).to_list(1000)
 
+    @router.get("/paginated")
+    async def get_employees_paginated(
+        page: int = 1, page_size: int = 20,
+        admin: dict = Depends(require_permission("employees.edit"))
+    ):
+        from utils.pagination import paginate
+        return await paginate(db.employees, {}, page, page_size)
+
     @router.get("/salary-report")
     async def get_salary_report(month: Optional[str] = None, user: dict = Depends(require_permission("employees.view"))):
         if not month:

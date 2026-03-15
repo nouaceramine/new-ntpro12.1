@@ -47,6 +47,12 @@ def create_auth_users_routes(db, main_db, get_current_user, get_admin_user, get_
                 detail="لا يمكن إنشاء حساب بصلاحية سوبر أدمين - Creating super_admin accounts is not allowed"
             )
 
+        # Password strength validation
+        from utils.password_validator import validate_password
+        pw_check = validate_password(user.password)
+        if not pw_check["is_valid"]:
+            raise HTTPException(status_code=400, detail={"message": "كلمة المرور ضعيفة", "errors": pw_check["errors"]})
+
         user_id = str(uuid.uuid4())
         now = datetime.now(timezone.utc).isoformat()
 
@@ -476,6 +482,11 @@ def create_auth_users_routes(db, main_db, get_current_user, get_admin_user, get_
 
         if len(password_data.new_password) < 4:
             raise HTTPException(status_code=400, detail="كلمة المرور يجب أن تكون 4 أحرف على الأقل")
+
+        from utils.password_validator import validate_password
+        pw_check = validate_password(password_data.new_password)
+        if not pw_check["is_valid"]:
+            raise HTTPException(status_code=400, detail={"message": "كلمة المرور ضعيفة", "errors": pw_check["errors"]})
 
         hashed = hash_password(password_data.new_password)
         await db.users.update_one({"id": user_id}, {"$set": {"password": hashed}})
